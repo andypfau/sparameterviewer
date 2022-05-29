@@ -56,3 +56,5 @@ def get_unique_short_filenames(names: "list[str]", min_length: int = 5) -> "list
     return result
 
 
+def is_windows():
+    return True if os.name=='nt' else False

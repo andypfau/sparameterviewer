@@ -1,7 +1,7 @@
 from tkinter import Toplevel
 import os, logging
 
-from .osdetect import is_windows
+from .utils import is_windows
 
 
 root_path = None
