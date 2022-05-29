@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-scatteringparameter">
+    <comment>Scattering-Parameter (S-Parameter)</comment>
+    <glob pattern="*.s[1-9]p"/>
+  </mime-type>
+  <!-- see <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>, <https://help.gnome.org/admin//system-admin-guide/2.32/mimetypes-source-xml.html.en> -->
+</mime-info>
