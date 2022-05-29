@@ -27,7 +27,14 @@ Usage
 
 - you can just start the app and load a directory
 - or you can open one or more file with the app
-	- under Windows, you can use `sparamviewer_windows.bat` for this purpose
+
+### Linux
+
+Under Linux, you can use `res/application-x-scatteringparameter.xml` to register a mime-type for S-parameter files. For instructions, see e.g. <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>.
+
+### Windows
+
+Under Windows, you can use `res/sparamviewer.bat` to launch the app from "*Open With...*". You have to adapt the paths in the file.
 	
 
 Development
