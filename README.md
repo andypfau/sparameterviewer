@@ -3,6 +3,17 @@ S-Parameter Viewer
 
 A cross-platform S-parameter Viewer written in Python.
 
+<img src="./doc/screenshot_mainwin_s2p.png" width="300" />
+
+
+Main Features
+-------------
+
+- Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse response, Phase (normal / unwrapped), Group Delay
+- Export to CSV or Excel
+- Plotting of Python-based expressions, including functions for stability factors and for adding passive elements
+- Bode-Fano optimum RL estimation
+
 
 Prerequisites
 -------------
@@ -35,4 +46,4 @@ Missing Features
 ----------------
 
 - Stability circles
-- Sample files (a 1-port termination, a 2-port filter, 3- or 4-port coupler)
+- More sample files (a 1-port termination, a 3- or 4-port coupler)
