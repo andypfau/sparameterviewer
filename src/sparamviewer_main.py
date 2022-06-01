@@ -3,7 +3,7 @@
 from tkinter import *
 from tkinter import filedialog, messagebox, simpledialog
 
-import os, glob, appdirs, math, copy, logging, traceback
+import os, glob, appdirs, math, copy, logging, traceback, datetime
 import numpy as np
 
 import matplotlib.pyplot as pyplot
@@ -371,15 +371,50 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         SparamviewerReturnlossDialog(self.toplevel_main, self.files, selected_id)
 
 
+    def get_info_str(self, file: LoadedSParamFile) -> str:
+        
+        try:
+            size = f'{os.path.getsize(file.filename):,.0f}'
+            fmt_tstamp = lambda ts: f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
+            created = fmt_tstamp(os.path.getctime(file.filename))
+            modified = fmt_tstamp(os.path.getmtime(file.filename))
+        except:
+            size = 'unknown'
+            created = 'unknown'
+            modified = 'unknown'
+        f0, f1 = file.sparam.frequencies[0], file.sparam.frequencies[-1]
+        n_pts = len(file.sparam.frequencies)
+        dir, fname = os.path.split(file.filename)
+        dir = os.path.abspath(dir)
+        comm = file.sparam.comment.strip()
+        n_ports = file.sparam.network.s.shape[1]
+        if (file.sparam.network.z0 == file.sparam.network.z0[0,0]).all():
+            z0 = str(Si(file.sparam.network.z0[0,0],'Ohm'))
+        else:
+            z0 = 'different for each port and/or frequency'
+        
+        info = f'{fname}\n'
+        info += '-'*len(fname)+'\n\n'
+        
+        if len(comm)>0:
+            info += comm + '\n\n'
+        info += f'Ports: {n_ports}, reference impedance: {z0}\n'
+        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_pts:,.0f} point{"s" if n_pts!=0 else ""}\n\n'
+
+        info += f'File created: {created}, last modified: {modified}\n'
+        info += f'File size: {size} B\n'
+        info += f'File path: {os.path.join(dir, fname)}'
+
+        return info
+
+
     def on_click_info(self):
         info = ''
         for file in self.files:
             if file.id in self.treeview_files.selection():
                 if len(info)>0:
                     info+= '\n\n\n'
-                info += f'{file.filename}\n'
-                info += '-'*len(file.filename)+'\n\n'
-                info += file.sparam.comment.strip()
+                info += self.get_info_str(file)
         
         if len(info)>0:
             dlg = SparamviewerInfoDialog(self.toplevel_main, title='File Info', text=info)
@@ -483,8 +518,12 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         if len(filenames)<1:
             self._load_all_files_in_dir(None)
             return
-            
-        dir = os.path.abspath(os.path.split(filenames[0])[0])
+
+        if os.path.isdir(filenames[0]):
+            dir = filenames[0]
+        else:
+            dir = os.path.split(filenames[0])[0]
+        dir = os.path.abspath(dir)
         self._load_all_files_in_dir(dir, select=filenames)
 
 

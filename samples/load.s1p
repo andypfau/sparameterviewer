@@ -1,4 +1,4 @@
-! 1-Port measurement of an SMA termination
+! 1-Port measurement of an SMA(m) termination
 # Hz S  dB   R 50
 10000000 -46.547264 179.83647
 13196000 -46.448975 177.98088

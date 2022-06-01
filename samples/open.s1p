@@ -1,4 +1,4 @@
-! 1-Port measurement of an SMA open
+! 1-Port measurement of an SMA(m) open
 # Hz S  dB   R 50
 10000000 0.00023503823 -0.028586557
 13196000 1.5531579e-006 -0.052778576

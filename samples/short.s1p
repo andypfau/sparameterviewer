@@ -1,4 +1,16 @@
-! 1-Port measurement of an SMA short
+! 1-Port measurement of an SMA(m) short
+! An interesting aspect of this file is that the impedance
+!   rotates counter-clockwise with increasing frequency in
+!   the Smith-chart, even though you would typically expect
+!   it to rotate clock-wise. This is because the VNA cal
+!   shifts the reference plane to the end of the connector
+!   of the DUT, i.e. a bit away from the VNA's female
+!   3.5 mm connector. However, this particular DUT shorts
+!   the signal immediately at the end of the VNA's
+!   connector, which means the cal data contains a short
+!   transmission line that is not in the DUT, resulting in
+!   a negative-length transmission line in the calibrated
+!   data.
 # Hz S  dB   R 50
 10000000 -0.014404813 -179.92926
 13196000 -0.018440653 -179.93633
