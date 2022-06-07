@@ -52,4 +52,5 @@ Known Issues
 Missing Features
 ----------------
 
-- Stability circles
+- Implement the Bode-Fano limit as expression functions, e.g. `bodefano(1e9,10e9,'optimum')` to calculate the optimum achievable RL over a range of 1 GHz to 10 GHz.
+- Stability circles, first as an expression function, maybe later as its own dialog for convenience
