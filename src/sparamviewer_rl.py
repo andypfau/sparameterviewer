@@ -1,7 +1,3 @@
-#!/bin/python3
-
-from ast import Load
-from asyncio import selector_events
 from tkinter import END
 
 import matplotlib.pyplot as pyplot
@@ -10,28 +6,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import matplotlib.ticker as ticker
 import numpy as np
 import skrf, copy, math, cmath, glob, os
-from scipy.interpolate import interp1d
-from scipy.integrate import trapz
 
-from lib import LoadedSParamFile, AppGlobal
+from lib import LoadedSParamFile, AppGlobal, BodeFano
 from sparamviewer_rl_pygubu import SparamviewerPygubuApp
 
-
-def crop_xrange(x, y, xmin=-1e99, xmax=+1e99):
-    cropped = [(xx,yy) for xx,yy in zip(x,y) if xmin<=xx<=xmax]
-    x_cropped = [xx for (xx,yy) in cropped]
-    y_cropped = [yy for (xx,yy) in cropped]
-    return np.array(x_cropped), np.array(y_cropped)
-
-def integrate(f, s):
-    integral = trapz(np.log(1/np.abs(s)), f*math.tau)
-    return integral
-
-def get_optimum_rl(integral, f0, f1):
-    omega0, omega1 = math.tau*f0, math.tau*f1
-    gamma = 1 / math.exp(integral / (omega1-omega0))
-    db = 20*math.log10(gamma)
-    return db
 
 
 # extend auto-generated UI code
@@ -106,27 +84,15 @@ class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
 
     def update_plot(self, file: LoadedSParamFile, port: int, int0: float, int1: float, tgt0: float, tgt1: float):
         
-        nw_f_complete = file.sparam.frequencies
-        nw_s_complete = file.sparam.get_sparam(port, port)
-
-        nw_f_intrange, nw_s_intrange = crop_xrange(nw_f_complete, nw_s_complete, int0, int1)
-        nw_f_calcrange, nw_s_calcrange = crop_xrange(nw_f_complete, nw_s_complete, tgt0, tgt1)
-        
-        f0_int, f1_int = min(nw_f_intrange), max(nw_f_intrange)
-        
-        integral_intrange = integrate(nw_f_intrange, nw_s_intrange)
-        integral_calcrange = integrate(nw_f_calcrange, nw_s_calcrange)
-        db_total = get_optimum_rl(integral_intrange, min(nw_f_intrange), max(nw_f_intrange))
-        db_current = get_optimum_rl(integral_calcrange, tgt0, tgt1)
-        db_optimized = get_optimum_rl(integral_intrange, tgt0, tgt1)
+        bodefano = BodeFano.from_touchstone(file.sparam, port, int0, int1, tgt0, tgt1)
 
         self.fig.clf()
         self.plot = self.fig.add_subplot(111)
 
-        self.plot.plot(nw_f_intrange/1e9, 20*np.log10(np.abs(nw_s_intrange)), '-', label=f'S{port}{port}')
-        self.plot.plot([f0_int/1e9,f1_int/1e9], [db_total,db_total], ':', label=f'Current avg. RL (integration range): {db_total:+.3g} dB')
-        self.plot.plot([tgt0/1e9,tgt1/1e9], [db_current,db_current], '--', label=f'Current avg. RL (target range): {db_current:+.3g} dB')
-        self.plot.plot([tgt0/1e9,tgt1/1e9], [db_optimized,db_optimized], '-', label=f'Achievable avg. RL (target range): {db_optimized:+.3g} dB')
+        self.plot.plot(bodefano.nw_f_intrange/1e9, 20*np.log10(np.abs(bodefano.nw_s_intrange)), '-', label=f'S{port}{port}')
+        self.plot.plot([bodefano.f_integration_actual_start_hz/1e9,bodefano.f_integration_actual_stop_hz/1e9], [bodefano.db_total,bodefano.db_total], ':', label=f'Current avg. RL (integration range): {bodefano.db_total:+.3g} dB')
+        self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_current,bodefano.db_current], '--', label=f'Current avg. RL (target range): {bodefano.db_current:+.3g} dB')
+        self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_optimized,bodefano.db_optimized], '-', label=f'Achievable avg. RL (target range): {bodefano.db_optimized:+.3g} dB')
         self.plot.set_xlabel('f / GHz')
         self.plot.set_ylabel('RL / dB')
         self.plot.legend()

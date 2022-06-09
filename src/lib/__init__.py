@@ -9,3 +9,4 @@ from .tkinter_helpers import TkText, TkCommon
 from .appglobal import AppGlobal
 from .excel import ExcelGen
 from .data_export import DataExport
+from .bodefano import BodeFano

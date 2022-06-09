@@ -1,5 +1,5 @@
-from zipfile import ZIP_BZIP2
 from .structs import LoadedSParamFile
+from .bodefano import BodeFano
 
 import skrf, math, cmath, copy
 import numpy as np
@@ -90,6 +90,27 @@ class SParam:
         new_f, new_s = zip(*new)
         return SParam(self.name, new_f, new_s, self.z0)
         return self._new_from_z(1/(1/self._get_z() + 1/z))
+    
+    def rl_avg(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
+        f_start = f_start if f_start is not None else -1e99
+        f_end = f_end if f_end is not None else +1e99
+        bodefano = BodeFano(self.f, self.s, f_start, f_end, f_start, f_end)
+        f = np.array([bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz])
+        s11 = pow(10, bodefano.db_total/20)
+        s = np.array([s11, s11])
+        return SParam(self.name, f, s, self.z0)
+    
+    def rl_opt(self, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> "SParam":
+        f_integrate_start = f_integrate_start if f_integrate_start is not None else -1e99
+        f_integrate_end = f_integrate_end if f_integrate_end is not None else +1e99
+        bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_integrate_start, f_integrate_end)
+        f_target_start = f_target_start if f_target_start is not None else bodefano.f_integration_actual_start_hz
+        f_target_end = f_target_end if f_target_end is not None else bodefano.f_integration_actual_stop_hz
+        bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_target_start, f_target_end)
+        f = np.array([f_target_start, f_target_end])
+        s11 = pow(10, bodefano.db_optimized/20)
+        s = np.array([s11, s11])
+        return SParam(self.name, f, s, self.z0)
     
     def __repr__(self):
         return f'<SParam("{self.name}", f={self.f}, s={self.s})>'
@@ -321,7 +342,13 @@ class ExpressionParser:
         
         def plot(sparam: SParam, label: "str|None" = None, style: "str|None" = None):
             sparam.plot(label, style)
-    
+
+        def rl_avg(sparam: SParam, f_start: "float|None" = None, f_end: "float|None" = None) -> SParam:
+            return sparam.rl_avg(f_start, f_end)
+
+        def rl_opt(sparam: SParam, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> SParam:
+            return sparam.rl_opt(f_integrate_start, f_integrate_end, f_target_start, f_target_end)
+        
         def crop_f(obj: "Network|SParam", f_start: "float|None" = None, f_end: "float|None" = None) -> "Network|SParam":
             return obj.crop_f(f_start, f_end)
         
@@ -370,6 +397,8 @@ class ExpressionParser:
             'crop_f': crop_f,
             'abs': abs,
             'db': db,
+            'rl_avg': rl_avg,
+            'rl_opt': rl_opt,
             'math': math,
             'np': np,
         }
@@ -464,6 +493,14 @@ Network
             Works only for 1-ports and 2-ports. The length is specified in degrees at the given frequency.
             The loss is the real part of the propagation constant.
             If Z0 is not provided, the reference impedance of the corresponding port is used.
+        
+        rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParam
+            Calculates the average return loss over the given frequency range.
+        
+        rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) -> SParam
+            Integrates the return loss over the given integration frequency range, then uses
+            the Bode-Fano limit to calculate the maximum achievable return loss over the
+            given target frequency range.
 
     Unary Operators
 
@@ -482,7 +519,7 @@ SParam
 
         plot([<label=None>],[<style="-">]) -> Network
             Plots the data. <label> is any string.
-            <style> is a matplotlib-compatbile format (e.g. "-", ":", "--", "o-").
+            <style> is a matplotlib-compatible format (e.g. "-", ":", "--", "o-").
 
         db() -> Network
             Converts all values to dB.
@@ -508,7 +545,7 @@ SParam
 Functions
 =========
 
-All available functions are just shortcuts to object methods; the arguments deonted by "..." are the same as for the object methods.
+All available functions are just shortcuts to object methods; the arguments denoted by "..." are the same as for the object methods.
 
     Object Method                              | Corresponding Function
     -------------------------------------------+----------------------------
@@ -531,6 +568,8 @@ All available functions are just shortcuts to object methods; the arguments deon
     plot(<sparam>,...)                         | SParam.plot(...)
     db(<sparam>)                               | SParam.db()
     abs(<sparam>)                              | SParam.abs()
+    rl_avg(<sparam>, ...)                      | SParam.rl_avg(...)
+    rl_opt(<sparam>, ...)                      | SParam.rl_opt(...)
 
 
 Examples
