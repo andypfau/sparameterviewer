@@ -37,7 +37,7 @@ class StabilityCircle:
     def get_plot_data(self, n_points) -> "np.ndarray":
         result = []
         def add(angle):
-            result.append(self.center.real+math.cos(angle) + 1j*self.center.imag+math.sin(angle))
+            result.append(self.center.real+self.radius*math.cos(angle) + 1j*(self.center.imag+self.radius*math.sin(angle)))
         for i in range(n_points-1):
             add(math.tau*i/(n_points-1))
         add(0) # close the circle

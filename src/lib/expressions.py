@@ -514,8 +514,10 @@ Network
             the Bode-Fano limit to calculate the maximum achievable return loss over the
             given target frequency range.
         
-        plot_stab(...):
-            TBD
+        plot_stab(frequency_hz, [<at_output=False>], [<n_points=101>], ([<label=None>],[<style="-">]):
+            Plots the stability circle at the given frequency. Set at_output=True if you want to calculate the stability at
+            the output, otherwise the input is calculated. It adds "s.i." (stable inside circle) or "s.o." (stable outside
+            of the circle) to the plot name.
 
     Unary Operators
 
@@ -569,10 +571,8 @@ All available functions are just shortcuts to object methods; the arguments deno
     invert(<network>)                          | Network.invert()
     flip(<network>)                            | Network.flip()
     half(<network>)                            | Network.half()
-    cascade(<network>,<network>[,...])         | Network**Network...
     k(<network>)                               | Network.k()
     mu(<network>,...)                          | Network.mu(...)
-    crop_f(<network|SParam>,...)               | Network|SParam.crop_f(...)
     add_sr(<network>,...)                      | Network.add_sr(...))
     add_sl(<network>,...)                      | Network.add_sr(...)]
     add_sc(<network>,...)                      | Network.add_sr(...))
@@ -581,6 +581,8 @@ All available functions are just shortcuts to object methods; the arguments deno
     add_pc(<network>,...)                      | Network.add_pc(...))
     add_tl(<network>,...)                      | Network.add_tl(,...)
     plot_stab(<network>,...)                   | Network.plot_stab(,...)
+    cascade(<network>,<network>[,...])         | Network**Network...
+    crop_f(<network|SParam>,...)               | Network|SParam.crop_f(...)
     plot(<sparam>,...)                         | SParam.plot(...)
     db(<sparam>)                               | SParam.db()
     abs(<sparam>)                              | SParam.abs()
