@@ -10,9 +10,8 @@ Main Features
 -------------
 
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse response, Phase (normal / unwrapped), Group Delay
-- Export to CSV or Excel
-- Plotting of Python-based expressions, including functions for stability factors and for adding passive elements
-- Bode-Fano optimum RL estimation
+- Plotting of Python-based expressions, including functions for stability factorsa and stability circles, for adding passive elements, and for Bode-Fano optimum RL estimation
+- Export to CSV or XLSX
 
 
 Prerequisites
@@ -42,8 +41,10 @@ Development
 
 To modify the UI, you need `pygubu-designer`.
 
+There are sample .json-files in the `res` folder for VS Code.
+
 
 Known Issues
 ------------
 
-- Under Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
+- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
