@@ -52,4 +52,4 @@ Known Issues
 Missing Features
 ----------------
 
-- Stability circles, first as an expression function, maybe later as its own dialog for convenience
+- Automatic scaling of Smith chart with radius>1

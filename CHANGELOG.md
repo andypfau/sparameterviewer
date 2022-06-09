@@ -5,6 +5,7 @@ v0.61 beta (2022-06-09)
 ----------------------
 
 - implemented Bode-Fano as expressions
+- implemented stability circles as expressions
 
 
 v0.6 beta (2022-06-01)
