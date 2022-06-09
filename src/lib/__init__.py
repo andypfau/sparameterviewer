@@ -10,3 +10,4 @@ from .appglobal import AppGlobal
 from .excel import ExcelGen
 from .data_export import DataExport
 from .bodefano import BodeFano
+from .stabcircle import StabilityCircle
