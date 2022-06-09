@@ -31,3 +31,4 @@ class StabilityCircle:
         denom = pow(abs(s22),2) - pow(abs(delta),2)
         self.center = ((s22 - delta*s11.conjugate()).conjugate()) / denom
         self.radius = abs((s12*s21) / denom)
+        self.stable_inside = True if abs(s11)>1 else False
