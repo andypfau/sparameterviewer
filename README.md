@@ -47,9 +47,3 @@ Known Issues
 ------------
 
 - Under Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
-
-
-Missing Features
-----------------
-
-- Automatic scaling of Smith chart with radius>1

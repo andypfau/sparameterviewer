@@ -293,11 +293,11 @@ class Network:
     
     def plot_stab(self, frequency_hz: float, at_output: bool = False, n_points=101, label: "str|None" = None, style: "str|None" = None):
         stab = StabilityCircle(self.nw, frequency_hz, at_output)
-        fake_f = np.linspace(0, 1, n_points)
-        plot = stab.get_plot_data(n_points)
+        data = stab.get_plot_data(n_points)
+        freq = np.full([n_points], frequency_hz)
         label = label if label is not None else self.name
         label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
-        SParam.plot_fn(fake_f, plot, label, style)
+        SParam.plot_fn(np.real(data), data, label, style)
 
     
 ################################################################################

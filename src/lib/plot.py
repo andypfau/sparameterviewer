@@ -90,17 +90,11 @@ class PlotHelper:
         self.y_log = y_log
         self.fig.clf()
         
-        if self.polar:
-            self.plot = self.fig.add_subplot(111, projection='polar')
-        elif self.smith:
-            from skrf import plotting
-            self.plot = self.fig.add_subplot(111)
-            plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True)
-        else:
-            self.plot = self.fig.add_subplot(111)
-        
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
+        self.items_to_plot = []
+
+        self.plot = None # type:plt.axes.Axes
     
 
     def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Data]":
@@ -146,48 +140,83 @@ class PlotHelper:
         
         self.x_range = [min(self.x_range[0],min(x)), max(self.x_range[1],max(x))]
         self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
-        
-        def fix_log(x,y):
-            if x[0]<=0 and self.x_log:
-                x,y = x[1:], y[1:]
-            if y[0]<=0 and self.y_log:
-                x,y = x[1:], y[1:]
-            return x,y
-        
-        # escaping
-        label = name
-        if label.startswith('_'):
-            label = ' _' + label[1:]
-        
+        self.items_to_plot.append([x, y, name, style])
+    
+
+    def render(self):
+
+        def get_r_max():
+            r_max = 0
+            for (x,y,_,_) in self.items_to_plot:
+                r_this = max(np.sqrt(np.power(x,2) + np.power(y,2)))
+                r_max = max(r_max, r_this)
+            return r_max
+
         if self.polar:
-            new_plt = self.plot.plot(x, y, style, label=label)
+            self.plot = self.fig.add_subplot(111, projection='polar')
+            r_max = get_r_max()
+            if r_max <= 1:
+                self.plot.set_ylim((0,1))
         elif self.smith:
             from skrf import plotting
-            new_plt = plotting.plot_smith(s=x+1j*y, ax=self.plot, chart_type='z', show_legend=True, label=label, title=None)
-        elif self.x_log and self.y_log:
-            x,y = fix_log(x,y)
-            new_plt = self.plot.loglog(x, y, style, label=label)
-        elif self.x_log:
-            x,y = fix_log(x,y)
-            new_plt = self.plot.semilogx(x, y, style, label=label)
-        elif self.y_log:
-            x,y = fix_log(x,y)
-            new_plt = self.plot.semilogy(x, y, style, label=label)
+            self.plot = self.fig.add_subplot(111)
+            r_max = get_r_max()
+            r_smith = 1 if r_max<=1 else r_max*1.05
+            import logging; logging.warning(f'Setting Smith radius to {r_smith} (r_max is {r_max})')
+            plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
         else:
-            new_plt = self.plot.plot(x, y, style, label=label)
+            self.plot = self.fig.add_subplot(111)
 
-        color = new_plt[0].get_color() if new_plt is not None else None
-        self.plots.append(PlotData(
-            name, 
-            PlotDataQuantity(self.x_qty, self.x_fmt, x),
-            PlotDataQuantity(self.y_qty, self.y_fmt, y),
-            style,
-            color,
-        ))
+        for (x,y,name,style) in self.items_to_plot:
+        
+            # escaping
+            label = name
+            if label.startswith('_'):
+                label = ' _' + label[1:]
+
+            def fix_log(x,y):
+                if x[0]<=0 and self.x_log:
+                    x,y = x[1:], y[1:]
+                if y[0]<=0 and self.y_log:
+                    x,y = x[1:], y[1:]
+                return x,y
+            
+            if self.polar:
+                c = x + 1j*y
+                new_plt = self.plot.plot(np.angle(c), np.abs(c), style, label=label)
+            elif self.smith:
+                c = x + 1j*y
+                from skrf import plotting
+                new_plt = plotting.plot_smith(s=c, ax=self.plot, chart_type='z', show_legend=True, label=label, title=None)
+            elif self.x_log and self.y_log:
+                x,y = fix_log(x,y)
+                new_plt = self.plot.loglog(x, y, style, label=label)
+            elif self.x_log:
+                x,y = fix_log(x,y)
+                new_plt = self.plot.semilogx(x, y, style, label=label)
+            elif self.y_log:
+                x,y = fix_log(x,y)
+                new_plt = self.plot.semilogy(x, y, style, label=label)
+            else:
+                new_plt = self.plot.plot(x, y, style, label=label)
+
+            color = new_plt[0].get_color() if new_plt is not None else None
+            self.plots.append(PlotData(
+                name, 
+                PlotDataQuantity(self.x_qty, self.x_fmt, x),
+                PlotDataQuantity(self.y_qty, self.y_fmt, y),
+                style,
+                color,
+            ))
+        
+        if self.smith and r_smith!=1:
+            # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
+            self.plot.set_xlim((-r_smith,+r_smith))
+            self.plot.set_ylim((-r_smith,+r_smith))
 
 
     def finish(self, show_legend):
-        
+                
         if len(self.plots)<1:
             return
         

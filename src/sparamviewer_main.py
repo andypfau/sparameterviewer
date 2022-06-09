@@ -619,9 +619,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 elif style=='-.':
                     style2 = ':'
 
-                if polar:
-                    self.plot.add(np.angle(sp), np.abs(sp), name, style)
-                elif smith:
+                if polar or smith:
                     self.plot.add(np.real(sp), np.imag(sp), name, style)
                 else:
                     if timedomain:
@@ -691,13 +689,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                             add_to_plot(f, sp, name, style)
                             self.default_expr += f'nw("{unique_short_name}").s({ep},{ip}).plot("{name}","{style}")\n'
                 self.show_error(None)
+            
+            self.plot.render()
 
-            if polar:
-                if self.plot.y_range[1] <= 1.0:
-                    self.plot.plot.set_ylim((0.0,1.0))
-            elif smith:
-                pass
-            elif not timedomain and not qty_group_delay:
+            if not polar and not smith and not timedomain and not qty_group_delay:
                 if data_rl and self.plot.y_range[1]<=0:
                     self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
                 if (data_il or data_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
