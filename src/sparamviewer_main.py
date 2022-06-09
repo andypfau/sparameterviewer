@@ -555,10 +555,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
 
-            selected_files = self.get_selected_files()
-            if len(selected_files)<1:
-                return
-            
             data_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_IL_ALL) or (self.app_settings.plot_mode==self.MODE_IL_RECIPROCAL)
             data_rev_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_IL_ALL)
             data_rl = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_RL)
@@ -604,8 +600,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     else:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                 self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl)
-
-            unique_short_names = get_unique_short_filenames([os.path.split(f.filename)[1] for f in selected_files])
 
             def get_default_style(ep, ip):
                 if not polar and not smith:
@@ -667,6 +661,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.show_error(f'ERROR: {ex}')
 
             else:
+
+                selected_files = self.get_selected_files()
+                unique_short_names = get_unique_short_filenames([os.path.split(f.filename)[1] for f in selected_files])
+
                 for file,unique_short_name in zip(selected_files, unique_short_names):
                     for ep in range(1,file.sparam.n_ports+1):
                         for ip in range(1,file.sparam.n_ports+1):
