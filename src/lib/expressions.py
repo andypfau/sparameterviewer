@@ -2,7 +2,7 @@ from .structs import LoadedSParamFile
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 
-import skrf, math, cmath, copy
+import skrf, math, os
 import numpy as np
 
 
@@ -138,7 +138,7 @@ class Network:
             self.nw = nw
             self.name = name
         else:
-            template = Network.available_networks[Network._match_name_idx(search_str, [n.name for n in Network.available_networks])]
+            template = Network.available_networks[Network._match_name_idx(search_str, [os.path.split(n.name)[1] for n in Network.available_networks])]
             self.nw = template.nw
             self.name = template.name
     
@@ -291,8 +291,8 @@ class Network:
         
         return self._get_added_2port(s_matrix, port)
     
-    def plot_stab(self, frequency_hz: float, at_output: bool = False, n_points=101, label: "str|None" = None, style: "str|None" = None):
-        stab = StabilityCircle(self.nw, frequency_hz, at_output)
+    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        stab = StabilityCircle(self.nw, frequency_hz, port)
         data = stab.get_plot_data(n_points)
         freq = np.full([n_points], frequency_hz)
         label = label if label is not None else self.name
@@ -382,8 +382,8 @@ class ExpressionParser:
         def add_tl(network: "Network", degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
             return _get_nw(network).add_tl(degrees, frequency_hz, z0, loss, port)
 
-        def plot_stab(network: "Network", frequency_hz: float, at_output: bool = False, n_points=101, label: "str|None" = None, style: "str|None" = None):
-            network.plot_stab(frequency_hz, at_output, n_points, label, style)
+        def plot_stab(network: "Network", frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+            network.plot_stab(frequency_hz, port, n_points, label, style)
 
         vars_global = {}
         vars_local = {
@@ -514,9 +514,9 @@ Network
             the Bode-Fano limit to calculate the maximum achievable return loss over the
             given target frequency range.
         
-        plot_stab(frequency_hz, [<at_output=False>], [<n_points=101>], ([<label=None>],[<style="-">]):
-            Plots the stability circle at the given frequency. Set at_output=True if you want to calculate the stability at
-            the output, otherwise the input is calculated. It adds "s.i." (stable inside circle) or "s.o." (stable outside
+        plot_stab(frequency_hz, [<port=2>], [<n_points=101>], ([<label=None>],[<style="-">]):
+            Plots the stability circle at the given frequency. Set port=1 if you want to calculate the stability at
+            the input, otherwise the output is calculated. It adds "s.i." (stable inside circle) or "s.o." (stable outside
             of the circle) to the plot name.
 
     Unary Operators

@@ -162,7 +162,6 @@ class PlotHelper:
             self.plot = self.fig.add_subplot(111)
             r_max = get_r_max()
             r_smith = 1 if r_max<=1 else r_max*1.05
-            import logging; logging.warning(f'Setting Smith radius to {r_smith} (r_max is {r_max})')
             plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
         else:
             self.plot = self.fig.add_subplot(111)
