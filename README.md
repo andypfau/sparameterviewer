@@ -10,7 +10,7 @@ Main Features
 -------------
 
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse response, Phase (normal / unwrapped), Group Delay
-- Plotting of Python-based expressions, including functions for stability factorsa and stability circles, for adding passive elements, and for Bode-Fano optimum RL estimation
+- Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, and for Bode-Fano optimum RL estimation
 - Export to CSV or XLSX
 
 
