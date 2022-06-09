@@ -1,5 +1,6 @@
 from .structs import LoadedSParamFile
 from .bodefano import BodeFano
+from .stabcircle import StabilityCircle
 
 import skrf, math, cmath, copy
 import numpy as np
@@ -289,6 +290,14 @@ class Network:
         s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0*z0_self)/ds
         
         return self._get_added_2port(s_matrix, port)
+    
+    def plot_stab(self, frequency_hz: float, at_output: bool = False, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        stab = StabilityCircle(self.nw, frequency_hz, at_output)
+        fake_f = np.linspace(0, 1, n_points)
+        plot = stab.get_plot_data(n_points)
+        label = label if label is not None else self.name
+        label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
+        SParam.plot_fn(fake_f, plot, label, style)
 
     
 ################################################################################
@@ -370,9 +379,11 @@ class ExpressionParser:
         def add_pc(network: "Network", inductance: float, port: int = 1) -> "Network":
             return _get_nw(network).add_pc(inductance, port)
     
-        def add_tl(network: "Network", self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
+        def add_tl(network: "Network", degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
             return _get_nw(network).add_tl(degrees, frequency_hz, z0, loss, port)
 
+        def plot_stab(network: "Network", frequency_hz: float, at_output: bool = False, n_points=101, label: "str|None" = None, style: "str|None" = None):
+            network.plot_stab(frequency_hz, at_output, n_points, label, style)
 
         vars_global = {}
         vars_local = {
@@ -394,6 +405,7 @@ class ExpressionParser:
             'add_pc': add_pc,
             'add_tl': add_tl,
             'plot': plot,
+            'plot_stab': plot_stab,
             'crop_f': crop_f,
             'abs': abs,
             'db': db,
@@ -501,6 +513,9 @@ Network
             Integrates the return loss over the given integration frequency range, then uses
             the Bode-Fano limit to calculate the maximum achievable return loss over the
             given target frequency range.
+        
+        plot_stab(...):
+            TBD
 
     Unary Operators
 
@@ -565,6 +580,7 @@ All available functions are just shortcuts to object methods; the arguments deno
     add_pl(<network>,...)                      | Network.add_pl(...)]
     add_pc(<network>,...)                      | Network.add_pc(...))
     add_tl(<network>,...)                      | Network.add_tl(,...)
+    plot_stab(<network>,...)                   | Network.plot_stab(,...)
     plot(<sparam>,...)                         | SParam.plot(...)
     db(<sparam>)                               | SParam.db()
     abs(<sparam>)                              | SParam.abs()
