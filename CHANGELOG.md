@@ -1,21 +1,21 @@
 S-Parameter Viewer Changelog
 ============================
 
-v0.6.1 beta (2022-06-09)
-----------------------
+0.7b1 (2022-06-09)
+------------------
 
 - implemented Bode-Fano as expressions
 - implemented stability circles as expressions
 - better scaling of Smith charts
 
 
-v0.6 beta (2022-06-01)
-----------------------
+0.6b1 (2022-06-01)
+------------------
 
 - more detailed file info
 
 
-v0.5 beta (2022-05-29)
-----------------------
+0.5b1 (2022-05-29)
+------------------
 
 - first published version
