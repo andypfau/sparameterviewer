@@ -1,7 +1,7 @@
 S-Parameter Viewer Changelog
 ============================
 
-v0.61 beta (2022-06-09)
+v0.6.1 beta (2022-06-09)
 ----------------------
 
 - implemented Bode-Fano as expressions
