@@ -38,7 +38,7 @@ class StabilityCircle:
         self.stable_inside = True if abs(s22)>1 else False
     
 
-    def get_plot_data(self, n_points) -> "np.ndarray":
+    def get_plot_data(self, n_points: int = 101) -> "np.ndarray":
         result = []
         def add(angle):
             re = self.center.real + self.radius*math.cos(angle)
