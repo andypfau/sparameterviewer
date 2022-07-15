@@ -18,7 +18,7 @@ from sparamviewer_cursor import SparamviewerCursorDialog
 from info import *
 
 from lib import Touchstone
-from lib import sparam_to_timedomain, get_sparam_name, get_unique_short_filenames
+from lib import sparam_to_timedomain, get_sparam_name, get_unique_short_filename
 from lib import Si, DataExport
 from lib import LoadedSParamFile, AppSettings, PlotHelper
 from lib import ExpressionParser
@@ -661,7 +661,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             else:
 
                 selected_files = self.get_selected_files()
-                unique_short_names = get_unique_short_filenames([os.path.split(f.filename)[1] for f in selected_files])
+                selected_filenames = [os.path.split(f.filename)[1] for f in selected_files]
+                all_filenames = [os.path.split(f.filename)[1] for f in self.files]
+                unique_short_names = [get_unique_short_filename(n, all_filenames) for n in selected_filenames]
 
                 for file,unique_short_name in zip(selected_files, unique_short_names):
                     for ep in range(1,file.sparam.n_ports+1):
