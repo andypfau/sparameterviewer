@@ -1,12 +1,13 @@
 S-Parameter Viewer Changelog
 ============================
 
-0.7b1 (2022-06-09)
+0.7b2 (2022-07-15)
 ------------------
 
 - implemented Bode-Fano as expressions
 - implemented stability circles as expressions
 - better scaling of Smith charts
+- fixed filename shortening
 
 
 0.6b1 (2022-06-01)
