@@ -23,7 +23,7 @@ if __name__ == '__main__':
         pass # ignore
 
     try:
-        # disabe log stuff I am not interested in
+        # disable log stuff I am not interested in
         logging.getLogger('matplotlib.font_manager').disabled = True
         logging.getLogger('matplotlib.ticker').disabled = True
     except Exception as ex:
