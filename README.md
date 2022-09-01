@@ -44,7 +44,9 @@ To modify the UI, you need `pygubu-designer`.
 There are sample .json-files in the `res` folder for VS Code.
 
 
-Known Issues
-------------
+Known Issues and Missing Feautres
+---------------------------------
 
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
+- A more convenient way to show e.g. only S11 of all selected traces
+- Allow to lock axis scalings when switchting to another file
