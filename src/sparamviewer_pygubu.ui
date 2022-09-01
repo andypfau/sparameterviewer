@@ -299,6 +299,16 @@
                   </object>
                 </child>
                 <child>
+                  <object class="tk.Menuitem.Command" id="command_2">
+                    <property name="accelerator">Ctrl+F5</property>
+                    <property cbtype="simple" name="command" type="command">on_reload_dir</property>
+                    <property name="label" translatable="yes">Reload Directory</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Separator" id="separator_2" />
+                </child>
+                <child>
                   <object class="tk.Menuitem.Command" id="command_export">
                     <property name="accelerator">Ctrl+E</property>
                     <property cbtype="simple" name="command" type="command">on_export</property>
@@ -374,12 +384,39 @@
                   </object>
                 </child>
                 <child>
+                  <object class="tk.Menuitem.Separator" id="separator_4" />
+                </child>
+                <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_logf">
                     <property cbtype="simple" name="command" type="command">on_change_logf</property>
                     <property name="label" translatable="yes">Logarithmic Frequency</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
                     <property name="variable">string:logf</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Checkbutton" id="checkbutton_1">
+                    <property cbtype="simple" name="command" type="command">on_lock_xaxis</property>
+                    <property name="label" translatable="yes">Lock X-Axis</property>
+                    <property name="offvalue">0</property>
+                    <property name="onvalue">1</property>
+                    <property name="variable">string:lock_plot_xaxis</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Checkbutton" id="checkbutton_2">
+                    <property cbtype="simple" name="command" type="command">on_lock_yaxis</property>
+                    <property name="label" translatable="yes">Lock Y-Axis</property>
+                    <property name="offvalue">0</property>
+                    <property name="onvalue">1</property>
+                    <property name="variable">string:lock_plot_yaxis</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_5">
+                    <property cbtype="simple" name="command" type="command">on_rescale_locked_axes</property>
+                    <property name="label" translatable="yes">Re-Scale </property>
                   </object>
                 </child>
                 <child>

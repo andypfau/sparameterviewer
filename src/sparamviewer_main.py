@@ -39,6 +39,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             always_show_names = False,
             expression = '',
             td_kaiser = 35.0,
+            lock_xaxis = False,
+            lock_yaxis = False,
         ))
 
         try:
@@ -47,6 +49,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.default_expr = ''
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
+            self.plot_axes_are_valid = False
 
             # init UI
             AppGlobal.set_toplevel_icon(self.toplevel_main)
@@ -56,6 +59,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.logf.set('1' if self.app_settings.log_freq else '0')
             self.short_names.set('1' if self.app_settings.short_names else '0')
             self.always_show_names.set('1' if self.app_settings.always_show_names else '0')
+            self.lock_plot_xaxis.set('1' if self.app_settings.lock_xaxis else '0')
+            self.lock_plot_yaxis.set('1' if self.app_settings.lock_yaxis else '0')
             self.combobox_mode['values']= (
                 'All S-Params',
                 'All S-Params (reciprocal/1st IL only)',
@@ -151,25 +156,30 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_check_for_global_keystrokes(self, key, ctrl, alt, **kwargs):
-        if key=='F1':
+        no_mod = not ctrl and not alt
+        ctrl_only = ctrl and not alt
+        if key=='F1' and no_mod:
             self.on_click_info()
             return 'break'
-        if key=='F3':
+        if key=='F3' and no_mod:
             self.on_cursor_cmd()
             return 'break'
-        if key=='F5':
+        if key=='F5' and no_mod:
             self.on_use_expr()
             return 'break'
-        if ctrl and key=='o':
+        if key=='F5' and ctrl_only:
+            self.on_reload_dir()
+            return 'break'
+        if key=='o' and ctrl_only:
             self.on_open_dir()
             return 'break'
-        if ctrl and key=='s':
+        if key=='s' and ctrl_only:
             self.on_save_expr()
             return 'break'
-        if ctrl and key=='l':
+        if key=='l' and ctrl_only:
             self.on_load_expr()
             return 'break'
-        if ctrl and key=='e':
+        if key=='e' and ctrl_only:
             self.on_export()
             return 'break'
         return
@@ -286,6 +296,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def on_open_dir(self):
         dir = filedialog.askdirectory(initialdir=self.dir)
         self.load_dir(dir)
+    
+
+    def on_reload_dir(self):
+        self._load_all_files_in_dir(self.dir, select=[sf.filename for sf in self.get_selected_files()])
 
 
     def on_exit_cmd(self):
@@ -446,6 +460,23 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.app_settings.save()
         self.update_plot()
 
+
+    def on_lock_xaxis(self):
+        self.app_settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
+        if not self.app_settings.lock_xaxis:
+            self.update_plot()
+
+
+    def on_lock_yaxis(self):
+        self.app_settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
+        if not self.app_settings.lock_yaxis:
+            self.update_plot()
+    
+
+    def on_rescale_locked_axes(self):
+        self.plot_axes_are_valid = False
+        self.update_plot()
+
     
     def on_export(self):
 
@@ -467,9 +498,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def _load_all_files_in_dir(self, dir: "str|None", select: "list[str]" = [], select_first: bool = False):
-        
+
         try:
-                
+            
             self.dir = appdirs.user_data_dir()
             self.files = [] # type: list[LoadedSParamFile]
             self.treeview_files.delete(*self.treeview_files.get_children())
@@ -542,6 +573,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def update_plot(self):
 
         try:
+
+            prev_xlim = self.plot.plot.get_xlim() if self.plot is not None else None
+            prev_ylim = self.plot.plot.get_ylim() if self.plot is not None else None
             
             self.fig.clf()
             self.default_expr = ''
@@ -701,11 +735,20 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
             
             self.plot.finish(show_legend=self.app_settings.show_legend)
+
+            if self.plot_axes_are_valid:
+                if self.app_settings.lock_xaxis and prev_xlim is not None:
+                    self.plot.plot.set_xlim(prev_xlim)
+                if self.app_settings.lock_yaxis and prev_ylim is not None:
+                    self.plot.plot.set_ylim(prev_ylim)
+
             self.canvas.draw()
 
             if self.cursor_dialog is not None:
                 self.cursor_dialog.clear()
                 self.cursor_dialog.repopulate(self.plot.plots)
+            
+            self.plot_axes_are_valid = True
 
         except Exception as ex:
             logging.exception(f'Plotting failed: {ex}')

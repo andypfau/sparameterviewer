@@ -101,25 +101,30 @@ class SparamviewerPygubuApp:
         self.mi_command_1 = 1
         self.submenu_1.add('command', accelerator='Ctrl+O', label='Open Directory...')
         self.submenu_1.entryconfigure(self.mi_command_1, command=self.on_open_dir)
-        self.mi_command_export = 2
+        self.mi_command_2 = 2
+        self.submenu_1.add('command', accelerator='Ctrl+F5', label='Reload Directory')
+        self.submenu_1.entryconfigure(self.mi_command_2, command=self.on_reload_dir)
+        self.mi_separator_2 = 3
+        self.submenu_1.add('separator')
+        self.mi_command_export = 4
         self.submenu_1.add('command', accelerator='Ctrl+E', label='Export Trace Data...')
         self.submenu_1.entryconfigure(self.mi_command_export, command=self.on_export)
-        self.mi_separator3 = 3
+        self.mi_separator3 = 5
         self.submenu_1.add('separator')
-        self.mi_command_info = 4
+        self.mi_command_info = 6
         self.submenu_1.add('command', accelerator='F1', label='File Info...')
         self.submenu_1.entryconfigure(self.mi_command_info, command=self.on_click_info)
-        self.mi_separator_1 = 5
+        self.mi_separator_1 = 7
         self.submenu_1.add('separator')
-        self.mi_command_loadexpr = 6
+        self.mi_command_loadexpr = 8
         self.submenu_1.add('command', accelerator='Ctrl+L', label='Load Expressions...')
         self.submenu_1.entryconfigure(self.mi_command_loadexpr, command=self.on_load_expr)
-        self.mi_command_saveexpr = 7
+        self.mi_command_saveexpr = 9
         self.submenu_1.add('command', accelerator='Ctrl+S', label='Save Expressions...')
         self.submenu_1.entryconfigure(self.mi_command_saveexpr, command=self.on_save_expr)
-        self.mi_separator_3 = 8
+        self.mi_separator_3 = 10
         self.submenu_1.add('separator')
-        self.mi_command_exit = 9
+        self.mi_command_exit = 11
         self.submenu_1.add('command', label='Exit')
         self.submenu_1.entryconfigure(self.mi_command_exit, command=self.on_exit_cmd)
         self.submenu_2 = tk.Menu(self.menu_2)
@@ -136,18 +141,31 @@ class SparamviewerPygubuApp:
         self.mi_checkbutton_alwaysnames = 3
         self.submenu_2.add('checkbutton', label='Always Show Names', offvalue='0', onvalue='1', variable=self.always_show_names)
         self.submenu_2.entryconfigure(self.mi_checkbutton_alwaysnames, command=self.on_show_names_always)
+        self.mi_separator_4 = 4
+        self.submenu_2.add('separator')
         self.logf = tk.StringVar(value='')
-        self.mi_checkbutton_logf = 4
+        self.mi_checkbutton_logf = 5
         self.submenu_2.add('checkbutton', label='Logarithmic Frequency', offvalue='0', onvalue='1', variable=self.logf)
         self.submenu_2.entryconfigure(self.mi_checkbutton_logf, command=self.on_change_logf)
-        self.mi_separator1 = 5
+        self.lock_plot_xaxis = tk.StringVar(value='')
+        self.mi_checkbutton_1 = 6
+        self.submenu_2.add('checkbutton', label='Lock X-Axis', offvalue='0', onvalue='1', variable=self.lock_plot_xaxis)
+        self.submenu_2.entryconfigure(self.mi_checkbutton_1, command=self.on_lock_xaxis)
+        self.lock_plot_yaxis = tk.StringVar(value='')
+        self.mi_checkbutton_2 = 7
+        self.submenu_2.add('checkbutton', label='Lock Y-Axis', offvalue='0', onvalue='1', variable=self.lock_plot_yaxis)
+        self.submenu_2.entryconfigure(self.mi_checkbutton_2, command=self.on_lock_yaxis)
+        self.mi_command_5 = 8
+        self.submenu_2.add('command', label='Re-Scale ')
+        self.submenu_2.entryconfigure(self.mi_command_5, command=self.on_rescale_locked_axes)
+        self.mi_separator1 = 9
         self.submenu_2.add('separator')
-        self.mi_command_plot_expr = 6
+        self.mi_command_plot_expr = 10
         self.submenu_2.add('command', accelerator='F5', label='Update Plot From Expressions')
         self.submenu_2.entryconfigure(self.mi_command_plot_expr, command=self.on_use_expr)
-        self.mi_separator2 = 7
+        self.mi_separator2 = 11
         self.submenu_2.add('separator')
-        self.mi_command_kaiser = 8
+        self.mi_command_kaiser = 12
         self.submenu_2.add('command', label='TD Kaiser Argument...')
         self.submenu_2.entryconfigure(self.mi_command_kaiser, command=self.on_set_kaiser)
         self.submenu_3 = tk.Menu(self.menu_2)
@@ -198,6 +216,9 @@ class SparamviewerPygubuApp:
     def on_open_dir(self):
         pass
 
+    def on_reload_dir(self):
+        pass
+
     def on_export(self):
         pass
 
@@ -223,6 +244,15 @@ class SparamviewerPygubuApp:
         pass
 
     def on_change_logf(self):
+        pass
+
+    def on_lock_xaxis(self):
+        pass
+
+    def on_lock_yaxis(self):
+        pass
+
+    def on_rescale_locked_axes(self):
         pass
 
     def on_set_kaiser(self):
