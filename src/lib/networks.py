@@ -16,16 +16,8 @@ class Networks:
     available_networks: "list[skrf.Network]"
 
 
-    def __init__(self, search_pattern: str, *, nws: "list[skrf.Network]" = None):
-        
-        if nws is not None:
-            self.nws = nws
-            return
-        
-        self.nws = [] # type: list[skrf.Network]
-        for nw in Networks.available_networks:
-            if fnmatch.fnmatch(nw.name, search_pattern):
-                self.nws.append(nw)
+    def __init__(self, nws: "list[skrf.Network]" = None):
+        self.nws = nws
     
 
     @staticmethod
@@ -58,7 +50,7 @@ class Networks:
             except Exception as ex:
                 logging.warning(f'Unary operation <{fn}> on network <{nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
-            return Networks(None, nws=result)
+            return Networks(nws=result)
         elif return_type == SParams:
             return SParams(sps=result)
         else:
@@ -73,7 +65,7 @@ class Networks:
             except Exception as ex:
                 logging.warning(f'Binary operation <{fn}> on network <{nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
-            return Networks(None, nws=result)
+            return Networks(nws=result)
         elif return_type == SParams:
             return SParams(sps=result)
         else:

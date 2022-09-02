@@ -47,11 +47,11 @@ def get_dummy_sparams(n: int) -> "list[LoadedSParamFile]":
 
 
 def get_dummy_network(n_ports: int) -> "Networks":
-    return Networks(None, nws=[get_dummy_sparam(n_ports)])
+    return Networks(nws=[get_dummy_sparam(n_ports)])
 
 
 def get_dummy_networks(n: int) -> "Networks":
-    return Networks(None, nws=get_dummy_sparams(n))
+    return Networks(nws=get_dummy_sparams(n))
 
 
 

@@ -16,120 +16,35 @@ class ExpressionParser:
         available_networks: "list[LoadedSParamFile]", \
         selected_networks: "list[LoadedSParamFile]", \
         plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
-
-        available = [nw.sparam.network for nw in available_networks]
-        selected = [nw.sparam.network for nw in selected_networks]
         
         SParam.plot_fn = plot_fn
-        Networks.available_networks = available
 
-        def all_nws() -> Networks:
-            return Networks(None, nws=available)
-        
-        def sel_nws() -> Networks:
-            return Networks(None, nws=selected)
-        
-        def nws(name: str) -> Networks:
-            return Networks(name)
-        
-        def _get_nw(obj: "str|Networks") -> Networks:
-            return obj if isinstance(obj, Networks) else Networks(obj)
-        
-        def s(network: "str|Networks", egress_port: int, ingress_port: int) -> SParams:
-            return _get_nw(network).s(egress_port, ingress_port)
-        
-        def k(network: "str|Networks") -> SParams:
-            return _get_nw(network).k()
-        
-        def mu(network: "str|Networks", mu: int = 1) -> SParams:
-            return _get_nw(network).mu(mu)
-        
-        def cascade(*networks: "tuple[str|Networks, ...]") -> Networks:
-            networks = [_get_nw(n) for n in networks]
-            result = networks[0]
-            for i in range(1,len(networks)):
-                result = result ** networks[i-1]
-            return result
-        
-        def half(network: "Networks") -> Networks:
-            return _get_nw(network).half()
-        
-        def flip(network: "Networks") -> Networks:
-            return _get_nw(network).flip()
-        
-        def invert(network: "Networks") -> Networks:
-            return ~_get_nw(network)
-        
-        def abs(sparam: "SParams") -> SParams:
-            return sparam.abs()
-        
-        def db(sparam: "SParams") -> SParams:
-            return sparam.db()
-        
-        def plot(sparam: SParams, label: "str|None" = None, style: "str|None" = None):
-            sparam.plot(label, style)
+        def select_networks(network_list: list[LoadedSParamFile], pattern: str, single: bool) -> Networks:
+            nws = []
+            for nw in network_list:
+                if pattern is None or fnmatch.fnmatch(nw.sparam.network.name, pattern):
+                    nws.append(nw.sparam.network)
+            if single:
+                if len(nws) != 1:
+                    raise RuntimeError(f'The pattern "" matched {len(nws)} networks, but need exactly one')
+            return Networks(nws)
 
-        def rl_avg(sparam: SParams, f_start: "float|None" = None, f_end: "float|None" = None) -> SParams:
-            return sparam.rl_avg(f_start, f_end)
-
-        def rl_opt(sparam: SParams, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> SParams:
-            return sparam.rl_opt(f_integrate_start, f_integrate_end, f_target_start, f_target_end)
+        def sel_nws(pattern: str = None) -> Networks:
+            return select_networks(selected_networks, pattern, single=False)
         
-        def crop_f(obj: "Networks|SParams", f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks|SParams":
-            return obj.crop_f(f_start, f_end)
+        def nws(pattern: str) -> Networks:
+            return select_networks(selected_networks, pattern, single=False)
         
-        def add_sr(network: "Networks", resistance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_sr(resistance, port)
-        
-        def add_sl(network: "Networks", resistance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_sl(resistance, port)
-        
-        def add_sc(network: "Networks", inductance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_sc(inductance, port)
-        
-        def add_pr(network: "Networks", resistance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_pr(resistance, port)
-        
-        def add_pl(network: "Networks", capacitance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_pl(capacitance, port)
-        
-        def add_pc(network: "Networks", inductance: float, port: int = 1) -> "Networks":
-            return _get_nw(network).add_pc(inductance, port)
-    
-        def add_tl(network: "Networks", degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Networks":
-            return _get_nw(network).add_tl(degrees, frequency_hz, z0, loss, port)
-
-        def plot_stab(network: "Networks", frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
-            network.plot_stab(frequency_hz, port, n_points, label, style)
+        def nw(pattern: str) -> Networks:
+            return select_networks(selected_networks, pattern, single=True)
 
         vars_global = {}
         vars_local = {
             'Networks': Networks,
             'SParams': SParams,
-            'all_nws': all_nws,
-            'sel_nws': sel_nws,
+            'nw': nw,
             'nws': nws,
-            's': s,
-            'k': k,
-            'mu': mu,
-            'half': half,
-            'flip': flip,
-            'invert': invert,
-            'cascade': cascade,
-            'add_sr': add_sr,
-            'add_sl': add_sl,
-            'add_sc': add_sc,
-            'add_pr': add_pr,
-            'add_pl': add_pl,
-            'add_pc': add_pc,
-            'add_tl': add_tl,
-            'plot': plot,
-            'plot_stab': plot_stab,
-            'crop_f': crop_f,
-            'abs': abs,
-            'db': db,
-            'rl_avg': rl_avg,
-            'rl_opt': rl_opt,
+            'sel_nws': sel_nws,
             'math': math,
             'np': np,
         }
@@ -148,14 +63,17 @@ class ExpressionParser:
             return '''Basics
 ======
 
-The basic idea is to load a network (nw), get a specific S-parameter (s), and plot it (plot):
+The basic concept is to load one or multiple networks, get a specific S-parameter (s), and plot it (plot):
 
-    nw("Amplifier.s2p").s(2,1).plot("IL")
+    nws("Amplifier.s2p").s(2,1).plot("IL")
 
-The expression use Python syntax. Everything is object-oriented,
-but there are function-wrappers for convenience.
+Which could be re-written as:
+    
+    n = nws("*.s2p") # type: Networks
+    s = n.s(2,1) # type: SParams
+    s.plot("IL")
 
-You also have access to `math` and `np` (numpy).
+The expression use Python syntax. You also have access to `math` and `np` (numpy).
 
 
 Objects
@@ -286,34 +204,23 @@ SParams
 Functions
 =========
 
-Most available functions are just shortcuts to object methods; the arguments denoted by "..." are the same as for the object methods.
+nws(pattern)
+------------
 
-    Object Method                              | Corresponding Function
-    -------------------------------------------+----------------------------
-    all_nws()                                  | returns all available networks
-    sel_nws()                                  | returns all selected networks
-    nws(<name_or_partial_name>)                | Networks(...)
-    s(<network>,<egress_port>,<ingress_port>)  | Networks.s(...)
-    invert(<network>)                          | Networks.invert()
-    flip(<network>)                            | Networks.flip()
-    half(<network>)                            | Networks.half()
-    k(<network>)                               | Networks.k()
-    mu(<network>,...)                          | Networks.mu(...)
-    add_sr(<network>,...)                      | Networks.add_sr(...))
-    add_sl(<network>,...)                      | Networks.add_sr(...)]
-    add_sc(<network>,...)                      | Networks.add_sr(...))
-    add_pr(<network>,...)                      | Networks.add_pr(...))
-    add_pl(<network>,...)                      | Networks.add_pl(...)]
-    add_pc(<network>,...)                      | Networks.add_pc(...))
-    add_tl(<network>,...)                      | Networks.add_tl(,...)
-    plot_stab(<network>,...)                   | Networks.plot_stab(,...)
-    cascade(<network>,<network>[,...])         | Networks**Networks...
-    crop_f(<network|SParam>,...)               | Networks|SParam.crop_f(...)
-    plot(<sparam>,...)                         | SParams.plot(...)
-    db(<sparam>)                               | SParams.db()
-    abs(<sparam>)                              | SParams.abs()
-    rl_avg(<sparam>, ...)                      | SParams.rl_avg(...)
-    rl_opt(<sparam>, ...)                      | SParams.rl_opt(...)
+Returns a Networks object that contains all networks that match the given pattern, e.g. '*.s2p'. Note that
+this returns an empty Networks object if the pattern does not match anything.
+
+
+sel_nws(pattern)
+----------------
+
+same as nws(), except that it only matches networks that are currently selected.
+
+
+nw(pattern)
+-----------
+
+same as nws(), except that it raises an error if not exactly one network is matched.
 
 
 Examples
@@ -322,7 +229,7 @@ Examples
 Basic
 -----
 
-    all_nws().s(1,1).plot("RL")
+    nws().s(1,1).plot("RL")
     sel_nws().s(1,2).plot("Reverse IL")
     nws("Amplifier.s2p").s(2,1).plot("IL")
     nws("Amplifier.s2p").s(1,1).plot("RL",":")
