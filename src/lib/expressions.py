@@ -17,10 +17,19 @@ class ExpressionParser:
         selected_networks: "list[LoadedSParamFile]", \
         plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
 
+        available = [nw.sparam.network for nw in available_networks]
+        selected = [nw.sparam.network for nw in selected_networks]
+        
         SParam.plot_fn = plot_fn
-        Networks.available_networks = [nw.sparam.network for nw in available_networks]
+        Networks.available_networks = available
 
-        def nw(name: str) -> Networks:
+        def all_nws() -> Networks:
+            return Networks(None, nws=available)
+        
+        def sel_nws() -> Networks:
+            return Networks(None, nws=selected)
+        
+        def nws(name: str) -> Networks:
             return Networks(name)
         
         def _get_nw(obj: "str|Networks") -> Networks:
@@ -97,7 +106,9 @@ class ExpressionParser:
         vars_local = {
             'Networks': Networks,
             'SParams': SParams,
-            'nw': nw,
+            'all_nws': all_nws,
+            'sel_nws': sel_nws,
+            'nws': nws,
             's': s,
             'k': k,
             'mu': mu,
@@ -150,74 +161,79 @@ You also have access to `math` and `np` (numpy).
 Objects
 =======
 
-Network
--------
+Networks
+--------
+
+    A container for one or more S-parameter networks.
+
+    Note that any operation on the object might fail silently. For example, if an object contains a 1-port
+    and a 2-port, and you attempt to invert the object (an operation that only works on 2-ports), the 1-port
+    will silently be dropped.
 
     Constructor
 
         Network(<name_or_partial_name>)
-            Returns the network that matches the provided name; e.g. Network("Amplifier") would match
-            a file named "Amplifier.s2p" or "MyAmplifier01.s2p", but only if "Amplifier" is unique
-            among all available networks.
+            Returns the networks that match the provided name; e.g. Networks("Amplifier") would match
+            a file named "Amplifier.s2p" or "MyAmplifier01.s2p".
 
     Methods
 
-        s(<egress_port>,<ingress_port>) -> SParam
+        s(<egress_port>,<ingress_port>) -> SParams
             Gets an S-parameters.
 
-        invert() -> Network
+        invert() -> Networks
             Inverts the ports (e.g. for de-embedding).
 
-        flip() -> Network
+        flip() -> Networks
             Flips the ports (e.g. to use it in reverse direction).
 
-        half() -> Network
+        half() -> Networks
             Chops the network in half (e.g. for 2xTHRU de-embedding).
 
-        k() -> SParam
+        k() -> SParams
             Returns the K (Rollet) stability factor (should be >1, or >0 dB).
 
-        mu(<mu=1>) -> SParam
+        mu(<mu=1>) -> SParams
             Returns the µ or µ' (Edwards-Sinsky) stability factor (should be >1, or >0 dB;
             mu must be 1 or 2, default is 1).
 
-        crop_f([f_start], [f_end]) -> Network
+        crop_f([f_start], [f_end]) -> Networks
             Returns the same network, but with a reduced frequency range
         
-        add_sr(resistance[, <port=1>]) -> Network
+        add_sr(resistance[, <port=1>]) -> Networks
             Returns a network with a series resistance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_sl(inductance[, <port=1>]) -> Network
+        add_sl(inductance[, <port=1>]) -> Networks
             Returns a network with a series inductance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_sc(capacitance[, <port=1>]) -> Network
+        add_sc(capacitance[, <port=1>]) -> Networks
             Returns a network with a series inductance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_pr(resistance[, <port=1>]) -> Network
+        add_pr(resistance[, <port=1>]) -> Networks
             Returns a network with a parallel resistance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_pl(inductance[, <port=1>]) -> Network
+        add_pl(inductance[, <port=1>]) -> Networks
             Returns a network with a parallel inductance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_pc(capacitance[, <port=1>]) -> Network
+        add_pc(capacitance[, <port=1>]) -> Networks
             Returns a network with a parallel inductance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_tl(degrees, frequency_hz=1e9[, <z0=default>][, <loss=0>][, <port=1>]) -> Network
+        add_tl(degrees, frequency_hz=1e9[, <z0=default>][, <loss=0>][, <port=1>]) -> Networks
             Returns a network with a transmission line attached to the specified port.
             Works only for 1-ports and 2-ports. The length is specified in degrees at the given frequency.
             The loss is the real part of the propagation constant.
             If Z0 is not provided, the reference impedance of the corresponding port is used.
         
-        rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParam
+        rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParams
             Calculates the average return loss over the given frequency range.
         
-        rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) -> SParam
+        rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) -> SParams
             Integrates the return loss over the given integration frequency range, then uses
             the Bode-Fano limit to calculate the maximum achievable return loss over the
             given target frequency range.
@@ -237,8 +253,8 @@ Network
         **
             Cascades two networks.
 
-SParam
-------
+SParams
+-------
 
     Methods
 
@@ -270,32 +286,34 @@ SParam
 Functions
 =========
 
-All available functions are just shortcuts to object methods; the arguments denoted by "..." are the same as for the object methods.
+Most available functions are just shortcuts to object methods; the arguments denoted by "..." are the same as for the object methods.
 
     Object Method                              | Corresponding Function
     -------------------------------------------+----------------------------
-    nw(<name_or_partial_name>)                 | Network(...)
-    s(<network>,<egress_port>,<ingress_port>)  | Network.s(...)
-    invert(<network>)                          | Network.invert()
-    flip(<network>)                            | Network.flip()
-    half(<network>)                            | Network.half()
-    k(<network>)                               | Network.k()
-    mu(<network>,...)                          | Network.mu(...)
-    add_sr(<network>,...)                      | Network.add_sr(...))
-    add_sl(<network>,...)                      | Network.add_sr(...)]
-    add_sc(<network>,...)                      | Network.add_sr(...))
-    add_pr(<network>,...)                      | Network.add_pr(...))
-    add_pl(<network>,...)                      | Network.add_pl(...)]
-    add_pc(<network>,...)                      | Network.add_pc(...))
-    add_tl(<network>,...)                      | Network.add_tl(,...)
-    plot_stab(<network>,...)                   | Network.plot_stab(,...)
-    cascade(<network>,<network>[,...])         | Network**Network...
-    crop_f(<network|SParam>,...)               | Network|SParam.crop_f(...)
-    plot(<sparam>,...)                         | SParam.plot(...)
-    db(<sparam>)                               | SParam.db()
-    abs(<sparam>)                              | SParam.abs()
-    rl_avg(<sparam>, ...)                      | SParam.rl_avg(...)
-    rl_opt(<sparam>, ...)                      | SParam.rl_opt(...)
+    all_nws()                                  | returns all available networks
+    sel_nws()                                  | returns all selected networks
+    nws(<name_or_partial_name>)                | Networks(...)
+    s(<network>,<egress_port>,<ingress_port>)  | Networks.s(...)
+    invert(<network>)                          | Networks.invert()
+    flip(<network>)                            | Networks.flip()
+    half(<network>)                            | Networks.half()
+    k(<network>)                               | Networks.k()
+    mu(<network>,...)                          | Networks.mu(...)
+    add_sr(<network>,...)                      | Networks.add_sr(...))
+    add_sl(<network>,...)                      | Networks.add_sr(...)]
+    add_sc(<network>,...)                      | Networks.add_sr(...))
+    add_pr(<network>,...)                      | Networks.add_pr(...))
+    add_pl(<network>,...)                      | Networks.add_pl(...)]
+    add_pc(<network>,...)                      | Networks.add_pc(...))
+    add_tl(<network>,...)                      | Networks.add_tl(,...)
+    plot_stab(<network>,...)                   | Networks.plot_stab(,...)
+    cascade(<network>,<network>[,...])         | Networks**Networks...
+    crop_f(<network|SParam>,...)               | Networks|SParam.crop_f(...)
+    plot(<sparam>,...)                         | SParams.plot(...)
+    db(<sparam>)                               | SParams.db()
+    abs(<sparam>)                              | SParams.abs()
+    rl_avg(<sparam>, ...)                      | SParams.rl_avg(...)
+    rl_opt(<sparam>, ...)                      | SParams.rl_opt(...)
 
 
 Examples
@@ -304,35 +322,37 @@ Examples
 Basic
 -----
 
-    nw("Amplifier.s2p").s(2,1).plot("IL")
-    nw("Amplifier.s2p").s(1,1).plot("RL",":")
+    all_nws().s(1,1).plot("RL")
+    sel_nws().s(1,2).plot("Reverse IL")
+    nws("Amplifier.s2p").s(2,1).plot("IL")
+    nws("Amplifier.s2p").s(1,1).plot("RL",":")
 
 Objects vs. Functions
 ---------------------
 
 The following examples are all identical:
 
-    nw("Amplifier.s2p").s(1,1).plot("RL",":")
-    Network("Amplifier.s2p").s(1,1).plot("RL",":")
-    plot(s(nw("Amplifier.s2p"),1,1),"RL",":")
+    nws("Amplifier.s2p").s(1,1).plot("RL",":")
+    Networks("Amplifier.s2p").s(1,1).plot("RL",":")
+    plot(s(nws("Amplifier.s2p"),1,1),"RL",":")
 
 Advanced
 --------
 
     # calculate directivity (S42/S32) of a directional coupler
     # note that this example requires plotting in linear units, as the values are already converted to dB
-    (nw("Coupler.s2p").s(4,2).db() / nw("Coupler.s2p").s(3,2).db()).plot("Directivity")
+    (nws("Coupler.s2p").s(4,2).db() / nw("Coupler.s2p").s(3,2).db()).plot("Directivity")
 
     # de-embed a 2xTHRU
-    (nw("2xThru").half().invert() ** nw("DUT") ** nw("2xThru").half().invert().flip()).s(2,1).plot("De-embedded")
+    (nws("2xThru").half().invert() ** nw("DUT") ** nw("2xThru").half().invert().flip()).s(2,1).plot("De-embedded")
 
     # crop frequency range; this can be handy e.g. if you want to see the Smith-chart only for a specific frequency range
-    nw("Amplifier.s2p").crop_f(1e9,10e9).s(1,1).plot("RL",":")
+    nws("Amplifier.s2p").crop_f(1e9,10e9).s(1,1).plot("RL",":")
 
     # calculate stability factor
-    nw("Amplifier").mu().plot("µ Stability Factor",":")
+    nws("Amplifier").mu().plot("µ Stability Factor",":")
 
     # add elements to a network (in this case, a parallel cap, followed by a short transmission line)
-    nw("Amplifier").s(1,1).plot("Baseline",":")
-    nw("Amplifier").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
+    nws("Amplifier").s(1,1).plot("Baseline",":")
+    nws("Amplifier").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
 '''

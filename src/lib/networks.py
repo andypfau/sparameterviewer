@@ -126,7 +126,7 @@ class Networks:
         def fn(nw):
             if nw.number_of_ports != 2:
                 raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.name} (only valid for 2-port networks)')
-            return SParams(nw.name, nw.f, nw.stability, nw.z0[0,0])
+            return SParam(nw.name, nw.f, nw.stability, nw.z0[0,0])
         return self._unary_op(fn, True)
         
     
@@ -143,7 +143,7 @@ class Networks:
                 p1,p2 = 1,0
             delta = nw.s[:,0,0]*nw.s[:,1,1] - nw.s[:,0,1]*nw.s[:,1,0]
             stability_factor = (1 - np.abs(nw.s[:,p1,p1]**2)) / (np.abs(nw.s[:,p2,p2]-np.conjugate(nw.s[:,p1,p1])*delta) + np.abs(nw.s[:,1,0]*nw.s[:,0,1]))
-            return SParams(nw.name, nw.f, stability_factor, nw.z0[0,0])
+            return SParam(nw.name, nw.f, stability_factor, nw.z0[0,0])
         return self._unary_op(fn, True, mu=mu)
     
     def half(self) -> "Networks":
