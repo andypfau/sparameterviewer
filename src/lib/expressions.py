@@ -1,394 +1,102 @@
 from .structs import LoadedSParamFile
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
+from .networks import Networks
+from .sparams import SParam, SParams
 
 import skrf, math, os
 import numpy as np
-
-
-################################################################################
-# Helper methods
-
-
-################################################################################
-# S-Parameter Classes
-
-
-class SParam:
-
-    plot_fn: "callable[[np.ndarray,np.ndarray,str,str], None]"
-
-    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
-        self.name, self.f, self.s, self.z0 = name, f, s, z0
-    
-    @staticmethod
-    def _adapt_f(a: "SParam", b: "SParam") -> "tuple(skrf.Network)":
-        if len(a.f)==len(b.f):
-            if all(af==bf for af,bf in zip(a.f, b.f)):
-                return a,b
-        f_min = max(min(a.f), min(b.f))
-        f_max = min(max(a.f), max(b.f))
-        f_new = np.array([f for f in a.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.fromf(f_new, unit='Hz')
-        a_nw = skrf.Network(f=a.f, s=a.s, f_unit='Hz').interpolate(freq_new)
-        b_nw = skrf.Network(f=b.f, s=b.s, f_unit='Hz').interpolate(freq_new)
-        return a_nw,b_nw
-    
-    @staticmethod
-    def _op(a: "SParam", b: "SParam", op: "callable") -> "SParam":
-        if isinstance(a,int) or isinstance(a,float):
-            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))))
-        if isinstance(b,int) or isinstance(b,float):
-            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b))
-        a_nw, b_nw = SParam._adapt_f(a, b)
-        a_s = np.array(np.ndarray.flatten(a_nw.s))
-        b_s = np.array(np.ndarray.flatten(b_nw.s))
-        c_s = op(a_s, b_s)
-        return SParam(a.name, a_nw.f, c_s, a_nw.z0[0])
-        
-    def __truediv__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a/b)
-
-    def __rtruediv__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a/b)
-        
-    def __mul__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a*b)
-
-    def __rmul__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a*b)
-        
-    def __add__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a-b)
-
-    def __radd__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a+b)
-        
-    def __sub__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a-b)
-
-    def __rsub__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: b-a)
-
-    def __invert__(self) -> "SParam":
-        return SParam(self.name, self.f, 1/self.s, self.z0)
-    
-    def abs(self) -> "SParam":
-        return SParam(self.name, self.f, np.abs(self.s), self.z0)
-    
-    def db(self) -> "SParam":
-        return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
-    
-    def plot(self, label: "str|None" = None, style: "str|None" = None):
-        SParam.plot_fn(self.f, self.s, label if label is not None else self.name, style)
-    
-    def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
-        f_start = -1e99 if f_start is None else f_start
-        f_end   = +1e99 if f_end   is None else f_end
-        new = [(f,s) for (f,s) in zip(self.f, self.s) if f_start<=f<=f_end]
-        if len(new)<1:
-            raise Exception('SParam.crop_f(): frequency out of range')
-        new_f, new_s = zip(*new)
-        return SParam(self.name, new_f, new_s, self.z0)
-        return self._new_from_z(1/(1/self._get_z() + 1/z))
-    
-    def rl_avg(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
-        f_start = f_start if f_start is not None else -1e99
-        f_end = f_end if f_end is not None else +1e99
-        bodefano = BodeFano(self.f, self.s, f_start, f_end, f_start, f_end)
-        f = np.array([bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz])
-        s11 = pow(10, bodefano.db_total/20)
-        s = np.array([s11, s11])
-        return SParam(self.name, f, s, self.z0)
-    
-    def rl_opt(self, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> "SParam":
-        f_integrate_start = f_integrate_start if f_integrate_start is not None else -1e99
-        f_integrate_end = f_integrate_end if f_integrate_end is not None else +1e99
-        bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_integrate_start, f_integrate_end)
-        f_target_start = f_target_start if f_target_start is not None else bodefano.f_integration_actual_start_hz
-        f_target_end = f_target_end if f_target_end is not None else bodefano.f_integration_actual_stop_hz
-        bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_target_start, f_target_end)
-        f = np.array([f_target_start, f_target_end])
-        s11 = pow(10, bodefano.db_optimized/20)
-        s = np.array([s11, s11])
-        return SParam(self.name, f, s, self.z0)
-    
-    def __repr__(self):
-        return f'<SParam("{self.name}", f={self.f}, s={self.s})>'
-
-    
-class Network:
-    
-    available_networks: "list[Network]"
-
-    @staticmethod
-    def _match_name_idx(s: str, names: "list[str]"):
-        result = None
-        for i,n in enumerate(names):
-            if s.lower() in n.lower():
-                if result is not None:
-                    raise RuntimeError(f'Cannot uniquely match name "{s}"')
-                result = i
-        if result is None:
-            raise RuntimeError(f'Cannot match name "{s}"')
-        return result
-
-    def __init__(self, search_str: str, *, name: str = None, nw: "skrf.Network" = None):
-        if name is not None and nw is not None:
-            self.nw = nw
-            self.name = name
-        else:
-            template = Network.available_networks[Network._match_name_idx(search_str, [os.path.split(n.name)[1] for n in Network.available_networks])]
-            self.nw = template.nw
-            self.name = template.name
-    
-    @staticmethod
-    def _get_adapted_networks(a: "SParam", b: "SParam") -> "tuple(skrf.Network)":
-        if len(a.nw.f)==len(b.nw.f):
-            if all(af==bf for af,bf in zip(a.nw.f, b.nw.f)):
-                return a.nw,b.nw
-        f_min = max(min(a.nw.f), min(b.nw.f))
-        f_max = min(max(a.nw.f), max(b.nw.f))
-        f_new = np.array([f for f in a.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.fromf(f_new, unit='Hz')
-        a_nw = a.nw.interpolate(freq_new)
-        b_nw = a.nw.interpolate(freq_new)
-        return a_nw,b_nw
-
-    def __invert__(self) -> "Network":
-        return self.invert()
-
-    def __pow__(self, other: "Network") -> "Network":
-        a_nw,b_nw = Network._get_adapted_networks(self, other)
-        return Network(None, name=self.name, nw=a_nw**b_nw)
-    
-    def __repr__(self):
-        return f'<Network("{self.name}", nw={self.nw})>'
-    
-    def s(self, egress_port: int, ingress_port: int):
-        return SParam(self.name, self.nw.f, self.nw.s[:,egress_port-1,ingress_port-1], self.nw.z0[0,egress_port-1])
-    
-    def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Network":
-        f_start = -1e99 if f_start is None else f_start
-        f_end   = +1e99 if f_end   is None else f_end
-        idx0, idx1 = +1e99, -1e99
-        for idx,f in enumerate(self.nw.f):
-            if f>=f_start:
-                idx0 = min(idx,idx0)
-            if f<=f_end:
-                idx1 = max(idx,idx1)
-        if idx0<0 or idx1>=len(self.nw.f):
-            raise Exception('Network.crop_f(): frequency out of range')
-        new_f = self.nw.f[idx0:idx1+1]
-        new_s = self.nw.s[idx0:idx1+1,:,:]
-        new_nw = skrf.Network(f=new_f, s=new_s, f_unit='Hz')
-        return Network(None, name=self.name, nw=new_nw)
-    
-    def k(self):
-        if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.name} (only valid for 2-port networks)')
-        return SParam(self.name, self.nw.f, self.nw.stability, self.nw.z0[0,0])
-    
-    def mu(self, mu: int = 1):
-        if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.name} (only valid for 2-port networks)')
-        if mu!=1 and mu!=2:
-            raise RuntimeError(f'Network.mu(mu): mu must be 1 or 2')
-        # see https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability
-        if mu==1:
-            p1,p2 = 0,1
-        else:
-            p1,p2 = 1,0
-        delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
-        stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
-        return SParam(self.name, self.nw.f, stability_factor, self.nw.z0[0,0])
-    
-    def half(self) -> "Network":
-        return Network(None, name=self.name, nw=skrf.network.chopinhalf(self.nw))
-    
-    def flip(self) -> "Network":
-        return Network(None, name=self.name, nw=skrf.Network(f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'))
-    
-    def invert(self) -> "Network":
-        return Network(None, name=self.name, nw=self.nw.inv)
-
-    def _get_added_2port(self, s_matrix: np.ndarray, port: int) -> "Network":
-        
-        if port<1 or port>self.nw.number_of_ports:
-            raise ValueError(f'Port number {port} out of range')
-        
-        if self.nw.number_of_ports==1:
-            s_new = np.zeros([len(self.nw.f),1,1], dtype=complex)
-            s11 = s_matrix[:,0,0]
-            s22 = s_matrix[:,1,1]
-            s21 = s_matrix[:,1,0]
-            s12 = s_matrix[:,0,1]
-            s11_self = self.nw.s[:,0,0]
-            delta = 1 - s22 * s11_self
-            s_new[:,0,0] = (s11*delta + s21*s11_self*s12) / delta
-            return Network(None, name=self.name, nw=skrf.Network(f=self.nw.f, s=s_new, f_unit='Hz'))
-
-        elif self.nw.number_of_ports==2:
-            other_nw = skrf.Network(f=self.nw.f, s=s_matrix, f_unit='Hz')
-            if port==1:
-                new_nw = other_nw ** self.nw
-            elif port==2:
-                new_nw = self.nw ** other_nw
-            else:
-                raise ValueError()
-            return Network(None, name=self.name, nw=new_nw)
-        else:
-            raise RuntimeError('Impedance adding is only supported for 1-port and 2-port networks')
-    
-    def _get_added_z(self, z: np.ndarray, port: int, mode: str) -> "Network":
-        z0 = self.nw.z0[0,0]
-        # see https://www.edn.com/bypass-capacitor-s-parameter-models-what-you-need-to-know/
-        s_matrix = np.zeros([len(self.nw.f),2,2], dtype=complex)
-        if mode=='series':
-            factor = 1/(z+2*z0)
-            s_matrix[:,0,0] = s_matrix[:,1,1] = z*factor
-            s_matrix[:,1,0] = s_matrix[:,0,1] = 2*z0*factor
-        elif mode=='parallel':
-            factor = 1/(1/z+2/z0)
-            s_matrix[:,0,0] = s_matrix[:,1,1] = (1/z)*factor
-            s_matrix[:,1,0] = s_matrix[:,0,1] = (2/z0)*factor
-        else:
-            raise RuntimeError('Invalid Z mode')
-        return self._get_added_2port(s_matrix, port)
-    
-    def add_sr(self, resistance: float, port: int = 1) -> "Network":
-        return self._get_added_z(np.full([len(self.nw.f)], resistance), port, 'series')
-    
-    def add_sl(self, inductance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1j*math.tau*self.nw.f*inductance, port, 'series')
-    
-    def add_sc(self, capacitance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1/(1j*math.tau*self.nw.f*capacitance), port, 'series')
-    
-    def add_pr(self, resistance: float, port: int = 1) -> "Network":
-        return self._get_added_z(np.full([len(self.nw.f)], resistance), port, 'parallel')
-    
-    def add_pl(self, inductance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1j*math.tau*self.nw.f*inductance, port, 'parallel')
-    
-    def add_pc(self, capacitance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1/(1j*math.tau*self.nw.f*capacitance), port, 'parallel')
-    
-    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
-        z0_self = self.nw.z0[0,0]
-        z0 = z0 if z0 is not None else z0_self
-
-        # see https://cds.cern.ch/record/1415639/files/p67.pdf
-        s_matrix = np.zeros([len(self.nw.f),2,2], dtype=complex)
-        arg = 1j*degrees*math.pi/180 * self.nw.f/frequency_hz + loss
-        sh = np.sinh(arg)
-        ch = np.cosh(arg)
-        zzpzz = z0*z0 + z0_self*z0_self
-        zzmzz = z0*z0 - z0_self*z0_self
-        ds = 2*z0*z0_self*ch + zzpzz*sh
-        s_matrix[:,0,0] = s_matrix[:,1,1] = (zzmzz*sh)/ds
-        s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0*z0_self)/ds
-        
-        return self._get_added_2port(s_matrix, port)
-    
-    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
-        stab = StabilityCircle(self.nw, frequency_hz, port)
-        data = stab.get_plot_data(n_points)
-        freq = np.full([n_points], frequency_hz)
-        label = label if label is not None else self.name
-        label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
-        SParam.plot_fn(freq, data, label, style)
-
-    
-################################################################################
-# Parser
+import fnmatch
 
 
 class ExpressionParser:
 
     @staticmethod
-    def eval(code: str, available_networks: "list[LoadedSParamFile]", plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
-            
-        SParam.plot_fn = plot_fn
-        Network.available_networks = [Network(None, name=nw.filename, nw=nw.sparam.network) for nw in available_networks]
+    def eval(code: str, \
+        available_networks: "list[LoadedSParamFile]", \
+        selected_networks: "list[LoadedSParamFile]", \
+        plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
 
-        def nw(name: str) -> Network:
-            return Network(name)
+        SParam.plot_fn = plot_fn
+        Networks.available_networks = [nw.sparam.network for nw in available_networks]
+
+        def nw(name: str) -> Networks:
+            return Networks(name)
         
-        def _get_nw(obj: "str|Network") -> Network:
-            return obj if isinstance(obj, Network) else Network(obj)
+        def _get_nw(obj: "str|Networks") -> Networks:
+            return obj if isinstance(obj, Networks) else Networks(obj)
         
-        def s(network: "str|Network", egress_port: int, ingress_port: int) -> SParam:
+        def s(network: "str|Networks", egress_port: int, ingress_port: int) -> SParams:
             return _get_nw(network).s(egress_port, ingress_port)
         
-        def k(network: "str|Network") -> SParam:
+        def k(network: "str|Networks") -> SParams:
             return _get_nw(network).k()
         
-        def mu(network: "str|Network", mu: int = 1) -> SParam:
+        def mu(network: "str|Networks", mu: int = 1) -> SParams:
             return _get_nw(network).mu(mu)
         
-        def cascade(*networks: "tuple[str|Network, ...]") -> Network:
+        def cascade(*networks: "tuple[str|Networks, ...]") -> Networks:
             networks = [_get_nw(n) for n in networks]
             result = networks[0]
             for i in range(1,len(networks)):
                 result = result ** networks[i-1]
             return result
         
-        def half(network: "Network") -> Network:
+        def half(network: "Networks") -> Networks:
             return _get_nw(network).half()
         
-        def flip(network: "Network") -> Network:
+        def flip(network: "Networks") -> Networks:
             return _get_nw(network).flip()
         
-        def invert(network: "Network") -> Network:
+        def invert(network: "Networks") -> Networks:
             return ~_get_nw(network)
         
-        def abs(sparam: "SParam") -> SParam:
+        def abs(sparam: "SParams") -> SParams:
             return sparam.abs()
         
-        def db(sparam: "SParam") -> SParam:
+        def db(sparam: "SParams") -> SParams:
             return sparam.db()
         
-        def plot(sparam: SParam, label: "str|None" = None, style: "str|None" = None):
+        def plot(sparam: SParams, label: "str|None" = None, style: "str|None" = None):
             sparam.plot(label, style)
 
-        def rl_avg(sparam: SParam, f_start: "float|None" = None, f_end: "float|None" = None) -> SParam:
+        def rl_avg(sparam: SParams, f_start: "float|None" = None, f_end: "float|None" = None) -> SParams:
             return sparam.rl_avg(f_start, f_end)
 
-        def rl_opt(sparam: SParam, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> SParam:
+        def rl_opt(sparam: SParams, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> SParams:
             return sparam.rl_opt(f_integrate_start, f_integrate_end, f_target_start, f_target_end)
         
-        def crop_f(obj: "Network|SParam", f_start: "float|None" = None, f_end: "float|None" = None) -> "Network|SParam":
+        def crop_f(obj: "Networks|SParams", f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks|SParams":
             return obj.crop_f(f_start, f_end)
         
-        def add_sr(network: "Network", resistance: float, port: int = 1) -> "Network":
+        def add_sr(network: "Networks", resistance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_sr(resistance, port)
         
-        def add_sl(network: "Network", resistance: float, port: int = 1) -> "Network":
+        def add_sl(network: "Networks", resistance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_sl(resistance, port)
         
-        def add_sc(network: "Network", inductance: float, port: int = 1) -> "Network":
+        def add_sc(network: "Networks", inductance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_sc(inductance, port)
         
-        def add_pr(network: "Network", resistance: float, port: int = 1) -> "Network":
+        def add_pr(network: "Networks", resistance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_pr(resistance, port)
         
-        def add_pl(network: "Network", capacitance: float, port: int = 1) -> "Network":
+        def add_pl(network: "Networks", capacitance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_pl(capacitance, port)
         
-        def add_pc(network: "Network", inductance: float, port: int = 1) -> "Network":
+        def add_pc(network: "Networks", inductance: float, port: int = 1) -> "Networks":
             return _get_nw(network).add_pc(inductance, port)
     
-        def add_tl(network: "Network", degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
+        def add_tl(network: "Networks", degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Networks":
             return _get_nw(network).add_tl(degrees, frequency_hz, z0, loss, port)
 
-        def plot_stab(network: "Network", frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        def plot_stab(network: "Networks", frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
             network.plot_stab(frequency_hz, port, n_points, label, style)
 
         vars_global = {}
         vars_local = {
-            'Network': Network,
-            'SParam': SParam,
+            'Networks': Networks,
+            'SParams': SParams,
             'nw': nw,
             's': s,
             'k': k,

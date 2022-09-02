@@ -4,6 +4,8 @@ from .structs import LoadedSParamFile, PlotData, PlotDataQuantity
 from .plot import PlotHelper
 from .appsettings import AppSettings
 from .utils import get_unique_short_filename, is_windows
+from .networks import Networks
+from .sparams import SParams
 from .expressions import ExpressionParser
 from .tkinter_helpers import TkText, TkCommon
 from .appglobal import AppGlobal

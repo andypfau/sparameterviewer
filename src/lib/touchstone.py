@@ -2,7 +2,7 @@ from argparse import ArgumentError
 import skrf
 import numpy as np
 from scipy.interpolate import interp1d
-import math, cmath, copy
+import math, cmath, copy, os
 
 
 def get_sparam_name(egress: int, ingress: int) -> str:
@@ -77,6 +77,7 @@ class Touchstone:
             self.network = network
         else:
             self.network = skrf.Network(filename)
+        self.network.name = os.path.split(filename)[1]
         self.n_ports = self.network.s.shape[1] # type: int
         self.frequencies = self.network.f # type: np.ndarray
         self.comment = self.network.comments
