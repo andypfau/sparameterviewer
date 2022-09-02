@@ -66,15 +66,25 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 'All S-Params (reciprocal/1st IL only)',
                 'Insertion Loss',
                 'Insertion Loss (reciprocal/1st only)',
+                'Insertion Loss S21',
                 'Return Loss / Impedance',
+                'Return Loss S11',
+                'Return Loss S22',
+                'Return Loss S33',
+                'Return Loss S44',
                 'Expression-Based',
             )
             self.MODE_ALL = 0
             self.MODE_ALL_RECIPROCAL = 1
             self.MODE_IL_ALL = 2
             self.MODE_IL_RECIPROCAL = 3
-            self.MODE_RL = 4
-            self.MODE_EXPR = 5
+            self.MODE_S21 = 4
+            self.MODE_RL = 5
+            self.MODE_S11 = 6
+            self.MODE_S22 = 7
+            self.MODE_S33 = 8
+            self.MODE_S44 = 9
+            self.MODE_EXPR = 10
             self.combobox_mode.current(self.app_settings.plot_mode)
             self.combobox_unit['values']= (
                 'dB',
@@ -574,8 +584,11 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
         try:
 
-            prev_xlim = self.plot.plot.get_xlim() if self.plot is not None else None
-            prev_ylim = self.plot.plot.get_ylim() if self.plot is not None else None
+            try:
+                prev_xlim = self.plot.plot.get_xlim()
+                prev_ylim = self.plot.plot.get_ylim()
+            except:
+                prev_xlim, prev_ylim = None, None
             
             self.fig.clf()
             self.default_expr = ''
@@ -589,9 +602,17 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
 
-            data_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_IL_ALL) or (self.app_settings.plot_mode==self.MODE_IL_RECIPROCAL)
-            data_rev_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_IL_ALL)
-            data_rl = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_RL)
+            data_include_fwd_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_IL_ALL) or (self.app_settings.plot_mode==self.MODE_IL_RECIPROCAL)
+            data_include_rev_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_IL_ALL)
+            data_include_rl = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_RL)
+            data_only_s21 = (self.app_settings.plot_mode==self.MODE_S21)
+            data_only_s11 = (self.app_settings.plot_mode==self.MODE_S11)
+            data_only_s22 = (self.app_settings.plot_mode==self.MODE_S22)
+            data_only_s33 = (self.app_settings.plot_mode==self.MODE_S33)
+            data_only_s44 = (self.app_settings.plot_mode==self.MODE_S44)
+            data_include_fwd_il |= data_only_s21
+            data_include_rl |= data_only_s11 or data_only_s22 or data_only_s33 or data_only_s44
+
             data_expr_based = self.app_settings.plot_mode==self.MODE_EXPR
             qty_db = (self.app_settings.plot_unit == self.UNIT_DB)
             qty_lin_mag = (self.app_settings.plot_unit == self.UNIT_LIN_MAG)
@@ -637,7 +658,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
             def get_default_style(ep, ip):
                 if not polar and not smith:
-                    if (data_il or data_rev_il) and data_rl:
+                    if (data_include_fwd_il or data_include_rev_il) and data_include_rl: # RL and IL mixed
                         if ep==ip: # RL:
                             return '--'
                 return '-'
@@ -684,7 +705,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 self.app_settings.save()
 
                 try:
-                    ExpressionParser.eval(raw_exprs, self.files, add_to_plot)  
+                    ExpressionParser.eval(raw_exprs, self.files, self.get_selected_files(), add_to_plot)  
                     self.show_error(None)              
                 except Exception as ex:
                     # likely a user-induced error, so reduce level, in order not to flood the log file
@@ -712,11 +733,22 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                             else:
                                 name = spar_str
                             
-                            if ep==ip and not data_rl:
+                            if ep==ip and not data_include_rl:
                                 continue
-                            if ep!=ip and not data_il:
+                            if ep>ip and not data_include_fwd_il:
                                 continue
-                            if ep<ip and not data_rev_il:
+                            if ep<ip and not data_include_rev_il:
+                                continue
+
+                            if data_only_s21 and not (ep==2 and ip==1):
+                                continue
+                            if data_only_s11 and not (ep==1 and ip==ep):
+                                continue
+                            if data_only_s22 and not (ep==2 and ip==ep):
+                                continue
+                            if data_only_s33 and not (ep==3 and ip==ep):
+                                continue
+                            if data_only_s44 and not (ep==4 and ip==ep):
                                 continue
                             
                             sp = file.sparam.get_sparam(ep, ip)
@@ -729,9 +761,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.plot.render()
 
             if not polar and not smith and not timedomain and not qty_group_delay:
-                if data_rl and self.plot.y_range[1]<=0:
+                if data_include_rl and self.plot.y_range[1]<=0:
                     self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
-                if (data_il or data_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
+                if (data_include_fwd_il or data_include_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
                     self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
             
             self.plot.finish(show_legend=self.app_settings.show_legend)

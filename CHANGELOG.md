@@ -1,9 +1,10 @@
 S-Parameter Viewer Changelog
 ============================
 
-0.8b1 (2022-09-01)
+0.8b2 (2022-09-02)
 ------------------
 
+- new: can now directly plot S21 only, as well as S11/22/33/44
 - new: command to reload current directory
 - new: option to lock axes scaling
 
