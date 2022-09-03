@@ -287,8 +287,8 @@ class Networks:
         return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
     
 
-    def s(self, egress_port: int, ingress_port: int) -> SParams:
-        return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port)
+    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False) -> SParams:
+        return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only)
     
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks":

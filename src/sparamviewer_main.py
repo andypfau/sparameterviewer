@@ -45,7 +45,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         try:
             self.dir = ''
             self.files = [] # type: list[SParamFile]
-            self.default_expr = ''
+            self.generated_expressions = ''
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
             self.plot_axes_are_valid = False
@@ -332,12 +332,12 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_gen_expr(self):
         
-        if len(self.default_expr)<1:
+        if len(self.generated_expressions)<1:
             return
         
         current = TkText.get_text(self.text_expr).strip()
         
-        new = self.default_expr
+        new = self.generated_expressions
         for line in current.splitlines():
             commented = '# ' + line.strip() if not line.startswith('#') else line.strip()
             if len(new)>0:
@@ -590,7 +590,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 prev_xlim, prev_ylim = None, None
             
             self.fig.clf()
-            self.default_expr = ''
+            self.generated_expressions = ''
             self.plot = None
 
             def v2db(v):
@@ -600,17 +600,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 gd = -np.diff(np.unwrap(np.angle(sp)))/np.diff(f)
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
-
-            data_include_fwd_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_IL_ALL) or (self.app_settings.plot_mode==self.MODE_IL_RECIPROCAL)
-            data_include_rev_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_IL_ALL)
-            data_include_rl = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_RL)
-            data_only_s21 = (self.app_settings.plot_mode==self.MODE_S21)
-            data_only_s11 = (self.app_settings.plot_mode==self.MODE_S11)
-            data_only_s22 = (self.app_settings.plot_mode==self.MODE_S22)
-            data_only_s33 = (self.app_settings.plot_mode==self.MODE_S33)
-            data_only_s44 = (self.app_settings.plot_mode==self.MODE_S44)
-            data_include_fwd_il |= data_only_s21
-            data_include_rl |= data_only_s11 or data_only_s22 or data_only_s33 or data_only_s44
 
             data_expr_based = self.app_settings.plot_mode==self.MODE_EXPR
             qty_db = (self.app_settings.plot_unit == self.UNIT_DB)
@@ -655,12 +644,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                 self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl)
 
-            def get_default_style(ep, ip):
-                if not polar and not smith:
-                    if (data_include_fwd_il or data_include_rev_il) and data_include_rl: # RL and IL mixed
-                        if ep==ip: # RL:
-                            return '--'
-                return '-'
 
             def add_to_plot(f, sp, name, style=None):
 
@@ -714,57 +697,43 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
             else:
 
-                selected_files = self.get_selected_files()
-                selected_names = [f.name for f in selected_files]
-                all_names = [f.name for f in self.files]
-                unique_short_names = [get_unique_short_filename(n, all_names) for n in selected_names]
+                if self.app_settings.plot_mode == self.MODE_ALL:
+                    self.generated_expressions = 'sel_nws().s().plot()'
+                elif self.app_settings.plot_mode == self.MODE_ALL_RECIPROCAL:
+                    self.generated_expressions = 'sel_nws().s(fwd_il_only=True).plot(style="-")'
+                    self.generated_expressions = 'sel_nws().s(rl_only=True).plot(style="--")'
+                elif self.app_settings.plot_mode == self.MODE_IL_ALL:
+                    self.generated_expressions = 'sel_nws().s(il_only=True).plot()'
+                elif self.app_settings.plot_mode == self.MODE_IL_RECIPROCAL:
+                    self.generated_expressions = 'sel_nws().s(fwd_il_only=True).plot()'
+                elif self.app_settings.plot_mode == self.MODE_RL:
+                    self.generated_expressions = 'sel_nws().s(rl_only=True).plot()'
+                elif self.app_settings.plot_mode == self.MODE_S21:
+                    self.generated_expressions = 'sel_nws().s(2,1).plot()'
+                elif self.app_settings.plot_mode == self.MODE_S11:
+                    self.generated_expressions = 'sel_nws().s(1,1).plot()'
+                elif self.app_settings.plot_mode == self.MODE_S22:
+                    self.generated_expressions = 'sel_nws().s(2,2).plot()'
+                elif self.app_settings.plot_mode == self.MODE_S33:
+                    self.generated_expressions = 'sel_nws().s(3,3).plot()'
+                elif self.app_settings.plot_mode == self.MODE_S44:
+                    self.generated_expressions = 'sel_nws().s(4,4).plot()'
 
-                for sparam_file,unique_short_name in zip(selected_files, unique_short_names):
-                    for ep in range(1,sparam_file.nw.number_of_ports+1):
-                        for ip in range(1,sparam_file.nw.number_of_ports+1):
-
-                            spar_str = get_sparam_name(ep,ip)
-                            if self.app_settings.always_show_names or len(selected_files)>1:
-                                if self.app_settings.short_names:
-                                    name = f'{unique_short_name} {spar_str}'
-                                else:
-                                    name = f'{os.path.split(sparam_file.filename)[1]} {spar_str}'
-                            else:
-                                name = spar_str
-                            
-                            if ep==ip and not data_include_rl:
-                                continue
-                            if ep>ip and not data_include_fwd_il:
-                                continue
-                            if ep<ip and not data_include_rev_il:
-                                continue
-
-                            if data_only_s21 and not (ep==2 and ip==1):
-                                continue
-                            if data_only_s11 and not (ep==1 and ip==ep):
-                                continue
-                            if data_only_s22 and not (ep==2 and ip==ep):
-                                continue
-                            if data_only_s33 and not (ep==3 and ip==ep):
-                                continue
-                            if data_only_s44 and not (ep==4 and ip==ep):
-                                continue
-                            
-                            sp = sparam_file.nw.s[:,ep-1,ip-1]
-                            f = sparam_file.nw.f
-
-                            style = get_default_style(ep, ip)
-                            add_to_plot(f, sp, name, style)
-                            self.default_expr += f'nw("{unique_short_name}").s({ep},{ip}).plot("{name}","{style}")\n'
-                self.show_error(None)
+                try:
+                    ExpressionParser.eval(self.generated_expressions, self.files, self.get_selected_files(), add_to_plot)  
+                    self.show_error(None)              
+                except Exception as ex:
+                    logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
+                    self.fig.clf()
+                    self.show_error(f'ERROR: {ex}')
             
             self.plot.render()
 
-            if not polar and not smith and not timedomain and not qty_group_delay:
-                if data_include_rl and self.plot.y_range[1]<=0:
-                    self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
-                if (data_include_fwd_il or data_include_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
-                    self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
+            #if not polar and not smith and not timedomain and not qty_group_delay:
+            #    if data_include_rl and self.plot.y_range[1]<=0:
+            #        self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
+            #    if (data_include_fwd_il or data_include_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
+            #        self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
             
             self.plot.finish(show_legend=self.app_settings.show_legend)
 
