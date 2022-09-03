@@ -1,4 +1,3 @@
-from argparse import ArgumentError
 import skrf
 import numpy as np
 from scipy.interpolate import interp1d
@@ -68,18 +67,3 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, step_response: bool = 
         return t, sr
     else:
         return t, ir
-
-
-class Touchstone:
-
-    def __init__(self, filename: str, network: skrf.Network = None):
-        if network is not None:
-            self.network = network
-        else:
-            self.network = skrf.Network(filename)
-        self.n_ports = self.network.s.shape[1] # type: int
-        self.frequencies = self.network.f # type: np.ndarray
-        self.comment = self.network.comments
-    
-    def get_sparam(self, egress: int, ingress: int) -> np.ndarray:
-        return self.network.s[:, egress-1, ingress-1]

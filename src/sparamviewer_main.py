@@ -17,12 +17,12 @@ from sparamviewer_rl import SparamviewerReturnlossDialog
 from sparamviewer_cursor import SparamviewerCursorDialog
 from info import *
 
-from lib import Touchstone
-from lib import sparam_to_timedomain, get_sparam_name, get_unique_short_filename
+from lib import sparam_to_timedomain, get_sparam_name
 from lib import Si, DataExport
-from lib import LoadedSParamFile, AppSettings, PlotHelper
+from lib import SParamFile, PlotHelper
 from lib import ExpressionParser
 from lib import TkText, TkCommon, AppGlobal
+from lib import app_settings
 
 
 # extend auto-generated UI code
@@ -30,23 +30,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def __init__(self, filenames: "list[str]"):
         super().__init__()
 
-        self.app_settings = AppSettings('apfau.de S-Parameter Viewer', 'apfau.de', '0.1', dict(
-            plot_mode = 0,
-            plot_unit = 0,
-            show_legend = True,
-            log_freq = False,
-            short_names = True,
-            always_show_names = False,
-            expression = '',
-            td_kaiser = 35.0,
-            lock_xaxis = False,
-            lock_yaxis = False,
-        ))
-
         try:
             self.dir = ''
-            self.files = [] # type: list[LoadedSParamFile]
-            self.default_expr = ''
+            self.files = [] # type: list[SParamFile]
+            self.generated_expressions = ''
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
             self.plot_axes_are_valid = False
@@ -55,12 +42,11 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             AppGlobal.set_toplevel_icon(self.toplevel_main)
             TkCommon.default_keyhandler(self.toplevel_main, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
             TkText.default_keyhandler(self.text_expr, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
-            self.show_legend.set('1' if self.app_settings.show_legend else '0')
-            self.logf.set('1' if self.app_settings.log_freq else '0')
-            self.short_names.set('1' if self.app_settings.short_names else '0')
-            self.always_show_names.set('1' if self.app_settings.always_show_names else '0')
-            self.lock_plot_xaxis.set('1' if self.app_settings.lock_xaxis else '0')
-            self.lock_plot_yaxis.set('1' if self.app_settings.lock_yaxis else '0')
+            self.show_legend.set('1' if app_settings.show_legend else '0')
+            self.logf.set('1' if app_settings.log_freq else '0')
+            self.always_show_names.set('1' if app_settings.always_show_names else '0')
+            self.lock_plot_xaxis.set('1' if app_settings.lock_xaxis else '0')
+            self.lock_plot_yaxis.set('1' if app_settings.lock_yaxis else '0')
             self.combobox_mode['values']= (
                 'All S-Params',
                 'All S-Params (reciprocal/1st IL only)',
@@ -85,7 +71,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.MODE_S33 = 8
             self.MODE_S44 = 9
             self.MODE_EXPR = 10
-            self.combobox_mode.current(self.app_settings.plot_mode)
+            self.combobox_mode.current(app_settings.plot_mode)
             self.combobox_unit['values']= (
                 'dB',
                 'Log. Magnitude',
@@ -116,8 +102,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.UNIT_GROUP_DELAY = 11
             self.UNIT_IMPULSE = 12
             self.UNIT_STEP = 13
-            self.combobox_unit.current(self.app_settings.plot_unit)
-            TkText.set_text(self.text_expr, self.app_settings.expression.strip())
+            self.combobox_unit.current(app_settings.plot_unit)
+            TkText.set_text(self.text_expr, app_settings.expression.strip())
 
             # fix treeview
             self.treeview_files['columns'] = ('filename', 'props')
@@ -159,8 +145,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.update_plot()
         
         except Exception as ex:
-            self.app_settings.reset()
-            self.app_settings.save()
+            app_settings.reset()
+            app_settings.save()
             logging.exception(f'Unable to init main dialog: {ex}')
             messagebox.showerror('Error', f'Error ({ex}); maybe corrupted config... reset, try again next time')
     
@@ -297,9 +283,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_select_plotmode(self, event=None):
-        self.app_settings.plot_unit = self.combobox_unit.current()
-        self.app_settings.plot_mode = self.combobox_mode.current()
-        self.app_settings.save()
+        app_settings.plot_unit = self.combobox_unit.current()
+        app_settings.plot_mode = self.combobox_mode.current()
+        app_settings.save()
         self.update_plot()
     
 
@@ -317,36 +303,36 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     
     def on_set_kaiser(self):
-        kaiser = simpledialog.askfloat('Kaiser Window', 'Argument for Kaiser Window:', initialvalue=self.app_settings.td_kaiser, parent=self.toplevel_main, minvalue=0.0, maxvalue=1e3)
+        kaiser = simpledialog.askfloat('Kaiser Window', 'Argument for Kaiser Window:', initialvalue=app_settings.td_kaiser, parent=self.toplevel_main, minvalue=0.0, maxvalue=1e3)
         if kaiser is None:
             return
-        self.app_settings.td_kaiser = kaiser
-        self.app_settings.save()
+        app_settings.td_kaiser = kaiser
+        app_settings.save()
         self.update_plot()
 
     
     def on_use_expr(self):
         self.combobox_mode.current(self.MODE_EXPR)
-        self.app_settings.plot_mode = self.MODE_EXPR
+        app_settings.plot_mode = self.MODE_EXPR
         self.update_plot()
 
 
     def on_gen_expr(self):
         
-        if len(self.default_expr)<1:
+        if len(self.generated_expressions)<1:
             return
         
         current = TkText.get_text(self.text_expr).strip()
         
-        new = self.default_expr
+        new = self.generated_expressions
         for line in current.splitlines():
             commented = '# ' + line.strip() if not line.startswith('#') else line.strip()
             if len(new)>0:
                 new += '\n'
             new += commented
 
-        self.app_settings.expression = new
-        self.app_settings.save()
+        app_settings.expression = new
+        app_settings.save()
 
         TkText.set_text(self.text_expr, new)
 
@@ -395,25 +381,25 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         SparamviewerReturnlossDialog(self.toplevel_main, self.files, selected_id)
 
 
-    def get_info_str(self, file: LoadedSParamFile) -> str:
+    def get_info_str(self, sparam_file: SParamFile) -> str:
         
         try:
-            size = f'{os.path.getsize(file.filename):,.0f}'
+            size = f'{os.path.getsize(sparam_file.file_path):,.0f} B'
             fmt_tstamp = lambda ts: f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
-            created = fmt_tstamp(os.path.getctime(file.filename))
-            modified = fmt_tstamp(os.path.getmtime(file.filename))
+            created = fmt_tstamp(os.path.getctime(sparam_file.file_path))
+            modified = fmt_tstamp(os.path.getmtime(sparam_file.file_path))
         except:
             size = 'unknown'
             created = 'unknown'
             modified = 'unknown'
-        f0, f1 = file.sparam.frequencies[0], file.sparam.frequencies[-1]
-        n_pts = len(file.sparam.frequencies)
-        dir, fname = os.path.split(file.filename)
+        f0, f1 = sparam_file.nw.f[0], sparam_file.nw.f[-1]
+        n_pts = len(sparam_file.nw.f)
+        dir, fname = os.path.split(sparam_file.file_path)
         dir = os.path.abspath(dir)
-        comm = file.sparam.comment.strip()
-        n_ports = file.sparam.network.s.shape[1]
-        if (file.sparam.network.z0 == file.sparam.network.z0[0,0]).all():
-            z0 = str(Si(file.sparam.network.z0[0,0],'Ohm'))
+        comm = sparam_file.nw.comments.strip()
+        n_ports = sparam_file.nw.s.shape[1]
+        if (sparam_file.nw.z0 == sparam_file.nw.z0[0,0]).all():
+            z0 = str(Si(sparam_file.nw.z0[0,0],'Ohm'))
         else:
             z0 = 'different for each port and/or frequency'
         
@@ -426,7 +412,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_pts:,.0f} point{"s" if n_pts!=0 else ""}\n\n'
 
         info += f'File created: {created}, last modified: {modified}\n'
-        info += f'File size: {size} B\n'
+        info += f'File size: {size}\n'
         info += f'File path: {os.path.join(dir, fname)}'
 
         return info
@@ -435,7 +421,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def on_click_info(self):
         info = ''
         for file in self.files:
-            if file.id in self.treeview_files.selection():
+            if file.tag in self.treeview_files.selection():
                 if len(info)>0:
                     info+= '\n\n\n'
                 info += self.get_info_str(file)
@@ -448,38 +434,32 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def on_show_legend(self):
-        self.app_settings.show_legend = (self.show_legend.get() == '1')
-        self.app_settings.save()
+        app_settings.show_legend = (self.show_legend.get() == '1')
+        app_settings.save()
         self.update_plot()
 
 
     def on_change_logf(self):
-        self.app_settings.log_freq = (self.logf.get() == '1')
-        self.app_settings.save()
-        self.update_plot()
-
-
-    def on_show_shortnames(self):
-        self.app_settings.short_names = (self.short_names.get() == '1')
-        self.app_settings.save()
+        app_settings.log_freq = (self.logf.get() == '1')
+        app_settings.save()
         self.update_plot()
 
 
     def on_show_names_always(self):
-        self.app_settings.always_show_names = (self.always_show_names.get() == '1')
-        self.app_settings.save()
+        app_settings.always_show_names = (self.always_show_names.get() == '1')
+        app_settings.save()
         self.update_plot()
 
 
     def on_lock_xaxis(self):
-        self.app_settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
-        if not self.app_settings.lock_xaxis:
+        app_settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
+        if not app_settings.lock_xaxis:
             self.update_plot()
 
 
     def on_lock_yaxis(self):
-        self.app_settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
-        if not self.app_settings.lock_yaxis:
+        app_settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
+        if not app_settings.lock_yaxis:
             self.update_plot()
     
 
@@ -512,7 +492,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         try:
             
             self.dir = appdirs.user_data_dir()
-            self.files = [] # type: list[LoadedSParamFile]
+            self.files = [] # type: list[SParamFile]
             self.treeview_files.delete(*self.treeview_files.get_children())
             self.trace_data = []
 
@@ -524,14 +504,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             
             for i,filename in enumerate(all_files):
                 try:
-                    spar = Touchstone(filename)
-                    id = f'file{i}'
-                    self.files.append(LoadedSParamFile(id,filename,spar))
+                    tag = f'file{i}'
+                    spar = SParamFile.load(filename, tag)
+                    self.files.append(spar)
                     
-                    namestr = os.path.split(filename)[1]
-                    propstr = f'{spar.n_ports}-port, {Si(min(spar.frequencies),"Hz")} to {Si(max(spar.frequencies),"Hz")}'
+                    name_str = os.path.split(filename)[1]
+                    prop_str = f'{spar.nw.number_of_ports}-port, {Si(min(spar.nw.f),"Hz")} to {Si(max(spar.nw.f),"Hz")}'
                     
-                    self.treeview_files.insert('', 'end', id, values=(namestr,propstr))
+                    self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
                     
                     do_select = False
                     if select_first and i==0:
@@ -541,7 +521,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                             do_select = True
                             break
                     if do_select:
-                        self.treeview_files.selection_add(id)
+                        self.treeview_files.selection_add(tag)
 
                 except Exception as ex:
                     logging.info(f'Ignoring file <{filename}>: {ex}')
@@ -572,10 +552,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.eval_err_msg.set(error if error is not None else "No problems found")
 
 
-    def get_selected_files(self) -> "list[LoadedSParamFile]":
+    def get_selected_files(self) -> "list[SParamFile]":
         selected_files = []
         for file in self.files:
-            if file.id in self.treeview_files.selection():
+            if file.tag in self.treeview_files.selection():
                 selected_files.append(file)
         return selected_files
 
@@ -591,7 +571,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 prev_xlim, prev_ylim = None, None
             
             self.fig.clf()
-            self.default_expr = ''
+            self.generated_expressions = ''
             self.plot = None
 
             def v2db(v):
@@ -602,31 +582,20 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
 
-            data_include_fwd_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_IL_ALL) or (self.app_settings.plot_mode==self.MODE_IL_RECIPROCAL)
-            data_include_rev_il = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_IL_ALL)
-            data_include_rl = (self.app_settings.plot_mode==self.MODE_ALL) or (self.app_settings.plot_mode==self.MODE_ALL_RECIPROCAL) or (self.app_settings.plot_mode==self.MODE_RL)
-            data_only_s21 = (self.app_settings.plot_mode==self.MODE_S21)
-            data_only_s11 = (self.app_settings.plot_mode==self.MODE_S11)
-            data_only_s22 = (self.app_settings.plot_mode==self.MODE_S22)
-            data_only_s33 = (self.app_settings.plot_mode==self.MODE_S33)
-            data_only_s44 = (self.app_settings.plot_mode==self.MODE_S44)
-            data_include_fwd_il |= data_only_s21
-            data_include_rl |= data_only_s11 or data_only_s22 or data_only_s33 or data_only_s44
-
-            data_expr_based = self.app_settings.plot_mode==self.MODE_EXPR
-            qty_db = (self.app_settings.plot_unit == self.UNIT_DB)
-            qty_lin_mag = (self.app_settings.plot_unit == self.UNIT_LIN_MAG)
-            qty_log_mag = (self.app_settings.plot_unit == self.UNIT_LOG_MAG)
-            qty_group_delay = (self.app_settings.plot_unit == self.UNIT_GROUP_DELAY)
-            qty_re = (self.app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (self.app_settings.plot_unit == self.UNIT_RE_VS_F)
-            qty_im = (self.app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (self.app_settings.plot_unit == self.UNIT_IM_VS_F)
-            qty_phase = (self.app_settings.plot_unit == self.UNIT_DEG) or (self.app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
-            unwrap_phase = (self.app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
-            polar = (self.app_settings.plot_unit == self.UNIT_RE_IM_POLAR)
-            smith = (self.app_settings.plot_unit == self.UNIT_SMITH_Z) or (self.app_settings.plot_unit == self.UNIT_SMITH_Y)
-            timedomain = (self.app_settings.plot_unit == self.UNIT_IMPULSE) or (self.app_settings.plot_unit == self.UNIT_STEP)
-            stepresponse = (self.app_settings.plot_unit == self.UNIT_STEP)
-            if self.app_settings.plot_unit == self.UNIT_SMITH_Z:
+            data_expr_based = app_settings.plot_mode==self.MODE_EXPR
+            qty_db = (app_settings.plot_unit == self.UNIT_DB)
+            qty_lin_mag = (app_settings.plot_unit == self.UNIT_LIN_MAG)
+            qty_log_mag = (app_settings.plot_unit == self.UNIT_LOG_MAG)
+            qty_group_delay = (app_settings.plot_unit == self.UNIT_GROUP_DELAY)
+            qty_re = (app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (app_settings.plot_unit == self.UNIT_RE_VS_F)
+            qty_im = (app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (app_settings.plot_unit == self.UNIT_IM_VS_F)
+            qty_phase = (app_settings.plot_unit == self.UNIT_DEG) or (app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            unwrap_phase = (app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            polar = (app_settings.plot_unit == self.UNIT_RE_IM_POLAR)
+            smith = (app_settings.plot_unit == self.UNIT_SMITH_Z) or (app_settings.plot_unit == self.UNIT_SMITH_Y)
+            timedomain = (app_settings.plot_unit == self.UNIT_IMPULSE) or (app_settings.plot_unit == self.UNIT_STEP)
+            stepresponse = (app_settings.plot_unit == self.UNIT_STEP)
+            if app_settings.plot_unit == self.UNIT_SMITH_Z:
                 smith_type = 'z'
             else:
                 smith_type = 'y'
@@ -641,7 +610,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
                     yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
-                    xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),self.app_settings.log_freq
+                    xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),app_settings.log_freq
                     if qty_group_delay:
                         yq,yf,yl = 'Group Delay',SiFmt(unit='s',force_sign=True),False
                     elif qty_phase:
@@ -656,12 +625,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                 self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl)
 
-            def get_default_style(ep, ip):
-                if not polar and not smith:
-                    if (data_include_fwd_il or data_include_rev_il) and data_include_rl: # RL and IL mixed
-                        if ep==ip: # RL:
-                            return '--'
-                return '-'
 
             def add_to_plot(f, sp, name, style=None):
 
@@ -678,7 +641,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.plot.add(np.real(sp), np.imag(sp), name, style)
                 else:
                     if timedomain:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=self.app_settings.td_kaiser)
+                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=app_settings.td_kaiser)
                         self.plot.add(t, lev, name, style)
                     elif qty_db:
                         self.plot.add(f, v2db(sp), name, style)
@@ -701,8 +664,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             if data_expr_based:
 
                 raw_exprs = TkText.get_text(self.text_expr)
-                self.app_settings.expression = raw_exprs
-                self.app_settings.save()
+                app_settings.expression = raw_exprs
+                app_settings.save()
 
                 try:
                     ExpressionParser.eval(raw_exprs, self.files, add_to_plot)  
@@ -715,63 +678,51 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
             else:
 
-                selected_files = self.get_selected_files()
-                selected_filenames = [os.path.split(f.filename)[1] for f in selected_files]
-                all_filenames = [os.path.split(f.filename)[1] for f in self.files]
-                unique_short_names = [get_unique_short_filename(n, all_filenames) for n in selected_filenames]
+                if app_settings.plot_mode == self.MODE_ALL:
+                    self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
+                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
+                elif app_settings.plot_mode == self.MODE_ALL_RECIPROCAL:
+                    self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot(style="-")\n'
+                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
+                elif app_settings.plot_mode == self.MODE_IL_ALL:
+                    self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
+                elif app_settings.plot_mode == self.MODE_IL_RECIPROCAL:
+                    self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()'
+                elif app_settings.plot_mode == self.MODE_RL:
+                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
+                elif app_settings.plot_mode == self.MODE_S21:
+                    self.generated_expressions += 'sel_nws().s(2,1).plot()'
+                elif app_settings.plot_mode == self.MODE_S11:
+                    self.generated_expressions += 'sel_nws().s(1,1).plot()'
+                elif app_settings.plot_mode == self.MODE_S22:
+                    self.generated_expressions += 'sel_nws().s(2,2).plot()'
+                elif app_settings.plot_mode == self.MODE_S33:
+                    self.generated_expressions += 'sel_nws().s(3,3).plot()'
+                elif app_settings.plot_mode == self.MODE_S44:
+                    self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
-                for file,unique_short_name in zip(selected_files, unique_short_names):
-                    for ep in range(1,file.sparam.n_ports+1):
-                        for ip in range(1,file.sparam.n_ports+1):
-
-                            spar_str = get_sparam_name(ep,ip)
-                            if self.app_settings.always_show_names or len(selected_files)>1:
-                                if self.app_settings.short_names:
-                                    name = f'{unique_short_name}.{spar_str}'
-                                else:
-                                    name = f'{os.path.split(file.filename)[1]}.{spar_str}'
-                            else:
-                                name = spar_str
-                            
-                            if ep==ip and not data_include_rl:
-                                continue
-                            if ep>ip and not data_include_fwd_il:
-                                continue
-                            if ep<ip and not data_include_rev_il:
-                                continue
-
-                            if data_only_s21 and not (ep==2 and ip==1):
-                                continue
-                            if data_only_s11 and not (ep==1 and ip==ep):
-                                continue
-                            if data_only_s22 and not (ep==2 and ip==ep):
-                                continue
-                            if data_only_s33 and not (ep==3 and ip==ep):
-                                continue
-                            if data_only_s44 and not (ep==4 and ip==ep):
-                                continue
-                            
-                            sp = file.sparam.get_sparam(ep, ip)
-                            f = file.sparam.frequencies
-                            style = get_default_style(ep, ip)
-                            add_to_plot(f, sp, name, style)
-                            self.default_expr += f'nw("{unique_short_name}").s({ep},{ip}).plot("{name}","{style}")\n'
-                self.show_error(None)
+                try:
+                    ExpressionParser.eval(self.generated_expressions, self.files, self.get_selected_files(), add_to_plot)  
+                    self.show_error(None)              
+                except Exception as ex:
+                    logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
+                    self.fig.clf()
+                    self.show_error(f'ERROR: {ex}')
             
             self.plot.render()
 
-            if not polar and not smith and not timedomain and not qty_group_delay:
-                if data_include_rl and self.plot.y_range[1]<=0:
-                    self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
-                if (data_include_fwd_il or data_include_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
-                    self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
+            #if not polar and not smith and not timedomain and not qty_group_delay:
+            #    if data_include_rl and self.plot.y_range[1]<=0:
+            #        self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
+            #    if (data_include_fwd_il or data_include_rev_il) and self.plot.y_range[1]<=-10 and self.plot.y_range[1]-self.plot.y_range[1]>=5:
+            #        self.plot.plot.set_ylim((None,max(0,self.plot.y_range[1]+1)))
             
-            self.plot.finish(show_legend=self.app_settings.show_legend)
+            self.plot.finish()
 
             if self.plot_axes_are_valid:
-                if self.app_settings.lock_xaxis and prev_xlim is not None:
+                if app_settings.lock_xaxis and prev_xlim is not None:
                     self.plot.plot.set_xlim(prev_xlim)
-                if self.app_settings.lock_yaxis and prev_ylim is not None:
+                if app_settings.lock_yaxis and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
 
             self.canvas.draw()

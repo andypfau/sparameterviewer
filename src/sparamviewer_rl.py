@@ -7,14 +7,14 @@ import matplotlib.ticker as ticker
 import numpy as np
 import skrf, copy, math, cmath, glob, os
 
-from lib import LoadedSParamFile, AppGlobal, BodeFano
+from lib import SParamFile, AppGlobal, BodeFano
 from sparamviewer_rl_pygubu import SparamviewerPygubuApp
 
 
 
 # extend auto-generated UI code
 class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
-    def __init__(self, master, files: "list(LoadedSParamFile)", selected_id: "str|None"):
+    def __init__(self, master, files: "list[SParamFile]", selected_tag: any = None):
         super().__init__(master)
         
         AppGlobal.set_toplevel_icon(self.toplevel_rl)
@@ -23,9 +23,9 @@ class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
 
         values = []
         idx_to_select = 0
-        for i,f in enumerate(files):
-            values.append(os.path.split(f.filename)[1])
-            if f.id==selected_id:
+        for i,nwf in enumerate(files):
+            values.append(nwf.name)
+            if nwf.tag == selected_tag:
                 idx_to_select = i
         self.combobox_files['values'] = values
         if len(values)>0:
@@ -82,9 +82,9 @@ class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
         self.err_msg.set('')
     
 
-    def update_plot(self, file: LoadedSParamFile, port: int, int0: float, int1: float, tgt0: float, tgt1: float):
+    def update_plot(self, file: SParamFile, port: int, int0: float, int1: float, tgt0: float, tgt1: float):
         
-        bodefano = BodeFano.from_touchstone(file.sparam, port, int0, int1, tgt0, tgt1)
+        bodefano = BodeFano.from_network(file.nw, port, int0, int1, tgt0, tgt1)
 
         self.fig.clf()
         self.plot = self.fig.add_subplot(111)

@@ -44,9 +44,11 @@ To modify the UI, you need `pygubu-designer`.
 There are sample .json-files in the `res` folder for VS Code.
 
 
-Known Issues and Missing Feautres
+Known Issues and Missing Features
 ---------------------------------
 
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
 - Equations that work on wildcard names
 - Smarter name shortening
+- Equation-based plot type
+- Unify the plotting functionality to always use expressions under the hood
