@@ -1,6 +1,7 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
+from ..sparam_helpers import get_sparam_name
 from .sparams import SParam, SParams
 
 import skrf, math
@@ -10,6 +11,7 @@ import logging
 
 
 class Network:
+
     
     def __init__(self, nw: "Network|skrf.Network|SParamFile" = None):
         if isinstance(nw, SParamFile):
@@ -65,7 +67,7 @@ class Network:
                     continue
                 if rev_il_only and not (ep<ip):
                     continue
-                result.append(SParam(self.nw.name, self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
+                result.append(SParam(f'{self.nw.name} {get_sparam_name(ep,ip)}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
         return result
     
 
@@ -89,7 +91,7 @@ class Network:
     def k(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(self.nw.name, self.nw.f, self.nw.stability, self.nw.z0[0,0])
+        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0])
     
 
     def mu(self, mu: int = 1):
@@ -104,7 +106,7 @@ class Network:
             p1,p2 = 1,0
         delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
         stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
-        return SParam(self.nw.name, self.nw.f, stability_factor, self.nw.z0[0,0])
+        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0])
     
 
     def half(self) -> "Network":

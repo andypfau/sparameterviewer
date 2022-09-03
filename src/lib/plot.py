@@ -1,5 +1,6 @@
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
+from .appsettings import app_settings
 
 import math
 import numpy as np
@@ -92,6 +93,7 @@ class PlotHelper:
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
         self.items_to_plot = []
+        self.any_legend = False
 
         self.plot = None # type: pyplot.axes.Axes
     
@@ -164,13 +166,19 @@ class PlotHelper:
             plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
         else:
             self.plot = self.fig.add_subplot(111)
+        
+        self.any_legend = False
 
         for (x,y,name,style) in self.items_to_plot:
         
-            # escaping
-            label = name
-            if label.startswith('_'):
-                label = ' _' + label[1:]
+            if len(self.items_to_plot) == 1 and not app_settings.always_show_names:
+                label = None
+            else:
+                self.any_legend = True
+                # escaping for matplotlib
+                label = name
+                if label.startswith('_'):
+                    label = ' _' + label[1:]
 
             def fix_log(x,y):
                 if x[0]<=0 and self.x_log:
@@ -213,12 +221,12 @@ class PlotHelper:
             self.plot.set_ylim((-r_smith,+r_smith))
 
 
-    def finish(self, show_legend):
+    def finish(self):
                 
         if len(self.plots)<1:
             return
         
-        if show_legend:
+        if app_settings.show_legend and self.any_legend:
             self.plot.legend()
         
         if not self.polar:

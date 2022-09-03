@@ -90,8 +90,12 @@ class SParam:
         return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
 
     
-    def plot(self, label: "str|None" = None, style: "str|None" = None):
-        SParam.plot_fn(self.f, self.s, label if label is not None else self.name, style)
+    def plot(self, label: "str" = None, style: "str" = None):
+        if label is None:
+            label = self.name
+        else:
+            label = label.replace('%n', self.name)
+        SParam.plot_fn(self.f, self.s, label, style)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":

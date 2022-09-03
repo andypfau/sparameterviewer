@@ -133,39 +133,35 @@ class SparamviewerPygubuApp:
         self.mi_checkbutton_showlegend = 1
         self.submenu_2.add('checkbutton', label='Show Legend', offvalue='0', onvalue='1', variable=self.show_legend)
         self.submenu_2.entryconfigure(self.mi_checkbutton_showlegend, command=self.on_show_legend)
-        self.short_names = tk.StringVar(value='')
-        self.mi_checkbutton_shortnames = 2
-        self.submenu_2.add('checkbutton', label='Short Names', offvalue='0', onvalue='1', variable=self.short_names)
-        self.submenu_2.entryconfigure(self.mi_checkbutton_shortnames, command=self.on_show_shortnames)
         self.always_show_names = tk.StringVar(value='')
-        self.mi_checkbutton_alwaysnames = 3
+        self.mi_checkbutton_alwaysnames = 2
         self.submenu_2.add('checkbutton', label='Always Show Names', offvalue='0', onvalue='1', variable=self.always_show_names)
         self.submenu_2.entryconfigure(self.mi_checkbutton_alwaysnames, command=self.on_show_names_always)
-        self.mi_separator_4 = 4
+        self.mi_separator_4 = 3
         self.submenu_2.add('separator')
         self.logf = tk.StringVar(value='')
-        self.mi_checkbutton_logf = 5
+        self.mi_checkbutton_logf = 4
         self.submenu_2.add('checkbutton', label='Logarithmic Frequency', offvalue='0', onvalue='1', variable=self.logf)
         self.submenu_2.entryconfigure(self.mi_checkbutton_logf, command=self.on_change_logf)
         self.lock_plot_xaxis = tk.StringVar(value='')
-        self.mi_checkbutton_1 = 6
+        self.mi_checkbutton_1 = 5
         self.submenu_2.add('checkbutton', label='Lock X-Axis', offvalue='0', onvalue='1', variable=self.lock_plot_xaxis)
         self.submenu_2.entryconfigure(self.mi_checkbutton_1, command=self.on_lock_xaxis)
         self.lock_plot_yaxis = tk.StringVar(value='')
-        self.mi_checkbutton_2 = 7
+        self.mi_checkbutton_2 = 6
         self.submenu_2.add('checkbutton', label='Lock Y-Axis', offvalue='0', onvalue='1', variable=self.lock_plot_yaxis)
         self.submenu_2.entryconfigure(self.mi_checkbutton_2, command=self.on_lock_yaxis)
-        self.mi_command_5 = 8
+        self.mi_command_5 = 7
         self.submenu_2.add('command', label='Re-Scale ')
         self.submenu_2.entryconfigure(self.mi_command_5, command=self.on_rescale_locked_axes)
-        self.mi_separator1 = 9
+        self.mi_separator1 = 8
         self.submenu_2.add('separator')
-        self.mi_command_plot_expr = 10
+        self.mi_command_plot_expr = 9
         self.submenu_2.add('command', accelerator='F5', label='Update Plot From Expressions')
         self.submenu_2.entryconfigure(self.mi_command_plot_expr, command=self.on_use_expr)
-        self.mi_separator2 = 11
+        self.mi_separator2 = 10
         self.submenu_2.add('separator')
-        self.mi_command_kaiser = 12
+        self.mi_command_kaiser = 11
         self.submenu_2.add('command', label='TD Kaiser Argument...')
         self.submenu_2.entryconfigure(self.mi_command_kaiser, command=self.on_set_kaiser)
         self.submenu_3 = tk.Menu(self.menu_2)
@@ -235,9 +231,6 @@ class SparamviewerPygubuApp:
         pass
 
     def on_show_legend(self):
-        pass
-
-    def on_show_shortnames(self):
         pass
 
     def on_show_names_always(self):
