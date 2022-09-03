@@ -17,10 +17,9 @@ from sparamviewer_rl import SparamviewerReturnlossDialog
 from sparamviewer_cursor import SparamviewerCursorDialog
 from info import *
 
-from lib import Touchstone
 from lib import sparam_to_timedomain, get_sparam_name, get_unique_short_filename
 from lib import Si, DataExport
-from lib import LoadedSParamFile, AppSettings, PlotHelper
+from lib import SParamFile, AppSettings, PlotHelper
 from lib import ExpressionParser
 from lib import TkText, TkCommon, AppGlobal
 
@@ -45,7 +44,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
         try:
             self.dir = ''
-            self.files = [] # type: list[LoadedSParamFile]
+            self.files = [] # type: list[SParamFile]
             self.default_expr = ''
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
@@ -395,25 +394,25 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         SparamviewerReturnlossDialog(self.toplevel_main, self.files, selected_id)
 
 
-    def get_info_str(self, file: LoadedSParamFile) -> str:
+    def get_info_str(self, sparam_file: SParamFile) -> str:
         
         try:
-            size = f'{os.path.getsize(file.filename):,.0f}'
+            size = f'{os.path.getsize(sparam_file.file_path):,.0f} B'
             fmt_tstamp = lambda ts: f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
-            created = fmt_tstamp(os.path.getctime(file.filename))
-            modified = fmt_tstamp(os.path.getmtime(file.filename))
+            created = fmt_tstamp(os.path.getctime(sparam_file.file_path))
+            modified = fmt_tstamp(os.path.getmtime(sparam_file.file_path))
         except:
             size = 'unknown'
             created = 'unknown'
             modified = 'unknown'
-        f0, f1 = file.sparam.frequencies[0], file.sparam.frequencies[-1]
-        n_pts = len(file.sparam.frequencies)
-        dir, fname = os.path.split(file.filename)
+        f0, f1 = sparam_file.nw.f[0], sparam_file.nw.f[-1]
+        n_pts = len(sparam_file.nw.f)
+        dir, fname = os.path.split(sparam_file.file_path)
         dir = os.path.abspath(dir)
-        comm = file.sparam.comment.strip()
-        n_ports = file.sparam.network.s.shape[1]
-        if (file.sparam.network.z0 == file.sparam.network.z0[0,0]).all():
-            z0 = str(Si(file.sparam.network.z0[0,0],'Ohm'))
+        comm = sparam_file.nw.comments.strip()
+        n_ports = sparam_file.nw.s.shape[1]
+        if (sparam_file.nw.z0 == sparam_file.nw.z0[0,0]).all():
+            z0 = str(Si(sparam_file.nw.z0[0,0],'Ohm'))
         else:
             z0 = 'different for each port and/or frequency'
         
@@ -426,7 +425,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_pts:,.0f} point{"s" if n_pts!=0 else ""}\n\n'
 
         info += f'File created: {created}, last modified: {modified}\n'
-        info += f'File size: {size} B\n'
+        info += f'File size: {size}\n'
         info += f'File path: {os.path.join(dir, fname)}'
 
         return info
@@ -435,7 +434,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def on_click_info(self):
         info = ''
         for file in self.files:
-            if file.id in self.treeview_files.selection():
+            if file.tag in self.treeview_files.selection():
                 if len(info)>0:
                     info+= '\n\n\n'
                 info += self.get_info_str(file)
@@ -512,7 +511,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         try:
             
             self.dir = appdirs.user_data_dir()
-            self.files = [] # type: list[LoadedSParamFile]
+            self.files = [] # type: list[SParamFile]
             self.treeview_files.delete(*self.treeview_files.get_children())
             self.trace_data = []
 
@@ -524,14 +523,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             
             for i,filename in enumerate(all_files):
                 try:
-                    spar = Touchstone(filename)
-                    id = f'file{i}'
-                    self.files.append(LoadedSParamFile(id,filename,spar))
+                    tag = f'file{i}'
+                    spar = SParamFile.load(filename, tag)
+                    self.files.append(spar)
                     
-                    namestr = os.path.split(filename)[1]
-                    propstr = f'{spar.n_ports}-port, {Si(min(spar.frequencies),"Hz")} to {Si(max(spar.frequencies),"Hz")}'
+                    name_str = os.path.split(filename)[1]
+                    prop_str = f'{spar.nw.number_of_ports}-port, {Si(min(spar.nw.f),"Hz")} to {Si(max(spar.nw.f),"Hz")}'
                     
-                    self.treeview_files.insert('', 'end', id, values=(namestr,propstr))
+                    self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
                     
                     do_select = False
                     if select_first and i==0:
@@ -541,7 +540,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                             do_select = True
                             break
                     if do_select:
-                        self.treeview_files.selection_add(id)
+                        self.treeview_files.selection_add(tag)
 
                 except Exception as ex:
                     logging.info(f'Ignoring file <{filename}>: {ex}')
@@ -572,10 +571,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.eval_err_msg.set(error if error is not None else "No problems found")
 
 
-    def get_selected_files(self) -> "list[LoadedSParamFile]":
+    def get_selected_files(self) -> "list[SParamFile]":
         selected_files = []
         for file in self.files:
-            if file.id in self.treeview_files.selection():
+            if file.tag in self.treeview_files.selection():
                 selected_files.append(file)
         return selected_files
 
@@ -716,20 +715,20 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             else:
 
                 selected_files = self.get_selected_files()
-                selected_filenames = [os.path.split(f.filename)[1] for f in selected_files]
-                all_filenames = [os.path.split(f.filename)[1] for f in self.files]
-                unique_short_names = [get_unique_short_filename(n, all_filenames) for n in selected_filenames]
+                selected_names = [f.name for f in selected_files]
+                all_names = [f.name for f in self.files]
+                unique_short_names = [get_unique_short_filename(n, all_names) for n in selected_names]
 
-                for file,unique_short_name in zip(selected_files, unique_short_names):
-                    for ep in range(1,file.sparam.n_ports+1):
-                        for ip in range(1,file.sparam.n_ports+1):
+                for sparam_file,unique_short_name in zip(selected_files, unique_short_names):
+                    for ep in range(1,sparam_file.nw.number_of_ports+1):
+                        for ip in range(1,sparam_file.nw.number_of_ports+1):
 
                             spar_str = get_sparam_name(ep,ip)
                             if self.app_settings.always_show_names or len(selected_files)>1:
                                 if self.app_settings.short_names:
-                                    name = f'{unique_short_name}.{spar_str}'
+                                    name = f'{unique_short_name} {spar_str}'
                                 else:
-                                    name = f'{os.path.split(file.filename)[1]}.{spar_str}'
+                                    name = f'{os.path.split(sparam_file.filename)[1]} {spar_str}'
                             else:
                                 name = spar_str
                             
@@ -751,8 +750,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                             if data_only_s44 and not (ep==4 and ip==ep):
                                 continue
                             
-                            sp = file.sparam.get_sparam(ep, ip)
-                            f = file.sparam.frequencies
+                            sp = sparam_file.nw.s[:,ep-1,ip-1]
+                            f = sparam_file.nw.f
+
                             style = get_default_style(ep, ip)
                             add_to_plot(f, sp, name, style)
                             self.default_expr += f'nw("{unique_short_name}").s({ep},{ip}).plot("{name}","{style}")\n'

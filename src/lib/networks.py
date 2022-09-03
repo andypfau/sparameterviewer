@@ -1,5 +1,5 @@
 from multiprocessing.sharedctypes import Value
-from .structs import LoadedSParamFile
+from .structs import SParamFile
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 from .sparams import SParam, SParams
@@ -13,13 +13,13 @@ import logging
 
 class Network:
     
-    def __init__(self, nw: "Network|skrf.Network|LoadedSParamFile" = None):
+    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None):
         if isinstance(nw, Network):
             self.nw = nw.nw
         elif isinstance(nw, skrf.Network):
             self.nw = nw
-        elif isinstance(nw, LoadedSParamFile):
-            self.nw = nw.sparam.network
+        elif isinstance(nw, SParamFile):
+            self.nw = nw.nw.network
         else:
             raise ValueError()
     

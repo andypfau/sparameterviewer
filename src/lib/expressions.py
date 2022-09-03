@@ -1,4 +1,4 @@
-from .structs import LoadedSParamFile
+from .structs import SParamFile
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 from .networks import Networks
@@ -13,17 +13,17 @@ class ExpressionParser:
 
     @staticmethod
     def eval(code: str, \
-        available_networks: "list[LoadedSParamFile]", \
-        selected_networks: "list[LoadedSParamFile]", \
+        available_networks: "list[SParamFile]", \
+        selected_networks: "list[SParamFile]", \
         plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
         
         SParam.plot_fn = plot_fn
 
-        def select_networks(network_list: list[LoadedSParamFile], pattern: str, single: bool) -> Networks:
+        def select_networks(network_list: list[SParamFile], pattern: str, single: bool) -> Networks:
             nws = []
             for nw in network_list:
-                if pattern is None or fnmatch.fnmatch(nw.sparam.network.name, pattern):
-                    nws.append(nw.sparam.network)
+                if pattern is None or fnmatch.fnmatch(nw.nw.network.name, pattern):
+                    nws.append(nw.nw.network)
             if single:
                 if len(nws) != 1:
                     raise RuntimeError(f'The pattern "" matched {len(nws)} networks, but need exactly one')

@@ -1,4 +1,3 @@
-from .touchstone import Touchstone
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
 
@@ -94,7 +93,7 @@ class PlotHelper:
         self.y_range = [+1e99,-1e99]
         self.items_to_plot = []
 
-        self.plot = None # type:plt.axes.Axes
+        self.plot = None # type: pyplot.axes.Axes
     
 
     def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Data]":

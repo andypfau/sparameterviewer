@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.abspath('../src'))
 
 
-from lib import DataExport, PlotData, PlotDataQuantity, SiFmt, ExpressionParser, LoadedSParamFile, Touchstone
+from lib import DataExport, PlotData, PlotDataQuantity, SiFmt, ExpressionParser
 from lib import Networks, SParams
 
 import unittest, tempfile, skrf
@@ -32,17 +32,17 @@ def get_dummy_plot_data(n: int) -> "list[PlotData]":
     return result
 
 
-def get_dummy_sparam(n_ports: int) -> "LoadedSParamFile":
+def get_dummy_sparam(n_ports: int) -> "SParamFile":
     N_FREQUENCIES = 101
     filename = f'/tmp/{n_ports}-port.s{n_ports}p'
     frequencies = np.geomspace(1e6,10e9,N_FREQUENCIES)
     sparams = np.random.rand(N_FREQUENCIES,n_ports,n_ports) + 1j*np.random.rand(N_FREQUENCIES,n_ports,n_ports)
     network = skrf.Network(f=frequencies, s=sparams, f_unit='Hz')
     touchstone = Touchstone(filename, network=network)
-    return LoadedSParamFile(f'{n_ports}-port', filename, touchstone)
+    return SParamFile(f'{n_ports}-port', filename, touchstone)
 
 
-def get_dummy_sparams(n: int) -> "list[LoadedSParamFile]":
+def get_dummy_sparams(n: int) -> "list[SParamFile]":
     return [get_dummy_sparam(n_ports) for n_ports in range(1,n+1)]
 
 

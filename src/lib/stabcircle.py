@@ -1,5 +1,4 @@
 from multiprocessing.sharedctypes import Value
-from .touchstone import Touchstone
 from .si import Si
 
 import numpy as np

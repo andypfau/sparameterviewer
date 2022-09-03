@@ -1,7 +1,6 @@
-from .touchstone import Touchstone
-
 import numpy as np
 import math
+import skrf
 from scipy.integrate import trapz
 
 
@@ -27,6 +26,7 @@ def get_optimum_rl(integral, f0, f1):
 
 class BodeFano:
 
+
     def __init__(self, freuqencies_hz: "np.ndarray", sparam_rl: "np.ndarray",
             f_integration_start_hz: float, f_integration_stop_hz: float,
             f_target_start_hz: float, f_target_stop_hz: float):
@@ -44,10 +44,11 @@ class BodeFano:
         self.db_current = get_optimum_rl(integral_calcrange, f_target_start_hz, f_target_stop_hz)
         self.db_optimized = get_optimum_rl(integral_intrange, f_target_start_hz, f_target_stop_hz)
 
+
     @staticmethod
-    def from_touchstone(touchstone: Touchstone, port: int,
+    def from_network(network: skrf.Network, port: int,
             f_integration_start_hz: float, f_integration_stop_hz: float,
             f_target_start_hz: float, f_target_stop_hz: float):
-        f = touchstone.frequencies
-        s = touchstone.get_sparam(port, port)
+        f = network.f
+        s = network.s[:,port-1,port-1]
         return BodeFano(f, s, f_integration_start_hz, f_integration_stop_hz, f_target_start_hz, f_target_stop_hz)

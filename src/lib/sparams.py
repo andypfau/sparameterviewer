@@ -1,5 +1,5 @@
 from multiprocessing.context import SpawnContext
-from .structs import LoadedSParamFile
+from .structs import SParamFile
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 
