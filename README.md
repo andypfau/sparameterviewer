@@ -51,3 +51,4 @@ Known Issues and Missing Features
 - Equations that work on wildcard names
 - Smarter name shortening
 - Equation-based plot type
+- Unify the plotting functionality to always use expressions under the hood

@@ -147,23 +147,16 @@ class SParamViewerTest(unittest.TestCase):
     #     with self.assertRaises(Exception):
     #         ExpressionParser.eval('nw("1).s(1,1).plot().invalid()', **self.eval_kwargs)
     
-    def test_network_load_single(self):
-        Networks.available_networks = get_dummy_sparams(4)
-        n = Networks("*1-port*")._count()
-        self.assertEqual(n, 1)
-    
-    def test_network_load_multiple(self):
-        Networks.available_networks = get_dummy_sparams(4)
-        n = Networks("*")._count()
-        self.assertEqual(n, len(Networks.available_networks))
-    
+
     def test_network_plot_stab(self):
         nw = get_dummy_network(2)
         nw.plot_stab(1e9)
-    
+
+
     def test_networks_plot_single(self):
         nw = get_dummy_network(2)
         nw.s(2,1).plot()
+
     
     def test_networks_plot_multiple(self):
         nw = get_dummy_networks(3)
