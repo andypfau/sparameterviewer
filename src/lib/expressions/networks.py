@@ -1,9 +1,7 @@
-from multiprocessing.sharedctypes import Value
-from .structs import SParamFile
-from .bodefano import BodeFano
-from .stabcircle import StabilityCircle
+from ..structs import SParamFile
+from ..bodefano import BodeFano
+from ..stabcircle import StabilityCircle
 from .sparams import SParam, SParams
-
 
 import skrf, math
 import numpy as np
@@ -14,18 +12,18 @@ import logging
 class Network:
     
     def __init__(self, nw: "Network|skrf.Network|SParamFile" = None):
-        if isinstance(nw, Network):
+        if isinstance(nw, SParamFile):
+            self.nw = nw.nw
+        elif isinstance(nw, Network):
             self.nw = nw.nw
         elif isinstance(nw, skrf.Network):
             self.nw = nw
-        elif isinstance(nw, SParamFile):
-            self.nw = nw.nw.network
         else:
-            raise ValueError()
+            raise ValueError(f'Invalid type to init Network object (<{nw}>)')
     
 
     @staticmethod
-    def _get_adapted_networks(a: "SParam", b: "SParam") -> "tuple(skrf.Network)":
+    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple(skrf.Network)":
         if len(a.nw.f)==len(b.nw.f):
             if all(af==bf for af,bf in zip(a.nw.f, b.nw.f)):
                 return a.nw,b.nw
@@ -231,7 +229,7 @@ class Networks:
 
     def _broadcast(self, n: "Networks") -> "list[Network]":
         if len(n.nws) == 1:
-            return [n.nws] * len(self.nws)
+            return [n.nws[0]] * len(self.nws)
         elif len(n.nws) == len(self.nws):
             return self.nws
         raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nw)}')
@@ -241,11 +239,11 @@ class Networks:
         result = []
         for nw in self.nws:
             try:
-                result = fn(nw, **kwargs)
-                if hasattr(result, '__len__'):
-                    result.extend(result)
+                r = fn(nw, **kwargs)
+                if hasattr(r, '__len__'):
+                    result.extend(r)
                 else:
-                    result.append(result)
+                    result.append(r)
             except Exception as ex:
                 logging.warning(f'Unary operation <{fn}> on network <{nw.nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
@@ -260,11 +258,11 @@ class Networks:
         result = []
         for nw,other in zip(self.nws, self._broadcast(others)):
             try:
-                result = fn(nw, other, **kwargs)
-                if hasattr(result, '__len__'):
-                    result.extend(result)
+                r = fn(nw, other, **kwargs)
+                if hasattr(r, '__len__'):
+                    result.extend(r)
                 else:
-                    result.append(result)
+                    result.append(r)
             except Exception as ex:
                 logging.warning(f'Binary operation <{fn}> on network <{nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
@@ -298,11 +296,11 @@ class Networks:
     
 
     def k(self):
-        return self._unary_op(Network.k, Networks)
+        return self._unary_op(Network.k, SParams)
         
     
     def mu(self, mu: int = 1):
-        return self._unary_op(Network.mu, Networks, mu=mu)
+        return self._unary_op(Network.mu, SParams, mu=mu)
     
 
     def half(self) -> "Networks":

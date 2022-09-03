@@ -1,7 +1,6 @@
-from multiprocessing.context import SpawnContext
-from .structs import SParamFile
-from .bodefano import BodeFano
-from .stabcircle import StabilityCircle
+from ..structs import SParamFile
+from ..bodefano import BodeFano
+from ..stabcircle import StabilityCircle
 
 import skrf, math, os
 import numpy as np

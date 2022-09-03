@@ -1,6 +1,6 @@
-from .structs import SParamFile
-from .bodefano import BodeFano
-from .stabcircle import StabilityCircle
+from ..structs import SParamFile
+from ..bodefano import BodeFano
+from ..stabcircle import StabilityCircle
 from .networks import Networks
 from .sparams import SParam, SParams
 
@@ -22,11 +22,11 @@ class ExpressionParser:
         def select_networks(network_list: list[SParamFile], pattern: str, single: bool) -> Networks:
             nws = []
             for nw in network_list:
-                if pattern is None or fnmatch.fnmatch(nw.nw.network.name, pattern):
-                    nws.append(nw.nw.network)
+                if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
+                    nws.append(nw.nw)
             if single:
                 if len(nws) != 1:
-                    raise RuntimeError(f'The pattern "" matched {len(nws)} networks, but need exactly one')
+                    raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
             return Networks(nws)
 
         def sel_nws(pattern: str = None) -> Networks:
