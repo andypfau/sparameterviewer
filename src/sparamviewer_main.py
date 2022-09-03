@@ -494,7 +494,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             return
 
         try:
-            filename = filedialog.asksaveasfilename(title='Export Trace Data', confirmoverwrite=True, defaultextension='.csv', filetypes=(('CSV','.csv'), ('Excel','.xlsx'), ('All Files','*')))
+            filename = filedialog.asksaveasfilename(title='Export Trace Data', confirmoverwrite=True, defaultextension='.csv', filetypes=(('CSV','.csv'), ('Spreadsheet','.xlsx'), ('All Files','*')))
             if not filename:
                 return
             DataExport.auto(self.plot.plots, filename)

@@ -51,13 +51,13 @@ def dummy_method(*args, **kwargs):
 
 class SParamViewerTest(unittest.TestCase):
 
-    def test_export_empty_to_excel(self):
+    def test_export_empty_to_spreadsheet(self):
         with Tempfile() as fn:
-            DataExport.to_excel(get_dummy_plot_data(0), fn)
+            DataExport.to_spreadsheet(get_dummy_plot_data(0), fn)
 
-    def test_export_to_excel(self):
+    def test_export_to_spreadsheet(self):
         with Tempfile() as fn:
-            DataExport.to_excel(get_dummy_plot_data(2), fn)
+            DataExport.to_spreadsheet(get_dummy_plot_data(2), fn)
 
     def test_export_empty_to_csv(self):
         with Tempfile() as fn:

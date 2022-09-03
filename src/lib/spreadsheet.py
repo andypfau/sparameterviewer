@@ -18,7 +18,7 @@ def clean_name(name: str) -> str:
     return result
 
 
-class ExcelGen:
+class SpreadsheetGen:
 
     def __init__(self):
         self.sheets = []
@@ -31,7 +31,7 @@ class ExcelGen:
             ws.title = clean_name(name)
         else:
             ws = self.wb.create_sheet(clean_name(name))
-        self.sheets.append(ExcelGen.Sheet(self, ws))
+        self.sheets.append(SpreadsheetGen.Sheet(self, ws))
         return self.sheets[-1]
 
 

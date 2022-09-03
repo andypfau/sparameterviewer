@@ -1,4 +1,4 @@
-from .excel import ExcelGen
+from .spreadsheet import SpreadsheetGen
 from .structs import PlotData, PlotDataQuantity
 
 from openpyxl.worksheet.table import TableStyleInfo
@@ -10,7 +10,7 @@ class DataExport:
     @staticmethod
     def auto(plots: "list[PlotData]", filename: str):
         if filename.lower().endswith('xlsx'):
-            DataExport.to_excel(plots, filename)
+            DataExport.to_spreadsheet(plots, filename)
         else:
             DataExport.to_csv(plots, filename)
             
@@ -58,13 +58,13 @@ class DataExport:
     
 
     @staticmethod
-    def to_excel(plots: "list[PlotData]", filename: str):
+    def to_spreadsheet(plots: "list[PlotData]", filename: str):
         
         tbl_table = TableStyleInfo(name='MyTable', showRowStripes=True)
         fnt_title = Font(size=14, bold=True)
         fnt_header = Font(bold=True)
 
-        xls = ExcelGen()
+        xls = SpreadsheetGen()
         for plot in plots:
             ws = xls.add_sheet(plot.name)
             ws.add_row([plot.name], fnt_title)

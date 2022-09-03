@@ -7,7 +7,7 @@ from .utils import get_unique_short_filename, is_windows
 from .expressions import ExpressionParser
 from .tkinter_helpers import TkText, TkCommon
 from .appglobal import AppGlobal
-from .excel import ExcelGen
+from .spreadsheet import SpreadsheetGen
 from .data_export import DataExport
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
