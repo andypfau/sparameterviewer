@@ -15,14 +15,14 @@ from sparamviewer_main_pygubu import SparamviewerPygubuApp
 from sparamviewer_info import SparamviewerInfoDialog
 from sparamviewer_rl import SparamviewerReturnlossDialog
 from sparamviewer_cursor import SparamviewerCursorDialog
-from info import *
+from info import Info
 
 from lib import sparam_to_timedomain, get_sparam_name
 from lib import Si, DataExport
 from lib import SParamFile, PlotHelper
 from lib import ExpressionParser
 from lib import TkText, TkCommon, AppGlobal
-from lib import app_settings
+from lib import AppSettings
 
 
 # extend auto-generated UI code
@@ -38,15 +38,27 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.cursor_dialog = None # type: SparamviewerCursorDialog
             self.plot_axes_are_valid = False
 
+            class SParamViewerAppSettings(AppSettings):
+                plot_mode: int = 0
+                plot_unit: int = 0
+                show_legend: bool = True
+                log_freq: bool = False
+                always_show_names: bool = False
+                expression: str = ''
+                td_kaiser: float = 35.0
+                lock_xaxis: bool = False
+                lock_yaxis: bool = False
+            self.settings = SParamViewerAppSettings('apfau.de S-Parameter Viewer', 'apfau.de', '0.1')
+
             # init UI
             AppGlobal.set_toplevel_icon(self.toplevel_main)
             TkCommon.default_keyhandler(self.toplevel_main, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
             TkText.default_keyhandler(self.text_expr, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
-            self.show_legend.set('1' if app_settings.show_legend else '0')
-            self.logf.set('1' if app_settings.log_freq else '0')
-            self.always_show_names.set('1' if app_settings.always_show_names else '0')
-            self.lock_plot_xaxis.set('1' if app_settings.lock_xaxis else '0')
-            self.lock_plot_yaxis.set('1' if app_settings.lock_yaxis else '0')
+            self.show_legend.set('1' if self.settings.show_legend else '0')
+            self.logf.set('1' if self.settings.log_freq else '0')
+            self.show_single_legend.set('1' if self.settings.always_show_names else '0')
+            self.lock_plot_xaxis.set('1' if self.settings.lock_xaxis else '0')
+            self.lock_plot_yaxis.set('1' if self.settings.lock_yaxis else '0')
             self.combobox_mode['values']= (
                 'All S-Params',
                 'All S-Params (reciprocal/1st IL only)',
@@ -71,7 +83,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.MODE_S33 = 8
             self.MODE_S44 = 9
             self.MODE_EXPR = 10
-            self.combobox_mode.current(app_settings.plot_mode)
+            self.combobox_mode.current(self.settings.plot_mode)
             self.combobox_unit['values']= (
                 'dB',
                 'Log. Magnitude',
@@ -102,8 +114,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.UNIT_GROUP_DELAY = 11
             self.UNIT_IMPULSE = 12
             self.UNIT_STEP = 13
-            self.combobox_unit.current(app_settings.plot_unit)
-            TkText.set_text(self.text_expr, app_settings.expression.strip())
+            self.combobox_unit.current(self.settings.plot_unit)
+            TkText.set_text(self.text_expr, self.settings.expression.strip())
 
             # fix treeview
             self.treeview_files['columns'] = ('filename', 'props')
@@ -111,7 +123,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.treeview_files.heading('props', text='Properties')
             self.treeview_files['show'] = 'headings'
 
-            self.toplevel_main.title(APP_NAME)
+            self.toplevel_main.title(Info.AppName)
 
             # create plot
             try:
@@ -145,8 +157,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.update_plot()
         
         except Exception as ex:
-            app_settings.reset()
-            app_settings.save()
+            self.settings.reset()
+            self.settings.save()
             logging.exception(f'Unable to init main dialog: {ex}')
             messagebox.showerror('Error', f'Error ({ex}); maybe corrupted config... reset, try again next time')
     
@@ -283,9 +295,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_select_plotmode(self, event=None):
-        app_settings.plot_unit = self.combobox_unit.current()
-        app_settings.plot_mode = self.combobox_mode.current()
-        app_settings.save()
+        self.settings.plot_unit = self.combobox_unit.current()
+        self.settings.plot_mode = self.combobox_mode.current()
+        self.settings.save()
         self.update_plot()
     
 
@@ -303,17 +315,17 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     
     def on_set_kaiser(self):
-        kaiser = simpledialog.askfloat('Kaiser Window', 'Argument for Kaiser Window:', initialvalue=app_settings.td_kaiser, parent=self.toplevel_main, minvalue=0.0, maxvalue=1e3)
+        kaiser = simpledialog.askfloat('Kaiser Window', 'Argument for Kaiser Window:', initialvalue=self.settings.td_kaiser, parent=self.toplevel_main, minvalue=0.0, maxvalue=1e3)
         if kaiser is None:
             return
-        app_settings.td_kaiser = kaiser
-        app_settings.save()
+        self.settings.td_kaiser = kaiser
+        self.settings.save()
         self.update_plot()
 
     
     def on_use_expr(self):
         self.combobox_mode.current(self.MODE_EXPR)
-        app_settings.plot_mode = self.MODE_EXPR
+        self.settings.plot_mode = self.MODE_EXPR
         self.update_plot()
 
 
@@ -331,8 +343,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 new += '\n'
             new += commented
 
-        app_settings.expression = new
-        app_settings.save()
+        self.settings.expression = new
+        self.settings.save()
 
         TkText.set_text(self.text_expr, new)
 
@@ -434,32 +446,32 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def on_show_legend(self):
-        app_settings.show_legend = (self.show_legend.get() == '1')
-        app_settings.save()
+        self.settings.show_legend = (self.show_legend.get() == '1')
+        self.settings.save()
         self.update_plot()
 
 
     def on_change_logf(self):
-        app_settings.log_freq = (self.logf.get() == '1')
-        app_settings.save()
+        self.settings.log_freq = (self.logf.get() == '1')
+        self.settings.save()
         self.update_plot()
 
 
     def on_show_names_always(self):
-        app_settings.always_show_names = (self.always_show_names.get() == '1')
-        app_settings.save()
+        self.settings.always_show_names = (self.show_single_legend.get() == '1')
+        self.settings.save()
         self.update_plot()
 
 
     def on_lock_xaxis(self):
-        app_settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
-        if not app_settings.lock_xaxis:
+        self.settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
+        if not self.settings.lock_xaxis:
             self.update_plot()
 
 
     def on_lock_yaxis(self):
-        app_settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
-        if not app_settings.lock_yaxis:
+        self.settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
+        if not self.settings.lock_yaxis:
             self.update_plot()
     
 
@@ -484,7 +496,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def on_menu_about(self):
-        messagebox.showinfo('About', f'{APP_NAME}\n\nVersion: {APP_VERSION_STR}\nDate: {APP_DATE}')
+        messagebox.showinfo('About', f'{Info.AppName}\n\nVersion: {Info.AppVersionStr}\nDate: {Info.AppDateStr}')
 
 
     def _load_all_files_in_dir(self, dir: "str|None", select: "list[str]" = [], select_first: bool = False):
@@ -582,35 +594,35 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
 
-            data_expr_based = app_settings.plot_mode==self.MODE_EXPR
-            qty_db = (app_settings.plot_unit == self.UNIT_DB)
-            qty_lin_mag = (app_settings.plot_unit == self.UNIT_LIN_MAG)
-            qty_log_mag = (app_settings.plot_unit == self.UNIT_LOG_MAG)
-            qty_group_delay = (app_settings.plot_unit == self.UNIT_GROUP_DELAY)
-            qty_re = (app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (app_settings.plot_unit == self.UNIT_RE_VS_F)
-            qty_im = (app_settings.plot_unit == self.UNIT_RE_IM_VS_F) or (app_settings.plot_unit == self.UNIT_IM_VS_F)
-            qty_phase = (app_settings.plot_unit == self.UNIT_DEG) or (app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
-            unwrap_phase = (app_settings.plot_unit == self.UNIT_DEG_UNWRAP)
-            polar = (app_settings.plot_unit == self.UNIT_RE_IM_POLAR)
-            smith = (app_settings.plot_unit == self.UNIT_SMITH_Z) or (app_settings.plot_unit == self.UNIT_SMITH_Y)
-            timedomain = (app_settings.plot_unit == self.UNIT_IMPULSE) or (app_settings.plot_unit == self.UNIT_STEP)
-            stepresponse = (app_settings.plot_unit == self.UNIT_STEP)
-            if app_settings.plot_unit == self.UNIT_SMITH_Z:
+            data_expr_based = self.settings.plot_mode==self.MODE_EXPR
+            qty_db = (self.settings.plot_unit == self.UNIT_DB)
+            qty_lin_mag = (self.settings.plot_unit == self.UNIT_LIN_MAG)
+            qty_log_mag = (self.settings.plot_unit == self.UNIT_LOG_MAG)
+            qty_group_delay = (self.settings.plot_unit == self.UNIT_GROUP_DELAY)
+            qty_re = (self.settings.plot_unit == self.UNIT_RE_IM_VS_F) or (self.settings.plot_unit == self.UNIT_RE_VS_F)
+            qty_im = (self.settings.plot_unit == self.UNIT_RE_IM_VS_F) or (self.settings.plot_unit == self.UNIT_IM_VS_F)
+            qty_phase = (self.settings.plot_unit == self.UNIT_DEG) or (self.settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            unwrap_phase = (self.settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            polar = (self.settings.plot_unit == self.UNIT_RE_IM_POLAR)
+            smith = (self.settings.plot_unit == self.UNIT_SMITH_Z) or (self.settings.plot_unit == self.UNIT_SMITH_Y)
+            timedomain = (self.settings.plot_unit == self.UNIT_IMPULSE) or (self.settings.plot_unit == self.UNIT_STEP)
+            stepresponse = (self.settings.plot_unit == self.UNIT_STEP)
+            if self.settings.plot_unit == self.UNIT_SMITH_Z:
                 smith_type = 'z'
             else:
                 smith_type = 'y'
             
             if polar:
-                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False)
+                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, show_legend=self.settings.show_legend, show_single_legend=self.show_single_legend)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z)
+                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, show_legend=self.settings.show_legend, show_single_legend=self.show_single_legend)
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
                     yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
-                    xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),app_settings.log_freq
+                    xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),self.settings.log_freq
                     if qty_group_delay:
                         yq,yf,yl = 'Group Delay',SiFmt(unit='s',force_sign=True),False
                     elif qty_phase:
@@ -641,7 +653,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.plot.add(np.real(sp), np.imag(sp), name, style)
                 else:
                     if timedomain:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=app_settings.td_kaiser)
+                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=self.settings.td_kaiser)
                         self.plot.add(t, lev, name, style)
                     elif qty_db:
                         self.plot.add(f, v2db(sp), name, style)
@@ -664,8 +676,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             if data_expr_based:
 
                 raw_exprs = TkText.get_text(self.text_expr)
-                app_settings.expression = raw_exprs
-                app_settings.save()
+                self.settings.expression = raw_exprs
+                self.settings.save()
 
                 try:
                     ExpressionParser.eval(raw_exprs, self.files, add_to_plot)  
@@ -678,27 +690,27 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
             else:
 
-                if app_settings.plot_mode == self.MODE_ALL:
+                if self.settings.plot_mode == self.MODE_ALL:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif app_settings.plot_mode == self.MODE_ALL_RECIPROCAL:
+                elif self.settings.plot_mode == self.MODE_ALL_RECIPROCAL:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif app_settings.plot_mode == self.MODE_IL_ALL:
+                elif self.settings.plot_mode == self.MODE_IL_ALL:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
-                elif app_settings.plot_mode == self.MODE_IL_RECIPROCAL:
+                elif self.settings.plot_mode == self.MODE_IL_RECIPROCAL:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()'
-                elif app_settings.plot_mode == self.MODE_RL:
+                elif self.settings.plot_mode == self.MODE_RL:
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
-                elif app_settings.plot_mode == self.MODE_S21:
+                elif self.settings.plot_mode == self.MODE_S21:
                     self.generated_expressions += 'sel_nws().s(2,1).plot()'
-                elif app_settings.plot_mode == self.MODE_S11:
+                elif self.settings.plot_mode == self.MODE_S11:
                     self.generated_expressions += 'sel_nws().s(1,1).plot()'
-                elif app_settings.plot_mode == self.MODE_S22:
+                elif self.settings.plot_mode == self.MODE_S22:
                     self.generated_expressions += 'sel_nws().s(2,2).plot()'
-                elif app_settings.plot_mode == self.MODE_S33:
+                elif self.settings.plot_mode == self.MODE_S33:
                     self.generated_expressions += 'sel_nws().s(3,3).plot()'
-                elif app_settings.plot_mode == self.MODE_S44:
+                elif self.settings.plot_mode == self.MODE_S44:
                     self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
                 try:
@@ -720,9 +732,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.plot.finish()
 
             if self.plot_axes_are_valid:
-                if app_settings.lock_xaxis and prev_xlim is not None:
+                if self.settings.lock_xaxis and prev_xlim is not None:
                     self.plot.plot.set_xlim(prev_xlim)
-                if app_settings.lock_yaxis and prev_ylim is not None:
+                if self.settings.lock_yaxis and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
 
             self.canvas.draw()

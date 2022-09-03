@@ -1,6 +1,5 @@
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
-from .appsettings import app_settings
 
 import math
 import numpy as np
@@ -15,12 +14,15 @@ class PlotHelper:
     class Cursor:
         
         def __init__(self, plot: "PlotHelper", style: str, color: object = None):
+            
             self.plot = plot
             self.enabled = False
             self.style = style
             self.color = color
+
             self.x, self.y = 0, 0
             self.data = None # type: PlotHelper.Data
+
             self._is_set = False
             self._hl, self._vl = None, None
         
@@ -68,7 +70,8 @@ class PlotHelper:
     
 
     def __init__(self, fig: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
-        y_qty: "str", y_fmt: SiFmt, y_log: bool, smith_type: str='z', smith_z=1.0):
+        y_qty: "str", y_fmt: SiFmt, y_log: bool, smith_type: str='z', smith_z=1.0,
+        show_legend: bool = True, show_single_legend: bool = True):
         
         self.cursors = [
             PlotHelper.Cursor(self, '--'),
@@ -88,6 +91,9 @@ class PlotHelper:
         self.y_qty = y_qty
         self.y_fmt = y_fmt
         self.y_log = y_log
+        self.show_legend = show_legend
+        self.show_single_legend = show_single_legend
+
         self.fig.clf()
         
         self.x_range = [+1e99,-1e99]
@@ -171,7 +177,7 @@ class PlotHelper:
 
         for (x,y,name,style) in self.items_to_plot:
         
-            if len(self.items_to_plot) == 1 and not app_settings.always_show_names:
+            if len(self.items_to_plot) == 1 and not self.show_single_legend:
                 label = None
             else:
                 self.any_legend = True
@@ -226,7 +232,7 @@ class PlotHelper:
         if len(self.plots)<1:
             return
         
-        if app_settings.show_legend and self.any_legend:
+        if self.show_legend and self.any_legend:
             self.plot.legend()
         
         if not self.polar:
