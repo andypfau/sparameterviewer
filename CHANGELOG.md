@@ -1,11 +1,12 @@
 S-Parameter Viewer Changelog
 ============================
 
-0.9b1 (2022-09-TBD)
+0.9b1 (2022-09-03)
 ------------------
 
 - change: expressions now work on sets of mutliple networks and S-parameters
 - change: dropped the function wrappers for expressions
+- change: dropped name shortening
 
 
 0.8b2 (2022-09-02)
