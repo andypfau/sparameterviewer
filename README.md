@@ -9,8 +9,9 @@ A cross-platform S-parameter Viewer written in Python.
 Main Features
 -------------
 
-- Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse response, Phase (normal / unwrapped), Group Delay
+- Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay
 - Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, and for Bode-Fano optimum RL estimation
+    - to learn more about this feature, open the "Expressions" tab, and click "Help"
 - Export to CSV or XLSX
 
 
