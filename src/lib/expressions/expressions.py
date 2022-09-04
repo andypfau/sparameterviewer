@@ -21,9 +21,12 @@ class ExpressionParser:
 
         def select_networks(network_list: list[SParamFile], pattern: str, single: bool) -> Networks:
             nws = []
-            for nw in network_list:
-                if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
-                    nws.append(nw.nw)
+            if pattern is None and not single:
+                nws = [nw for nw in network_list]
+            else:
+                for nw in network_list:
+                    if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
+                        nws.append(nw.nw)
             if single:
                 if len(nws) != 1:
                     raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
@@ -32,11 +35,11 @@ class ExpressionParser:
         def sel_nws(pattern: str = None) -> Networks:
             return select_networks(selected_networks, pattern, single=False)
         
-        def nws(pattern: str) -> Networks:
-            return select_networks(selected_networks, pattern, single=False)
+        def nws(pattern: str = None) -> Networks:
+            return select_networks(available_networks, pattern, single=False)
         
         def nw(pattern: str) -> Networks:
-            return select_networks(selected_networks, pattern, single=True)
+            return select_networks(available_networks, pattern, single=True)
 
         vars_global = {}
         vars_local = {
@@ -49,13 +52,7 @@ class ExpressionParser:
             'np': np,
         }
         
-        for code_line in code.split('\n'):
-            code_linestripped = code_line.strip()
-            if code_linestripped.startswith('#'):
-                continue
-            if len(code_linestripped) < 1:
-                continue
-            _ = eval(code_linestripped, vars_global, vars_local)
+        exec(code, vars_global, vars_local)
 
 
     @staticmethod
@@ -65,7 +62,7 @@ class ExpressionParser:
 
 The basic concept is to load one or multiple networks, get a specific S-parameter (s), and plot it (plot):
 
-    nws("Amplifier.s2p").s(2,1).plot("IL")
+    nws("amp.s2p").s(2,1).plot("IL")
 
 Which could be re-written as:
     
@@ -105,8 +102,10 @@ Networks
         flip() -> Networks
             Flips the ports (e.g. to use it in reverse direction).
 
-        half() -> Networks
+        half([<method='IEEE370NZC'>][, <side=1>]) -> Networks
             Chops the network in half (e.g. for 2xTHRU de-embedding).
+            Allowed methods are 'IEEE370NZC' (IEEE-370, no Z-compensation), or 'ChopInHalf'. For IEEE-370,
+            an additional argument <side> can be provided, to return the left side (1) or the right side (2).
 
         k() -> SParams
             Returns the K (Rollet) stability factor (should be >1, or >0 dB).
@@ -231,35 +230,26 @@ Basic
 
     nws().s(1,1).plot("RL")
     sel_nws().s(1,2).plot("Reverse IL")
-    nws("Amplifier.s2p").s(2,1).plot("IL")
-    nws("Amplifier.s2p").s(1,1).plot("RL",":")
-
-Objects vs. Functions
----------------------
-
-The following examples are all identical:
-
-    nws("Amplifier.s2p").s(1,1).plot("RL",":")
-    Networks("Amplifier.s2p").s(1,1).plot("RL",":")
-    plot(s(nws("Amplifier.s2p"),1,1),"RL",":")
+    nws("amp.s2p").s(2,1).plot("IL")
+    nw("amp.s2p").s(1,1).plot("RL",":")
 
 Advanced
 --------
 
     # calculate directivity (S42/S32) of a directional coupler
     # note that this example requires plotting in linear units, as the values are already converted to dB
-    (nws("Coupler.s2p").s(4,2).db() / nw("Coupler.s2p").s(3,2).db()).plot("Directivity")
+    (nw("coupler_4port.s4p").s(4,2).db() - nw("coupler_4port.s4p").s(3,2).db()).plot("Directivity")
 
     # de-embed a 2xTHRU
-    (nws("2xThru").half().invert() ** nw("DUT") ** nw("2xThru").half().invert().flip()).s(2,1).plot("De-embedded")
+    (nw("thru.s2p").half(side=1).invert() ** nw("atty_10db.s2p") ** nw("thru.s2p").half(side=2).flip()).s(2,1).plot("De-embedded")
 
     # crop frequency range; this can be handy e.g. if you want to see the Smith-chart only for a specific frequency range
-    nws("Amplifier.s2p").crop_f(1e9,10e9).s(1,1).plot("RL",":")
+    nws("amp.s2p").crop_f(10e9,11e9).s(1,1).plot("RL",":")
 
     # calculate stability factor
-    nws("Amplifier").mu().plot("µ Stability Factor",":")
+    nws("amp.s2p").mu().plot("µ Stability Factor",":")
 
     # add elements to a network (in this case, a parallel cap, followed by a short transmission line)
-    nws("Amplifier").s(1,1).plot("Baseline",":")
-    nws("Amplifier").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
+    nws("amp.s2p").s(1,1).plot("Baseline",":")
+    nws("amp.s2p").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
 '''

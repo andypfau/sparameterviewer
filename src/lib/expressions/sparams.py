@@ -43,7 +43,7 @@ class SParam:
         a_s = np.array(np.ndarray.flatten(a_nw.s))
         b_s = np.array(np.ndarray.flatten(b_nw.s))
         c_s = op(a_s, b_s)
-        return SParam(a.name, a_nw.f, c_s, a_nw.z0[0])
+        return SParam(a.name, a_nw.f, c_s, a_nw.z0)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
@@ -146,7 +146,7 @@ class SParams:
         if isinstance(sp,int) or isinstance(sp,float):
             return [sp] * len(self.sps)
         elif len(sp.sps) == 1:
-            return [sp.sps] * len(self.sps)
+            return [sp.sps[0]] * len(self.sps)
         elif len(sp.sps) == len(self.sps):
             return self.sps
         raise ValueError(f'Argument has dimension {len(sp.sps)}, but must nave 1 or {len(self.sps)}')
@@ -160,7 +160,7 @@ class SParams:
             except Exception as ex:
                 logging.warning(f'Unary operation <{fn}> on sparam <{sp.name}> failed ({ex}), ignoring')
         if return_sps:
-            return SParams(None, sps=result)
+            return SParams(sps=result)
         else:
             return result
 
@@ -173,7 +173,7 @@ class SParams:
             except Exception as ex:
                 logging.warning(f'Binary operation <{fn}> on sparam <{sp.name}> failed ({ex}), ignoring')
         if return_sps:
-            return SParams(None, sps=result)
+            return SParams(sps=result)
         else:
             return result
 

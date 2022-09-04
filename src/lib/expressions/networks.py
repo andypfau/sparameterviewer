@@ -4,7 +4,8 @@ from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name
 from .sparams import SParam, SParams
 
-import skrf, math
+import math
+import skrf
 import numpy as np
 import logging
 
@@ -31,8 +32,8 @@ class Network:
                 return a.nw,b.nw
         f_min = max(min(a.nw.f), min(b.nw.f))
         f_max = min(max(a.nw.f), max(b.nw.f))
-        f_new = np.array([f for f in a.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.fromf(f_new, unit='Hz')
+        f_new = np.array([f for f in a.nw.f if f_min<=f<=f_max])
+        freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
         a_nw = a.nw.interpolate(freq_new)
         b_nw = a.nw.interpolate(freq_new)
         return a_nw,b_nw
@@ -109,8 +110,20 @@ class Network:
         return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0])
     
 
-    def half(self) -> "Network":
-        return Network(skrf.network.chopinhalf(self.nw))
+    def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
+        if method=='IEEE370NZC':
+            from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
+            deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw)
+            if side==1:
+                return Network(deembed.s_side1)
+            elif side==2:
+                return Network(deembed.s_side2)
+            else:
+                raise ValueError(f'half(): Invalid side, must be 1 or 2')
+        elif method=='ChopInHalf':
+            return Network(skrf.network.chopinhalf(self.nw))
+        else:
+            raise ValueError(f'half(): Invalid method, must be <IEEE370NZC> or <ChopInHalf>')
     
 
     def flip(self) -> "Network":
@@ -305,8 +318,8 @@ class Networks:
         return self._unary_op(Network.mu, SParams, mu=mu)
     
 
-    def half(self) -> "Networks":
-        return self._unary_op(Network.half, Networks)
+    def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Networks":
+        return self._unary_op(Network.half, Networks, method=method, side=side)
 
     
     def flip(self) -> "Networks":

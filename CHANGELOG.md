@@ -1,6 +1,12 @@
 S-Parameter Viewer Changelog
 ============================
 
+0.9b2 (2022-09-04)
+------------------
+
+- new: Networks.half() now uses IEEE-370 by default
+
+
 0.9b1 (2022-09-03)
 ------------------
 

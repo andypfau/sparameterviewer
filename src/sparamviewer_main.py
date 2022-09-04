@@ -680,7 +680,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 self.settings.save()
 
                 try:
-                    ExpressionParser.eval(raw_exprs, self.files, add_to_plot)  
+                    ExpressionParser.eval(raw_exprs, self.files, self.get_selected_files(), add_to_plot)  
                     self.show_error(None)              
                 except Exception as ex:
                     # likely a user-induced error, so reduce level, in order not to flood the log file
