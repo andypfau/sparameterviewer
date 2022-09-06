@@ -11,3 +11,4 @@ from .spreadsheet import SpreadsheetGen
 from .data_export import DataExport
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
+from .buffer_log_handler import BufferLogHandler

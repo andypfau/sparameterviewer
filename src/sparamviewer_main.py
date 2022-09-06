@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from lib.buffer_log_handler import BufferLogHandler
 from lib.si import SiFmt
 
 from sparamviewer_main_pygubu import SparamviewerPygubuApp
@@ -30,6 +31,11 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def __init__(self, filenames: "list[str]"):
         super().__init__()
 
+        logging.basicConfig(level=logging.WARNING)
+        logging.captureWarnings(True)
+        self.bufferLogHandler = BufferLogHandler(logging.WARNING)
+        logging.getLogger().addHandler(self.bufferLogHandler)
+
         try:
             self.dir = ''
             self.files = [] # type: list[SParamFile]
@@ -37,6 +43,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
             self.plot_axes_are_valid = False
+            self.eval_error_list = []
 
             class SParamViewerAppSettings(AppSettings):
                 plot_mode: int = 0
@@ -116,7 +123,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.UNIT_STEP = 13
             self.combobox_unit.current(self.settings.plot_unit)
             TkText.set_text(self.text_expr, self.settings.expression.strip())
-
+            def on_click_errors(event):
+                self.on_open_error_dialog()
+            self.entry_err.bind('<Button-1>', on_click_errors)
+            
             # fix treeview
             self.treeview_files['columns'] = ('filename', 'props')
             self.treeview_files.heading('filename', text='File')
@@ -561,7 +571,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def show_error(self, error: "str|None"):
-        self.eval_err_msg.set(error if error is not None else "No problems found")
+        self.eval_err_msg.set('\u26A0 ' + error if error is not None else "No problems found")
+
+
+    def on_open_error_dialog(self):
+        errs = self.bufferLogHandler.entries if len(self.eval_error_list)== 0 else self.eval_error_list
+        log = '\n'.join(errs)
+        dlg = SparamviewerInfoDialog(self.toplevel_main, title='Error Log', text=log)
+        dlg.run()
 
 
     def get_selected_files(self) -> "list[SParamFile]":
@@ -679,14 +696,23 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 self.settings.expression = raw_exprs
                 self.settings.save()
 
+                self.show_error(None)              
+                self.eval_error_list = []
+                log_entries_before = self.bufferLogHandler.count
+                ex_msg = None
                 try:
                     ExpressionParser.eval(raw_exprs, self.files, self.get_selected_files(), add_to_plot)  
-                    self.show_error(None)              
                 except Exception as ex:
-                    # likely a user-induced error, so reduce level, in order not to flood the log file
-                    logging.warning(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
+                    logging.exception(ex)
+                    ex_msg = str(ex)
+                log_entries_after = self.bufferLogHandler.count
+                if log_entries_after > log_entries_before:
+                    self.eval_error_list = self.bufferLogHandler.entries[log_entries_before:]
                     self.fig.clf()
-                    self.show_error(f'ERROR: {ex}')
+                    if ex_msg is not None:
+                        self.show_error(ex_msg)
+                    else:
+                        self.show_error('Error while parsing expressions')
 
             else:
 
