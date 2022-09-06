@@ -19,7 +19,7 @@ class ExpressionParser:
         
         SParam.plot_fn = plot_fn
 
-        def select_networks(network_list: list[SParamFile], pattern: str, single: bool) -> Networks:
+        def select_networks(network_list: "list[SParamFile]", pattern: str, single: bool) -> Networks:
             nws = []
             if pattern is None and not single:
                 nws = [nw for nw in network_list]
