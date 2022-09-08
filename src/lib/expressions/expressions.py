@@ -252,4 +252,7 @@ Advanced
     # add elements to a network (in this case, a parallel cap, followed by a short transmission line)
     nws("amp.s2p").s(1,1).plot("Baseline",":")
     nws("amp.s2p").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
+
+    # Compare S21 of all available networks to the currently selected one
+    (nws().s(2,1) / sel_nws().s(2,1)).plot()
 '''
