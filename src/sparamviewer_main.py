@@ -475,12 +475,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_lock_xaxis(self):
         self.settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
+        self.settings.save()
         if not self.settings.lock_xaxis:
             self.update_plot()
 
 
     def on_lock_yaxis(self):
         self.settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
+        self.settings.save()
         if not self.settings.lock_yaxis:
             self.update_plot()
     
