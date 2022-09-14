@@ -99,7 +99,6 @@ class PlotHelper:
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
         self.items_to_plot = []
-        self.any_legend = False
 
         self.plot = None # type: pyplot.axes.Axes
     
@@ -177,14 +176,10 @@ class PlotHelper:
 
         for (x,y,name,style) in self.items_to_plot:
         
-            if len(self.items_to_plot) == 1 and not self.show_single_legend:
-                label = None
-            else:
-                self.any_legend = True
-                # escaping for matplotlib
-                label = name
-                if label.startswith('_'):
-                    label = ' _' + label[1:]
+            # escaping for matplotlib
+            label = name
+            if label.startswith('_'):
+                label = ' _' + label[1:]
 
             def fix_log(x,y):
                 if x[0]<=0 and self.x_log:
@@ -232,7 +227,10 @@ class PlotHelper:
         if len(self.plots)<1:
             return
         
-        if self.show_legend and self.any_legend:
+        show_legend = self.show_legend
+        if len(self.items_to_plot) == 1 and not self.show_single_legend:
+            show_legend = False
+        if show_legend:
             self.plot.legend()
         
         if not self.polar:

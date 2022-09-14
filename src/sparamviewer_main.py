@@ -630,10 +630,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 smith_type = 'y'
             
             if polar:
-                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, show_legend=self.settings.show_legend, show_single_legend=self.show_single_legend)
+                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, show_legend=self.settings.show_legend, show_single_legend=self.show_single_legend)
+                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
@@ -652,7 +652,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         yq,yf,yl = 'Magnitude',SiFmt(unit=''),True
                     else:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
-                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl)
+                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
 
 
             def add_to_plot(f, sp, name, style=None):
