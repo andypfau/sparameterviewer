@@ -63,7 +63,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             TkText.default_keyhandler(self.text_expr, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
             self.show_legend.set('1' if self.settings.show_legend else '0')
             self.logf.set('1' if self.settings.log_freq else '0')
-            self.show_single_legend.set('1' if self.settings.always_show_names else '0')
+            self.always_show_names.set('1' if self.settings.always_show_names else '0')
             self.lock_plot_xaxis.set('1' if self.lock_xaxis else '0')
             self.lock_plot_yaxis.set('1' if self.lock_yaxis else '0')
             self.combobox_mode['values']= (
@@ -468,7 +468,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def on_show_names_always(self):
-        self.settings.always_show_names = (self.show_single_legend.get() == '1')
+        self.settings.always_show_names = (self.always_show_names.get() == '1')
         self.settings.save()
         self.update_plot()
 

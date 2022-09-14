@@ -133,9 +133,9 @@ class SparamviewerPygubuApp:
         self.mi_checkbutton_showlegend = 1
         self.submenu_2.add('checkbutton', label='Show Legend', offvalue='0', onvalue='1', variable=self.show_legend)
         self.submenu_2.entryconfigure(self.mi_checkbutton_showlegend, command=self.on_show_legend)
-        self.show_single_legend = tk.StringVar(value='')
+        self.always_show_names = tk.StringVar(value='')
         self.mi_checkbutton_alwaysnames = 2
-        self.submenu_2.add('checkbutton', label='Always Show Names', offvalue='0', onvalue='1', variable=self.show_single_legend)
+        self.submenu_2.add('checkbutton', label='Always Show Names', offvalue='0', onvalue='1', variable=self.always_show_names)
         self.submenu_2.entryconfigure(self.mi_checkbutton_alwaysnames, command=self.on_show_names_always)
         self.mi_separator_4 = 3
         self.submenu_2.add('separator')
