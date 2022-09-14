@@ -64,8 +64,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.show_legend.set('1' if self.settings.show_legend else '0')
             self.logf.set('1' if self.settings.log_freq else '0')
             self.show_single_legend.set('1' if self.settings.always_show_names else '0')
-            self.lock_plot_xaxis.set('1' if self.settings.lock_xaxis else '0')
-            self.lock_plot_yaxis.set('1' if self.settings.lock_yaxis else '0')
+            self.lock_plot_xaxis.set('1' if self.lock_xaxis else '0')
+            self.lock_plot_yaxis.set('1' if self.lock_yaxis else '0')
             self.combobox_mode['values']= (
                 'All S-Params',
                 'All S-Params (reciprocal/1st IL only)',
