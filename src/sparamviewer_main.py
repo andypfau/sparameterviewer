@@ -43,6 +43,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
             self.plot_axes_are_valid = False
+            self.lock_xaxis = False
+            self.lock_yaxis = False
             self.eval_error_list = []
 
             class SParamViewerAppSettings(AppSettings):
@@ -53,8 +55,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 always_show_names: bool = False
                 expression: str = ''
                 td_kaiser: float = 35.0
-                lock_xaxis: bool = False
-                lock_yaxis: bool = False
             self.settings = SParamViewerAppSettings('apfau.de S-Parameter Viewer', 'apfau.de', '0.1')
 
             # init UI
@@ -474,16 +474,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def on_lock_xaxis(self):
-        self.settings.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
-        self.settings.save()
-        if not self.settings.lock_xaxis:
+        self.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
+        if not self.lock_xaxis:
             self.update_plot()
 
 
     def on_lock_yaxis(self):
-        self.settings.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
-        self.settings.save()
-        if not self.settings.lock_yaxis:
+        self.lock_yaxis = (self.lock_plot_yaxis.get() == '1')
+        if not self.lock_yaxis:
             self.update_plot()
     
 
@@ -760,9 +758,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.plot.finish()
 
             if self.plot_axes_are_valid:
-                if self.settings.lock_xaxis and prev_xlim is not None:
+                if self.lock_xaxis and prev_xlim is not None:
                     self.plot.plot.set_xlim(prev_xlim)
-                if self.settings.lock_yaxis and prev_ylim is not None:
+                if self.lock_yaxis and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
 
             self.canvas.draw()
