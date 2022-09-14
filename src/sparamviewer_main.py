@@ -51,8 +51,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 plot_mode: int = 0
                 plot_unit: int = 0
                 show_legend: bool = True
+                hide_single_item_legend: bool = True
+                shorten_legend_items: bool = True
                 log_freq: bool = False
-                always_show_names: bool = False
                 expression: str = ''
                 td_kaiser: float = 35.0
             self.settings = SParamViewerAppSettings('apfau.de S-Parameter Viewer', 'apfau.de', '0.1')
@@ -62,8 +63,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             TkCommon.default_keyhandler(self.toplevel_main, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
             TkText.default_keyhandler(self.text_expr, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
             self.show_legend.set('1' if self.settings.show_legend else '0')
+            self.hide_single_legend.set('1' if self.settings.hide_single_item_legend else '0')
+            self.short_legend.set('1' if self.settings.shorten_legend_items else '0')
             self.logf.set('1' if self.settings.log_freq else '0')
-            self.always_show_names.set('1' if self.settings.always_show_names else '0')
             self.lock_plot_xaxis.set('1' if self.lock_xaxis else '0')
             self.lock_plot_yaxis.set('1' if self.lock_yaxis else '0')
             self.combobox_mode['values']= (
@@ -467,8 +469,14 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.update_plot()
 
 
-    def on_show_names_always(self):
-        self.settings.always_show_names = (self.always_show_names.get() == '1')
+    def on_hide_single_legend(self):
+        self.settings.hide_single_item_legend = (self.hide_single_legend.get() == '1')
+        self.settings.save()
+        self.update_plot()
+
+
+    def on_short_legend(self):
+        self.settings.shorten_legend_items = (self.short_legend.get() == '1')
         self.settings.save()
         self.update_plot()
 
@@ -629,11 +637,13 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             else:
                 smith_type = 'y'
             
+            common_plot_args = dict(show_legend=self.settings.show_legend, hide_single_item_legend=self.settings.hide_single_item_legend, shorten_legend=self.settings.shorten_legend_items)
+
             if polar:
-                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
+                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, **common_plot_args)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
+                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, **common_plot_args)
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
@@ -652,7 +662,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         yq,yf,yl = 'Magnitude',SiFmt(unit=''),True
                     else:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
-                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, show_legend=self.settings.show_legend, show_single_legend=self.settings.always_show_names)
+                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, **common_plot_args)
 
 
             def add_to_plot(f, sp, name, style=None):

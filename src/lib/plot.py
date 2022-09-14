@@ -2,6 +2,7 @@ from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
 
 import math
+import re
 import numpy as np
 from dataclasses import dataclass
 import matplotlib.pyplot as pyplot
@@ -71,7 +72,7 @@ class PlotHelper:
 
     def __init__(self, fig: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
         y_qty: "str", y_fmt: SiFmt, y_log: bool, smith_type: str='z', smith_z=1.0,
-        show_legend: bool = True, show_single_legend: bool = True):
+        show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False):
         
         self.cursors = [
             PlotHelper.Cursor(self, '--'),
@@ -92,7 +93,8 @@ class PlotHelper:
         self.y_fmt = y_fmt
         self.y_log = y_log
         self.show_legend = show_legend
-        self.show_single_legend = show_single_legend
+        self.hide_single_item_legend = hide_single_item_legend
+        self.shorten_legend = shorten_legend
 
         self.fig.clf()
         
@@ -149,6 +151,25 @@ class PlotHelper:
         self.items_to_plot.append([x, y, name, style])
     
 
+    def shorten_labels(self, labels):
+        if len(labels) == 1:
+            return labels
+        def split(s):
+            m = re.search(r'[ _/\\+~*#.,-]', s)
+            if not m:
+                return '', s
+            return (s[:m.start()+1], s[m.start()+1:])
+        while True:
+            split_strs = [split(l) for l in labels]
+            prefixes = set([p for (p,_) in split_strs])
+            if len(prefixes) != 1:
+                break # no common prefix
+            if len(split_strs[0][0]) == 0:
+                break # no common prefix
+            labels = [s[1] for s in split_strs] # remove prefix
+        return labels
+    
+
     def render(self):
 
         def get_r_max():
@@ -174,10 +195,13 @@ class PlotHelper:
         
         self.any_legend = False
 
-        for (x,y,name,style) in self.items_to_plot:
+        labels = [i[2] for i in self.items_to_plot]
+        if self.shorten_legend:
+            labels = self.shorten_labels(labels)
+
+        for (x,y,name,style),label in zip(self.items_to_plot, labels):
         
             # escaping for matplotlib
-            label = name
             if label.startswith('_'):
                 label = ' _' + label[1:]
 
@@ -228,7 +252,7 @@ class PlotHelper:
             return
         
         show_legend = self.show_legend
-        if len(self.items_to_plot) == 1 and not self.show_single_legend:
+        if len(self.items_to_plot) <= 1 and self.hide_single_item_legend:
             show_legend = False
         if show_legend:
             self.plot.legend()

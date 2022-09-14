@@ -366,12 +366,21 @@
                   </object>
                 </child>
                 <child>
-                  <object class="tk.Menuitem.Checkbutton" id="checkbutton_alwaysnames">
-                    <property cbtype="simple" name="command" type="command">on_show_names_always</property>
-                    <property name="label" translatable="yes">Always Show Names</property>
+                  <object class="tk.Menuitem.Checkbutton" id="checkbutton_hide_single_legend">
+                    <property cbtype="simple" name="command" type="command">on_hide_single_legend</property>
+                    <property name="label" translatable="yes">Hide Single-Item Legend</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
-                    <property name="variable">string:always_show_names</property>
+                    <property name="variable">string:hide_single_legend</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Checkbutton" id="checkbutton_short_legend">
+                    <property cbtype="simple" name="command" type="command">on_short_legend</property>
+                    <property name="label" translatable="yes">Shorten Legend Items</property>
+                    <property name="offvalue">0</property>
+                    <property name="onvalue">1</property>
+                    <property name="variable">string:short_legend</property>
                   </object>
                 </child>
                 <child>
