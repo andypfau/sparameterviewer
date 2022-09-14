@@ -1,5 +1,6 @@
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
+from .shortstr import remove_common_prefixes_and_suffixes
 
 import math
 import re
@@ -151,25 +152,6 @@ class PlotHelper:
         self.items_to_plot.append([x, y, name, style])
     
 
-    def shorten_labels(self, labels):
-        if len(labels) == 1:
-            return labels
-        def split(s):
-            m = re.search(r'[ _/\\+~*#.,-]', s)
-            if not m:
-                return '', s
-            return (s[:m.start()+1], s[m.start()+1:])
-        while True:
-            split_strs = [split(l) for l in labels]
-            prefixes = set([p for (p,_) in split_strs])
-            if len(prefixes) != 1:
-                break # no common prefix
-            if len(split_strs[0][0]) == 0:
-                break # no common prefix
-            labels = [s[1] for s in split_strs] # remove prefix
-        return labels
-    
-
     def render(self):
 
         def get_r_max():
@@ -197,7 +179,7 @@ class PlotHelper:
 
         labels = [i[2] for i in self.items_to_plot]
         if self.shorten_legend:
-            labels = self.shorten_labels(labels)
+            labels = remove_common_prefixes_and_suffixes(labels)
 
         for (x,y,name,style),label in zip(self.items_to_plot, labels):
         
