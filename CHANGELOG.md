@@ -1,6 +1,16 @@
 S-Parameter Viewer Changelog
 ============================
 
+0.10b1 (2022-09-14)
+-------------------
+
+- Smarter handling and shortening of the legend
+- ignoring case of the .snp file extension (important under Linux)
+- option to lock X/Y axes
+- updated documentation
+- misc small fixes
+
+
 0.9b2 (2022-09-04)
 ------------------
 

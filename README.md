@@ -49,5 +49,7 @@ Known Issues and Missing Features
 ---------------------------------
 
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
-- Smarter name shortening
+- File type registration script for Windows
+- Filter for listed files
+- Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
