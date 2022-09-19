@@ -372,7 +372,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 return
 
         try:
-            fn = filedialog.askopenfilename(filetypes=(('Expressions','.py'),('All Files','*')))
+            fn = filedialog.askopenfilename(filetypes=(('Expressions','.py'),('Text','.txt'),('All Files','*')))
             if not fn:
                 return
             with open(fn, 'r') as fp:
@@ -386,7 +386,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def on_save_expr(self):
         try:
             py = TkText.get_text(self.text_expr)
-            fn = filedialog.asksaveasfilename(confirmoverwrite=True, defaultextension='.py')
+            fn = filedialog.asksaveasfilename(confirmoverwrite=True, filetypes=[('Expressions','.py'),('Text','.txt'),('All Files','*')], defaultextension='.py')
             if not fn:
                 return
             with open(fn, 'w') as fp:
