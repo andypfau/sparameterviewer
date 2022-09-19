@@ -4,6 +4,7 @@ S-Parameter Viewer Changelog
 0.10b2 (2022-09-19)
 -------------------
 
+- Updated docs of Network expression class.
 - Fixed save/load expression dialog
 - Smarter handling and shortening of the legend
 - ignoring case of the .snp file extension (important under Linux)
@@ -21,7 +22,7 @@ S-Parameter Viewer Changelog
 0.9b1 (2022-09-03)
 ------------------
 
-- change: expressions now work on sets of mutliple networks and S-parameters
+- change: expressions now work on sets of multiple networks and S-parameters
 - change: dropped the function wrappers for expressions
 - change: dropped name shortening
 
