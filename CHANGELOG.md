@@ -1,6 +1,13 @@
 S-Parameter Viewer Changelog
 ============================
 
+0.10b3 (2022-11-04)
+-------------------
+
+- fixed binary operations on S-parameters in expressions
+- fixed addition of S-parameters in expressions
+
+
 0.10b2 (2022-09-19)
 -------------------
 

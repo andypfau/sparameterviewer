@@ -48,8 +48,15 @@ There are sample .json-files in the `res` folder for VS Code.
 Known Issues and Missing Features
 ---------------------------------
 
-- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
-- File type registration script for Windows
-- Filter for listed files
+- File type registration script for Windows (using `assoc` and `ftype`)
+- Filter for listed files (e.g. only show *.s2p)
 - Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
+- Log output for equations (so that you can also print some data or status)
+- Table view of data
+- Check if network is reciprocal, passive, lossless, unilateral
+- Implement lazy-loading of files (would speed up loading a huge directory, especially when working with cloud-hosted files)
+- Allow to provide regex to strip names in expression plots
+- Allow filtering of displayed files
+- Menu command "Add files from directory..."
+- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown

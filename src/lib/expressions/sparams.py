@@ -36,9 +36,9 @@ class SParam:
     @staticmethod
     def _op(a: "SParam", b: "SParam", op: "callable") -> "SParam":
         if isinstance(a,int) or isinstance(a,float):
-            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))))
+            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0)
         if isinstance(b,int) or isinstance(b,float):
-            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b))
+            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0)
         a_nw, b_nw = SParam._adapt_f(a, b)
         a_s = np.array(np.ndarray.flatten(a_nw.s))
         b_s = np.array(np.ndarray.flatten(b_nw.s))
@@ -63,7 +63,7 @@ class SParam:
 
         
     def __add__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a-b)
+        return SParam._op(self, other, lambda a,b: a+b)
 
 
     def __radd__(self, other: "SParam|float") -> "SParam":
