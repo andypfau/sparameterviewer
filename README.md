@@ -19,7 +19,7 @@ Prerequisites
 -------------
 
 - Python 3.7
-- Packets: `numpy, scipy, skrf, matplotlib, tkinter, pygubu, openpyxl`
+- Packets: `numpy, scipy, skrf, matplotlib, tkinter, pygubu, openpyxl, appdirs`
 
 
 Usage
@@ -30,11 +30,18 @@ Usage
 
 ### Linux
 
-Under Linux, you can use `res/application-x-scatteringparameter.xml` to register a mime-type for S-parameter files. For instructions, see e.g. <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>.
+To register S-parameter files with this application under Linux:
+
+1. Register a mime-type for S-parameter files using `res/application-x-scatteringparameter.xml` (for instructions, see e.g. <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>).
+2. Double-click any .s#p-file, and select the script `src/sparamviewer.py` as the application.
 
 ### Windows
 
-Under Windows, you can use `res/sparamviewer.bat` to launch the app from "*Open With...*". You have to adapt the paths in the file.
+To register S-parameter files with this application under Windows:
+
+1. Open `res/sparamviewer.bat` in a text editor.
+2. Adapt the paths to your Python interpreter, as well as the path where `src/sparamviewer.py` is, in the 1st line.
+3. Double-click any .s#p-file, and select the batch-file `res/sparamviewer.bat` as the application (you have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...).
 	
 
 Development
@@ -57,6 +64,5 @@ Known Issues and Missing Features
 - Check if network is reciprocal, passive, lossless, unilateral
 - Implement lazy-loading of files (would speed up loading a huge directory, especially when working with cloud-hosted files)
 - Allow to provide regex to strip names in expression plots
-- Allow filtering of displayed files
 - Menu command "Add files from directory..."
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
