@@ -44,7 +44,7 @@ Usage
 
 Compiling is optional. You can just as well run the Python script.
 
-Compiling was successfully tested under Windows 10 with the following command:
+Compiling was successfully tested under Windows 10 and under Fedora 36 with the following command:
 - `cd src`
 - `pyinstaller sparamviewer.spec`
 
@@ -56,7 +56,7 @@ Compiling was successfully tested under Windows 10 with the following command:
 To register S-parameter files with this application under Linux:
 
 1. Register a mime-type for S-parameter files using `res/application-x-scatteringparameter.xml` (for instructions, see e.g. <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>).
-2. Double-click any .s#p-file, and select the script `src/sparamviewer.py` as the application.
+2. Double-click any .s#p-file, and select the script `src/sparamviewer.py` (or the binary, if you compiled it) as the application.
 
 #### Windows
 
@@ -93,6 +93,5 @@ Known Issues and Missing Features
 - Allow to provide regex to strip names in expression plots
 - Menu command "Add files from directory..."
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
-- Test `pyinstaller` under Linux
 - Allow user to select TTK theme
 - UI to set axis limits manually
