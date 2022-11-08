@@ -66,3 +66,4 @@ Known Issues and Missing Features
 - Allow to provide regex to strip names in expression plots
 - Menu command "Add files from directory..."
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
+- Get it to work with `pyinstaller` or similar tool
