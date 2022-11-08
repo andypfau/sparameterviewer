@@ -28,6 +28,8 @@ Prerequisites
     - `pygubu`
     - `openpyxl`
     - `appdirs`
+- Optional packet dependencies:
+    - `pyinstaller` (required to compile script into binary)
 
 
 Usage
