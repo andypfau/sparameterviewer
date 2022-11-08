@@ -95,3 +95,4 @@ Known Issues and Missing Features
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
 - Test `pyinstaller` under Linux
 - Allow user to select TTK theme
+- UI to set axis limits manually
