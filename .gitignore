@@ -1,3 +1,5 @@
 **/__pycache__
 src/sparamviewer.log
+src/dist
+src/build
 .vscode

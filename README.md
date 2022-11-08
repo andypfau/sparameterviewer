@@ -19,7 +19,15 @@ Prerequisites
 -------------
 
 - Python 3.7
-- Packets: `numpy, scipy, skrf, matplotlib, tkinter, pygubu, openpyxl, appdirs`
+- Packet dependencies:
+    - `numpy`
+    - `scipy`
+    - `skrf`
+    - `matplotlib`
+    - `tkinter`
+    - `pygubu`
+    - `openpyxl`
+    - `appdirs`
 
 
 Usage
@@ -27,6 +35,18 @@ Usage
 
 - you can just start the app and load a directory
 - or you can open one or more file with the app
+
+
+Compiling
+---------
+
+Compiling was successfully tested under Windows 10 with the following command:
+- `cd src`
+- `pyinstaller sparamviewer.spec`
+
+
+File Type Association
+---------------------
 
 ### Linux
 
@@ -42,7 +62,9 @@ To register S-parameter files with this application under Windows:
 1. Open `res/sparamviewer.bat` in a text editor.
 2. Adapt the paths to your Python interpreter, as well as the path where `src/sparamviewer.py` is, in the 1st line.
 3. Double-click any .s#p-file, and select the batch-file `res/sparamviewer.bat` as the application (you have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...).
-	
+
+Note that if you compiled the executable, the batch-file might not be necessary.
+
 
 Development
 -----------
