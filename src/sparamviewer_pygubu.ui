@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.2">
+<interface version="1.3">
   <object class="tk.Toplevel" id="toplevel_main">
     <property name="height">200</property>
     <property name="overrideredirect">False</property>
@@ -173,7 +173,7 @@
                                 <property name="text" translatable="yes">Expressions</property>
                                 <child>
                                   <object class="ttk.Frame" id="frame_8">
-                                    <property name="height">200</property>
+                                    <property name="height">150</property>
                                     <property name="padding">5</property>
                                     <property name="width">200</property>
                                     <layout manager="pack">
@@ -181,7 +181,7 @@
                                     </layout>
                                     <child>
                                       <object class="ttk.Frame" id="frame2">
-                                        <property name="height">200</property>
+                                        <property name="height">150</property>
                                         <property name="width">200</property>
                                         <layout manager="pack">
                                           <property name="anchor">n</property>
@@ -233,7 +233,7 @@
                                         </layout>
                                         <child>
                                           <object class="tk.Text" id="text_expr">
-                                            <property name="height">10</property>
+                                            <property name="height">5</property>
                                             <property name="width">50</property>
                                             <layout manager="pack">
                                               <property name="expand">true</property>
@@ -313,6 +313,12 @@
                     <property name="accelerator">Ctrl+E</property>
                     <property cbtype="simple" name="command" type="command">on_export</property>
                     <property name="label" translatable="yes">Export Trace Data...</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_7">
+                    <property cbtype="simple" name="command" type="command">on_save_plot_graphic</property>
+                    <property name="label" translatable="yes">Save Plot Image...</property>
                   </object>
                 </child>
                 <child>
@@ -457,6 +463,15 @@
                   <object class="tk.Menuitem.Command" id="command_3">
                     <property cbtype="simple" name="command" type="command">on_call_optrlcalc</property>
                     <property name="label" translatable="yes">Optimum RL Calculator</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Separator" id="separator_6" />
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_6">
+                    <property cbtype="simple" name="command" type="command">on_show_error_log_click</property>
+                    <property name="label" translatable="yes">Error Log</property>
                   </object>
                 </child>
               </object>

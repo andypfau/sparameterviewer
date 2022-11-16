@@ -3,7 +3,7 @@
 from tkinter import *
 from tkinter import filedialog, messagebox, simpledialog
 
-import os, glob, appdirs, math, copy, logging, traceback, datetime
+import os, glob, appdirs, math, copy, logging, traceback, datetime, io
 import numpy as np
 
 import matplotlib.pyplot as pyplot
@@ -126,7 +126,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.combobox_unit.current(self.settings.plot_unit)
             TkText.set_text(self.text_expr, self.settings.expression.strip())
             def on_click_errors(event):
-                self.on_open_error_dialog()
+                self.open_error_dialog()
             self.entry_err.bind('<Button-1>', on_click_errors)
             
             # fix treeview
@@ -504,10 +504,36 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             return
 
         try:
-            filename = filedialog.asksaveasfilename(title='Export Trace Data', confirmoverwrite=True, defaultextension='.csv', filetypes=(('CSV','.csv'), ('Spreadsheet','.xlsx'), ('All Files','*')))
+            filename = filedialog.asksaveasfilename(
+                title='Export Trace Data', confirmoverwrite=True, defaultextension='.csv',
+                filetypes=(
+                    ('CSV','.csv'),
+                    ('Spreadsheet','.xlsx'),
+                    ('All Files','*'),
+                ))
             if not filename:
                 return
             DataExport.auto(self.plot.plots, filename)
+        except Exception as ex:
+            logging.exception(f'Exporting failed: {ex}')
+            messagebox.showerror('Error', str(ex))
+
+
+    def on_save_plot_graphic(self):
+
+        if not self.plot.fig:
+            return
+
+        try:
+            filename = filedialog.asksaveasfilename(
+                title='Save Plot Graphic', confirmoverwrite=True, defaultextension='.png',
+                filetypes=(
+                    ('PNG','.png'),
+                    ('All Files','*'),
+                ))
+            if not filename:
+                return
+            self.plot.fig.savefig(filename)
         except Exception as ex:
             logging.exception(f'Exporting failed: {ex}')
             messagebox.showerror('Error', str(ex))
@@ -582,11 +608,15 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.eval_err_msg.set('\u26A0 ' + error if error is not None else "No problems found")
 
 
-    def on_open_error_dialog(self):
+    def open_error_dialog(self):
         errs = self.bufferLogHandler.entries if len(self.eval_error_list)== 0 else self.eval_error_list
         log = '\n'.join(errs)
         dlg = SparamviewerInfoDialog(self.toplevel_main, title='Error Log', text=log)
         dlg.run()
+
+
+    def on_show_error_log_click(self):
+        self.open_error_dialog()
 
 
     def get_selected_files(self) -> "list[SParamFile]":
