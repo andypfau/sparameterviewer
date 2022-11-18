@@ -18,18 +18,9 @@ Main Features
 Prerequisites
 -------------
 
-- Python 3.7
-- Packet dependencies:
-    - `numpy`
-    - `scipy`
-    - `skrf`
-    - `matplotlib`
-    - `tkinter`
-    - `pygubu`
-    - `openpyxl`
-    - `appdirs`
-- Optional packet dependencies:
-    - `pyinstaller` (required to compile script into binary)
+- Python 3.11 (should work with 3.7 or newer, but not tested)
+- Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs`
+- Optional packet dependencies: `pyinstaller`
 
 
 Usage

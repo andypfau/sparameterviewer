@@ -1,6 +1,16 @@
 S-Parameter Viewer Changelog
 ============================
 
+0.10b4 (2022-11-18)
+-------------------
+
+- development environment switched to Python 3.11.0
+- menu option to export plot as graphic
+- menu option to show error log
+- minor UI scaling improvements
+- improved readme
+
+
 0.10b3 (2022-11-04)
 -------------------
 
