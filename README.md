@@ -74,7 +74,6 @@ Known Issues and Missing Features
 ---------------------------------
 
 - File type registration script for Windows (using `assoc` and `ftype`)
-- Filter for listed files (e.g. only show *.s2p)
 - Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
 - Log output for equations (so that you can also print some data or status)

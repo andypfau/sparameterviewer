@@ -5,6 +5,7 @@ from tkinter import filedialog, messagebox, simpledialog
 
 import os, glob, appdirs, math, copy, logging, traceback, datetime, io
 import numpy as np
+import re
 
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
@@ -543,67 +544,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         messagebox.showinfo('About', f'{Info.AppName}\n\nVersion: {Info.AppVersionStr}\nDate: {Info.AppDateStr}')
 
 
-    def _load_all_files_in_dir(self, dir: "str|None", select: "list[str]" = [], select_first: bool = False):
-
-        try:
-            
-            self.dir = appdirs.user_data_dir()
-            self.files = [] # type: list[SParamFile]
-            self.treeview_files.delete(*self.treeview_files.get_children())
-            self.trace_data = []
-
-            if dir is None:
-                return
-            
-            self.dir = os.path.abspath(dir)
-            all_files = sorted(list(glob.glob(f'{self.dir}/*.[Ss]*[Pp]')))
-            
-            for i,filename in enumerate(all_files):
-                try:
-                    tag = f'file{i}'
-                    spar = SParamFile.load(filename, tag)
-                    self.files.append(spar)
-                    
-                    name_str = os.path.split(filename)[1]
-                    prop_str = f'{spar.nw.number_of_ports}-port, {Si(min(spar.nw.f),"Hz")} to {Si(max(spar.nw.f),"Hz")}'
-                    
-                    self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
-                    
-                    do_select = False
-                    if select_first and i==0:
-                        do_select = True
-                    for sel_fn in select:
-                        if os.path.abspath(filename)==os.path.abspath(sel_fn):
-                            do_select = True
-                            break
-                    if do_select:
-                        self.treeview_files.selection_add(tag)
-
-                except Exception as ex:
-                    logging.info(f'Ignoring file <{filename}>: {ex}')
-        
-        except Exception as ex:
-            logging.exception(f'Unable to load files: {ex}')
-            raise ex
-
-
-    def load_dir(self, dir: str):
-        self._load_all_files_in_dir(dir, select_first=True)
-
-    
-    def load_files(self, filenames: "list[str]"):
-        if len(filenames)<1:
-            self._load_all_files_in_dir(None)
-            return
-
-        if os.path.isdir(filenames[0]):
-            dir = filenames[0]
-        else:
-            dir = os.path.split(filenames[0])[0]
-        dir = os.path.abspath(dir)
-        self._load_all_files_in_dir(dir, select=filenames)
-
-
     def show_error(self, error: "str|None"):
         self.eval_err_msg.set('\u26A0 ' + error if error is not None else "No problems found")
 
@@ -617,6 +557,100 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_show_error_log_click(self):
         self.open_error_dialog()
+
+
+    def _load_all_files_in_dir(self, dir: str):
+
+        try:
+            
+            self.dir = appdirs.user_data_dir()
+            self.files = [] # type: list[SParamFile]
+            self.trace_data = []
+
+            if dir is None:
+                return
+            
+            self.dir = os.path.abspath(dir)
+            all_files = sorted(list(glob.glob(f'{self.dir}/*.[Ss]*[Pp]')))
+            
+            for i,filename in enumerate(all_files):
+                try:
+                    tag = f'file{i}'
+                    spar = SParamFile.load(filename, tag)
+                    self.files.append(spar)
+
+                except Exception as ex:
+                    logging.info(f'Ignoring file <{filename}>: {ex}')
+        
+        except Exception as ex:
+            logging.exception(f'Unable to load files: {ex}')
+            raise ex
+
+
+    def load_dir(self, dir: str):
+        self._load_all_files_in_dir(dir)
+        self.update_file_list(only_select_first=True)
+
+    
+    def load_files(self, filenames: "list[str]"):
+        if len(filenames)<1:
+            self._load_all_files_in_dir(None)
+            return
+
+        if os.path.isdir(filenames[0]):
+            dir = filenames[0]
+        else:
+            dir = os.path.split(filenames[0])[0]
+        dir = os.path.abspath(dir)
+        self._load_all_files_in_dir(dir)
+        self.update_file_list(selected_filenames=filenames)
+    
+
+    def on_search_press_key(self, event=None):
+        if event is not None:
+            if event.keysym == 'Return':
+                self.update_file_list()
+    
+
+    def update_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
+        
+        if len(selected_filenames) == 0 and not only_select_first:
+            search = self.search_str.get()
+            if len(search) != 0:
+                previously_selected_files = []
+            else:
+                previously_selected_files = self.get_selected_files()
+                search = None
+        else:
+            previously_selected_files = []
+            search = None
+            self.search_str.set('')
+
+        self.treeview_files.delete(*self.treeview_files.get_children())
+        for i,file in enumerate(self.files):
+            
+            tag = f'file{i}'
+            name_str = os.path.split(file.file_path)[1]
+            prop_str = f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+            
+            self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
+            
+            do_select = False
+            if only_select_first and i==0:
+                do_select = True
+            elif file.tag in [s.tag for s in previously_selected_files]:
+                do_select = True
+            elif os.path.abspath(file.file_path) in [os.path.abspath(f) for f in selected_filenames]:
+                do_select = True
+            elif search is not None:
+                try:
+                    if re.search(search, file.filename, re.IGNORECASE):
+                        do_select = True
+                except:
+                    pass
+            
+            if do_select:
+                self.treeview_files.selection_add(tag)
 
 
     def get_selected_files(self) -> "list[SParamFile]":

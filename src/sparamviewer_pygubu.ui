@@ -141,6 +141,17 @@
                                           <property name="side">top</property>
                                         </layout>
                                         <child>
+                                          <object class="ttk.Entry" id="entry_6">
+                                            <property name="textvariable">string:search_str</property>
+                                            <bind add="" handler="on_search_hit_enter" sequence="&lt;KeyPress&gt;" />
+                                            <layout manager="pack">
+                                              <property name="fill">x</property>
+                                              <property name="pady">2</property>
+                                              <property name="side">top</property>
+                                            </layout>
+                                          </object>
+                                        </child>
+                                        <child>
                                           <object class="pygubu.builder.widgets.scrollbarhelper" id="scrollbarhelper_1">
                                             <property name="scrolltype">vertical</property>
                                             <property name="usemousewheel">true</property>

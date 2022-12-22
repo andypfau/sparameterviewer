@@ -49,6 +49,11 @@ class SparamviewerPygubuApp:
         self.frame_4.configure(height=200, padding=5, width=200)
         self.frame_7 = ttk.Frame(self.frame_4)
         self.frame_7.configure(height=200, padding=5, width=200)
+        self.entry_6 = ttk.Entry(self.frame_7)
+        self.search_str = tk.StringVar()
+        self.entry_6.configure(textvariable=self.search_str)
+        self.entry_6.pack(fill="x", pady=2, side="top")
+        self.entry_6.bind("<KeyPress>", self.on_search_press_key, add="")
         self.scrollbarhelper_1 = ScrollbarHelper(
             self.frame_7, scrolltype="vertical")
         self.scrollbarhelper_1.configure(usemousewheel=True)
@@ -257,6 +262,9 @@ class SparamviewerPygubuApp:
         self.mainwindow.mainloop()
 
     def on_select_plotmode(self, event=None):
+        pass
+
+    def on_search_press_key(self, event=None):
         pass
 
     def on_select_file(self, event=None):
