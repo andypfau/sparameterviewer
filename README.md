@@ -79,7 +79,6 @@ Known Issues and Missing Features
 - Log output for equations (so that you can also print some data or status)
 - Table view of data
 - Check if network is reciprocal, passive, lossless, unilateral
-- Implement lazy-loading of files (would speed up loading a huge directory, especially when working with cloud-hosted files)
 - Allow to provide regex to strip names in expression plots
 - Menu command "Add files from directory..."
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown

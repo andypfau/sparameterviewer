@@ -4,32 +4,39 @@ from .si import Si, SiFmt
 import dataclasses
 import numpy as np
 import skrf
+import logging
 
 
 
-@dataclasses.dataclass
 class SParamFile:
     """Wrapper for a skrf.Network"""
 
-    file_path: str
-    filename: str = dataclasses.field(init=False)
-    nw: skrf.Network
-    tag: any = None
-    name: str = None
-    short_name: str = None
 
-    def __post_init__(self):
+    def __init__(self, file_path: str, tag: int = None, name: str = None, short_name: str = None):
+
+        self.file_path = file_path
         self.filename = os.path.split(self.file_path)[1]
-        if self.name is None:
-            self.name = self.filename
-        if self.short_name is None:
-            self.short_name = os.path.splitext(self.filename)[0]
+        self.tag = tag
 
-    @staticmethod
-    def load(file_path: str, tag: any = None) -> "SParamFile":
-        nw = skrf.Network(file_path)
-        nw.name = os.path.split(file_path)[1]
-        return SParamFile(file_path, nw, tag)
+        self._nw = None
+
+        self.name = name if name is not None else self.filename
+        self.short_name = short_name if short_name is not None else os.path.splitext(self.filename)[0]
+    
+
+    @property
+    def nw(self):
+        if not self._nw:
+            try:
+                logging.warning(f'Loading network "{self.file_path}"')
+                self._nw = skrf.network.Network(self.file_path)
+            except Exception as ex:
+                logging.exception(f'Unable to load network from "{self.file_path}" ({ex})')
+        return self._nw
+    
+
+    def loaded(self) -> bool:
+        return self._nw is not None
 
 
 

@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - added search bar
+- files are now lazy-loaded (this speeds up the app start when opening large directories, especially when those are network- or cloud-hosted)
 
 
 0.10b4 (2022-11-18)

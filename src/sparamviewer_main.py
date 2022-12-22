@@ -576,8 +576,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             for i,filename in enumerate(all_files):
                 try:
                     tag = f'file{i}'
-                    spar = SParamFile.load(filename, tag)
-                    self.files.append(spar)
+                    file = SParamFile(filename, tag=tag)
+                    self.files.append(file)
 
                 except Exception as ex:
                     logging.info(f'Ignoring file <{filename}>: {ex}')
@@ -597,19 +597,37 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self._load_all_files_in_dir(None)
             return
 
-        if os.path.isdir(filenames[0]):
+        is_dir = os.path.isdir(filenames[0])
+        if is_dir:
             dir = filenames[0]
         else:
             dir = os.path.split(filenames[0])[0]
         dir = os.path.abspath(dir)
         self._load_all_files_in_dir(dir)
-        self.update_file_list(selected_filenames=filenames)
+        
+        if is_dir:
+            self.update_file_list(only_select_first=True)
+        else:
+            self.update_file_list(selected_filenames=filenames)
     
 
     def on_search_press_key(self, event=None):
         if event is not None:
             if event.keysym == 'Return':
                 self.update_file_list()
+    
+
+    def update_file_in_list(self, file: "SParamFile"):
+        
+        tag = file.tag
+        name_str = os.path.split(file.file_path)[1]
+        prop_str = self.get_file_prop_str(file)
+        
+        self.treeview_files.item(tag, values=(name_str,prop_str))
+
+
+    def get_file_prop_str(self, file: "SParamFile") -> str:
+        return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
     
 
     def update_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
@@ -631,7 +649,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             
             tag = f'file{i}'
             name_str = os.path.split(file.file_path)[1]
-            prop_str = f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+            if file.loaded():
+                prop_str = self.get_file_prop_str(file)
+            else:
+                prop_str = '[not loaded]'
             
             self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
             
@@ -763,6 +784,9 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         self.plot.add(f, np.unwrap(np.angle(sp))*180/math.pi, name, style)
                     else:
                         self.plot.add(f, np.angle(sp)*180/math.pi, name, style)
+            
+            selected_files = self.get_selected_files()
+            touched_files = []
 
             if data_expr_based:
 
@@ -775,7 +799,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 log_entries_before = self.bufferLogHandler.count
                 ex_msg = None
                 try:
-                    ExpressionParser.eval(raw_exprs, self.files, self.get_selected_files(), add_to_plot)  
+                    touched_files = ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
                 except Exception as ex:
                     logging.exception(ex)
                     ex_msg = str(ex)
@@ -814,12 +838,17 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files, self.get_selected_files(), add_to_plot)  
+                    ExpressionParser.eval(self.generated_expressions, self.files, selected_files, add_to_plot)  
                     self.show_error(None)              
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.fig.clf()
                     self.show_error(f'ERROR: {ex}')
+                
+                touched_files = selected_files
+            
+            for f in touched_files:
+                self.update_file_in_list(f)
             
             self.plot.render()
 

@@ -143,7 +143,7 @@
                                         <child>
                                           <object class="ttk.Entry" id="entry_6">
                                             <property name="textvariable">string:search_str</property>
-                                            <bind add="" handler="on_search_hit_enter" sequence="&lt;KeyPress&gt;" />
+                                            <bind add="" handler="on_search_press_key" sequence="&lt;KeyPress&gt;" />
                                             <layout manager="pack">
                                               <property name="fill">x</property>
                                               <property name="pady">2</property>

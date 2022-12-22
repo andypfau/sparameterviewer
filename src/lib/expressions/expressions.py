@@ -15,7 +15,9 @@ class ExpressionParser:
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
         selected_networks: "list[SParamFile]", \
-        plot_fn: "callable[np.ndarray,np.ndarray,str,str]"):
+        plot_fn: "callable[np.ndarray,np.ndarray,str,str]") -> "list[SParamFile]":
+
+        touched_files = []
         
         SParam.plot_fn = plot_fn
 
@@ -30,8 +32,12 @@ class ExpressionParser:
             if single:
                 if len(nws) != 1:
                     raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
+            nonlocal touched_files
+            for nw in nws:
+                if nws not in touched_files:
+                    touched_files.append(nw)
             return Networks(nws)
-
+        
         def sel_nws(pattern: str = None) -> Networks:
             return select_networks(selected_networks, pattern, single=False)
         
@@ -53,6 +59,8 @@ class ExpressionParser:
         }
         
         exec(code, vars_global, vars_local)
+
+        return touched_files
 
 
     @staticmethod
