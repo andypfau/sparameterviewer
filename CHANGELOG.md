@@ -1,11 +1,13 @@
 S-Parameter Viewer Changelog
 ============================
 
-0.10b5 (2022-12-22)
+0.10b5 (2022-12-23)
 -------------------
 
 - added search bar
 - files are now lazy-loaded (this speeds up the app start when opening large directories, especially when those are network- or cloud-hosted)
+- fixed / documented workarounds for pyinstaller
+- fixed app icon loading
 
 
 0.10b4 (2022-11-18)

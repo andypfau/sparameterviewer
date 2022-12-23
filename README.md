@@ -18,8 +18,8 @@ Main Features
 Prerequisites
 -------------
 
-- Python 3.11 (should work with 3.7 or newer, but not tested)
-- Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs`
+- Python 3.11 (might work with 3.7 or newer, but not tested)
+- Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow`
 - Optional packet dependencies: `pyinstaller`
 
 
@@ -35,9 +35,12 @@ Usage
 
 Compiling is optional. You can just as well run the Python script.
 
-Compiling was successfully tested under Windows 10 and under Fedora 36 with the following command:
+Compiling was successfully tested under Windows 10 and under Fedora 37 with the following command:
 - `cd src`
 - `pyinstaller sparamviewer.spec`
+    - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean sparamviewer.spec`
+
+Under Fedora 37 at least, I had to fix matplitlib by coping the contents of `src/dist/sparamviewer/matplotlib/mpl-data/` to `share/matplotlib/mpl-data/`.
 
 
 ### File Type Association
@@ -65,9 +68,10 @@ Uou have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...
 Development
 -----------
 
-To modify the UI, you need `pygubu-designer`.
+To modify the UI, you need `pygubu-designer`. To generate UI code, in the "Code" tab, make sure you select "Template": "Code Script", and "All IDs as class attributes".
 
 There are sample .json-files in the `res` folder for VS Code.
+
 
 
 Known Issues and Missing Features

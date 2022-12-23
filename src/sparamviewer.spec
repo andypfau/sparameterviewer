@@ -1,12 +1,29 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
+datas = []
+hiddenimports = []
+
+
+# add icon
+datas.extend([
+    ('../res/sparamviewer.ico', './res/'),
+    ('../res/sparamviewer.png', './res/'),
+    ('../res/sparamviewer.xbm', './res/'),
+])
+
+
 # Fix to get skrf required data folder included, see <https://github.com/scikit-rf/scikit-rf/issues/276>
-import os
-import skrf as rf
-datas = [
-  (os.path.join(os.path.dirname(rf.__file__), 'data/*'), 'skrf/data/')
-]
+import os, skrf as rf
+skrf_data_dir = os.path.join(os.path.dirname(rf.__file__), 'data/*')
+datas.extend([(skrf_data_dir, 'skrf/data/')])
+
+
+# Fix for PIL, see <https://stackoverflow.com/a/46720070>
+hiddenimports.extend(['PIL._tkinter_finder'])
+
+
+# TODO: fix for Matplotlib, which does not find <share/matplotlib/mpl-data>...
 
 
 block_cipher = None
@@ -17,7 +34,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=['PIL._tkinter_finder'],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
