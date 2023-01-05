@@ -77,7 +77,7 @@
                         <child>
                           <object class="ttk.Combobox" id="combobox_mode">
                             <property name="state">readonly</property>
-                            <bind add="" handler="on_select_plotmode" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                            <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_select_plotmode" add="" />
                             <layout manager="pack">
                               <property name="expand">true</property>
                               <property name="fill">x</property>
@@ -88,7 +88,7 @@
                         <child>
                           <object class="ttk.Combobox" id="combobox_unit">
                             <property name="state">readonly</property>
-                            <bind add="" handler="on_select_plotmode" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                            <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_select_plotmode" add="" />
                             <layout manager="pack">
                               <property name="padx">5</property>
                               <property name="side">right</property>
@@ -111,7 +111,7 @@
                           <object class="ttk.Notebook" id="notebook_mode">
                             <property name="height">200</property>
                             <property name="width">200</property>
-                            <bind add="" handler="on_tab_change" sequence="&lt;&lt;NotebookTabChanged&gt;&gt;" />
+                            <bind sequence="&lt;&lt;NotebookTabChanged&gt;&gt;" handler="on_tab_change" add="" />
                             <layout manager="pack">
                               <property name="expand">true</property>
                               <property name="fill">both</property>
@@ -143,7 +143,7 @@
                                         <child>
                                           <object class="ttk.Entry" id="entry_6">
                                             <property name="textvariable">string:search_str</property>
-                                            <bind add="" handler="on_search_press_key" sequence="&lt;KeyPress&gt;" />
+                                            <bind sequence="&lt;KeyPress&gt;" handler="on_search_press_key" add="" />
                                             <layout manager="pack">
                                               <property name="fill">x</property>
                                               <property name="pady">2</property>
@@ -163,7 +163,7 @@
                                             <child>
                                               <object class="ttk.Treeview" id="treeview_files">
                                                 <property name="selectmode">extended</property>
-                                                <bind add="" handler="on_select_file" sequence="&lt;&lt;TreeviewSelect&gt;&gt;" />
+                                                <bind sequence="&lt;&lt;TreeviewSelect&gt;&gt;" handler="on_select_file" add="" />
                                                 <layout manager="pack">
                                                   <property name="expand">true</property>
                                                   <property name="fill">both</property>
@@ -200,9 +200,9 @@
                                         </layout>
                                         <child>
                                           <object class="ttk.Button" id="button_gen">
-                                            <property cbtype="simple" name="command" type="command">on_use_expr</property>
+                                            <property name="command" cbtype="simple" type="command">on_use_expr</property>
                                             <property name="text" translatable="yes">Plot (F5)</property>
-                                            <bind add="" handler="callback" sequence="&lt;1&gt;" />
+                                            <bind sequence="&lt;1&gt;" handler="callback" add="" />
                                             <layout manager="pack">
                                               <property name="fill">x</property>
                                               <property name="side">top</property>
@@ -211,7 +211,7 @@
                                         </child>
                                         <child>
                                           <object class="ttk.Button" id="button1">
-                                            <property cbtype="simple" name="command" type="command">on_gen_expr</property>
+                                            <property name="command" cbtype="simple" type="command">on_gen_expr</property>
                                             <property name="text" translatable="yes">Generate</property>
                                             <layout manager="pack">
                                               <property name="fill">x</property>
@@ -222,7 +222,7 @@
                                         </child>
                                         <child>
                                           <object class="ttk.Button" id="button_expr_help">
-                                            <property cbtype="simple" name="command" type="command">on_expr_help</property>
+                                            <property name="command" cbtype="simple" type="command">on_expr_help</property>
                                             <property name="text" translatable="yes">Help</property>
                                             <layout manager="pack">
                                               <property name="pady">10</property>
@@ -305,14 +305,14 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_1">
                     <property name="accelerator">Ctrl+O</property>
-                    <property cbtype="simple" name="command" type="command">on_open_dir</property>
+                    <property name="command" cbtype="simple" type="command">on_open_dir</property>
                     <property name="label" translatable="yes">Open Directory...</property>
                   </object>
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_2">
                     <property name="accelerator">Ctrl+F5</property>
-                    <property cbtype="simple" name="command" type="command">on_reload_dir</property>
+                    <property name="command" cbtype="simple" type="command">on_reload_dir</property>
                     <property name="label" translatable="yes">Reload Directory</property>
                   </object>
                 </child>
@@ -322,13 +322,13 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_export">
                     <property name="accelerator">Ctrl+E</property>
-                    <property cbtype="simple" name="command" type="command">on_export</property>
+                    <property name="command" cbtype="simple" type="command">on_export</property>
                     <property name="label" translatable="yes">Export Trace Data...</property>
                   </object>
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_7">
-                    <property cbtype="simple" name="command" type="command">on_save_plot_graphic</property>
+                    <property name="command" cbtype="simple" type="command">on_save_plot_graphic</property>
                     <property name="label" translatable="yes">Save Plot Image...</property>
                   </object>
                 </child>
@@ -338,7 +338,7 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_info">
                     <property name="accelerator">F1</property>
-                    <property cbtype="simple" name="command" type="command">on_click_info</property>
+                    <property name="command" cbtype="simple" type="command">on_click_info</property>
                     <property name="label" translatable="yes">File Info...</property>
                   </object>
                 </child>
@@ -348,14 +348,14 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_loadexpr">
                     <property name="accelerator">Ctrl+L</property>
-                    <property cbtype="simple" name="command" type="command">on_load_expr</property>
+                    <property name="command" cbtype="simple" type="command">on_load_expr</property>
                     <property name="label" translatable="yes">Load Expressions...</property>
                   </object>
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_saveexpr">
                     <property name="accelerator">Ctrl+S</property>
-                    <property cbtype="simple" name="command" type="command">on_save_expr</property>
+                    <property name="command" cbtype="simple" type="command">on_save_expr</property>
                     <property name="label" translatable="yes">Save Expressions...</property>
                   </object>
                 </child>
@@ -364,7 +364,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_exit">
-                    <property cbtype="simple" name="command" type="command">on_exit_cmd</property>
+                    <property name="command" cbtype="simple" type="command">on_exit_cmd</property>
                     <property name="label" translatable="yes">Exit</property>
                   </object>
                 </child>
@@ -375,7 +375,7 @@
                 <property name="label" translatable="yes">Plot</property>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_showlegend">
-                    <property cbtype="simple" name="command" type="command">on_show_legend</property>
+                    <property name="command" cbtype="simple" type="command">on_show_legend</property>
                     <property name="label" translatable="yes">Show Legend</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -384,7 +384,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_hide_single_legend">
-                    <property cbtype="simple" name="command" type="command">on_hide_single_legend</property>
+                    <property name="command" cbtype="simple" type="command">on_hide_single_legend</property>
                     <property name="label" translatable="yes">Hide Single-Item Legend</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -393,7 +393,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_short_legend">
-                    <property cbtype="simple" name="command" type="command">on_short_legend</property>
+                    <property name="command" cbtype="simple" type="command">on_short_legend</property>
                     <property name="label" translatable="yes">Shorten Legend Items</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -405,7 +405,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_logf">
-                    <property cbtype="simple" name="command" type="command">on_change_logf</property>
+                    <property name="command" cbtype="simple" type="command">on_change_logf</property>
                     <property name="label" translatable="yes">Logarithmic Frequency</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -417,7 +417,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_1">
-                    <property cbtype="simple" name="command" type="command">on_lock_xaxis</property>
+                    <property name="command" cbtype="simple" type="command">on_lock_xaxis</property>
                     <property name="label" translatable="yes">Lock X-Axis</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -426,7 +426,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Checkbutton" id="checkbutton_2">
-                    <property cbtype="simple" name="command" type="command">on_lock_yaxis</property>
+                    <property name="command" cbtype="simple" type="command">on_lock_yaxis</property>
                     <property name="label" translatable="yes">Lock Y-Axis</property>
                     <property name="offvalue">0</property>
                     <property name="onvalue">1</property>
@@ -435,7 +435,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_5">
-                    <property cbtype="simple" name="command" type="command">on_rescale_locked_axes</property>
+                    <property name="command" cbtype="simple" type="command">on_rescale_locked_axes</property>
                     <property name="label" translatable="yes">Re-Scale </property>
                   </object>
                 </child>
@@ -445,7 +445,7 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_plot_expr">
                     <property name="accelerator">F5</property>
-                    <property cbtype="simple" name="command" type="command">on_use_expr</property>
+                    <property name="command" cbtype="simple" type="command">on_use_expr</property>
                     <property name="label" translatable="yes">Update Plot From Expressions</property>
                   </object>
                 </child>
@@ -454,7 +454,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_kaiser">
-                    <property cbtype="simple" name="command" type="command">on_set_kaiser</property>
+                    <property name="command" cbtype="simple" type="command">on_set_kaiser</property>
                     <property name="label" translatable="yes">TD Kaiser Argument...</property>
                   </object>
                 </child>
@@ -466,13 +466,13 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_cursors">
                     <property name="accelerator">F3</property>
-                    <property cbtype="simple" name="command" type="command">on_cursor_cmd</property>
+                    <property name="command" cbtype="simple" type="command">on_cursor_cmd</property>
                     <property name="label" translatable="yes">Trace Cursors</property>
                   </object>
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_3">
-                    <property cbtype="simple" name="command" type="command">on_call_optrlcalc</property>
+                    <property name="command" cbtype="simple" type="command">on_call_optrlcalc</property>
                     <property name="label" translatable="yes">Optimum RL Calculator</property>
                   </object>
                 </child>
@@ -481,7 +481,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_6">
-                    <property cbtype="simple" name="command" type="command">on_show_error_log_click</property>
+                    <property name="command" cbtype="simple" type="command">on_show_error_log_click</property>
                     <property name="label" translatable="yes">Error Log</property>
                   </object>
                 </child>
@@ -493,7 +493,7 @@
                 <property name="tearoff">false</property>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_4">
-                    <property cbtype="simple" name="command" type="command">on_menu_about</property>
+                    <property name="command" cbtype="simple" type="command">on_menu_about</property>
                     <property name="label" translatable="yes">About</property>
                   </object>
                 </child>
@@ -572,7 +572,7 @@
             <child>
               <object class="ttk.Combobox" id="combobox_files">
                 <property name="state">readonly</property>
-                <bind add="" handler="on_change" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_change" add="" />
                 <layout manager="pack">
                   <property name="expand">true</property>
                   <property name="fill">x</property>
@@ -767,7 +767,7 @@
             <child>
               <object class="ttk.Combobox" id="combobox_c1">
                 <property name="state">readonly</property>
-                <bind add="" handler="on_sel_trace1" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_sel_trace1" add="" />
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="row">0</property>
@@ -777,7 +777,7 @@
             <child>
               <object class="ttk.Combobox" id="combobox_c2">
                 <property name="state">readonly</property>
-                <bind add="" handler="on_sel_trace2" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_sel_trace2" add="" />
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="row">1</property>
@@ -786,7 +786,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="checkbutton_auto_cursor">
-                <property cbtype="simple" name="command" type="command">on_auto_cursor</property>
+                <property name="command" cbtype="simple" type="command">on_auto_cursor</property>
                 <property name="offvalue">manual</property>
                 <property name="onvalue">auto</property>
                 <property name="text" translatable="yes">Auto</property>
@@ -799,7 +799,7 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="checkbutton_auto_trace">
-                <property cbtype="simple" name="command" type="command">on_auto_trace</property>
+                <property name="command" cbtype="simple" type="command">on_auto_trace</property>
                 <property name="offvalue">manual</property>
                 <property name="onvalue">auto</property>
                 <property name="text" translatable="yes">Auto</property>
@@ -812,7 +812,7 @@
             </child>
             <child>
               <object class="ttk.Radiobutton" id="radiobutton_c1">
-                <property cbtype="simple" name="command" type="command">on_sel_cursor1</property>
+                <property name="command" cbtype="simple" type="command">on_sel_cursor1</property>
                 <property name="text" translatable="yes">Cursor 1</property>
                 <property name="value">cursor_1</property>
                 <property name="variable">string:var_selected_cursor</property>
@@ -824,7 +824,7 @@
             </child>
             <child>
               <object class="ttk.Radiobutton" id="radiobutton_c2">
-                <property cbtype="simple" name="command" type="command">on_sel_cursor2</property>
+                <property name="command" cbtype="simple" type="command">on_sel_cursor2</property>
                 <property name="text" translatable="yes">Cursor 2</property>
                 <property name="value">cursor_2</property>
                 <property name="variable">string:var_selected_cursor</property>
@@ -869,6 +869,77 @@
                 </child>
               </object>
             </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="tk.Toplevel" id="toplevel_log" named="True">
+    <property name="height">200</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Frame" id="frame4">
+        <property name="height">200</property>
+        <property name="width">200</property>
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">both</property>
+          <property name="padx">5</property>
+          <property name="pady">5</property>
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="pygubu.builder.widgets.scrollbarhelper" id="scrollbarhelper4">
+            <property name="scrolltype">both</property>
+            <property name="usemousewheel">false</property>
+            <layout manager="pack">
+              <property name="expand">true</property>
+              <property name="fill">both</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="tk.Text" id="text1">
+                <property name="height">25</property>
+                <property name="width">150</property>
+                <property name="wrap">none</property>
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">both</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="ttk.Frame" id="frame5">
+        <property name="height">200</property>
+        <property name="width">200</property>
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">x</property>
+          <property name="padx">5</property>
+          <property name="pady">5</property>
+          <property name="side">bottom</property>
+        </layout>
+        <child>
+          <object class="ttk.Combobox" id="combobox1">
+            <property name="state">readonly</property>
+            <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_set_level" add="" />
+            <layout manager="pack">
+              <property name="side">left</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button2">
+            <property name="command" type="command" cbtype="simple">on_clear</property>
+            <property name="text" translatable="yes">Clear</property>
+            <layout manager="pack">
+              <property name="side">right</property>
+            </layout>
           </object>
         </child>
       </object>
