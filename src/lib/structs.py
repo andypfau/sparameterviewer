@@ -28,7 +28,7 @@ class SParamFile:
     def nw(self):
         if not self._nw:
             try:
-                logging.warning(f'Loading network "{self.file_path}"')
+                logging.debug(f'Loading network "{self.file_path}"')
                 self._nw = skrf.network.Network(self.file_path)
             except Exception as ex:
                 logging.exception(f'Unable to load network from "{self.file_path}" ({ex})')

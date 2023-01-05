@@ -320,7 +320,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_reload_dir(self):
-        self._load_all_files_in_dir(self.dir, select=[sf.filename for sf in self.get_selected_files()])
+        self.reload_dir()
 
 
     def on_exit_cmd(self):
@@ -590,6 +590,11 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def load_dir(self, dir: str):
         self._load_all_files_in_dir(dir)
         self.update_file_list(only_select_first=True)
+    
+
+    def reload_dir(self):
+        self._load_all_files_in_dir(self.dir)
+        self.update_file_list()
 
     
     def load_files(self, filenames: "list[str]"):

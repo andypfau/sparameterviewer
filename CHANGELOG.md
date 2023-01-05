@@ -1,48 +1,58 @@
 S-Parameter Viewer Changelog
 ============================
 
+
+0.10b6 (2023-01-05)
+-------------------
+
+- bugfix: fixed loading of pattern-matched networks when using expressions
+- bugfix: removed constructor of Networks object from docs (not supposed to be called directly)
+- bugfix: fixed "Reload Directory" menu command
+- new: highlight of integrated area in RL calculator
+
+
 0.10b5 (2022-12-23)
 -------------------
 
-- added search bar
-- files are now lazy-loaded (this speeds up the app start when opening large directories, especially when those are network- or cloud-hosted)
-- fixed / documented workarounds for pyinstaller
-- fixed app icon loading
+- new: added search bar
+- new: files are now lazy-loaded (this speeds up the app start when opening large directories, especially when those are network- or cloud-hosted)
+- bugfix: fixed / documented workarounds for pyinstaller
+- bugfix: fixed app icon loading
 
 
 0.10b4 (2022-11-18)
 -------------------
 
-- development environment switched to Python 3.11.0
-- menu option to export plot as graphic
-- menu option to show error log
-- minor UI scaling improvements
-- improved readme
+- change: development environment switched to Python 3.11.0
+- new: menu option to export plot as graphic
+- new: menu option to show error log
+- enhancement: minor UI scaling improvements
+- enhancement: improved readme
 
 
 0.10b3 (2022-11-04)
 -------------------
 
-- fixed binary operations on S-parameters in expressions
-- fixed addition of S-parameters in expressions
+- bugfix: fixed binary operations on S-parameters in expressions
+- bugfix: fixed addition of S-parameters in expressions
 
 
 0.10b2 (2022-09-19)
 -------------------
 
-- Updated docs of Network expression class.
-- Fixed save/load expression dialog
-- Smarter handling and shortening of the legend
-- ignoring case of the .snp file extension (important under Linux)
-- option to lock X/Y axes
-- updated documentation
-- misc small fixes
+- enhancement: updated docs of Network expression class.
+- bugfix: fixed save/load expression dialog
+- enhancement: smarter handling and shortening of the legend
+- enhancement: ignoring case of the .snp file extension (important under Linux)
+- new: option to lock X/Y axes
+- enhancement: updated documentation
+- bugfix: misc small fixes
 
 
 0.9b2 (2022-09-04)
 ------------------
 
-- new: Networks.half() now uses IEEE-370 by default
+- change: Networks.half() now uses IEEE-370 by default
 
 
 0.9b1 (2022-09-03)

@@ -12,6 +12,11 @@ from sparamviewer_rl_pygubu import SparamviewerPygubuApp
 
 
 
+def v2db(v):
+    return 20*np.log10(np.maximum(1e-15,np.abs(v)))
+
+
+
 # extend auto-generated UI code
 class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
     def __init__(self, master, files: "list[SParamFile]", selected_tag: any = None):
@@ -88,11 +93,13 @@ class SparamviewerReturnlossDialog(SparamviewerPygubuApp):
 
         self.fig.clf()
         self.plot = self.fig.add_subplot(111)
-
-        self.plot.plot(bodefano.nw_f_intrange/1e9, 20*np.log10(np.abs(bodefano.nw_s_intrange)), '-', label=f'S{port}{port}')
+        
+        self.plot.fill_between(bodefano.nw_f_intrange/1e9, v2db(bodefano.nw_s_intrange), color='chartreuse', alpha=0.1)
+        self.plot.plot(bodefano.nw_f_intrange/1e9, v2db(bodefano.nw_s_intrange), '-', label=f'S{port}{port}')
         self.plot.plot([bodefano.f_integration_actual_start_hz/1e9,bodefano.f_integration_actual_stop_hz/1e9], [bodefano.db_total,bodefano.db_total], ':', label=f'Current avg. RL (integration range): {bodefano.db_total:+.3g} dB')
         self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_current,bodefano.db_current], '--', label=f'Current avg. RL (target range): {bodefano.db_current:+.3g} dB')
         self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_optimized,bodefano.db_optimized], '-', label=f'Achievable avg. RL (target range): {bodefano.db_optimized:+.3g} dB')
+        
         self.plot.set_xlabel('f / GHz')
         self.plot.set_ylabel('RL / dB')
         self.plot.legend()

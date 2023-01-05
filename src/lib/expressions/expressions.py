@@ -28,7 +28,7 @@ class ExpressionParser:
             else:
                 for nw in network_list:
                     if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
-                        nws.append(nw.nw)
+                        nws.append(nw)
             if single:
                 if len(nws) != 1:
                     raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
@@ -70,11 +70,11 @@ class ExpressionParser:
 
 The basic concept is to load one or multiple networks, get a specific S-parameter (s), and plot it (plot):
 
-    nws("amp.s2p").s(2,1).plot("IL")
+    nws("*amp.s2p").s(2,1).plot("IL")
 
 Which could be re-written as:
     
-    n = nws("*.s2p") # type: Networks
+    n = nws("*amp.s2p") # type: Networks
     s = n.s(2,1) # type: SParams
     s.plot("IL")
 
@@ -89,15 +89,10 @@ Networks
 
     A container for one or more S-parameter networks.
 
-    Note that any operation on the object might fail silently. For example, if an object contains a 1-port
-    and a 2-port, and you attempt to invert the object (an operation that only works on 2-ports), the 1-port
-    will silently be dropped.
-
-    Constructor
-
-        Network(<name_or_partial_name>)
-            Returns the networks that match the provided name; e.g. Networks("Amplifier") would match
-            a file named "Amplifier.s2p" or "MyAmplifier01.s2p".
+    Note that any operation on the object may, by design, fail silently. For example, if an object contains
+    a 1-port and a 2-port, and you attempt to invert the object (an operation that only works on 2-ports),
+    the 1-port will silently be dropped. This is to avoid excessive errors when applying general expressions
+    on a large set of networks.
 
     Methods
 
