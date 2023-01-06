@@ -2,7 +2,7 @@
 
 import sys, os, logging
 
-from sparamviewer_main import SparamviewerMainDialog
+from gui.main_window import SparamviewerMainDialog
 from lib import AppGlobal, is_windows
 
 

@@ -1,7 +1,7 @@
 #!/bin/python3
 
 from tkinter import END
-from sparamviewer_info_pygubu import SparamviewerPygubuApp
+from .info_dialog_pygubu import SparamviewerPygubuApp
 from lib import TkText, AppGlobal, TkCommon
 
 import logging

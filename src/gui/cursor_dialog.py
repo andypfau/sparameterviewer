@@ -1,11 +1,10 @@
 #!/bin/python3
 
 from tkinter import END
-from sparamviewer_cursor_pygubu import SparamviewerPygubuApp
-from lib import TkText, AppGlobal
+from .cursor_dialog_pygubu import SparamviewerPygubuApp
+from lib import TkText, AppGlobal, PlotData
 
 import os
-from lib import PlotData
 
 
 # extend auto-generated UI code

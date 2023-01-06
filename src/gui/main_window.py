@@ -13,10 +13,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from lib.buffer_log_handler import BufferLogHandler
 from lib.si import SiFmt
 
-from sparamviewer_main_pygubu import SparamviewerPygubuApp
-from sparamviewer_info import SparamviewerInfoDialog
-from sparamviewer_rl import SparamviewerReturnlossDialog
-from sparamviewer_cursor import SparamviewerCursorDialog
+from .main_window_pygubu import SparamviewerPygubuApp
+from .info_dialog import SparamviewerInfoDialog
+from .rl_dialog import SparamviewerReturnlossDialog
+from .cursor_dialog import SparamviewerCursorDialog
 from info import Info
 
 from lib import sparam_to_timedomain, get_sparam_name

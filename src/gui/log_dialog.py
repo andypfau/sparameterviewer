@@ -1,5 +1,5 @@
 from tkinter import END
-from sparamviewer_log_pygubu import SparamviewerPygubuApp
+from log_dialog_pygubu import SparamviewerPygubuApp
 from lib import TkText, AppGlobal, TkCommon
 
 import logging

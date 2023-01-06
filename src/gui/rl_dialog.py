@@ -8,7 +8,7 @@ import numpy as np
 import skrf, copy, math, cmath, glob, os
 
 from lib import SParamFile, AppGlobal, BodeFano
-from sparamviewer_rl_pygubu import SparamviewerPygubuApp
+from .rl_dialog_pygubu import SparamviewerPygubuApp
 
 
 
