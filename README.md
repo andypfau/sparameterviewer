@@ -81,7 +81,6 @@ Known Issues and Missing Features
 - Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
 - Log output for equations (so that you can also print some data or status)
-- Allow user to set log level (debug/info/warning/error)
 - Table view of data
 - Check if network is reciprocal, passive, lossless, unilateral
 - Allow to provide regex to strip names in expression plots
