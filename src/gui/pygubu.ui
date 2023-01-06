@@ -876,6 +876,7 @@
   </object>
   <object class="tk.Toplevel" id="toplevel_log" named="True">
     <property name="height">200</property>
+    <property name="title" translatable="yes">Log</property>
     <property name="width">200</property>
     <child>
       <object class="ttk.Frame" id="frame4">
@@ -898,7 +899,7 @@
               <property name="side">top</property>
             </layout>
             <child>
-              <object class="tk.Text" id="text1">
+              <object class="tk.Text" id="log_text" named="True">
                 <property name="height">25</property>
                 <property name="width">150</property>
                 <property name="wrap">none</property>
@@ -927,6 +928,8 @@
         <child>
           <object class="ttk.Combobox" id="combobox1">
             <property name="state">readonly</property>
+            <property name="textvariable">string:log_level</property>
+            <property name="values">Debug Info Warning Error</property>
             <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_set_level" add="" />
             <layout manager="pack">
               <property name="side">left</property>

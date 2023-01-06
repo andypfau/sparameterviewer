@@ -10,13 +10,13 @@ import re
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from lib.buffer_log_handler import BufferLogHandler
 from lib.si import SiFmt
 
 from .main_window_pygubu import SparamviewerPygubuApp
 from .info_dialog import SparamviewerInfoDialog
 from .rl_dialog import SparamviewerReturnlossDialog
 from .cursor_dialog import SparamviewerCursorDialog
+from .log_dialog import SparamviewerLogDialog, LogHandler
 from .settings import Settings
 from info import Info
 
@@ -31,11 +31,6 @@ from lib import TkText, TkCommon, AppGlobal
 class SparamviewerMainDialog(SparamviewerPygubuApp):
     def __init__(self, filenames: "list[str]"):
         super().__init__()
-
-        logging.basicConfig(level=logging.WARNING)
-        logging.captureWarnings(True)
-        self.bufferLogHandler = BufferLogHandler(logging.WARNING)
-        logging.getLogger().addHandler(self.bufferLogHandler)
 
         try:
             self.dir = ''
@@ -160,7 +155,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         
         except Exception as ex:
             Settings.reset()
-            Settings.save()
             logging.exception(f'Unable to init main dialog: {ex}')
             messagebox.showerror('Error', f'Error ({ex}); maybe corrupted config... reset, try again next time')
     
@@ -299,7 +293,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     def on_select_plotmode(self, event=None):
         Settings.plot_unit = self.combobox_unit.current()
         Settings.plot_mode = self.combobox_mode.current()
-        Settings.save()
         self.update_plot()
     
 
@@ -321,7 +314,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         if kaiser is None:
             return
         Settings.td_kaiser = kaiser
-        Settings.save()
         self.update_plot()
 
     
@@ -346,7 +338,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             new += commented
 
         Settings.expression = new
-        Settings.save()
 
         TkText.set_text(self.text_expr, new)
 
@@ -449,25 +440,21 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_show_legend(self):
         Settings.show_legend = (self.show_legend.get() == '1')
-        Settings.save()
         self.update_plot()
 
 
     def on_change_logf(self):
         Settings.log_freq = (self.logf.get() == '1')
-        Settings.save()
         self.update_plot()
 
 
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = (self.hide_single_legend.get() == '1')
-        Settings.save()
         self.update_plot()
 
 
     def on_short_legend(self):
         Settings.shorten_legend_items = (self.short_legend.get() == '1')
-        Settings.save()
         self.update_plot()
 
 
@@ -538,10 +525,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
 
     def open_error_dialog(self):
-        errs = self.bufferLogHandler.entries if len(self.eval_error_list)== 0 else self.eval_error_list
-        log = '\n'.join(errs)
-        dlg = SparamviewerInfoDialog(self.toplevel_main, title='Error Log', text=log)
-        dlg.run()
+        SparamviewerLogDialog(self.toplevel_main).run()
 
 
     def on_show_error_log_click(self):
@@ -786,20 +770,20 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
                 raw_exprs = TkText.get_text(self.text_expr)
                 Settings.expression = raw_exprs
-                Settings.save()
 
                 self.show_error(None)              
                 self.eval_error_list = []
-                log_entries_before = self.bufferLogHandler.count
+                log_entries_before = len(LogHandler.instance.entries)
                 ex_msg = None
                 try:
                     touched_files = ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
                 except Exception as ex:
                     logging.exception(ex)
                     ex_msg = str(ex)
-                log_entries_after = self.bufferLogHandler.count
-                if log_entries_after > log_entries_before:
-                    self.eval_error_list = self.bufferLogHandler.entries[log_entries_before:]
+                log_entries_after = len(LogHandler.instance.entries)
+                n_new_entries = log_entries_after - log_entries_before
+                if n_new_entries > 0:
+                    self.eval_error_list = LogHandler.instance.entries[-n_new_entries:]
                     self.fig.clf()
                     if ex_msg is not None:
                         self.show_error(ex_msg)

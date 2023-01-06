@@ -4,9 +4,10 @@ from ..stabcircle import StabilityCircle
 from .networks import Networks
 from .sparams import SParam, SParams
 
-import skrf, math, os
+import math
 import numpy as np
 import fnmatch
+import logging
 
 
 class ExpressionParser:
@@ -29,6 +30,7 @@ class ExpressionParser:
                 for nw in network_list:
                     if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
                         nws.append(nw)
+            logging.debug(f'Expression pattern "{pattern}" matched "' + '", "'.join([n.name for n in nws]) + '"')
             if single:
                 if len(nws) != 1:
                     raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')

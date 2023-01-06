@@ -1,5 +1,7 @@
 from lib import AppSettings
 
+import logging
+
 
 class SParamViewerAppSettings(AppSettings):
     plot_mode: int = 0
@@ -10,6 +12,7 @@ class SParamViewerAppSettings(AppSettings):
     log_freq: bool = False
     expression: str = ''
     td_kaiser: float = 35.0
+    log_level: int = logging.WARNING
 
 
 Settings = SParamViewerAppSettings(
