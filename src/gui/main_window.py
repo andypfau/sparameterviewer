@@ -524,8 +524,36 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         except Exception as ex:
             logging.exception(f'Exporting failed: {ex}')
             messagebox.showerror('Error', str(ex))
+    
 
+    def on_copy_plot_to_clipboard(self):
 
+        if not self.plot.fig:
+            return
+
+        try:
+            import io
+            import win32clipboard
+            from PIL import Image
+
+            rgba_buffer = self.plot.fig.canvas.buffer_rgba()
+            w = int(self.plot.fig.get_figwidth() * self.plot.fig.dpi)
+            h = int(self.plot.fig.get_figheight() * self.plot.fig.dpi)
+            im = Image.frombuffer('RGBA', (w,h), rgba_buffer)
+            
+            io_buffer = io.BytesIO()
+            im.convert("RGB").save(io_buffer, "BMP")
+            data = io_buffer.getvalue()[14:]
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+            win32clipboard.CloseClipboard()
+            io_buffer.close()
+
+        except Exception as ex:
+            logging.exception(f'Copying plot to clipboard failed: {ex}')
+            messagebox.showerror('Error', str(ex))
+    
     def on_menu_about(self):
         messagebox.showinfo('About', f'{Info.AppName}\n\nVersion: {Info.AppVersionStr}\nDate: {Info.AppDateStr}')
 

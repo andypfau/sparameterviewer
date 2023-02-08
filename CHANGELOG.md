@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: remembering geometry of main window
+- new: copy plot to clipboard
 
 
 0.10b7 (2023-01-06)

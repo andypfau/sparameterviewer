@@ -195,6 +195,11 @@ class SparamviewerPygubuApp:
             variable=self.short_legend)
         self.submenu_2.add("separator")
         self.submenu_2.add(
+            "command",
+            command=self.on_copy_plot_to_clipboard,
+            label='Copy to Clipboard')
+        self.submenu_2.add("separator")
+        self.submenu_2.add(
             "checkbutton",
             command=self.on_change_logf,
             label='Logarithmic Frequency',
@@ -316,6 +321,9 @@ class SparamviewerPygubuApp:
         pass
 
     def on_short_legend(self):
+        pass
+
+    def on_copy_plot_to_clipboard(self):
         pass
 
     def on_change_logf(self):
