@@ -13,6 +13,7 @@ class SParamViewerAppSettings(AppSettings):
     expression: str = ''
     td_kaiser: float = 35.0
     log_level: int = logging.WARNING
+    mainwin_geom: str = None
 
 
 Settings = SParamViewerAppSettings(

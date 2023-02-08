@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.10b8 (2023-02-08)
+-------------------
+
+- new: remembering geometry of main window
+
+
 0.10b7 (2023-01-06)
 -------------------
 

@@ -113,6 +113,16 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             def on_click_errors(event):
                 self.open_error_dialog()
             self.entry_err.bind('<Button-1>', on_click_errors)
+
+            # remember window size
+            if Settings.mainwin_geom is not None:
+                try:
+                    self.mainwindow.geometry(Settings.mainwin_geom)
+                except:
+                    Settings.mainwin_geom = None
+            def save_window_size(event):
+                Settings.mainwin_geom = self.mainwindow.geometry()
+            self.mainwindow.bind("<Configure>", save_window_size)
             
             # fix treeview
             self.treeview_files['columns'] = ('filename', 'props')
