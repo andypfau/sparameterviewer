@@ -37,8 +37,8 @@ Compiling is optional. You can just as well run the Python script.
 
 Compiling was successfully tested under Windows 10 and under Fedora 37 with the following command:
 - `cd src`
-- `pyinstaller sparamviewer.spec`
-    - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean sparamviewer.spec`
+- `pyinstaller pyinstaller.spec`
+    - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean pyinstaller.spec`
 
 Under Fedora 37 at least, I had to fix matplitlib by coping the contents of `src/dist/sparamviewer/matplotlib/mpl-data/` to `share/matplotlib/mpl-data/`.
 

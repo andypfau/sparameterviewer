@@ -26,12 +26,16 @@ hiddenimports.extend(['PIL._tkinter_finder'])
 # TODO: fix for Matplotlib, which does not find <share/matplotlib/mpl-data>...
 
 
+hiddenimports.append('lib')
+hiddenimports.append('gui')
+
+
 block_cipher = None
 
 
 a = Analysis(
     ['sparamviewer.py'],
-    pathex=[],
+    pathex=['./gui', './lib'],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
