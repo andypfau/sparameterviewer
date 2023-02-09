@@ -196,8 +196,12 @@ class SparamviewerPygubuApp:
         self.submenu_2.add("separator")
         self.submenu_2.add(
             "command",
-            command=self.on_copy_plot_to_clipboard,
-            label='Copy to Clipboard')
+            command=self.on_copy_plot_image_to_clipboard,
+            label='Copy Image to Clipboard')
+        self.submenu_2.add(
+            "command",
+            command=self.on_copy_plot_data_to_clipboard,
+            label='Copy Data to Clipboard')
         self.submenu_2.add("separator")
         self.submenu_2.add(
             "checkbutton",
@@ -323,7 +327,10 @@ class SparamviewerPygubuApp:
     def on_short_legend(self):
         pass
 
-    def on_copy_plot_to_clipboard(self):
+    def on_copy_plot_image_to_clipboard(self):
+        pass
+
+    def on_copy_plot_data_to_clipboard(self):
         pass
 
     def on_change_logf(self):

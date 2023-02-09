@@ -405,8 +405,14 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_copy_plot" named="True">
-                    <property cbtype="simple" name="command" type="command">on_copy_plot_to_clipboard</property>
-                    <property name="label" translatable="yes">Copy to Clipboard</property>
+                    <property cbtype="simple" name="command" type="command">on_copy_plot_image_to_clipboard</property>
+                    <property name="label" translatable="yes">Copy Image to Clipboard</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_copy_data" named="True">
+                    <property cbtype="simple" name="command" type="command">on_copy_plot_data_to_clipboard</property>
+                    <property name="label" translatable="yes">Copy Data to Clipboard</property>
                   </object>
                 </child>
                 <child>

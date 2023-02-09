@@ -526,7 +526,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             messagebox.showerror('Error', str(ex))
     
 
-    def on_copy_plot_to_clipboard(self):
+    def on_copy_plot_image_to_clipboard(self):
 
         if not self.plot.fig:
             return
@@ -549,11 +549,26 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
             win32clipboard.CloseClipboard()
             io_buffer.close()
+            
+        except Exception as ex:
+            logging.exception(f'Copying plot to clipboard failed: {ex}')
+            messagebox.showerror('Error', str(ex))
+    
+
+    def on_copy_plot_data_to_clipboard(self):
+
+        if not self.plot.fig:
+            return
+
+        try:
+            df = DataExport.to_pandas(self.plot.plots)
+            df.to_clipboard(index=False)
 
         except Exception as ex:
             logging.exception(f'Copying plot to clipboard failed: {ex}')
             messagebox.showerror('Error', str(ex))
     
+
     def on_menu_about(self):
         messagebox.showinfo('About', f'{Info.AppName}\n\nVersion: {Info.AppVersionStr}\nDate: {Info.AppDateStr}')
 

@@ -3,6 +3,8 @@ from .structs import PlotData, PlotDataQuantity
 
 from openpyxl.worksheet.table import TableStyleInfo
 from openpyxl.styles import Font
+import numpy as np
+import pandas as pd
 
 
 class DataExport:
@@ -80,3 +82,30 @@ class DataExport:
             ws.col_widths([20, 20])
 
         xls.save(filename)    
+
+    
+
+    @staticmethod
+    def to_pandas(plots: "list[PlotData]") -> "pd.DataFrame":
+        df = pd.DataFrame()
+        first_xname = None
+        first_xdata = None
+        for i,plot in enumerate(plots):
+            xname = plot.x.name + f' / {plot.x.format.unit}' if plot.x.format.unit!='' else ''
+            yname = plot.name + ' ' + plot.y.name + f' / {plot.y.format.unit}' if plot.y.format.unit!='' else ''
+
+            append_at_end = False
+            if i == 0:
+                first_xname = xname
+                first_xdata = plot.x.values
+                append_at_end = True
+            else:
+                if (first_xname==xname) and np.array_equal(first_xdata, plot.x.values):
+                    df[yname] = plot.y.values # same x-axis -> just add another column
+                else:
+                    append_at_end = True
+            if append_at_end:
+                data = list([[x,y] for x,y in zip(plot.x.values, plot.y.values)])
+                new_rows = pd.DataFrame(data=data, columns=[xname,yname])
+                df = pd.concat([df, new_rows], ignore_index=True)
+        return df

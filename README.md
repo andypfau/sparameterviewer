@@ -19,7 +19,7 @@ Prerequisites
 -------------
 
 - Python 3.11 (might work with 3.7 or newer, but not tested)
-- Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow`
+- Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow pandas`
 - Optional packet dependencies: `pyinstaller`
 
 
