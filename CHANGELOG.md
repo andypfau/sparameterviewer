@@ -2,11 +2,11 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.10b8 (2023-02-08)
+0.10b8 (2023-02-09)
 -------------------
 
 - new: remembering geometry of main window
-- new: copy plot to clipboard
+- new: copy plot image or data to clipboard
 
 
 0.10b7 (2023-01-06)
