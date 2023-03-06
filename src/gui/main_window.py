@@ -308,6 +308,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_open_dir(self):
         dir = filedialog.askdirectory(initialdir=self.dir)
+        if not dir:
+            return
         self.load_dir(dir)
     
 

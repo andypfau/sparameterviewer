@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.10b9 (2023-03-06)
+-------------------
+
+- bugfix: properly handling abort when selecting directory
+
+
 0.10b8 (2023-02-09)
 -------------------
 
