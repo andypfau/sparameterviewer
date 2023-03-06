@@ -38,7 +38,7 @@ class SparamviewerPygubuApp:
         self.combobox_unit.pack(padx=5, side="right")
         self.combobox_unit.bind(
             "<<ComboboxSelected>>",
-            self.on_select_plotmode,
+            self.on_select_plotunit,
             add="")
         self.frame_2.pack(expand="false", fill="x", side="top")
         self.frame_1 = ttk.Frame(self.frame_11)
@@ -271,6 +271,9 @@ class SparamviewerPygubuApp:
         self.mainwindow.mainloop()
 
     def on_select_plotmode(self, event=None):
+        pass
+
+    def on_select_plotunit(self, event=None):
         pass
 
     def on_search_press_key(self, event=None):

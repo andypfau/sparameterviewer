@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - bugfix: properly handling abort when selecting directory
+- bugfix: don't attempt to re-apply locked axis scale when plot format has changed
 
 
 0.10b8 (2023-02-09)

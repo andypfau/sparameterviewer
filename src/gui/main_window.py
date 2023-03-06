@@ -301,8 +301,16 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_select_plotmode(self, event=None):
-        Settings.plot_unit = self.combobox_unit.current()
         Settings.plot_mode = self.combobox_mode.current()
+        self.update_plot()
+    
+
+    def on_select_plotunit(self, event=None):
+        changed = Settings.plot_unit != self.combobox_unit.current()
+        Settings.plot_unit = self.combobox_unit.current()
+        if changed:
+            # different kind of chart -> axes scale is probably no longer valid
+            self.invalidate_axes_lock(update=False)
         self.update_plot()
     
 
@@ -483,8 +491,13 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
     
 
     def on_rescale_locked_axes(self):
+        self.invalidate_axes_lock()
+
+    
+    def invalidate_axes_lock(self, update: bool = True):
         self.plot_axes_are_valid = False
-        self.update_plot()
+        if update:
+            self.update_plot()
 
     
     def on_export(self):

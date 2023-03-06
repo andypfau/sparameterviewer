@@ -88,7 +88,7 @@
                         <child>
                           <object class="ttk.Combobox" id="combobox_unit">
                             <property name="state">readonly</property>
-                            <bind add="" handler="on_select_plotmode" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
+                            <bind add="" handler="on_select_plotunit" sequence="&lt;&lt;ComboboxSelected&gt;&gt;" />
                             <layout manager="pack">
                               <property name="padx">5</property>
                               <property name="side">right</property>
