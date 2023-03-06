@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 0.10b9 (2023-03-06)
 -------------------
 
+- new: displaying frequency in polar and Smith plots
 - bugfix: properly handling abort when selecting directory
 - bugfix: don't attempt to re-apply locked axis scale when plot format has changed
 

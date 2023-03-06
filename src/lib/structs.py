@@ -53,5 +53,6 @@ class PlotData:
     name: str
     x: PlotDataQuantity
     y: PlotDataQuantity
+    z: PlotDataQuantity
     style: str
     color: object

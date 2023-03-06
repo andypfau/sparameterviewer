@@ -241,31 +241,42 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             if target_cursor_index is not None:
 
                 if self.cursor_dialog.auto_select_trace:
-                    plot, x, y = self.plot.get_closest_plot_point(x, y)
+                    plot, x, y, z = self.plot.get_closest_plot_point(x, y)
                     if plot is not None:
                         self.cursor_dialog.set_trace(target_cursor_index, plot.name)
                 else:
                     selected_trace_name = self.cursor_dialog.selected_trace_name_1 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_2
                     if selected_trace_name is not None:
-                        plot, x, y = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
                     else:
-                        plot, x, y = None, None, None
+                        plot, x, y, z = None, None, None, None
 
                 if plot is not None:
                     target_cursor = self.plot.cursors[target_cursor_index]
-                    target_cursor.set(x, y, enable=True, color=plot.color)
+                    target_cursor.set(x, y, z, enable=True, color=plot.color)
         
         readout = ''
         xf = copy.copy(self.plot.x_fmt)
         yf = copy.copy(self.plot.y_fmt)
+        zf = copy.copy(self.plot.z_fmt)
         xf.significant_digits += 3
         yf.significant_digits += 3
+        if zf is not None:
+            zf.significant_digits += 1
         if self.cursor_dialog.enable_cursor_1:
-            x,y = self.plot.cursors[0].x, self.plot.cursors[0].y
-            readout += f'Cursor 1: {Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+            x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
+            readout += f'Cursor 1: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} | '
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+            readout += '\n'
         if self.cursor_dialog.enable_cursor_2:
-            x,y = self.plot.cursors[1].x, self.plot.cursors[1].y
-            readout += f'Cursor 2: {Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+            x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
+            readout += f'Cursor 2: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} |'
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}'
+            readout += '\n'
             if self.cursor_dialog.enable_cursor_1:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
                 if yf.unit=='dB' or yf.unit=='°':
@@ -771,10 +782,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
             if polar:
-                self.plot = PlotHelper(self.fig, False, True, 'Real', SiFmt(), False, 'Imaginary', SiFmt(), False, False, **common_plot_args)
+                self.plot = PlotHelper(self.fig, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(self.fig, True, False, '', SiFmt(), False, '', SiFmt(), False, smith_type=smith_type, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(fig=self.fig, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
@@ -808,28 +819,28 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     style2 = ':'
 
                 if polar or smith:
-                    self.plot.add(np.real(sp), np.imag(sp), name, style)
+                    self.plot.add(np.real(sp), np.imag(sp), f, name, style)
                 else:
                     if timedomain:
                         t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=Settings.td_kaiser)
-                        self.plot.add(t, lev, name, style)
+                        self.plot.add(t, lev, None, name, style)
                     elif qty_db:
-                        self.plot.add(f, v2db(sp), name, style)
+                        self.plot.add(f, v2db(sp), None, name, style)
                     elif qty_lin_mag or qty_log_mag:
-                        self.plot.add(f, np.abs(sp), name, style)
+                        self.plot.add(f, np.abs(sp), None, name, style)
                     elif qty_group_delay:
-                        self.plot.add(f, group_delay(f,sp), name, style)
+                        self.plot.add(f, group_delay(f,sp), None, name, style)
                     elif qty_re and qty_im:
-                        self.plot.add(f, np.real(sp), name+' re', style)
-                        self.plot.add(f, np.imag(sp), name+' im', style2)
+                        self.plot.add(f, np.real(sp), None, name+' re', style)
+                        self.plot.add(f, np.imag(sp), None, name+' im', style2)
                     elif qty_re:
-                        self.plot.add(f, np.real(sp), name, style)
+                        self.plot.add(f, np.real(sp), None, name, style)
                     elif qty_im:
-                        self.plot.add(f, np.imag(sp), name, style)
+                        self.plot.add(f, np.imag(sp), None, name, style)
                     elif unwrap_phase:
-                        self.plot.add(f, np.unwrap(np.angle(sp))*180/math.pi, name, style)
+                        self.plot.add(f, np.unwrap(np.angle(sp))*180/math.pi, None, name, style)
                     else:
-                        self.plot.add(f, np.angle(sp)*180/math.pi, name, style)
+                        self.plot.add(f, np.angle(sp)*180/math.pi, None, name, style)
             
             selected_files = self.get_selected_files()
             touched_files = []

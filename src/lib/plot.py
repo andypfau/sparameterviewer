@@ -10,6 +10,16 @@ import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 
 
+@dataclass
+class ItemToPlot:
+    x: "list[float]"
+    y: "list[float]"
+    z: "list[float]|None"
+    name: str
+    style: str
+
+
+
 class PlotHelper:
 
 
@@ -22,15 +32,16 @@ class PlotHelper:
             self.style = style
             self.color = color
 
-            self.x, self.y = 0, 0
-            self.data = None # type: PlotHelper.Data
+            self.x, self.y, self.z = 0, 0, None
+            self.data: PlotHelper.Data
+            self.data = None
 
             self._is_set = False
             self._hl, self._vl = None, None
         
 
-        def set(self, x: float, y: float, enable: bool = True, color: object = None):
-            self.x, self.y = x, y
+        def set(self, x: float, y: float, z: float, enable: bool = True, color: object = None):
+            self.x, self.y, self.z = x, y, z
             self._is_set = True
             self.enabled = enable
             self.color = color
@@ -72,7 +83,8 @@ class PlotHelper:
     
 
     def __init__(self, fig: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
-        y_qty: "str", y_fmt: SiFmt, y_log: bool, smith_type: str='z', smith_z=1.0,
+        y_qty: "str", y_fmt: SiFmt, y_log: bool, z_qty: "str" = None, z_fmt: SiFmt = None,
+        smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False):
         
         self.cursors = [
@@ -80,7 +92,8 @@ class PlotHelper:
             PlotHelper.Cursor(self, '-.'),
         ]
 
-        self.plots = [] # type: list[PlotData]
+        self.plots: list[PlotData]
+        self.plots = []
 
         self.fig = fig
         self.smith = smith
@@ -93,6 +106,8 @@ class PlotHelper:
         self.y_qty = y_qty
         self.y_fmt = y_fmt
         self.y_log = y_log
+        self.z_qty = z_qty
+        self.z_fmt = z_fmt
         self.show_legend = show_legend
         self.hide_single_item_legend = hide_single_item_legend
         self.shorten_legend = shorten_legend
@@ -101,6 +116,8 @@ class PlotHelper:
         
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
+        self.z_range = [+1e99,-1e99]
+        self.items_to_plot: list[ItemToPlot]
         self.items_to_plot = []
 
         self.plot = None # type: pyplot.axes.Axes
@@ -123,41 +140,46 @@ class PlotHelper:
             return (1, self.cursors[1])
 
 
-    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None) -> "tuple[PlotHelper.Data,float,float]":
+    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None) -> "tuple[PlotHelper.Data,float,float,float]":
 
         best_error = +1e99
         best_x = None
         best_y = None
+        best_z = None
         best_plot = None
 
         for plot in self.plots:
             if name is not None:
                 if plot.name != name:
                     continue
-            for dx,dy in zip(plot.x.values, plot.y.values):
+            for idx,(dx,dy) in enumerate(zip(plot.x.values, plot.y.values)):
                 error = math.sqrt(pow(x-dx,2)+pow(y-dy,2))
                 if error < best_error:
                     best_error = error
                     best_x = dx
                     best_y = dy
+                    if plot.z is not None:
+                        best_z = plot.z.values[idx]
                     best_plot = plot
 
-        return best_plot, best_x, best_y
+        return best_plot, best_x, best_y, best_z
 
 
-    def add(self, x: "list[float]", y: "list[float]", name: str, style: str):
+    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str):
         
         self.x_range = [min(self.x_range[0],min(x)), max(self.x_range[1],max(x))]
         self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
-        self.items_to_plot.append([x, y, name, style])
+        if z is not None:
+            self.z_range = [min(self.z_range[0],min(z)), max(self.z_range[1],max(z))]
+        self.items_to_plot.append(ItemToPlot(x, y, z, name, style))
     
 
     def render(self):
 
         def get_r_max():
             r_max = 0
-            for (x,y,_,_) in self.items_to_plot:
-                r_this = max(np.sqrt(np.power(x,2) + np.power(y,2)))
+            for item in self.items_to_plot:
+                r_this = max(np.sqrt(np.power(item.x,2) + np.power(item.y,2)))
                 r_max = max(r_max, r_this)
             return r_max
 
@@ -177,12 +199,14 @@ class PlotHelper:
         
         self.any_legend = False
 
-        labels = [i[2] for i in self.items_to_plot]
+        labels = [item.name for item in self.items_to_plot]
         if self.shorten_legend:
             labels = remove_common_prefixes_and_suffixes(labels)
 
-        for (x,y,name,style),label in zip(self.items_to_plot, labels):
+        for item,label in zip(self.items_to_plot, labels):
         
+            x, y, z, name, style = item.x, item.y, item.z, item.name, item.style
+
             # escaping for matplotlib
             if label.startswith('_'):
                 label = ' _' + label[1:]
@@ -218,6 +242,7 @@ class PlotHelper:
                 name, 
                 PlotDataQuantity(self.x_qty, self.x_fmt, x),
                 PlotDataQuantity(self.y_qty, self.y_fmt, y),
+                PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None,
                 style,
                 color,
             ))

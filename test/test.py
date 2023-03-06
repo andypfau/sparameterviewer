@@ -30,7 +30,7 @@ class Tempfile:
 def get_dummy_plot_data(n: int) -> "list[PlotData]":
     result = []
     for i in range(n):
-        result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFmt(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFmt(),[i+4,i+5,i+6]),'-',None))
+        result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFmt(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFmt(),[i+4,i+5,i+6]),None,'-',None))
     return result
 
 
