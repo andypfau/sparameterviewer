@@ -849,6 +849,19 @@
                 </layout>
               </object>
             </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_syncx" named="True">
+                <property cbtype="simple" name="command" type="command">on_sync_x</property>
+                <property name="offvalue">indep</property>
+                <property name="onvalue">sync</property>
+                <property name="text" translatable="yes">Sync X</property>
+                <property name="variable">string:var_sync_x</property>
+                <layout manager="grid">
+                  <property name="column">2</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
           </object>
         </child>
         <child>

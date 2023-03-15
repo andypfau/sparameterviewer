@@ -228,7 +228,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.plot.cursors[1].enable(self.cursor_dialog.enable_cursor_2)
         
         if left_btn_pressed:
-            
+
             # find out which cursor to move
             if self.cursor_dialog.auto_select_cursor and left_btn_event:
                 target_cursor_index, _ = self.plot.get_closest_cursor(x, y)
@@ -254,6 +254,15 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 if plot is not None:
                     target_cursor = self.plot.cursors[target_cursor_index]
                     target_cursor.set(x, y, z, enable=True, color=plot.color)
+                    
+                sync_x = self.cursor_dialog.var_sync_x.get() == 'sync'
+                if sync_x:
+                    other_trace_name = self.cursor_dialog.selected_trace_name_2 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_1
+                    other_plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=other_trace_name)
+                    if other_plot is not None:
+                        other_cursor_index = 1 - target_cursor_index
+                        other_cursor = self.plot.cursors[other_cursor_index]
+                        other_cursor.set(x, y, z, enable=True, color=other_plot.color)
         
         readout = ''
         xf = copy.copy(self.plot.x_fmt)
@@ -269,14 +278,12 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             if z is not None:
                 readout += f'{Si(z,si_fmt=zf)} | '
             readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
-            readout += '\n'
         if self.cursor_dialog.enable_cursor_2:
             x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
             readout += f'Cursor 2: '
             if z is not None:
                 readout += f'{Si(z,si_fmt=zf)} |'
-            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}'
-            readout += '\n'
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
             if self.cursor_dialog.enable_cursor_1:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
                 if yf.unit=='dB' or yf.unit=='°':

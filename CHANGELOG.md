@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.10b10 (2023-03-15)
+-------------------
+
+- new: allowing to sync cursors
+- bugfix: formatting of cursor status text
+
+
 0.10b9 (2023-03-06)
 -------------------
 

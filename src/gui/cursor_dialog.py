@@ -61,6 +61,10 @@ class SparamviewerCursorDialog(SparamviewerPygubuApp):
         self.update()
 
 
+    def  on_sync_x(self):
+        self.update()
+
+
     def repopulate(self, plots: "list[PlotData]"):
         
         self.plots = plots
