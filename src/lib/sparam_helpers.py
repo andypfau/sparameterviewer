@@ -11,43 +11,70 @@ def get_sparam_name(egress: int, ingress: int) -> str:
         return f'S{egress},{ingress}'
 
 
-def extrapolate_sparams_to_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
+def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float = 1e-3, max_abs_error = 1.0) -> "tuple(np.ndarray,np.ndarray)":
+
+    f_min, f_max = f[0], f[-1]
+    f_equidistant = np.linspace(f_min, f_max, len(f))
+
+    error = f - f_equidistant
+    max_error = max(np.abs(error))
+    if max_error < f_max*max_rel_error and max_abs_error:
+        return f, sp # already good enough
+
+    if len(f) < 2:
+        raise RuntimeError('Cannot interpolate S-parameters: at least two frequency samples are required')
     
-    if len(f)<2 or f[0]==0:
-        sp_realdc = copy.copy(sp)
-        sp_realdc[0] = np.real(sp)[0]
-        return f, sp_realdc
+    get_interpolator = lambda f,x: interp1d(f, x, kind='cubic', bounds_error=False, fill_value='extrapolate')
     
-    f0 = f[0]
-    fmax = f[-1]
-    df = f[1] - f[0]
-    n_points_missing = int(round(f0 / df))
-    n_final = len(f) + n_points_missing
+    pha, mag = np.unwrap(np.angle(sp)), np.abs(sp)
+    pha_fn, mag_fn = get_interpolator(f, pha), get_interpolator(f, mag)
     
-    f_ext = copy.copy(f)
-    sp_ext = copy.copy(sp)
-    
-    f_ext = np.insert(f_ext, 0, 0)
-    sp_ext = np.insert(sp_ext, 0, np.real(sp)[0])
-    
-    get_interpolator = lambda f,pha: interp1d(f, pha, kind='cubic', bounds_error=False, fill_value='extrapolate')
-    
-    pha, mag = np.unwrap(np.angle(sp_ext)), np.abs(sp_ext)
-    pha_fn, mag_fn= get_interpolator(f_ext, pha), get_interpolator(f_ext, mag)
-    
-    f_complete = np.linspace(0, fmax, n_final)
-    pha_int = [pha_fn(f) for f in f_complete]
-    mag_int = [mag_fn(f) for f in f_complete]
+    pha_int = [pha_fn(f) for f in f_equidistant]
+    mag_int = [mag_fn(f) for f in f_equidistant]
     sp_complete = np.array([cmath.rect(m,p) for m,p in zip(mag_int,pha_int)])
     
-    return f_complete, sp_complete  
+    return f_equidistant, sp_complete
+
+
+def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
+
+    if f[0] == 0:
+        return ensure_equidistant_freq(f, sp) # DC is already included
+    if f[0] < 0:
+        raise RuntimeError('Cannot handle S-parameters with negative frequencies')
+    if len(f) < 2:
+        raise RuntimeError('Cannot extrapolate S-parameters to DC: at least two frequency samples are required')
+    
+    # Extrapolation method: see IEEE370, Annex T
+
+    f1, f2 = f[0], f[1]
+    h1, h2 = sp[0], sp[1]
+
+    # real part: assume mirrored mirrorring Y-axis, use 2nd degree polynomial for interpolation
+    f_re, sp_re = [-f2, -f1, +f1, +f2], [h2.real, h1.real, h1.real, h2.real]
+    int_re = interp1d(f_re, sp_re, kind='quadratic', bounds_error=False, fill_value='extrapolate')
+
+    # real part: assume negative mirrorring across Y-axis (complex conjugate), use 3rd degree polynomial for interpolation
+    f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-h2.imag, -h1.imag, 0, h1.imag, h2.imag]
+    int_im = interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
+
+    extend = f[0] / f[-1]
+    n = max(10, int(math.ceil(len(f)*extend)))
+    f_int = np.linspace(0, f[0]*(n-1)/n, n)
+
+    sp_re_int = [int_re(f) for f in f_int]
+    sp_im_int = [int_im(f) for f in f_int]
+    sp_int = np.array([r+1j*i for r,i in zip(sp_re_int,sp_im_int)])
+
+    f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
+    return ensure_equidistant_freq(f_complete, sp_complete)
 
 
 def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, step_response: bool = False, kaiser: float = 35.0) -> "tuple(np.ndarray,np.ndarray)":
     
-    f_dc,sp_dc = extrapolate_sparams_to_dc(f, spar)
+    f_dc,sp_dc = ensure_equidistant_freq_from_dc(f, spar)
     
-    if kaiser>0:
+    if kaiser > 0:
         win = np.kaiser(2*len(sp_dc), kaiser)[len(sp_dc):]
     else:
         win = np.ones([len(sp_dc)])

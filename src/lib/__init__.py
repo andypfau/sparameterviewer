@@ -1,4 +1,4 @@
-from .sparam_helpers import extrapolate_sparams_to_dc, get_sparam_name, sparam_to_timedomain
+from .sparam_helpers import get_sparam_name, sparam_to_timedomain
 from .si import Si, SiFmt
 from .structs import SParamFile, PlotData, PlotDataQuantity
 from .plot import PlotHelper

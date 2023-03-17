@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.10b11 (2023-03-17)
+-------------------
+
+- enhancement: using the DC extrapolation method from IEEE370, to get more accurate time-domain responses
+
+
 0.10b10 (2023-03-15)
 -------------------
 
