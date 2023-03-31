@@ -9,6 +9,15 @@ from lib import AppGlobal, is_windows
 
 if __name__ == '__main__':
 
+    
+    # splashscreen (pyinstaller only)
+    import importlib
+    if importlib.find_loader('pyi_splash') is not None:
+        import pyi_splash
+        pyi_splash.update_text("Loading S-Parameter Viewer...")
+        pyi_splash.close()
+        
+
     AppGlobal.set_root_path(os.path.split(os.path.realpath(__file__))[0])
 
     LOG_FORMAT = '%(asctime)s: %(message)s (%(filename)s:%(lineno)d:%(funcName)s, %(levelname)s)'

@@ -23,6 +23,11 @@ datas.extend([(skrf_data_dir, 'skrf/data/')])
 hiddenimports.extend(['PIL._tkinter_finder'])
 
 
+# OS-specific
+if os.name == 'nt':
+    hiddenimports.extend(['win32clipbaord'])
+
+
 # TODO: fix for Matplotlib, which does not find <share/matplotlib/mpl-data>...
 
 
@@ -46,8 +51,11 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+splash = Splash('../res/splash.png', a.binaries, a.datas)
+
 exe = EXE(
     pyz,
+    splash,
     a.scripts,
     [],
     exclude_binaries=True,
@@ -55,7 +63,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -65,6 +73,7 @@ exe = EXE(
 )
 coll = COLLECT(
     exe,
+    splash.binaries,
     a.binaries,
     a.zipfiles,
     a.datas,
