@@ -51,7 +51,11 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-splash = Splash('../res/splash.png', a.binaries, a.datas)
+splash = Splash(
+    '../res/splash.png',
+    a.binaries,
+    a.datas,
+)
 
 exe = EXE(
     pyz,
