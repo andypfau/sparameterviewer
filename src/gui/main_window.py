@@ -630,7 +630,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 return
             
             self.dir = os.path.abspath(dir)
-            all_files = sorted(list(glob.glob(f'{self.dir}/*.[Ss]*[Pp]')))
+            all_files = sorted(list(glob.glob(f'{glob.escape(self.dir)}/*.[Ss]*[Pp]')))
             
             for i,filename in enumerate(all_files):
                 try:

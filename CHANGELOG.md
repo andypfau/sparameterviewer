@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.10b13 (2023-05-31)
+-------------------
+
+- bugfix: escaping path names, so that files in paths with certain special characters are found
+
+
 0.10b12 (2023-03-31)
 -------------------
 
