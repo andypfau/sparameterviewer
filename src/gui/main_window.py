@@ -33,7 +33,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         super().__init__()
 
         try:
-            self.dir = ''
+            self.directories = []
+            self.next_file_tag = 1
             self.files = [] # type: list[SParamFile]
             self.generated_expressions = ''
             self.plot_mouse_down = False
@@ -160,7 +161,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             except Exception as ex:
                 logging.exception(f'Unable to init plots: {ex}')
 
-            self.load_files(filenames)
+            self.initially_load_files_or_directory(filenames)
             self.update_plot()
         
         except Exception as ex:
@@ -182,7 +183,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.on_use_expr()
             return 'break'
         if key=='F5' and ctrl_only:
-            self.on_reload_dir()
+            self.on_reload_all_files()
             return 'break'
         if key=='o' and ctrl_only:
             self.on_open_dir()
@@ -331,17 +332,6 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.invalidate_axes_lock(update=False)
         self.update_plot()
     
-
-    def on_open_dir(self):
-        dir = filedialog.askdirectory(initialdir=self.dir)
-        if not dir:
-            return
-        self.load_dir(dir)
-    
-
-    def on_reload_dir(self):
-        self.reload_dir()
-
 
     def on_exit_cmd(self):
         self.toplevel_main.quit()
@@ -616,28 +606,71 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
 
     def on_show_error_log_click(self):
         self.open_error_dialog()
+    
+
+    def on_open_dir(self):
+        initialdir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        dir = filedialog.askdirectory(initialdir=initialdir)
+        if not dir:
+            return
+        absdir = os.path.abspath(dir)
+        self.directories = [absdir]
+        self.clear_loaded_files()
+        self.load_files_in_directory(absdir)
+        self.update_file_list(only_select_first=True)
+    
+
+    def on_append_dir(self):
+        initialdir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        dir = filedialog.askdirectory(initialdir=initialdir)
+        if not dir:
+            return
+        absdir = os.path.abspath(dir)
+        if absdir not in self.directories:
+            self.directories.append(absdir)
+            self.load_files_in_directory(absdir)
+        self.update_file_list()
+    
+
+    def on_reload_all_files(self):
+        self.reload_all_files()
 
 
-    def _load_all_files_in_dir(self, dir: str):
+    def clear_loaded_files(self):
+        self.files = []
+        self.trace_data = []
+
+    
+    def initially_load_files_or_directory(self, filenames_or_directory: "list[str]"):
+        if len(filenames_or_directory)<1:
+            filenames_or_directory = [appdirs.user_data_dir()]
+
+        is_dir = os.path.isdir(filenames_or_directory[0])
+        if is_dir:
+            absdir = os.path.abspath(filenames_or_directory[0])
+            self.directories = [absdir]
+            self.load_files_in_directory(absdir)
+            self.update_file_list(only_select_first=True)
+        else:
+            absdir = os.path.split(filenames_or_directory[0])[0]
+            self.directories = [absdir]
+            self.load_files_in_directory(absdir)
+            self.update_file_list(selected_filenames=filenames_or_directory)
+
+
+    def load_files_in_directory(self, dir: str):
 
         try:
             
-            self.dir = appdirs.user_data_dir()
-            self.files = [] # type: list[SParamFile]
-            self.trace_data = []
-
-            if dir is None:
-                return
+            absdir = os.path.abspath(dir)
+            all_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.[Ss]*[Pp]')))
             
-            self.dir = os.path.abspath(dir)
-            all_files = sorted(list(glob.glob(f'{glob.escape(self.dir)}/*.[Ss]*[Pp]')))
-            
-            for i,filename in enumerate(all_files):
+            for filename in all_files:
                 try:
-                    tag = f'file{i}'
+                    tag = f'file{self.next_file_tag}'
                     file = SParamFile(filename, tag=tag)
                     self.files.append(file)
-
+                    self.next_file_tag += 1
                 except Exception as ex:
                     logging.info(f'Ignoring file <{filename}>: {ex}')
         
@@ -646,33 +679,11 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             raise ex
 
 
-    def load_dir(self, dir: str):
-        self._load_all_files_in_dir(dir)
-        self.update_file_list(only_select_first=True)
-    
-
-    def reload_dir(self):
-        self._load_all_files_in_dir(self.dir)
+    def reload_all_files(self):
+        self.clear_loaded_files()
+        for dir in self.directories:
+            self.load_files_in_directory(dir)
         self.update_file_list()
-
-    
-    def load_files(self, filenames: "list[str]"):
-        if len(filenames)<1:
-            self._load_all_files_in_dir(None)
-            return
-
-        is_dir = os.path.isdir(filenames[0])
-        if is_dir:
-            dir = filenames[0]
-        else:
-            dir = os.path.split(filenames[0])[0]
-        dir = os.path.abspath(dir)
-        self._load_all_files_in_dir(dir)
-        
-        if is_dir:
-            self.update_file_list(only_select_first=True)
-        else:
-            self.update_file_list(selected_filenames=filenames)
     
 
     def on_search_press_key(self, event=None):
@@ -711,7 +722,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.treeview_files.delete(*self.treeview_files.get_children())
         for i,file in enumerate(self.files):
             
-            tag = f'file{i}'
+            tag = file.tag
             name_str = os.path.split(file.file_path)[1]
             if file.loaded():
                 prop_str = self.get_file_prop_str(file)

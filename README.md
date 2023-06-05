@@ -79,6 +79,8 @@ There are sample .json-files in the `res` folder for VS Code.
 Known Issues and Missing Features
 ---------------------------------
 
+- S-Parameter features: mixed-mode, port-renumbering
+- Display: more presets, to quickly scroll through all S-parameters
 - File type registration script for Windows (using `assoc` and `ftype`)
 - Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
@@ -86,7 +88,6 @@ Known Issues and Missing Features
 - Table view of data
 - Check if network is reciprocal, passive, lossless, unilateral
 - Allow to provide regex to strip names in expression plots
-- Menu command "Add files from directory..."
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
 - Allow user to select TTK theme
 - UI to set axis limits manually

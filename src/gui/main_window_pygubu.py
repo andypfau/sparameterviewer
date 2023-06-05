@@ -132,9 +132,13 @@ class SparamviewerPygubuApp:
             label='Open Directory...')
         self.submenu_1.add(
             "command",
+            command=self.on_append_dir,
+            label='Append Directory...')
+        self.submenu_1.add(
+            "command",
             accelerator="Ctrl+F5",
-            command=self.on_reload_dir,
-            label='Reload Directory')
+            command=self.on_reload_all_files,
+            label='Reload All Files')
         self.submenu_1.add("separator")
         self.submenu_1.add(
             "command",
@@ -300,7 +304,10 @@ class SparamviewerPygubuApp:
     def on_open_dir(self):
         pass
 
-    def on_reload_dir(self):
+    def on_append_dir(self):
+        pass
+
+    def on_reload_all_files(self):
         pass
 
     def on_export(self):
