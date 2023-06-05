@@ -183,7 +183,7 @@ SParams
     Methods
 
         plot([<label=None>],[<style="-">]) -> Network
-            Plots the data. <label> is any string.
+            Plots the data. <label> is any string. "%n" is replaced with the name of the parameter.
             <style> is a matplotlib-compatible format (e.g. "-", ":", "--", "o-").
 
         db() -> Network
