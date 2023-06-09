@@ -49,6 +49,23 @@ class ExpressionParser:
         def nw(pattern: str) -> Networks:
             return select_networks(available_networks, pattern, single=True)
 
+        def quick(*items):
+            for item in items:
+                try:
+                    if isinstance(item, int):
+                        if item<11 or item >99:
+                            raise ValueError(f'Invalid S-parameter: S{item}')
+                        e,i = item % 10, item//10
+                    elif isinstance(item, tuple):
+                        if len(item)!=2:
+                            raise ValueError(f'Invalid S-parameter: S{item}')
+                        e,i = item[0], item[1]
+                    else:
+                        raise ValueError(f'Expecting an integer or a tuple (e.g. 21 or (2,1) to plot S21)')
+                    sel_nws().s(e,i).plot()
+                except Exception as ex:
+                    logging.error(f'Unable to plot "{item}" ({ex})')
+
         vars_global = {}
         vars_local = {
             'Networks': Networks,
@@ -56,6 +73,7 @@ class ExpressionParser:
             'nw': nw,
             'nws': nws,
             'sel_nws': sel_nws,
+            'quick': quick,
             'math': math,
             'np': np,
         }
@@ -80,7 +98,11 @@ Which could be re-written as:
     s = n.s(2,1) # type: SParams
     s.plot("IL")
 
-The expression use Python syntax. You also have access to `math` and `np` (numpy).
+However, there is also a quicker way if you don't need full control:
+
+    quick(21)
+
+The expressions use Python syntax. You also have access to `math` and `np` (numpy).
 
 
 Objects
@@ -209,6 +231,14 @@ SParams
 
 Functions
 =========
+
+
+quick(parameter[, parameter...])
+--------------------------------
+
+Quick plotting of some parameters, indicated either as an integer (e.g. 21 to plot S21), or by
+a tuple (e.g. (2,1) to plot S21.). For example, to plot S21 and S22, call <quick(21, 22)>.
+
 
 nws(pattern)
 ------------
