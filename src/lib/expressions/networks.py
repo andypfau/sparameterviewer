@@ -1,7 +1,7 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
-from ..sparam_helpers import get_sparam_name
+from ..sparam_helpers import get_sparam_name, get_quick_params
 from .sparams import SParam, SParams
 
 import math
@@ -15,6 +15,7 @@ class Network:
 
     
     def __init__(self, nw: "Network|skrf.Network|SParamFile" = None):
+        self.nw: skrf.Network
         if isinstance(nw, SParamFile):
             self.nw = nw.nw
         elif isinstance(nw, Network):
@@ -52,7 +53,7 @@ class Network:
         return f'<Network({self.nw})>'
     
 
-    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False) -> SParams:
+    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False) -> list[SParam]:
         result = []
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
@@ -229,6 +230,59 @@ class Network:
         label = label if label is not None else self.nw.name
         label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
         SParam.plot_fn(freq, data, label, style)
+        
+    
+    def quick(self, *items):
+        for (e,i) in get_quick_params(*items):
+            SParams(self.s(e,i)).plot()
+    
+
+    def s2m(self, input_order: list = None, output_order: list = None) -> "Network":
+        new_nw = self.nw.copy()
+        
+        if input_order is not None:
+            # expected for a 4-port: inputs are 1,2, outputs are 3,4
+            if len(input_order) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(input_order)}')
+            old_indices = np.array(input_order) - 1
+            new_indices = np.arange(0, new_nw.nports, step=1)
+            new_nw.renumber(old_indices, new_indices)
+
+        new_nw.se2gmm(new_nw.nports // 2)
+        
+        if output_order is not None:
+            # expected for a 4-port: inputs are 1,2, outputs are 3,4
+            if len(output_order) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(output_order)}')
+            old_indices = np.array(output_order) - 1
+            new_indices = np.arange(0, new_nw.nports, step=1)
+            new_nw.renumber(old_indices, new_indices)
+        
+        return Network(new_nw)
+    
+
+    def m2s(self, input_order: list = None, output_order: list = None) -> "Network":
+        new_nw = self.nw.copy()
+        
+        if input_order is not None:
+            # expected for a 4-port: inputs are 1,2, outputs are 3,4
+            if len(input_order) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(input_order)}')
+            old_indices = np.array(input_order) - 1
+            new_indices = np.arange(0, new_nw.nports, step=1)
+            new_nw.renumber(old_indices, new_indices)
+
+        new_nw.gmm2se(new_nw.nports // 2)
+        
+        if output_order is not None:
+            # expected for a 4-port: inputs are 1,2, outputs are 3,4
+            if len(output_order) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(output_order)}')
+            old_indices = np.array(output_order) - 1
+            new_indices = np.arange(0, new_nw.nports, step=1)
+            new_nw.renumber(old_indices, new_indices)
+        
+        return Network(new_nw)
 
 
 
@@ -250,11 +304,11 @@ class Networks:
         raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nw)}')
     
 
-    def _unary_op(self, fn, return_type, **kwargs):
+    def _unary_op(self, fn, return_type, *args, **kwargs):
         result = []
         for nw in self.nws:
             try:
-                r = fn(nw, **kwargs)
+                r = fn(nw, *args, **kwargs)
                 if hasattr(r, '__len__'):
                     result.extend(r)
                 else:
@@ -269,11 +323,11 @@ class Networks:
             return result
 
 
-    def _binary_op(self, fn, others, return_type, **kwargs):
+    def _binary_op(self, fn, others, return_type, *args, **kwargs):
         result = []
         for nw,other in zip(self.nws, self._broadcast(others)):
             try:
-                r = fn(nw, other, **kwargs)
+                r = fn(nw, other, *args, **kwargs)
                 if hasattr(r, '__len__'):
                     result.extend(r)
                 else:
@@ -360,6 +414,18 @@ class Networks:
 
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)
+        
+    
+    def quick(self, *items):
+        self._unary_op(Network.quick, None, *items)
+        
+    
+    def m2s(self, inp: list = None, outp: list = None) -> "Networks":
+        return self._unary_op(Network.m2s, Networks, input_order=inp, output_order=outp)
+        
+    
+    def s2m(self, inp: list = None, outp: list = None) -> "Networks":
+        return self._unary_op(Network.s2m, Networks, input_order=inp, output_order=outp)
     
     
     def _count(self) -> int:

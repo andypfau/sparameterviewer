@@ -94,3 +94,19 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, step_response: bool = 
         return t, sr
     else:
         return t, ir
+
+
+def get_quick_params(*items) -> list:
+    result = []
+    for item in items:
+        if isinstance(item, int):
+            if item<11 or item >99:
+                raise ValueError(f'Invalid S-parameter: S{item}')
+            result.append((item//10, item % 10))
+        elif isinstance(item, tuple):
+            if len(item)!=2:
+                raise ValueError(f'Invalid S-parameter: S{item}')
+            result.append((item[0], item[1]))
+        else:
+            raise ValueError(f'Expecting an integer or a tuple (e.g. 21 or (2,1) to plot S21)')
+    return result

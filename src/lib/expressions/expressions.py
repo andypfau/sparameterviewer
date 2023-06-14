@@ -1,6 +1,7 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
+from ..sparam_helpers import get_quick_params
 from .networks import Networks
 from .sparams import SParam, SParams
 
@@ -50,21 +51,11 @@ class ExpressionParser:
             return select_networks(available_networks, pattern, single=True)
 
         def quick(*items):
-            for item in items:
+            for (e,i) in get_quick_params(*items):
                 try:
-                    if isinstance(item, int):
-                        if item<11 or item >99:
-                            raise ValueError(f'Invalid S-parameter: S{item}')
-                        e,i = item % 10, item//10
-                    elif isinstance(item, tuple):
-                        if len(item)!=2:
-                            raise ValueError(f'Invalid S-parameter: S{item}')
-                        e,i = item[0], item[1]
-                    else:
-                        raise ValueError(f'Expecting an integer or a tuple (e.g. 21 or (2,1) to plot S21)')
                     sel_nws().s(e,i).plot()
                 except Exception as ex:
-                    logging.error(f'Unable to plot "{item}" ({ex})')
+                    logging.error(f'Unable to plot "S{e},{i}" ({ex})')
 
         vars_global = {}
         vars_local = {
@@ -188,6 +179,27 @@ Networks
             Plots the stability circle at the given frequency. Set port=1 if you want to calculate the stability at
             the input, otherwise the output is calculated. It adds "s.i." (stable inside circle) or "s.o." (stable outside
             of the circle) to the plot name.
+        
+        s2m([inp=<ports>][, outp=<ports>]):
+            Single-ended to mixed-mode conversion.
+            The expected port order for the single-ended network is port1p, port1n, port2p, port2n, ....
+            You may define your own mapping with inp; e.g. if your data is <port1p, port2p, port1n, port2n>, you
+            can provide <inp=[1,3,2,4]>.
+            The generated mixed-mode network has port order diff1, comm1, diff2, comm_2, ...
+            You may define your own mapping with outp; e.g. if you want <diff1, diff2, comm1, comm2>, you
+            can provide <outp=[1,3,2,4]>.
+        
+        m2s([inp=<ports>][, outp=<ports>]):
+            Mixed-mode to single-ended conversion.
+            The expected port order for the single-ended network is diff1, comm1, diff2, comm_2, ...
+            You may define your own mapping with inp; e.g. if your data is <diff1, diff2, comm1, comm2>, you
+            can provide <inp=[1,3,2,4]>.
+            The generated mixed-mode network has port order port1p, port1n, port2p, port2n, ....
+            You may define your own mapping with outp; e.g. if you want <port1p, port2p, port1n, port2n>, you
+            can provide <outp=[1,3,2,4]>.
+
+        quick(quick(parameter[, parameter...]))
+            Does the same as the <quick()> function, see below.
 
     Unary Operators
 

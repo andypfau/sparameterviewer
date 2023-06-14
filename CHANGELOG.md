@@ -2,7 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.11b11 (2023-06-09)
+0.11b2 (2023-06-14)
+-------------------
+
+- new: `s2m` and `m2s`  for single-ended / mixed-mode S-parameter conversion
+- new: `quick` methods on Network objects
+
+
+0.11b1 (2023-06-09)
 -------------------
 
 - new: `quick` plot function

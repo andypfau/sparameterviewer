@@ -79,7 +79,6 @@ There are sample .json-files in the `res` folder for VS Code.
 Known Issues and Missing Features
 ---------------------------------
 
-- S-Parameter features: mixed-mode, port-renumbering
 - Display: more presets, to quickly scroll through all S-parameters
 - File type registration script for Windows (using `assoc` and `ftype`)
 - Allow user to select between generic and file-specific generated expressions
