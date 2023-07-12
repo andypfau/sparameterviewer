@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.12b1 (2023-07-12)
+-------------------
+
+- new: `phase` function
+- new: plot phase with linear phase removed
+
+
 0.11b2 (2023-06-14)
 -------------------
 

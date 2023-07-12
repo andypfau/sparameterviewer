@@ -6,6 +6,7 @@ import skrf, math, os
 import numpy as np
 import fnmatch
 import logging
+import scipy.signal
 
 
 
@@ -88,6 +89,18 @@ class SParam:
     
     def db(self) -> "SParam":
         return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
+
+    
+    def phase(self, processing: "str|None" = None) -> "SParam":
+        s = self.s
+        s = np.angle(s)
+        if processing == 'remove_linear':
+            s = scipy.signal.detrend(np.unwrap(s), type='linear')
+        elif processing == 'unwrap':
+            s = np.unwrap(s)
+        elif s is not None:
+            raise ValueError(f'Invalid processing option "{processing}"')
+        return SParam(self.name, self.f, s, self.z0)
 
     
     def plot(self, label: "str" = None, style: "str" = None):
@@ -220,6 +233,10 @@ class SParams:
 
     def db(self) -> "SParams":
         return self._unary_op(SParam.db, True)
+
+    
+    def phase(self, processing: "str|None" = None) -> "SParams":
+        return self._unary_op(SParam.phase, True, processing=processing)
     
 
     def plot(self, label: "str|None" = None, style: "str|None" = None):

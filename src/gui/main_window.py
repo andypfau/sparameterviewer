@@ -11,6 +11,7 @@ import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from lib.si import SiFmt
+import scipy.signal
 
 from .main_window_pygubu import SparamviewerPygubuApp
 from .info_dialog import SparamviewerInfoDialog
@@ -91,6 +92,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                 'Smith (Admittance)',
                 'Phase',
                 'Unwrapped Phase',
+                'Linear Phase Removed',
                 'Group Delay',
                 'Impulse Response',
                 'Step Response',
@@ -106,9 +108,10 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             self.UNIT_SMITH_Y = 8
             self.UNIT_DEG = 9
             self.UNIT_DEG_UNWRAP = 10
-            self.UNIT_GROUP_DELAY = 11
-            self.UNIT_IMPULSE = 12
-            self.UNIT_STEP = 13
+            self.UNIT_DEG_REMLIN = 11
+            self.UNIT_GROUP_DELAY = 12
+            self.UNIT_IMPULSE = 13
+            self.UNIT_STEP = 14
             self.combobox_unit.current(Settings.plot_unit)
             TkText.set_text(self.text_expr, Settings.expression.strip())
             def on_click_errors(event):
@@ -788,6 +791,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
             qty_im = (Settings.plot_unit == self.UNIT_RE_IM_VS_F) or (Settings.plot_unit == self.UNIT_IM_VS_F)
             qty_phase = (Settings.plot_unit == self.UNIT_DEG) or (Settings.plot_unit == self.UNIT_DEG_UNWRAP)
             unwrap_phase = (Settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            remove_lin_phase = (Settings.plot_unit == self.UNIT_DEG_REMLIN)
             polar = (Settings.plot_unit == self.UNIT_RE_IM_POLAR)
             smith = (Settings.plot_unit == self.UNIT_SMITH_Z) or (Settings.plot_unit == self.UNIT_SMITH_Y)
             timedomain = (Settings.plot_unit == self.UNIT_IMPULSE) or (Settings.plot_unit == self.UNIT_STEP)
@@ -855,6 +859,8 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                         self.plot.add(f, np.real(sp), None, name, style)
                     elif qty_im:
                         self.plot.add(f, np.imag(sp), None, name, style)
+                    elif remove_lin_phase:
+                        self.plot.add(f, scipy.signal.detrend(np.unwrap(np.angle(sp))*180/math.pi,type='linear'), None, name, style)
                     elif unwrap_phase:
                         self.plot.add(f, np.unwrap(np.angle(sp))*180/math.pi, None, name, style)
                     else:

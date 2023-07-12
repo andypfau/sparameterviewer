@@ -226,6 +226,11 @@ SParams
         abs() -> SParam
             Takes abs() of each value.
 
+        phase([processing=None]) -> SParam
+            Takes the phase of each value.
+            <processing> can be None, 'unwrap' (unwrap phase), or 'remove_linear' (unwrap, then
+            remove linear phase).
+
         crop_f([f_start=-inf], [f_end=+inf]) -> SParam.
             Returns the same S-Param, but with a reduced frequency range.
 
