@@ -27,6 +27,16 @@ class PygubuApp:
         self.label_7 = ttk.Label(self.labelframe_5)
         self.label_7.configure(text='Parameter:')
         self.label_7.grid(column=0, row=1, sticky="w")
+        self.spinbox_3 = ttk.Spinbox(self.labelframe_5)
+        self.win_param = tk.DoubleVar()
+        self.spinbox_3.configure(
+            from_=0,
+            increment=0.1,
+            textvariable=self.win_param,
+            to=1000)
+        self.spinbox_3.grid(column=1, padx=5, pady=3, row=1, sticky="w")
+        self.spinbox_3.bind("<<Decrement>>", self.on_change_arg, add="")
+        self.spinbox_3.bind("<<Increment>>", self.on_change_arg, add="")
         self.label_8 = ttk.Label(self.labelframe_5)
         self.label_8.configure(text='Shift:')
         self.label_8.grid(column=0, row=2, sticky="w")
@@ -46,16 +56,17 @@ class PygubuApp:
         self.label_10.configure(text='ps')
         self.label_10.pack(side="top")
         self.frame_12.grid(column=1, row=2)
-        self.spinbox_3 = ttk.Spinbox(self.labelframe_5)
-        self.win_param = tk.DoubleVar()
-        self.spinbox_3.configure(
-            from_=0,
-            increment=0.1,
-            textvariable=self.win_param,
-            to=1000)
-        self.spinbox_3.grid(column=1, padx=5, pady=3, row=1, sticky="w")
-        self.spinbox_3.bind("<<Decrement>>", self.on_change_arg, add="")
-        self.spinbox_3.bind("<<Increment>>", self.on_change_arg, add="")
+        self.checkbox_impedance = ttk.Checkbutton(self.labelframe_5)
+        self.impedance = tk.StringVar()
+        self.checkbox_impedance.configure(
+            offvalue="gamma",
+            onvalue="impedance",
+            text='Convert to Impedance',
+            variable=self.impedance)
+        self.checkbox_impedance.grid(
+            column=1, padx=5, pady=3, row=3, sticky="w")
+        self.checkbox_impedance.configure(command=self.on_impedance_change)
+        self.checkbox_impedance.bind("<1>", self.callback, add="")
         self.labelframe_5.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
         self.frame_13.pack()
 
@@ -68,10 +79,16 @@ class PygubuApp:
     def on_win_sel(self, event=None):
         pass
 
+    def on_change_arg(self, event=None):
+        pass
+
     def on_change_shift(self, event=None):
         pass
 
-    def on_change_arg(self, event=None):
+    def on_impedance_change(self):
+        pass
+
+    def callback(self, event=None):
         pass
 
 

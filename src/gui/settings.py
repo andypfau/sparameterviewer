@@ -14,6 +14,7 @@ class SParamViewerAppSettings(AppSettings):
     window_type: str = 'kaiser'
     window_arg: float = 35.0
     tdr_shift: float = 100e-12
+    tdr_impedance: bool = False
     log_level: int = logging.WARNING
     mainwin_geom: str = None
 

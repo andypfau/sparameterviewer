@@ -1038,6 +1038,23 @@
               </object>
             </child>
             <child>
+              <object class="ttk.Spinbox" id="spinbox_3">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:win_param</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
               <object class="ttk.Label" id="label_8">
                 <property name="text" translatable="yes">Shift:</property>
                 <layout manager="grid">
@@ -1081,18 +1098,18 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Spinbox" id="spinbox_3">
-                <property name="from_">0</property>
-                <property name="increment">0.1</property>
-                <property name="textvariable">double:win_param</property>
-                <property name="to">1000</property>
-                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
-                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+              <object class="ttk.Checkbutton" id="checkbox_impedance" named="True">
+                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
+                <property name="offvalue">gamma</property>
+                <property name="onvalue">impedance</property>
+                <property name="text" translatable="yes">Convert to Impedance</property>
+                <property name="variable">string:impedance</property>
+                <bind sequence="&lt;1&gt;" handler="callback" add="" />
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">5</property>
                   <property name="pady">3</property>
-                  <property name="row">1</property>
+                  <property name="row">3</property>
                   <property name="sticky">w</property>
                 </layout>
               </object>

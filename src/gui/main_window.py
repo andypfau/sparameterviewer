@@ -342,13 +342,8 @@ class SparamviewerMainDialog(PygubuApp):
 
     
     def on_open_settings_click(self):
-
-        def settings_callback(win_type, win_arg, shift):
-            Settings.window_type = win_type
-            Settings.window_arg = win_arg
-            Settings.tdr_shift = shift
+        def settings_callback():
             self.update_plot()
-        
         SparamviewerSettingsDialog(self.toplevel_main, settings_callback)
 
     
@@ -800,6 +795,7 @@ class SparamviewerMainDialog(PygubuApp):
             smith = (Settings.plot_unit == self.UNIT_SMITH_Z) or (Settings.plot_unit == self.UNIT_SMITH_Y)
             timedomain = (Settings.plot_unit == self.UNIT_IMPULSE) or (Settings.plot_unit == self.UNIT_STEP)
             stepresponse = (Settings.plot_unit == self.UNIT_STEP)
+            tdr_z = (Settings.tdr_impedance)
             if Settings.plot_unit == self.UNIT_SMITH_Z:
                 smith_type = 'z'
             else:
@@ -815,7 +811,10 @@ class SparamviewerMainDialog(PygubuApp):
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
-                    yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
+                    if tdr_z:
+                        yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(unit='Ω', force_sign=True),False
+                    else:
+                        yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
                     xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),Settings.log_freq
                     if qty_group_delay:
@@ -849,7 +848,12 @@ class SparamviewerMainDialog(PygubuApp):
                 else:
                     if timedomain:
                         t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg)
-                        self.plot.add(t, lev, None, name, style)
+                        if tdr_z:
+                            lev[lev==0] = 1e-20
+                            z = 50 * (1+lev) / (1-lev)
+                            self.plot.add(t, z, None, name, style)
+                        else:
+                            self.plot.add(t, lev, None, name, style)
                     elif qty_db:
                         self.plot.add(f, v2db(sp), None, name, style)
                     elif qty_lin_mag or qty_log_mag:
