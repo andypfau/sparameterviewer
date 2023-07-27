@@ -1,7 +1,8 @@
 import skrf
 import numpy as np
-from scipy.interpolate import interp1d
-import math, cmath, copy
+import math
+import cmath
+import scipy
 
 
 def get_sparam_name(egress: int, ingress: int) -> str:
@@ -24,7 +25,7 @@ def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float 
     if len(f) < 2:
         raise RuntimeError('Cannot interpolate S-parameters: at least two frequency samples are required')
     
-    get_interpolator = lambda f,x: interp1d(f, x, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    get_interpolator = lambda f,x: scipy.interpolate.interp1d(f, x, kind='cubic', bounds_error=False, fill_value='extrapolate')
     
     pha, mag = np.unwrap(np.angle(sp)), np.abs(sp)
     pha_fn, mag_fn = get_interpolator(f, pha), get_interpolator(f, mag)
@@ -52,11 +53,11 @@ def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.
 
     # real part: assume mirrored mirrorring Y-axis, use 2nd degree polynomial for interpolation
     f_re, sp_re = [-f2, -f1, +f1, +f2], [h2.real, h1.real, h1.real, h2.real]
-    int_re = interp1d(f_re, sp_re, kind='quadratic', bounds_error=False, fill_value='extrapolate')
+    int_re = scipy.interpolate.interp1d(f_re, sp_re, kind='quadratic', bounds_error=False, fill_value='extrapolate')
 
     # real part: assume negative mirrorring across Y-axis (complex conjugate), use 3rd degree polynomial for interpolation
     f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-h2.imag, -h1.imag, 0, h1.imag, h2.imag]
-    int_im = interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    int_im = scipy.interpolate.interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
 
     extend = f[0] / f[-1]
     n = max(10, int(math.ceil(len(f)*extend)))
@@ -70,24 +71,35 @@ def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.
     return ensure_equidistant_freq(f_complete, sp_complete)
 
 
-def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, step_response: bool = False, kaiser: float = 35.0) -> "tuple(np.ndarray,np.ndarray)":
+def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0, step_response: bool = False, window_type: str = 'boxcar', window_arg: float = None, cutoff: bool = True) -> "tuple(np.ndarray,np.ndarray)":
     
     f_dc,sp_dc = ensure_equidistant_freq_from_dc(f, spar)
-    
-    if kaiser > 0:
-        win = np.kaiser(2*len(sp_dc), kaiser)[len(sp_dc):]
-    else:
-        win = np.ones([len(sp_dc)])
 
-    ir = np.fft.irfft(sp_dc * win)
-    ir = np.fft.fftshift(ir)
+    if window_type in ['tukey', 'kaiser', 'gaussian', 'general_cosine', 'general_hamming', 'dpss', 'chebwin']:
+        window = (window_type, window_arg)
+    else:
+        window = window_type
+    
+    win_2sided = scipy.signal.get_window(window, 2*len(sp_dc))
+    win = win_2sided[len(sp_dc):]
     
     f_nyq = max(f)
     f_sa = 2.0 * f_nyq
     t_spc = 1.0 / f_sa
-    t_tot = (len(ir)-1)*t_spc
+
+    n_shift = round(shift/t_spc)
+
+    ir_unshifted = np.fft.irfft(sp_dc * win)
+    #ir = np.fft.fftshift(ir_unshifted)
+    ir_shifted = np.roll(ir_unshifted, n_shift)
+    if cutoff:
+        ir = ir_shifted[:len(ir_shifted)//2+n_shift]
+    else:
+        ir = ir_shifted
+    
+    t_tot = (len(ir_unshifted)-1)*t_spc
     t = np.linspace(0, t_tot, len(ir))
-    t -= t_tot/2 # compensate for the FFT-shift
+    t -= shift
 
     if step_response:
         sr = np.cumsum(ir)

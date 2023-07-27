@@ -11,7 +11,9 @@ class SParamViewerAppSettings(AppSettings):
     shorten_legend_items: bool = True
     log_freq: bool = False
     expression: str = ''
-    td_kaiser: float = 35.0
+    window_type: str = 'kaiser'
+    window_arg: float = 35.0
+    tdr_shift: float = 100e-12
     log_level: int = logging.WARNING
     mainwin_geom: str = None
 
@@ -19,5 +21,5 @@ class SParamViewerAppSettings(AppSettings):
 Settings = SParamViewerAppSettings(
     appname='apfau.de S-Parameter Viewer',
     author='apfau.de',
-    version='0.1'
+    version='0.13'
 )

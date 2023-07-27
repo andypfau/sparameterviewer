@@ -13,11 +13,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from lib.si import SiFmt
 import scipy.signal
 
-from .main_window_pygubu import SparamviewerPygubuApp
+from .main_window_pygubu import PygubuApp
 from .info_dialog import SparamviewerInfoDialog
 from .rl_dialog import SparamviewerReturnlossDialog
 from .cursor_dialog import SparamviewerCursorDialog
 from .log_dialog import SparamviewerLogDialog, LogHandler
+from .settings_dialog import SparamviewerSettingsDialog
 from .settings import Settings
 from info import Info
 
@@ -29,7 +30,7 @@ from lib import TkText, TkCommon, AppGlobal
 
 
 # extend auto-generated UI code
-class SparamviewerMainDialog(SparamviewerPygubuApp):
+class SparamviewerMainDialog(PygubuApp):
     def __init__(self, filenames: "list[str]"):
         super().__init__()
 
@@ -340,12 +341,15 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
         self.toplevel_main.quit()
 
     
-    def on_set_kaiser(self):
-        kaiser = simpledialog.askfloat('Kaiser Window', 'Argument for Kaiser Window:', initialvalue=Settings.td_kaiser, parent=self.toplevel_main, minvalue=0.0, maxvalue=1e3)
-        if kaiser is None:
-            return
-        Settings.td_kaiser = kaiser
-        self.update_plot()
+    def on_open_settings_click(self):
+
+        def settings_callback(win_type, win_arg, shift):
+            Settings.window_type = win_type
+            Settings.window_arg = win_arg
+            Settings.tdr_shift = shift
+            self.update_plot()
+        
+        SparamviewerSettingsDialog(self.toplevel_main, settings_callback)
 
     
     def on_use_expr(self):
@@ -844,7 +848,7 @@ class SparamviewerMainDialog(SparamviewerPygubuApp):
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style)
                 else:
                     if timedomain:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, kaiser=Settings.td_kaiser)
+                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg)
                         self.plot.add(t, lev, None, name, style)
                     elif qty_db:
                         self.plot.add(f, v2db(sp), None, name, style)

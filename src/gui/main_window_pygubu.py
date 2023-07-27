@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
-class SparamviewerPygubuApp:
+class PygubuApp:
     def __init__(self, master=None):
         # build ui
         self.toplevel_main = tk.Tk() if master is None else tk.Toplevel(master)
@@ -239,11 +239,6 @@ class SparamviewerPygubuApp:
             accelerator="F5",
             command=self.on_use_expr,
             label='Update Plot From Expressions')
-        self.submenu_2.add("separator")
-        self.submenu_2.add(
-            "command",
-            command=self.on_set_kaiser,
-            label='TD Kaiser Argument...')
         self.submenu_3 = tk.Menu(self.menu_2)
         self.menu_2.add(tk.CASCADE, menu=self.submenu_3, label='Tools')
         self.submenu_3.add(
@@ -260,6 +255,11 @@ class SparamviewerPygubuApp:
             "command",
             command=self.on_show_error_log_click,
             label='Error Log')
+        self.submenu_3.add("separator")
+        self.submenu_3.add(
+            "command",
+            command=self.on_open_settings_click,
+            label='Settings')
         self.submenu_4 = tk.Menu(self.menu_2, tearoff="false")
         self.menu_2.add(tk.CASCADE, menu=self.submenu_4, label='Help')
         self.submenu_4.add(
@@ -355,9 +355,6 @@ class SparamviewerPygubuApp:
     def on_rescale_locked_axes(self):
         pass
 
-    def on_set_kaiser(self):
-        pass
-
     def on_cursor_cmd(self):
         pass
 
@@ -367,10 +364,13 @@ class SparamviewerPygubuApp:
     def on_show_error_log_click(self):
         pass
 
+    def on_open_settings_click(self):
+        pass
+
     def on_menu_about(self):
         pass
 
 
 if __name__ == "__main__":
-    app = SparamviewerPygubuApp()
+    app = PygubuApp()
     app.run()
