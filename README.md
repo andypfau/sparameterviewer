@@ -10,7 +10,7 @@ Main Features
 -------------
 
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay
-- Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, and for Bode-Fano optimum RL estimation
+- Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness, and for Bode-Fano optimum RL estimation
     - to learn more about this feature, open the "Expressions" tab, and click "Help"
 - Export to CSV or XLSX
 
@@ -67,25 +67,34 @@ To register S-parameter files with this application under Windows:
 Uou have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...
 
 
+Roadmap
+-------
+
+
+### Missing Features
+
+- Display: more presets, to quickly scroll through all S-parameters
+- Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
+    - The idea is that the GUI has 3 steps: transform -> select parameter -> plot format
+    - The plot format for step/impulse response would have to be changed to a transformation
+- Allow user to select between generic and file-specific generated expressions
+- Equation-based plot type
+- Log output for equations (so that you can also print some data or status)
+- Table view of data
+- Allow to provide regex to strip names in expression plots
+- Allow user to select TTK theme
+- UI to set axis limits manually
+- File type registration script for Windows (using `assoc` and `ftype`)
+
+
+### Known Issues
+
+- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
+
+
 Development
 -----------
 
 To modify the UI, you need `pygubu-designer`. To generate UI code, in the "Code" tab, make sure you select "Template": "Code Script", and "All IDs as class attributes".
 
 There are sample .json-files in the `res` folder for VS Code.
-
-
-
-Known Issues and Missing Features
----------------------------------
-
-- Display: more presets, to quickly scroll through all S-parameters
-- File type registration script for Windows (using `assoc` and `ftype`)
-- Allow user to select between generic and file-specific generated expressions
-- Equation-based plot type
-- Log output for equations (so that you can also print some data or status)
-- Table view of data
-- Allow to provide regex to strip names in expression plots
-- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
-- Allow user to select TTK theme
-- UI to set axis limits manually
