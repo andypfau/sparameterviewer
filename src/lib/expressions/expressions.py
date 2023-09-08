@@ -134,6 +134,21 @@ Networks
             Returns the µ or µ' (Edwards-Sinsky) stability factor (should be >1, or >0 dB;
             mu must be 1 or 2, default is 1).
 
+        losslessness(<egress_port_or_kind>,<ingress_port=None>) -> SParams
+            Returns the losslessness metric S^T·S^* For a lossless component, the diagonal (i.e. indices i,i)
+            must be 1, and all other elements (i.e. indices i,j) must be 0.
+            You can either request a specific matrix element, e.g. with losslessness(2,1), or you can request
+            the worst of all diagonal elements with <losslessness('ii')> (which must all be 1), or you can
+            request the worst of all non-diagonal elements with <losslessness('ij')> (which must all be 0).
+
+        passivity() -> SParams
+            Returns the passivity metric Eigenvalues(S^H·S). For a passive component, this must be ≤ 1.
+
+        reciprocity(<egress_port=None>,<ingress_port=None>) -> SParams
+            Returns the reciprocity metric S[i,j]-S[j,i]. For a reciprocal component, this must be 0.
+            You can either request a specific matrix element, e.g. with reciprocity(2,1), or you can
+            request the worst of all elements with <reciprocity()>.
+
         crop_f([f_start], [f_end]) -> Networks
             Returns the same network, but with a reduced frequency range
         

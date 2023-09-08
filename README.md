@@ -85,7 +85,6 @@ Known Issues and Missing Features
 - Equation-based plot type
 - Log output for equations (so that you can also print some data or status)
 - Table view of data
-- Check if network is reciprocal, passive, lossless, unilateral
 - Allow to provide regex to strip names in expression plots
 - Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
 - Allow user to select TTK theme

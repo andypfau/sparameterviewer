@@ -5,11 +5,11 @@ import cmath
 import scipy
 
 
-def get_sparam_name(egress: int, ingress: int) -> str:
+def get_sparam_name(egress: int, ingress: int, prefix: str = 'S') -> str:
     if egress<10 and ingress<10:
-        return f'S{egress}{ingress}'
+        return f'{prefix}{egress}{ingress}'
     else:
-        return f'S{egress},{ingress}'
+        return f'{prefix}{egress},{ingress}'
 
 
 def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float = 1e-3, max_abs_error = 1.0) -> "tuple(np.ndarray,np.ndarray)":

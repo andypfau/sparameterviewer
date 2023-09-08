@@ -111,6 +111,66 @@ class Network:
         return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0])
     
 
+    def losslessness(self, egress_port_or_kind: "int|str" = None, ingress_port: int = None):
+        s = self.nw.s
+        s_t = np.transpose(s, (0,2,1))
+        s_c = np.conjugate(s)
+        prod = np.matmul(s_t, s_c)
+        if (egress_port_or_kind == 'ii') and ingress_port is None:
+            name = 'Losslessness_ii,worst'
+            diag = np.diagonal(prod,0,1,2)
+            worst_idx = np.argmax(np.abs(diag-1), (1)) # find the indices where the diagonal is the farthest away from 1
+            matrix = np.take_along_axis(diag, np.expand_dims(worst_idx, 1), 1)
+        elif (egress_port_or_kind == 'ij') and ingress_port is None:
+            name = 'Losslessness_ij,worst'
+            antidiag = np.copy(prod)
+            for i in range(antidiag.shape[1]):
+                antidiag[:,i,i] = 0
+            antidiag = np.reshape(antidiag, (antidiag.shape[0],antidiag.shape[1]**2))
+            worst_idx = np.argmax(np.abs(antidiag), (1)) # find the indices where the diagonal has greatest magnitude
+            matrix = np.take_along_axis(antidiag, np.expand_dims(worst_idx,1), 1)
+        elif egress_port_or_kind is not None and ingress_port is not None:
+            name = get_sparam_name(egress_port_or_kind,ingress_port,"Losslessness")
+            matrix = prod[:,egress_port_or_kind-1,ingress_port-1]
+        else:
+            raise ValueError(f'Network.losslessness(egress_port_or_kind,ingress_port): invalid arguments')
+        return SParam(f'{self.nw.name} {name}', self.nw.f, matrix, self.nw.z0[0,0])
+    
+
+    def passivity(self):
+        s = self.nw.s
+        s_tc = np.conjugate(np.transpose(s, (0,2,1)))
+        prod = np.matmul(s_tc, s)
+        eigenvals = []
+        for idx in range(prod.shape[0]):
+            submat = prod[idx,:,:]
+            ev = np.linalg.eigvals(submat)
+            evmax = np.max(np.real(ev))
+            eigenvals.append(evmax)
+        return SParam(f'{self.nw.name} Passivity', self.nw.f, np.array(eigenvals), self.nw.z0[0,0])
+    
+
+    def reciprocity(self, egress_port: int = None, ingress_port: int = None):
+        s = self.nw.s
+        if egress_port is None and ingress_port is None:
+            name = 'Reciprocity_worst'
+            errors = []
+            for i in range(s.shape[1]):
+                for j in range(i+1,s.shape[2]):
+                    errors.append(s[:,i,j]-s[:,j,i])
+            errmat = np.stack(errors)
+            worst_idx = np.argmax(np.abs(errmat),(0))
+            error = np.take_along_axis(errmat, np.expand_dims(worst_idx, 0), 0).reshape((s.shape[0],1))
+        elif egress_port is not None and ingress_port is not None:
+            if egress_port == ingress_port:
+                raise ValueError(f'Network.reciprocity(egress_port,ingress_port): ports must be different')
+            name = get_sparam_name(egress_port,ingress_port,"Reciprocity")
+            error = s[:,egress_port-1,ingress_port-1] - s[:,ingress_port-1,egress_port-1]
+        else:
+            raise ValueError(f'Network.reciprocity(egress_port,ingress_port): invalid arguments')
+        return SParam(f'{self.nw.name} {name}', self.nw.f, error, self.nw.z0[0,0])
+    
+
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
         if method=='IEEE370NZC':
             from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
@@ -370,6 +430,17 @@ class Networks:
     
     def mu(self, mu: int = 1):
         return self._unary_op(Network.mu, SParams, mu=mu)
+        
+    
+    def passivity(self):
+        return self._unary_op(Network.passivity, SParams)
+        
+    
+    def losslessness(self, egress_port_or_kind: "int|str" = None, ingress_port: int = None):
+        return self._unary_op(Network.losslessness, SParams, egress_port_or_kind=egress_port_or_kind, ingress_port=ingress_port)
+    
+    def reciprocity(self, egress_port: int = None, ingress_port: int = None):
+        return self._unary_op(Network.reciprocity, SParams, egress_port=egress_port, ingress_port=ingress_port)
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Networks":

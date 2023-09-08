@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.14b1 (2023-09-08)
+-------------------
+
+- new: `losslessness`, `passivity` and `reciprocity` functions
+- bugfix: the directional coupler samples are now actually passive networks
+
+
 0.13b1 (2023-07-27)
 -------------------
 
