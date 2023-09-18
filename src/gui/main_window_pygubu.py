@@ -231,8 +231,20 @@ class PygubuApp:
             variable=self.lock_plot_yaxis)
         self.submenu_2.add(
             "command",
+            command=self.on_lock_axes,
+            label='Lock both axes')
+        self.submenu_2.add(
+            "command",
+            command=self.on_unlock_axes,
+            label='Unlock both axes')
+        self.submenu_2.add(
+            "command",
             command=self.on_rescale_locked_axes,
-            label='Re-Scale ')
+            label='Re-scale locked axes')
+        self.submenu_2.add(
+            "command",
+            command=self.on_manual_axes,
+            label='Manual axes...')
         self.submenu_2.add("separator")
         self.submenu_2.add(
             "command",
@@ -352,7 +364,16 @@ class PygubuApp:
     def on_lock_yaxis(self):
         pass
 
+    def on_lock_axes(self):
+        pass
+
+    def on_unlock_axes(self):
+        pass
+
     def on_rescale_locked_axes(self):
+        pass
+
+    def on_manual_axes(self):
         pass
 
     def on_cursor_cmd(self):

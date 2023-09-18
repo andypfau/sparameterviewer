@@ -83,7 +83,6 @@ Roadmap
 - Table view of data
 - Allow to provide regex to strip names in expression plots
 - Allow user to select TTK theme
-- UI to set axis limits manually
 - File type registration script for Windows (using `assoc` and `ftype`)
 
 

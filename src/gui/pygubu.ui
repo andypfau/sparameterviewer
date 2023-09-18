@@ -455,9 +455,27 @@
                   </object>
                 </child>
                 <child>
+                  <object class="tk.Menuitem.Command" id="command_11">
+                    <property name="command" type="command" cbtype="simple">on_lock_axes</property>
+                    <property name="label" translatable="yes">Lock both axes</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_12">
+                    <property name="command" type="command" cbtype="simple">on_unlock_axes</property>
+                    <property name="label" translatable="yes">Unlock both axes</property>
+                  </object>
+                </child>
+                <child>
                   <object class="tk.Menuitem.Command" id="command_5">
                     <property name="command" cbtype="simple" type="command">on_rescale_locked_axes</property>
-                    <property name="label" translatable="yes">Re-Scale </property>
+                    <property name="label" translatable="yes">Re-scale locked axes</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_10">
+                    <property name="command" type="command" cbtype="simple">on_manual_axes</property>
+                    <property name="label" translatable="yes">Manual axes...</property>
                   </object>
                 </child>
                 <child>
@@ -1110,6 +1128,190 @@
                   <property name="padx">5</property>
                   <property name="pady">3</property>
                   <property name="row">3</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="tk.Toplevel" id="toplevel_axes" named="True">
+    <property name="height">200</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Frame" id="frame_15">
+        <property name="height">200</property>
+        <property name="padding">10</property>
+        <property name="width">200</property>
+        <layout manager="pack" />
+        <child>
+          <object class="ttk.Labelframe" id="labelframe_6">
+            <property name="height">200</property>
+            <property name="padding">5</property>
+            <property name="text" translatable="yes">Horizontal / X</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">right</property>
+            </layout>
+            <child>
+              <object class="ttk.Label" id="label_11">
+                <property name="text" translatable="yes">Left:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">0</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Spinbox" id="spinbox_4">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:x0</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="label_12">
+                <property name="text" translatable="yes">Right:</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">0</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_3" named="True">
+                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
+                <property name="offvalue">manual</property>
+                <property name="onvalue">auto</property>
+                <property name="text" translatable="yes">Automatic</property>
+                <property name="variable">string:xauto</property>
+                <bind sequence="&lt;1&gt;" handler="callback" add="" />
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="columnspan">2</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Spinbox" id="spinbox_6">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:x1</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe_7">
+            <property name="height">200</property>
+            <property name="padding">5</property>
+            <property name="text" translatable="yes">Vertical / Y</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">left</property>
+            </layout>
+            <child>
+              <object class="ttk.Label" id="label_14">
+                <property name="text" translatable="yes">Bottom:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Spinbox" id="spinbox_7">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:y0</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="label_15">
+                <property name="text" translatable="yes">Top:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">0</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_4" named="True">
+                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
+                <property name="offvalue">manual</property>
+                <property name="onvalue">auto</property>
+                <property name="text" translatable="yes">Automatic</property>
+                <property name="variable">string:yauto</property>
+                <bind sequence="&lt;1&gt;" handler="callback" add="" />
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="columnspan">2</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Spinbox" id="spinbox_8">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:y1</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">0</property>
                   <property name="sticky">w</property>
                 </layout>
               </object>

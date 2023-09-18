@@ -19,6 +19,7 @@ from .rl_dialog import SparamviewerReturnlossDialog
 from .cursor_dialog import SparamviewerCursorDialog
 from .log_dialog import SparamviewerLogDialog, LogHandler
 from .settings_dialog import SparamviewerSettingsDialog
+from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
 from info import Info
 
@@ -502,6 +503,42 @@ class SparamviewerMainDialog(PygubuApp):
 
     def on_rescale_locked_axes(self):
         self.invalidate_axes_lock()
+
+
+    def on_lock_axes(self):
+        self.lock_plot_xaxis.set(True)
+        self.lock_plot_yaxis.set(True)
+        self.lock_xaxis = True
+        self.lock_yaxis = True
+        self.update_plot()
+
+
+    def on_unlock_axes(self):
+        self.lock_plot_xaxis.set(False)
+        self.lock_plot_yaxis.set(False)
+        self.lock_xaxis = False
+        self.lock_yaxis = False
+        self.update_plot()
+    
+
+    def on_manual_axes(self):
+        def scaling_callback(x0, x1, xauto, y0, y1, yauto):
+            try:
+                self.lock_plot_xaxis.set(not xauto)
+                self.lock_xaxis = not xauto
+                if not xauto:
+                    self.plot.plot.set_xlim((x0,x1))
+                self.lock_plot_yaxis.set(not yauto)
+                self.lock_yaxis = not yauto
+                if not yauto:
+                    self.plot.plot.set_ylim((y0,y1))
+            except:
+                pass
+            self.update_plot()
+        
+        (x0,x1) = self.plot.plot.get_xlim()
+        (y0,y1) = self.plot.plot.get_ylim()
+        SparamviewerAxesDialog(self.toplevel_main, scaling_callback, x0, x1, not self.lock_xaxis, y0, y1, not self.lock_yaxis)
 
     
     def invalidate_axes_lock(self, update: bool = True):
