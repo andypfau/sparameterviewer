@@ -17,10 +17,11 @@ class SParamViewerAppSettings(AppSettings):
     tdr_impedance: bool = False
     log_level: int = logging.WARNING
     mainwin_geom: str = None
+    ttk_theme: str = ''
 
 
 Settings = SParamViewerAppSettings(
     appname='apfau.de S-Parameter Viewer',
     author='apfau.de',
-    version='0.13'
+    version='0.15'
 )

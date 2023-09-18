@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: manual axis scaling
+- new: allow to select GUI theme in settings dialog
 
 
 0.14b1 (2023-09-08)

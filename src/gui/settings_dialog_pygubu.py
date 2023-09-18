@@ -67,7 +67,28 @@ class PygubuApp:
             column=1, padx=5, pady=3, row=3, sticky="w")
         self.checkbox_impedance.configure(command=self.on_impedance_change)
         self.checkbox_impedance.bind("<1>", self.callback, add="")
-        self.labelframe_5.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
+        self.labelframe_5.pack(
+            fill="x",
+            ipadx=5,
+            ipady=5,
+            padx=5,
+            pady=5,
+            side="top")
+        self.labelframe_8 = ttk.Labelframe(self.frame_13)
+        self.labelframe_8.configure(height=200, text='GUI Theme', width=200)
+        self.combobox_theme = ttk.Combobox(self.labelframe_8)
+        self.combobox_theme.pack(expand="true", fill="x", padx=10)
+        self.combobox_theme.bind(
+            "<<ComboboxSelected>>",
+            self.on_theme_sel,
+            add="")
+        self.labelframe_8.pack(
+            fill="x",
+            ipadx=5,
+            ipady=5,
+            padx=5,
+            pady=5,
+            side="top")
         self.frame_13.pack()
 
         # Main widget
@@ -89,6 +110,9 @@ class PygubuApp:
         pass
 
     def callback(self, event=None):
+        pass
+
+    def on_theme_sel(self, event=None):
         pass
 
 

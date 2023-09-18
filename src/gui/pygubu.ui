@@ -1017,6 +1017,7 @@
             <property name="text" translatable="yes">Time-Domain Transform</property>
             <property name="width">200</property>
             <layout manager="pack">
+              <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>
               <property name="padx">5</property>
@@ -1129,6 +1130,31 @@
                   <property name="pady">3</property>
                   <property name="row">3</property>
                   <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe_8">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">GUI Theme</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="fill">x</property>
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Combobox" id="combobox_theme" named="True">
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_theme_sel" add="" />
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">x</property>
+                  <property name="padx">10</property>
                 </layout>
               </object>
             </child>

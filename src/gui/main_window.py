@@ -1,7 +1,7 @@
 #!/bin/python3
 
 from tkinter import *
-from tkinter import filedialog, messagebox, simpledialog
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 import os, glob, appdirs, math, copy, logging, traceback, datetime, io
 import numpy as np
@@ -119,6 +119,12 @@ class SparamviewerMainDialog(PygubuApp):
             def on_click_errors(event):
                 self.open_error_dialog()
             self.entry_err.bind('<Button-1>', on_click_errors)
+
+            # load TTK theme
+            try:
+                style = ttk.Style(self.toplevel_main)
+                style.theme_use(Settings.ttk_theme)
+            except: pass
 
             # remember window size
             if Settings.mainwin_geom is not None:

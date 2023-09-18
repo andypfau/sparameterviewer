@@ -1,4 +1,5 @@
 from lib import AppGlobal
+from tkinter import ttk
 
 from .settings import Settings
 from .settings_dialog_pygubu import PygubuApp
@@ -45,6 +46,19 @@ class SparamviewerSettingsDialog(PygubuApp):
         self.win_param.trace('w', on_input_change)
         self.shift_ps.trace('w', on_input_change)
         self.impedance.trace('w', on_input_change)
+
+        self.ttk_style = ttk.Style(self.toplevel_settings)
+        self.theme_map = {}
+        themes = []
+        theme_sel = 0
+        for i,name in enumerate(self.ttk_style.theme_names()):
+            self.theme_map[i] = name
+            themes.append(name)
+            if Settings.ttk_theme == name:
+                theme_sel = i
+        self.combobox_theme['values'] = themes
+        if Settings.ttk_theme != '':
+            self.combobox_theme.current(theme_sel)
     
 
     def on_win_sel(self, event=None):
@@ -52,3 +66,12 @@ class SparamviewerSettingsDialog(PygubuApp):
         typ = self.window_map[win_id]
         Settings.window_type = typ
         self.callback()
+    
+
+    def on_theme_sel(self, event=None):
+        try:
+            theme = self.theme_map[self.combobox_theme.current()]
+            Settings.ttk_theme = theme
+            self.ttk_style.theme_use(theme)
+        except:
+            pass
