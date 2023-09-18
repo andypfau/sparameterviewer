@@ -82,7 +82,6 @@ Roadmap
 - Log output for equations (so that you can also print some data or status)
 - Table view of data
 - Allow to provide regex to strip names in expression plots
-- Allow user to select TTK theme
 - File type registration script for Windows (using `assoc` and `ftype`)
 
 
