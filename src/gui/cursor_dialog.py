@@ -1,14 +1,14 @@
 #!/bin/python3
 
 from tkinter import END
-from .cursor_dialog_pygubu import SparamviewerPygubuApp
+from .cursor_dialog_pygubu import PygubuApp
 from lib import TkText, AppGlobal, PlotData
 
 import os
 
 
 # extend auto-generated UI code
-class SparamviewerCursorDialog(SparamviewerPygubuApp):
+class SparamviewerCursorDialog(PygubuApp):
     
     def __init__(self, master, plots: "list[PlotData]", callback: "callable"):
         super().__init__(master)

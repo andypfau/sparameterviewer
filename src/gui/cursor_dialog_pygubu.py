@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
-class SparamviewerPygubuApp:
+class PygubuApp:
     def __init__(self, master=None):
         # build ui
         self.toplevel_cursor = tk.Tk() if master is None else tk.Toplevel(master)
@@ -14,6 +14,14 @@ class SparamviewerPygubuApp:
         self.frame3.configure(height=200, padding=10, width=200)
         self.labelframe1 = ttk.Labelframe(self.frame3)
         self.labelframe1.configure(height=200, text='Selection', width=200)
+        self.radiobutton_c1 = ttk.Radiobutton(self.labelframe1)
+        self.var_selected_cursor = tk.StringVar(value='cursor_1')
+        self.radiobutton_c1.configure(
+            text='Cursor 1',
+            value="cursor_1",
+            variable=self.var_selected_cursor)
+        self.radiobutton_c1.grid(column=0, row=0)
+        self.radiobutton_c1.configure(command=self.on_sel_cursor1)
         self.combobox_c1 = ttk.Combobox(self.labelframe1)
         self.combobox_c1.configure(state="readonly")
         self.combobox_c1.grid(column=1, row=0)
@@ -21,6 +29,13 @@ class SparamviewerPygubuApp:
             "<<ComboboxSelected>>",
             self.on_sel_trace1,
             add="")
+        self.radiobutton_c2 = ttk.Radiobutton(self.labelframe1)
+        self.radiobutton_c2.configure(
+            text='Cursor 2',
+            value="cursor_2",
+            variable=self.var_selected_cursor)
+        self.radiobutton_c2.grid(column=0, row=1)
+        self.radiobutton_c2.configure(command=self.on_sel_cursor2)
         self.combobox_c2 = ttk.Combobox(self.labelframe1)
         self.combobox_c2.configure(state="readonly")
         self.combobox_c2.grid(column=1, row=1)
@@ -46,21 +61,6 @@ class SparamviewerPygubuApp:
             variable=self.var_auto_trace)
         self.checkbutton_auto_trace.grid(column=1, row=2)
         self.checkbutton_auto_trace.configure(command=self.on_auto_trace)
-        self.radiobutton_c1 = ttk.Radiobutton(self.labelframe1)
-        self.var_selected_cursor = tk.StringVar(value='cursor_1')
-        self.radiobutton_c1.configure(
-            text='Cursor 1',
-            value="cursor_1",
-            variable=self.var_selected_cursor)
-        self.radiobutton_c1.grid(column=0, row=0)
-        self.radiobutton_c1.configure(command=self.on_sel_cursor1)
-        self.radiobutton_c2 = ttk.Radiobutton(self.labelframe1)
-        self.radiobutton_c2.configure(
-            text='Cursor 2',
-            value="cursor_2",
-            variable=self.var_selected_cursor)
-        self.radiobutton_c2.grid(column=0, row=1)
-        self.radiobutton_c2.configure(command=self.on_sel_cursor2)
         self.checkbutton_syncx = ttk.Checkbutton(self.labelframe1)
         self.var_sync_x = tk.StringVar()
         self.checkbutton_syncx.configure(
@@ -94,7 +94,13 @@ class SparamviewerPygubuApp:
     def run(self):
         self.mainwindow.mainloop()
 
+    def on_sel_cursor1(self):
+        pass
+
     def on_sel_trace1(self, event=None):
+        pass
+
+    def on_sel_cursor2(self):
         pass
 
     def on_sel_trace2(self, event=None):
@@ -106,16 +112,10 @@ class SparamviewerPygubuApp:
     def on_auto_trace(self):
         pass
 
-    def on_sel_cursor1(self):
-        pass
-
-    def on_sel_cursor2(self):
-        pass
-
     def on_sync_x(self):
         pass
 
 
 if __name__ == "__main__":
-    app = SparamviewerPygubuApp()
+    app = PygubuApp()
     app.run()

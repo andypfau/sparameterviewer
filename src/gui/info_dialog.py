@@ -1,14 +1,14 @@
 #!/bin/python3
 
 from tkinter import END
-from .info_dialog_pygubu import SparamviewerPygubuApp
+from .info_dialog_pygubu import PygubuApp
 from lib import TkText, AppGlobal, TkCommon
 
 import logging
 
 
 # extend auto-generated UI code
-class SparamviewerInfoDialog(SparamviewerPygubuApp):
+class SparamviewerInfoDialog(PygubuApp):
     def __init__(self, master, title: str, text: str):
         super().__init__(master)
 
