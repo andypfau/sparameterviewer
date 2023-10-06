@@ -1196,17 +1196,14 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Spinbox" id="spinbox_8">
-                <property name="from_">0</property>
-                <property name="increment">0.1</property>
-                <property name="textvariable">double:y1</property>
-                <property name="to">1000</property>
-                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
-                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+              <object class="ttk.Entry" id="entry_7">
+                <property name="textvariable">string:y1_var</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_y1</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">5</property>
-                  <property name="pady">3</property>
+                  <property name="pady">5</property>
                   <property name="row">0</property>
                   <property name="sticky">w</property>
                 </layout>
@@ -1223,17 +1220,14 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Spinbox" id="spinbox_7">
-                <property name="from_">0</property>
-                <property name="increment">0.1</property>
-                <property name="textvariable">double:y0</property>
-                <property name="to">1000</property>
-                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
-                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+              <object class="ttk.Entry" id="entry_8">
+                <property name="textvariable">string:y0_var</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_y0</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">5</property>
-                  <property name="pady">3</property>
+                  <property name="pady">5</property>
                   <property name="row">1</property>
                   <property name="sticky">w</property>
                 </layout>
@@ -1241,12 +1235,10 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="checkbutton_4" named="True">
-                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
                 <property name="offvalue">manual</property>
                 <property name="onvalue">auto</property>
                 <property name="text" translatable="yes">Automatic</property>
-                <property name="variable">string:yauto</property>
-                <bind sequence="&lt;1&gt;" handler="callback" add="" />
+                <property name="variable">string:yauto_var</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="columnspan">2</property>
@@ -1282,17 +1274,14 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Spinbox" id="spinbox_4">
-                <property name="from_">0</property>
-                <property name="increment">0.1</property>
-                <property name="textvariable">double:x0</property>
-                <property name="to">1000</property>
-                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
-                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+              <object class="ttk.Entry" id="entry_9">
+                <property name="textvariable">string:x0_var</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_x0</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="padx">5</property>
-                  <property name="pady">3</property>
+                  <property name="pady">5</property>
                   <property name="row">1</property>
                   <property name="sticky">w</property>
                 </layout>
@@ -1309,17 +1298,14 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Spinbox" id="spinbox_6">
-                <property name="from_">0</property>
-                <property name="increment">0.1</property>
-                <property name="textvariable">double:x1</property>
-                <property name="to">1000</property>
-                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
-                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+              <object class="ttk.Entry" id="entry_10">
+                <property name="textvariable">string:x1_var</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_x1</property>
                 <layout manager="grid">
                   <property name="column">1</property>
                   <property name="padx">5</property>
-                  <property name="pady">3</property>
+                  <property name="pady">5</property>
                   <property name="row">1</property>
                   <property name="sticky">w</property>
                 </layout>
@@ -1327,12 +1313,10 @@
             </child>
             <child>
               <object class="ttk.Checkbutton" id="checkbutton_3" named="True">
-                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
                 <property name="offvalue">manual</property>
                 <property name="onvalue">auto</property>
                 <property name="text" translatable="yes">Automatic</property>
-                <property name="variable">string:xauto</property>
-                <bind sequence="&lt;1&gt;" handler="callback" add="" />
+                <property name="variable">string:xauto_var</property>
                 <layout manager="grid">
                   <property name="column">0</property>
                   <property name="columnspan">2</property>

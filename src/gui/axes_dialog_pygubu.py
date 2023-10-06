@@ -19,39 +19,29 @@ class PygubuApp:
         self.label_15 = ttk.Label(self.labelframe_7)
         self.label_15.configure(text='Top:')
         self.label_15.grid(column=0, row=0, sticky="w")
-        self.spinbox_8 = ttk.Spinbox(self.labelframe_7)
-        self.y1 = tk.DoubleVar()
-        self.spinbox_8.configure(
-            from_=0,
-            increment=0.1,
-            textvariable=self.y1,
-            to=1000)
-        self.spinbox_8.grid(column=1, padx=5, pady=3, row=0, sticky="w")
-        self.spinbox_8.bind("<<Decrement>>", self.on_change_arg, add="")
-        self.spinbox_8.bind("<<Increment>>", self.on_change_arg, add="")
+        self.entry_7 = ttk.Entry(self.labelframe_7)
+        self.y1_var = tk.StringVar()
+        self.entry_7.configure(textvariable=self.y1_var, validate="all")
+        self.entry_7.grid(column=1, padx=5, pady=5, row=0, sticky="w")
+        _validatecmd = (self.entry_7.register(self.on_y1), "%P", "%V")
+        self.entry_7.configure(validatecommand=_validatecmd)
         self.label_14 = ttk.Label(self.labelframe_7)
         self.label_14.configure(text='Bottom:')
         self.label_14.grid(column=0, row=1, sticky="w")
-        self.spinbox_7 = ttk.Spinbox(self.labelframe_7)
-        self.y0 = tk.DoubleVar()
-        self.spinbox_7.configure(
-            from_=0,
-            increment=0.1,
-            textvariable=self.y0,
-            to=1000)
-        self.spinbox_7.grid(column=1, padx=5, pady=3, row=1, sticky="w")
-        self.spinbox_7.bind("<<Decrement>>", self.on_change_arg, add="")
-        self.spinbox_7.bind("<<Increment>>", self.on_change_arg, add="")
+        self.entry_8 = ttk.Entry(self.labelframe_7)
+        self.y0_var = tk.StringVar()
+        self.entry_8.configure(textvariable=self.y0_var, validate="all")
+        self.entry_8.grid(column=1, padx=5, pady=5, row=1, sticky="w")
+        _validatecmd = (self.entry_8.register(self.on_y0), "%P", "%V")
+        self.entry_8.configure(validatecommand=_validatecmd)
         self.checkbutton_4 = ttk.Checkbutton(self.labelframe_7)
-        self.yauto = tk.StringVar()
+        self.yauto_var = tk.StringVar()
         self.checkbutton_4.configure(
             offvalue="manual",
             onvalue="auto",
             text='Automatic',
-            variable=self.yauto)
+            variable=self.yauto_var)
         self.checkbutton_4.grid(column=0, columnspan=2, padx=5, pady=3, row=2)
-        self.checkbutton_4.configure(command=self.on_impedance_change)
-        self.checkbutton_4.bind("<1>", self.callback, add="")
         self.labelframe_7.pack(ipadx=5, ipady=5, padx=5, pady=5, side="left")
         self.labelframe_6 = ttk.Labelframe(self.frame_15)
         self.labelframe_6.configure(
@@ -62,39 +52,29 @@ class PygubuApp:
         self.label_11 = ttk.Label(self.labelframe_6)
         self.label_11.configure(text='Left:')
         self.label_11.grid(column=0, row=0, sticky="w")
-        self.spinbox_4 = ttk.Spinbox(self.labelframe_6)
-        self.x0 = tk.DoubleVar()
-        self.spinbox_4.configure(
-            from_=0,
-            increment=0.1,
-            textvariable=self.x0,
-            to=1000)
-        self.spinbox_4.grid(column=0, padx=5, pady=3, row=1, sticky="w")
-        self.spinbox_4.bind("<<Decrement>>", self.on_change_arg, add="")
-        self.spinbox_4.bind("<<Increment>>", self.on_change_arg, add="")
+        self.entry_9 = ttk.Entry(self.labelframe_6)
+        self.x0_var = tk.StringVar()
+        self.entry_9.configure(textvariable=self.x0_var, validate="all")
+        self.entry_9.grid(column=0, padx=5, pady=5, row=1, sticky="w")
+        _validatecmd = (self.entry_9.register(self.on_x0), "%P", "%V")
+        self.entry_9.configure(validatecommand=_validatecmd)
         self.label_12 = ttk.Label(self.labelframe_6)
         self.label_12.configure(text='Right:')
         self.label_12.grid(column=1, row=0, sticky="w")
-        self.spinbox_6 = ttk.Spinbox(self.labelframe_6)
-        self.x1 = tk.DoubleVar()
-        self.spinbox_6.configure(
-            from_=0,
-            increment=0.1,
-            textvariable=self.x1,
-            to=1000)
-        self.spinbox_6.grid(column=1, padx=5, pady=3, row=1, sticky="w")
-        self.spinbox_6.bind("<<Decrement>>", self.on_change_arg, add="")
-        self.spinbox_6.bind("<<Increment>>", self.on_change_arg, add="")
+        self.entry_10 = ttk.Entry(self.labelframe_6)
+        self.x1_var = tk.StringVar()
+        self.entry_10.configure(textvariable=self.x1_var, validate="all")
+        self.entry_10.grid(column=1, padx=5, pady=5, row=1, sticky="w")
+        _validatecmd = (self.entry_10.register(self.on_x1), "%P", "%V")
+        self.entry_10.configure(validatecommand=_validatecmd)
         self.checkbutton_3 = ttk.Checkbutton(self.labelframe_6)
-        self.xauto = tk.StringVar()
+        self.xauto_var = tk.StringVar()
         self.checkbutton_3.configure(
             offvalue="manual",
             onvalue="auto",
             text='Automatic',
-            variable=self.xauto)
+            variable=self.xauto_var)
         self.checkbutton_3.grid(column=0, columnspan=2, padx=5, pady=3, row=2)
-        self.checkbutton_3.configure(command=self.on_impedance_change)
-        self.checkbutton_3.bind("<1>", self.callback, add="")
         self.labelframe_6.pack(ipadx=5, ipady=5, padx=5, pady=5, side="right")
         self.frame_15.pack()
 
@@ -104,13 +84,16 @@ class PygubuApp:
     def run(self):
         self.mainwindow.mainloop()
 
-    def on_change_arg(self, event=None):
+    def on_y1(self, p_entry_value, v_condition):
         pass
 
-    def on_impedance_change(self):
+    def on_y0(self, p_entry_value, v_condition):
         pass
 
-    def callback(self, event=None):
+    def on_x0(self, p_entry_value, v_condition):
+        pass
+
+    def on_x1(self, p_entry_value, v_condition):
         pass
 
 
