@@ -875,7 +875,7 @@ class SparamviewerMainDialog(PygubuApp):
                 self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, **common_plot_args)
 
 
-            def add_to_plot(f, sp, name, style=None):
+            def add_to_plot(f, sp, z0, name, style=None):
 
                 if style is None:
                     style = '-'
@@ -892,9 +892,9 @@ class SparamviewerMainDialog(PygubuApp):
                     if timedomain:
                         t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg)
                         if tdr_z:
-                            lev[lev==0] = 1e-20
-                            z = 50 * (1+lev) / (1-lev)
-                            self.plot.add(t, z, None, name, style)
+                            lev[lev==0] = 1e-20 # avoid division by zero in the next step
+                            imp = z0 * (1+lev) / (1-lev) # convert to impedance
+                            self.plot.add(t, np.real(imp), None, name, style)
                         else:
                             self.plot.add(t, lev, None, name, style)
                     elif qty_db:

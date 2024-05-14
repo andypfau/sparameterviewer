@@ -13,7 +13,7 @@ import scipy.signal
 class SParam:
 
 
-    plot_fn: "callable[[np.ndarray,np.ndarray,str,str], None]"
+    plot_fn: "callable[[np.ndarray,np.ndarray,complex,str,str], None]"
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
@@ -108,7 +108,7 @@ class SParam:
             label = self.name
         else:
             label = label.replace('%n', self.name)
-        SParam.plot_fn(self.f, self.s, label, style)
+        SParam.plot_fn(self.f, self.s, self.z0, label, style)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":

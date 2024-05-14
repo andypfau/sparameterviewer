@@ -17,7 +17,7 @@ class ExpressionParser:
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
         selected_networks: "list[SParamFile]", \
-        plot_fn: "callable[np.ndarray,np.ndarray,str,str]") -> "list[SParamFile]":
+        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str]") -> "list[SParamFile]":
 
         touched_files = []
         
