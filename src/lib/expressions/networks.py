@@ -303,9 +303,9 @@ class Network:
         
         if input_order is not None:
             old_indices = []
-            for df_port_str in input_order:
+            for se_port_str in input_order:
                 try:
-                    m = re.match(r'^([pn])(\d+)$', df_port_str.lower())
+                    m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
                     if not m:
                         raise ValueError()
                 except:
@@ -316,7 +316,7 @@ class Network:
                     df_index += 1
                 # expected order for a 4-port: pos1, neg1, pos2, neg2, ...
                 if df_index in old_indices:
-                    raise ValueError(f'Duplicate port <{df_port_str}>')
+                    raise ValueError(f'Duplicate port <{se_port_str}>')
                 old_indices.append(df_index)
             if len(old_indices) != new_nw.nports:
                 raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
@@ -380,9 +380,9 @@ class Network:
         
         if output_order is not None:
             old_indices = []
-            for df_port_str in output_order:
+            for se_port_str in output_order:
                 try:
-                    m = re.match(r'^([pn])(\d+)$', df_port_str.lower())
+                    m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
                     if not m:
                         raise ValueError()
                 except:
