@@ -79,12 +79,13 @@ class Network:
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Network":
         f_start = -1e99 if f_start is None else f_start
         f_end   = +1e99 if f_end   is None else f_end
-        idx0, idx1 = +1e99, -1e99
+        idx0, idx1 = +1_000_000, -1_000_000
         for idx,f in enumerate(self.nw.f):
             if f>=f_start:
                 idx0 = min(idx,idx0)
             if f<=f_end:
                 idx1 = max(idx,idx1)
+        assert 0<=idx0<len(self.nw.f) and 0<=idx1<len(self.nw.f)
         if idx0<0 or idx1>=len(self.nw.f):
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
