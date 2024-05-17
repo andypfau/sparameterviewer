@@ -9,6 +9,7 @@ import skrf
 import numpy as np
 import logging
 import re
+from types import NoneType
 
 
 
@@ -52,9 +53,31 @@ class Network:
 
     def __repr__(self):
         return f'<Network({self.nw})>'
-    
 
-    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+
+    def s(self, egress_port: "int|str|NoneType" = None, ingress_port: "int|NoneType" = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        
+        mixed_name = None
+        if isinstance(egress_port, str):
+            try:
+                m = re.match(r'^([cd])([cd])(\d+),(\d+)$', egress_port.lower())
+                if m is None:
+                    m = re.match(r'^([cd])([cd])(\d)(\d)$', egress_port.lower())
+                if m is None:
+                    raise ValueError()
+                egress_mode, ingress_mode, egress_diffport, ingress_diffport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
+                def get_port(mode, diffport):
+                    assert mode in ('c','d')
+                    port = diffport
+                    if mode == 'c':
+                        port += self.nw.nports // 2
+                    return port
+                egress_port, ingress_port = get_port(egress_mode,egress_diffport), get_port(ingress_mode,ingress_diffport)
+                separator = ',' if (egress_diffport >= 10 or ingress_diffport >= 10) else ''
+                mixed_name = f'S{egress_mode}{ingress_mode}{egress_diffport}{separator}{ingress_diffport}'.upper()
+            except:
+                raise ValueError(f'Expected a port number like <1> or <dd21>')
+
         result = []
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
@@ -70,9 +93,15 @@ class Network:
                     continue
                 if rev_il_only and not (ep<ip):
                     continue
-                if name is None:
-                    name = get_sparam_name(ep,ip)
-                result.append(SParam(f'{self.nw.name} {name}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
+                
+                if name is not None:
+                    label = name
+                else:
+                    if mixed_name is not None:
+                        label = mixed_name
+                    else:
+                        label = get_sparam_name(ep,ip)
+                result.append(SParam(f'{self.nw.name} {label}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
         return result
     
 
@@ -301,18 +330,18 @@ class Network:
             SParams(self.s(e,i)).plot()
     
 
-    def s2m(self, input_order: list = None, output_order: list = None) -> "Network":
+    def s2m(self, ports: list = None) -> "Network":
         new_nw = self.nw.copy()
         
-        if input_order is not None:
+        if ports is not None:
             old_indices = []
-            for se_port_str in input_order:
+            for se_port_str in ports:
                 try:
                     m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
                     if not m:
                         raise ValueError()
                 except:
-                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(input_order)}')
+                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(ports)}')
                 df_port = int(m.group(2))
                 df_index = 2*(df_port-1)
                 if m.group(1) == 'n':
@@ -328,33 +357,10 @@ class Network:
 
         new_nw.se2gmm(new_nw.nports // 2)
         assert new_nw.nports % 2 == 0
-        
-        if output_order is not None:
-            old_indices = []
-            for df_port_str in output_order:
-                try:
-                    m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
-                    if not m:
-                        raise ValueError()
-                except:
-                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(output_order)}')
-                df_port = int(m.group(2))
-                df_index = df_port-1
-                if m.group(1) == 'c':
-                    df_index += new_nw.nports//2
-                # default order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
-                if df_index in old_indices:
-                    raise ValueError(f'Duplicate port <{df_port_str}>')
-                old_indices.append(df_index)
-            if len(old_indices) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-            new_indices = np.arange(0, new_nw.nports, step=1)
-            new_nw.renumber(old_indices, new_indices)
-        
         return Network(new_nw)
     
 
-    def m2s(self, input_order: list = None, output_order: list = None) -> "Network":
+    def m2s(self, ports: list = None) -> "Network":
         new_nw = self.nw.copy()
         
         if input_order is not None:
@@ -380,29 +386,6 @@ class Network:
             new_nw.renumber(old_indices, new_indices)
 
         new_nw.gmm2se(new_nw.nports // 2)
-        
-        if output_order is not None:
-            old_indices = []
-            for se_port_str in output_order:
-                try:
-                    m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
-                    if not m:
-                        raise ValueError()
-                except:
-                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(output_order)}')
-                df_port = int(m.group(2))
-                df_index = 2*(df_port-1)
-                if m.group(1) == 'n':
-                    df_index += 1
-                # default order for a 4-port: pos1, neg1, pos2, neg2, ...
-                if df_index in old_indices:
-                    raise ValueError(f'Duplicate port <{se_port_str}>')
-                old_indices.append(df_index)
-            if len(old_indices) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-            new_indices = np.arange(0, new_nw.nports, step=1)
-            new_nw.renumber(old_indices, new_indices)
-        
         return Network(new_nw)
 
 
@@ -552,12 +535,12 @@ class Networks:
         self._unary_op(Network.quick, None, *items)
         
     
-    def m2s(self, inp: list = None, outp: list = None) -> "Networks":
-        return self._unary_op(Network.m2s, Networks, input_order=inp, output_order=outp)
+    def m2s(self, ports: list = None) -> "Networks":
+        return self._unary_op(Network.m2s, Networks, ports=ports)
         
     
-    def s2m(self, inp: list = None, outp: list = None) -> "Networks":
-        return self._unary_op(Network.s2m, Networks, input_order=inp, output_order=outp)
+    def s2m(self, ports: list = None) -> "Networks":
+        return self._unary_op(Network.s2m, Networks, ports=ports)
     
     
     def _count(self) -> int:

@@ -37,11 +37,18 @@ Networks
         s(<egress_port=None>,<ingress_port=None>,<rl_only=False>,<il_only=False>,<fwd_il_only=False>,<rev_il_only=False>,<name=None>) -> SParams
             Returns S-parameters of a network.
             <egress_port> and <ingress_port> can be set to a number, or kept at None (wildcard). Further filtering can be applied with
-            <rl_only>, <il_only>, <fwd_il_only>, <rev_il_only>.
+              <rl_only>, <il_only>, <fwd_il_only>, <rev_il_only>.
+            For a mixed-mode network, you may also format a string instead of <egress_port> (and omit <ingress_port>), e.g. "dd21" od "cd4,3".
+              The mixed-mode network must have port order <diff1, diff2, ..., comm1, comm2, ...>.
             If no explicit name is provided, a reasonable name is selected, e.g. "S21".
+            Examples:
+              s(2,1): plot S21
+              s('dd21'): plot SDD21
+              s(rl_only=True): plot S11, S22, ...
+              plot(None, 1): plot S11, S21, ...
 
         invert() -> Networks
-            Inverts the ports (e.g. for de-embedding).
+            Inverts the network (e.g. for de-embedding).
 
         flip() -> Networks
             Flips the ports (e.g. to use it in reverse direction).
@@ -119,16 +126,13 @@ Networks
             the input, otherwise the output is calculated. It adds "s.i." (stable inside circle) or "s.o." (stable outside
             of the circle) to the plot name.
         
-        s2m([inp=<ports>][, outp=<ports>]):
+        s2m([ports]):
             Single-ended to mixed-mode conversion.
             The expected port order for the single-ended network is <pos1, neg1, pos2, neg2, ...>.
             You may define your own mapping with <inp>; e.g. if your data is
                 <pos1, pos2, neg1, neg2>, you can provide
                 <inp=['p1','p2','n1','n2']>.
             The generated mixed-mode network has port order <diff1, diff2, ..., comm1, comm2, ...>.
-            You may define your own mapping with <outp>; e.g. if you want
-                <diff1, comm1, diff2, comm2>, you can provide
-                <outp=['d1','c1','d2','c2']>.
         
         m2s([inp=<ports>][, outp=<ports>]):
             Mixed-mode to single-ended conversion.
@@ -137,8 +141,6 @@ Networks
                 <diff1, diff2, comm1, comm2>, you can provide
                 <inp=['d1','d2','c1','c2']>.
             The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
-            You may define your own mapping with <outp>; e.g. if you want <pos1, pos2, neg1, neg2>, you
-            can provide <outp=['p1','p2','n1','n2']>.
 
         quick(quick(parameter[, parameter...]))
             Does the same as the <quick()> function, see below.
