@@ -120,21 +120,24 @@ Networks
         
         s2m([inp=<ports>][, outp=<ports>]):
             Single-ended to mixed-mode conversion.
-            The expected port order for the single-ended network is port1p, port1n, port2p, port2n, ....
-            You may define your own mapping with inp; e.g. if your data is <port1p, port2p, port1n, port2n>, you
-            can provide <inp=[1,3,2,4]>.
-            The generated mixed-mode network has port order diff1, comm1, diff2, comm_2, ...
-            You may define your own mapping with outp; e.g. if you want <diff1, diff2, comm1, comm2>, you
-            can provide <outp=[1,3,2,4]>.
+            The expected port order for the single-ended network is <pos1, neg1, pos2, neg2, ...>.
+            You may define your own mapping with <inp>; e.g. if your data is
+                <pos1, pos2, neg1, neg2>, you can provide
+                <inp=['p1','p2','n1','n2']>.
+            The generated mixed-mode network has port order <diff1, diff2, ..., comm1, comm2, ...>.
+            You may define your own mapping with <outp>; e.g. if you want
+                <diff1, comm1, diff2, comm2>, you can provide
+                <outp=['d1','c1','d2','c2']>.
         
         m2s([inp=<ports>][, outp=<ports>]):
             Mixed-mode to single-ended conversion.
-            The expected port order for the single-ended network is diff1, comm1, diff2, comm_2, ...
-            You may define your own mapping with inp; e.g. if your data is <diff1, diff2, comm1, comm2>, you
-            can provide <inp=[1,3,2,4]>.
-            The generated mixed-mode network has port order port1p, port1n, port2p, port2n, ....
-            You may define your own mapping with outp; e.g. if you want <port1p, port2p, port1n, port2n>, you
-            can provide <outp=[1,3,2,4]>.
+            The expected port order for the single-ended network is <diff1, diff2, ..., comm1, comm_2, ..>.
+            You may define your own mapping with <inp>; e.g. if your data is
+                <diff1, diff2, comm1, comm2>, you can provide
+                <inp=['d1','d2','c1','c2']>.
+            The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
+            You may define your own mapping with <outp>; e.g. if you want <pos1, pos2, neg1, neg2>, you
+            can provide <outp=['p1','p2','n1','n2']>.
 
         quick(quick(parameter[, parameter...]))
             Does the same as the <quick()> function, see below.

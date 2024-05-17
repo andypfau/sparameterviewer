@@ -8,6 +8,7 @@ import math
 import skrf
 import numpy as np
 import logging
+import re
 
 
 
@@ -301,20 +302,49 @@ class Network:
         new_nw = self.nw.copy()
         
         if input_order is not None:
-            # expected for a 4-port: inputs are 1,2, outputs are 3,4
-            if len(input_order) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(input_order)}')
-            old_indices = np.array(input_order) - 1
+            old_indices = []
+            for df_port_str in input_order:
+                try:
+                    m = re.match(r'^([pn])(\d+)$', df_port_str.lower())
+                    if not m:
+                        raise ValueError()
+                except:
+                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(input_order)}')
+                df_port = int(m.group(2))
+                df_index = 2*(df_port-1)
+                if m.group(1) == 'n':
+                    df_index += 1
+                # expected order for a 4-port: pos1, neg1, pos2, neg2, ...
+                if df_index in old_indices:
+                    raise ValueError(f'Duplicate port <{df_port_str}>')
+                old_indices.append(df_index)
+            if len(old_indices) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
             new_indices = np.arange(0, new_nw.nports, step=1)
             new_nw.renumber(old_indices, new_indices)
 
         new_nw.se2gmm(new_nw.nports // 2)
+        assert new_nw.nports % 2 == 0
         
         if output_order is not None:
-            # expected for a 4-port: inputs are 1,2, outputs are 3,4
-            if len(output_order) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(output_order)}')
-            old_indices = np.array(output_order) - 1
+            old_indices = []
+            for df_port_str in output_order:
+                try:
+                    m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
+                    if not m:
+                        raise ValueError()
+                except:
+                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(output_order)}')
+                df_port = int(m.group(2))
+                df_index = df_port-1
+                if m.group(1) == 'c':
+                    df_index += new_nw.nports//2
+                # default order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
+                if df_index in old_indices:
+                    raise ValueError(f'Duplicate port <{df_port_str}>')
+                old_indices.append(df_index)
+            if len(old_indices) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
             new_indices = np.arange(0, new_nw.nports, step=1)
             new_nw.renumber(old_indices, new_indices)
         
@@ -325,20 +355,48 @@ class Network:
         new_nw = self.nw.copy()
         
         if input_order is not None:
-            # expected for a 4-port: inputs are 1,2, outputs are 3,4
-            if len(input_order) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(input_order)}')
-            old_indices = np.array(input_order) - 1
+            old_indices = []
+            for df_port_str in input_order:
+                try:
+                    m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
+                    if not m:
+                        raise ValueError()
+                except:
+                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(input_order)}')
+                df_port = int(m.group(2))
+                df_index = df_port-1
+                if m.group(1) == 'c':
+                    df_index += new_nw.nports//2
+                # expected order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
+                if df_index in old_indices:
+                    raise ValueError(f'Duplicate port <{df_port_str}>')
+                old_indices.append(df_index)
+            if len(old_indices) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
             new_indices = np.arange(0, new_nw.nports, step=1)
             new_nw.renumber(old_indices, new_indices)
 
         new_nw.gmm2se(new_nw.nports // 2)
         
         if output_order is not None:
-            # expected for a 4-port: inputs are 1,2, outputs are 3,4
-            if len(output_order) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(output_order)}')
-            old_indices = np.array(output_order) - 1
+            old_indices = []
+            for df_port_str in output_order:
+                try:
+                    m = re.match(r'^([pn])(\d+)$', df_port_str.lower())
+                    if not m:
+                        raise ValueError()
+                except:
+                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(output_order)}')
+                df_port = int(m.group(2))
+                df_index = 2*(df_port-1)
+                if m.group(1) == 'n':
+                    df_index += 1
+                # default order for a 4-port: pos1, neg1, pos2, neg2, ...
+                if df_index in old_indices:
+                    raise ValueError(f'Duplicate port <{se_port_str}>')
+                old_indices.append(df_index)
+            if len(old_indices) != new_nw.nports:
+                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
             new_indices = np.arange(0, new_nw.nports, step=1)
             new_nw.renumber(old_indices, new_indices)
         
