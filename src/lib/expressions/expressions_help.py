@@ -34,10 +34,11 @@ Networks
 
     Methods
 
-        s(<egress_port=None>,<ingress_port=None>,<rl_only=False>,<il_only=False>,<fwd_il_only=False>,<rev_il_only=False>) -> SParams
+        s(<egress_port=None>,<ingress_port=None>,<rl_only=False>,<il_only=False>,<fwd_il_only=False>,<rev_il_only=False>,<name=None>) -> SParams
             Returns S-parameters of a network.
             <egress_port> and <ingress_port> can be set to a number, or kept at None (wildcard). Further filtering can be applied with
             <rl_only>, <il_only>, <fwd_il_only>, <rev_il_only>.
+            If no explicit name is provided, a reasonable name is selected, e.g. "S21".
 
         invert() -> Networks
             Inverts the ports (e.g. for de-embedding).

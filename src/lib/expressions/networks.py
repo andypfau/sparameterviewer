@@ -54,7 +54,7 @@ class Network:
         return f'<Network({self.nw})>'
     
 
-    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False) -> list[SParam]:
+    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
         result = []
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
@@ -70,7 +70,9 @@ class Network:
                     continue
                 if rev_il_only and not (ep<ip):
                     continue
-                result.append(SParam(f'{self.nw.name} {get_sparam_name(ep,ip)}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
+                if name is None:
+                    name = get_sparam_name(ep,ip)
+                result.append(SParam(f'{self.nw.name} {name}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
         return result
     
 
@@ -474,8 +476,8 @@ class Networks:
         return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
     
 
-    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False) -> SParams:
-        return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only)
+    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+        return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
     
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks":
