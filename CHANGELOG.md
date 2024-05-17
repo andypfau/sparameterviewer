@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.16b1 (2024-05-17)
+-------------------
+
+- change: changed syntax for port order of mixed-mode conversion, e.g. `sel_nws().s2m(inp=['p1','p2','n1','n2']).s(2,1).plot()`
+- new: allow to name S-parameters in expressions, eg. `sel_nws().s(2,1,name='SDD21').plot()`
+
+
 0.15b1 (2023-09-18)
 -------------------
 
