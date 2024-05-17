@@ -18,8 +18,9 @@ Main Features
 Prerequisites
 -------------
 
-- Python 3.11 (might work with 3.7 or newer, but not tested)
+- Python 3.12 (might work with 3.7 or newer, but not tested)
 - Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow pandas`
+    - Under Feodora Linux, you may have to install `python3-pillow-tk` via `dnf`
 - Optional packet dependencies:
     - `pyinstaller`: to compile a binary
     - `pywin32`: to copy plot image to clipboard (Windows only)
