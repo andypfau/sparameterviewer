@@ -199,7 +199,7 @@
                                           <property name="side">left</property>
                                         </layout>
                                         <child>
-                                          <object class="ttk.Button" id="button_gen">
+                                          <object class="ttk.Button" id="button_use_expr">
                                             <property name="command" cbtype="simple" type="command">on_use_expr</property>
                                             <property name="text" translatable="yes">Plot (F5)</property>
                                             <bind sequence="&lt;1&gt;" handler="callback" add="" />
@@ -210,8 +210,7 @@
                                           </object>
                                         </child>
                                         <child>
-                                          <object class="ttk.Button" id="button1">
-                                            <property name="command" cbtype="simple" type="command">on_gen_expr</property>
+                                          <object class="ttk.Button" id="button_gen_expr">
                                             <property name="text" translatable="yes">Generate</property>
                                             <layout manager="pack">
                                               <property name="fill">x</property>

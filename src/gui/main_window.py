@@ -126,6 +126,11 @@ class SparamviewerMainDialog(PygubuApp):
                 style.theme_use(Settings.ttk_theme)
             except: pass
 
+            # register event
+            def on_generate_button_click(event):
+                self.on_gen_expr(event)
+            self.button_gen_expr.bind("<1>", on_generate_button_click)
+
             # remember window size
             if Settings.mainwin_geom is not None:
                 try:
@@ -360,23 +365,68 @@ class SparamviewerMainDialog(PygubuApp):
         self.update_plot()
 
 
-    def on_gen_expr(self):
-        
-        if len(self.generated_expressions)<1:
-            return
-        
-        current = TkText.get_text(self.text_expr).strip()
-        
-        new = self.generated_expressions
-        for line in current.splitlines():
-            commented = '# ' + line.strip() if not line.startswith('#') else line.strip()
-            if len(new)>0:
-                new += '\n'
-            new += commented
+    def on_gen_expr(self, event):
 
-        Settings.expression = new
+        def set_expression(*expressions):
+            current = TkText.get_text(self.text_expr).strip()
+            new = '\n'.join(expressions)
+            for line in current.splitlines():
+                commented = '#' + line.strip() if not line.startswith('#') else line.strip()
+                if len(new)>0:
+                    new += '\n'
+                new += commented
+            Settings.expression = new
+            TkText.set_text(self.text_expr, new)
+            self.on_use_expr()
+        
+        def as_currently_selected():
+            set_expression(self.generated_expressions)
+        
+        def all_sparams():
+            set_expression('sel_nws().s().plot()')
+        
+        def insertion_loss():
+            set_expression('sel_nws().s(il_only=True).plot()')
+        
+        def insertion_loss_reciprocal():
+            set_expression('sel_nws().s(fwd_il_only=True).plot()')
+        
+        def return_loss():
+            set_expression('sel_nws().s(rl_only=True).plot()')
+        
+        def mixed_mode():
+            set_expression("sel_nws().s2m(['p1','p2','n1','n2']).s('dd21').plot()")
+        
+        def stability():
+            set_expression('sel_nws().mu(1).plot()', 'sel_nws().mu(2).plot()')
+        
+        def check():
+            set_expression('sel_nws().reciprocity().plot()', 'sel_nws().passivity().plot()',
+                           "sel_nws().losslessness('ii').plot()", "sel_nws().losslessness('ij').plot()")
+        
+        def cascade():
+            set_expression("(nw('network1*') ** nw('network2*')).s(2,1).plot()")
+        
+        def deembed():
+            set_expression("(nw('network1*').invert() ** nw('network1and2*')).s(2,1).plot()")
 
-        TkText.set_text(self.text_expr, new)
+        menu = Menu(self.toplevel_main, tearoff=False)
+        menu.add_command(label='As Currently Selected', command=as_currently_selected, state='disabled' if len(self.generated_expressions)<1 else 'normal')
+        menu.add_separator()
+        menu.add_command(label='All S-Parameters', command=all_sparams)
+        menu.add_command(label='Insertion Loss', command=insertion_loss)
+        menu.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
+        menu.add_command(label='Return Loss', command=return_loss)
+        menu.add_command(label='Stability', command=stability)
+        menu.add_command(label='Network Check', command=check)
+        menu.add_separator()
+        menu.add_command(label='Template: Single-Ended to Mixed-Mode', command=mixed_mode)
+        menu.add_command(label='Template: Cascade', command=cascade)
+        menu.add_command(label='Template: De-Embed', command=deembed)
+        
+        # show poupu at cursor
+        x, y = event.x_root, event.y_root
+        menu.post(x, y)
 
 
     def on_expr_help(self):

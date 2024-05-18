@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.16b2 (2024-05-18)
+-------------------
+
+- new: more useful generate-button
+
+
 0.16b1 (2024-05-17)
 -------------------
 
