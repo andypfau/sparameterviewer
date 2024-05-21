@@ -51,10 +51,22 @@ a = Analysis(
 )
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+
+splash_text = 'Initializing...'
+try:
+    from info import Info
+    splash_text = Info.AppVersionStr
+except:
+    pass
+
 splash = Splash(
     '../res/splash.png',
     a.binaries,
     a.datas,
+    text_pos=(20,50),
+    text_size=8,
+    text_color='#999999',
+    text_default=splash_text
 )
 
 exe = EXE(
