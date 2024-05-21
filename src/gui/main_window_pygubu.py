@@ -79,7 +79,7 @@ class PygubuApp:
         self.button_use_expr.configure(command=self.on_use_expr)
         self.button_use_expr.bind("<1>", self.callback, add="")
         self.button_gen_expr = ttk.Button(self.frame2)
-        self.button_gen_expr.configure(text='Generate')
+        self.button_gen_expr.configure(text='Generate...')
         self.button_gen_expr.pack(fill="x", pady=5, side="top")
         self.button_gen_expr.configure(command=self.on_gen_expr)
         self.button_expr_help = ttk.Button(self.frame2)

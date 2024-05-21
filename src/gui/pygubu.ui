@@ -211,7 +211,7 @@
                                         </child>
                                         <child>
                                           <object class="ttk.Button" id="button_gen_expr">
-                                            <property name="text" translatable="yes">Generate</property>
+                                            <property name="text" translatable="yes">Generate...</property>
                                             <layout manager="pack">
                                               <property name="fill">x</property>
                                               <property name="pady">5</property>
