@@ -362,15 +362,15 @@ class Network:
     def m2s(self, ports: list = None) -> "Network":
         new_nw = self.nw.copy()
         
-        if input_order is not None:
+        if ports is not None:
             old_indices = []
-            for df_port_str in input_order:
+            for df_port_str in ports:
                 try:
                     m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
                     if not m:
                         raise ValueError()
                 except:
-                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(input_order)}')
+                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(ports)}')
                 df_port = int(m.group(2))
                 df_index = df_port-1
                 if m.group(1) == 'c':
