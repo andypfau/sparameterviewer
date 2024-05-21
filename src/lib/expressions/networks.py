@@ -73,8 +73,7 @@ class Network:
                         port += self.nw.nports // 2
                     return port
                 egress_port, ingress_port = get_port(egress_mode,egress_diffport), get_port(ingress_mode,ingress_diffport)
-                separator = ',' if (egress_diffport >= 10 or ingress_diffport >= 10) else ''
-                mixed_name = f'S{egress_mode}{ingress_mode}{egress_diffport}{separator}{ingress_diffport}'.upper()
+                mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'S{egress_mode}{ingress_mode}'.upper())
             except:
                 raise ValueError(f'Expected a port number like <1> or <dd21>')
 
