@@ -1,7 +1,7 @@
 ! 4-Port simulation of a 2:1 balun
 ! Port 1: x1 input
-! Port 2: x1 input
-! Port 3: x2 output
+! Port 2: x2 output
+! Port 3: x1 input
 ! Port 4: x2 output
 # HZ S RI R 50
 1.00000000000e+007 +1.69306586660e-002 +4.82339307424e-002 -9.99966689002e-003 -6.69637680775e-002 -9.83069341334e-001 +4.82339307424e-002 -9.99966689002e-003 -6.69637680775e-002
