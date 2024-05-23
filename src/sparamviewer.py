@@ -35,11 +35,12 @@ if __name__ == '__main__':
     LogHandler.set_up()
 
     # splashscreen (pyinstaller only)
-    try:
-        import pyi_splash
-        pyi_splash.close()
-    except Exception as ex:
-        pass # not started from pyinstaller, ignore        
+    if getattr(sys, 'frozen', False):
+        try:
+            import pyi_splash
+            pyi_splash.close()
+        except Exception as ex:
+            pass # not started from pyinstaller, ignore        
 
     try:
         if is_windows():
