@@ -860,11 +860,14 @@ class SparamviewerMainDialog(PygubuApp):
 
         try:
 
-            try:
-                prev_xlim = self.plot.plot.get_xlim()
-                prev_ylim = self.plot.plot.get_ylim()
-            except:
-                prev_xlim, prev_ylim = None, None
+            
+            prev_xlim, prev_ylim = None, None
+            if self.plot is not None:
+                try:
+                    prev_xlim = self.plot.plot.get_xlim()
+                    prev_ylim = self.plot.plot.get_ylim()
+                except:
+                    pass
             
             self.fig.clf()
             self.generated_expressions = ''
