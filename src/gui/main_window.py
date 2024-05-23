@@ -410,6 +410,9 @@ class SparamviewerMainDialog(PygubuApp):
         def deembed():
             set_expression("(nw('network1*').invert() ** nw('network1and2*')).s(2,1).plot()")
 
+        def renorm():
+            set_expression('sel_nws().renorm([50,75]).s(2,1).plot()')
+
         menu = Menu(self.toplevel_main, tearoff=False)
         menu.add_command(label='As Currently Selected', command=as_currently_selected, state='disabled' if len(self.generated_expressions)<1 else 'normal')
         menu.add_separator()
@@ -421,8 +424,9 @@ class SparamviewerMainDialog(PygubuApp):
         menu.add_command(label='Network Check', command=check)
         menu.add_separator()
         menu.add_command(label='Template: Single-Ended to Mixed-Mode', command=mixed_mode)
-        menu.add_command(label='Template: Cascade', command=cascade)
-        menu.add_command(label='Template: De-Embed', command=deembed)
+        menu.add_command(label='Template: Impedance Renormalization', command=renorm)
+        menu.add_command(label='Template: Cascade Networks', command=cascade)
+        menu.add_command(label='Template: De-Embed Network', command=deembed)
         
         # show poupu at cursor
         x, y = event.x_root, event.y_root

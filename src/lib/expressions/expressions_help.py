@@ -144,6 +144,9 @@ Networks
                 <diff1, diff2, comm1, comm2>, you can provide
                 <inp=['d1','d2','c1','c2']>.
             The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
+        
+        renorm(z):
+            Renormalize to a specific reference impedance. <z> can be a scalar, or a list of scalars (one per port).
 
         quick(quick(parameter[, parameter...]))
             Does the same as the <quick()> function, see below.

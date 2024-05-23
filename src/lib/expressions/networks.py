@@ -388,6 +388,12 @@ class Network:
         return Network(new_nw)
 
 
+    def renorm(self, z: "complex|list[complex]") -> "Network":
+        nw = self.nw.copy()
+        nw.renormalize(z)
+        return Network(nw)
+
+
 
 class Networks:
     
@@ -540,6 +546,10 @@ class Networks:
     
     def s2m(self, ports: list = None) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
+    
+
+    def renorm(self, z: "complex|list[complex]") -> "Networks":
+        return self._unary_op(Network.renorm, Networks, z=z)
     
     
     def _count(self) -> int:
