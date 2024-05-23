@@ -74,6 +74,7 @@ Roadmap
 
 ### Missing Features
 
+- Prevent exceptions on startup, to make debugging more convenient
 - Better error handling when reading invalid files
 - Display: more presets, to quickly scroll through all S-parameters
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
