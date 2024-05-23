@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: `renorm()` function to renormalize impedance.
+- new: better handling of corrupted files.
 
 
 0.16b2 (2024-05-18)

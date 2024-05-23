@@ -801,7 +801,12 @@ class SparamviewerMainDialog(PygubuApp):
 
 
     def get_file_prop_str(self, file: "SParamFile") -> str:
-        return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+        if file.loaded():
+            return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+        elif file.error():
+            return '[loading failed]'
+        else:
+            return '[not loaded]'
     
 
     def update_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
@@ -823,10 +828,7 @@ class SparamviewerMainDialog(PygubuApp):
             
             tag = file.tag
             name_str = os.path.split(file.file_path)[1]
-            if file.loaded():
-                prop_str = self.get_file_prop_str(file)
-            else:
-                prop_str = '[not loaded]'
+            prop_str = self.get_file_prop_str(file)
             
             self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
             
@@ -863,11 +865,12 @@ class SparamviewerMainDialog(PygubuApp):
             
             prev_xlim, prev_ylim = None, None
             if self.plot is not None:
-                try:
-                    prev_xlim = self.plot.plot.get_xlim()
-                    prev_ylim = self.plot.plot.get_ylim()
-                except:
-                    pass
+                if self.plot.plot is not None:
+                    try:
+                        prev_xlim = self.plot.plot.get_xlim()
+                        prev_ylim = self.plot.plot.get_ylim()
+                    except:
+                        pass
             
             self.fig.clf()
             self.generated_expressions = ''
@@ -986,11 +989,13 @@ class SparamviewerMainDialog(PygubuApp):
                 self.eval_error_list = []
                 log_entries_before = len(LogHandler.instance.entries)
                 ex_msg = None
+                ExpressionParser.touched_files = []
                 try:
-                    touched_files = ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
+                    ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
                 except Exception as ex:
                     logging.exception(ex)
                     ex_msg = str(ex)
+                touched_files.extend(ExpressionParser.touched_files)
                 log_entries_after = len(LogHandler.instance.entries)
                 n_new_entries = log_entries_after - log_entries_before
                 if n_new_entries > 0:
