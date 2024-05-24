@@ -18,6 +18,7 @@ class SParamViewerAppSettings(AppSettings):
     log_level: int = logging.WARNING
     mainwin_geom: str = None
     ttk_theme: str = ''
+    ext_editor_cmd: str = ''
 
 
 Settings = SParamViewerAppSettings(

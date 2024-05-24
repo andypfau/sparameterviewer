@@ -529,6 +529,20 @@ class SparamviewerMainDialog(PygubuApp):
             messagebox.showerror(title='File Info', message='No file selected.')
 
 
+    def on_click_open_externally(self):
+
+        files = []
+        for file in self.files:
+            if file.tag in self.treeview_files.selection():
+                files.append(file.file_path)
+        
+        try:
+            import subprocess
+            subprocess.run([Settings.ext_editor_cmd, *files])
+        except Exception as ex:
+            messagebox.showerror(title='Open File', message=f'Unable to open file with external editor ({str(ex)}). Did you set up the external editor path (currently <{Settings.ext_editor_cmd}>) in the settings dialog?')
+
+
     def on_show_legend(self):
         Settings.show_legend = (self.show_legend.get() == '1')
         self.update_plot()

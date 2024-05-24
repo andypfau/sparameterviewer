@@ -81,7 +81,6 @@ class PygubuApp:
         self.button_gen_expr = ttk.Button(self.frame2)
         self.button_gen_expr.configure(text='Generate...')
         self.button_gen_expr.pack(fill="x", pady=5, side="top")
-        self.button_gen_expr.configure(command=self.on_gen_expr)
         self.button_expr_help = ttk.Button(self.frame2)
         self.button_expr_help.configure(text='Help')
         self.button_expr_help.pack(pady=10, side="top")
@@ -154,7 +153,11 @@ class PygubuApp:
             "command",
             accelerator="F1",
             command=self.on_click_info,
-            label='File Info...')
+            label='File Info')
+        self.submenu_1.add(
+            "command",
+            command=self.on_click_open_externally,
+            label='Open File Externally')
         self.submenu_1.add("separator")
         self.submenu_1.add(
             "command",
@@ -304,9 +307,6 @@ class PygubuApp:
     def callback(self, event=None):
         pass
 
-    def on_gen_expr(self):
-        pass
-
     def on_expr_help(self):
         pass
 
@@ -329,6 +329,9 @@ class PygubuApp:
         pass
 
     def on_click_info(self):
+        pass
+
+    def on_click_open_externally(self):
         pass
 
     def on_load_expr(self):

@@ -67,13 +67,7 @@ class PygubuApp:
             column=1, padx=5, pady=3, row=3, sticky="w")
         self.checkbox_impedance.configure(command=self.on_impedance_change)
         self.checkbox_impedance.bind("<1>", self.callback, add="")
-        self.labelframe_5.pack(
-            fill="x",
-            ipadx=5,
-            ipady=5,
-            padx=5,
-            pady=5,
-            side="top")
+        self.labelframe_5.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
         self.labelframe_8 = ttk.Labelframe(self.frame_13)
         self.labelframe_8.configure(height=200, text='GUI Theme', width=200)
         self.combobox_theme = ttk.Combobox(self.labelframe_8)
@@ -82,14 +76,22 @@ class PygubuApp:
             "<<ComboboxSelected>>",
             self.on_theme_sel,
             add="")
-        self.labelframe_8.pack(
+        self.labelframe_8.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
+        self.ext_ed_box = ttk.Labelframe(self.frame_13)
+        self.ext_ed_box.configure(
+            height=200, text='External Editor', width=200)
+        self.entry_ext_ed = ttk.Entry(self.ext_ed_box)
+        self.ext_ed = tk.StringVar()
+        self.entry_ext_ed.configure(textvariable=self.ext_ed)
+        self.entry_ext_ed.pack(expand="true", fill="x", padx=10, side="top")
+        self.ext_ed_box.pack(
             fill="x",
             ipadx=5,
             ipady=5,
             padx=5,
             pady=5,
             side="top")
-        self.frame_13.pack()
+        self.frame_13.pack(expand="true", fill="x")
 
         # Main widget
         self.mainwindow = self.toplevel_settings

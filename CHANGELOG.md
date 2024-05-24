@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.16b4 (2024-05-24)
+-------------------
+
+- new: open file with external editor
+
+
 0.16b3 (2024-05-23)
 -------------------
 

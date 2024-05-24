@@ -1,4 +1,4 @@
 class Info:
     AppName = 'S-Parameter Viewer'
-    AppVersionStr = "0.16b3" # see https://peps.python.org/pep-0440/
-    AppDateStr = "2024-05-23"
+    AppVersionStr = "0.16b4" # see https://peps.python.org/pep-0440/
+    AppDateStr = "2024-05-24"

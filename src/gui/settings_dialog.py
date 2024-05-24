@@ -37,15 +37,22 @@ class SparamviewerSettingsDialog(PygubuApp):
         
         AppGlobal.set_toplevel_icon(self.toplevel_settings)
 
-        def on_input_change(var, index, mode):
+        def on_window_change(var, index, mode):
             Settings.window_arg = self.win_param.get()
             Settings.tdr_shift = self.shift_ps.get()*1e-12
             Settings.tdr_impedance = self.impedance.get() == 'impedance'
             self.callback()
         
-        self.win_param.trace('w', on_input_change)
-        self.shift_ps.trace('w', on_input_change)
-        self.impedance.trace('w', on_input_change)
+        self.win_param.trace_add('write', on_window_change)
+        self.shift_ps.trace_add('write', on_window_change)
+        self.impedance.trace_add('write', on_window_change)
+
+        def on_editor_change(var, index, mode):
+            import logging
+            logging.error(self.ext_ed.get())
+            Settings.ext_editor_cmd = self.ext_ed.get()
+
+        self.ext_ed.trace_add('write', on_editor_change)
 
         self.ttk_style = ttk.Style(self.toplevel_settings)
         self.theme_map = {}
@@ -59,6 +66,8 @@ class SparamviewerSettingsDialog(PygubuApp):
         self.combobox_theme['values'] = themes
         if Settings.ttk_theme != '':
             self.combobox_theme.current(theme_sel)
+        
+        self.ext_ed.set(Settings.ext_editor_cmd)
     
 
     def on_win_sel(self, event=None):

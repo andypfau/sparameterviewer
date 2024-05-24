@@ -344,7 +344,13 @@
                   <object class="tk.Menuitem.Command" id="command_info">
                     <property name="accelerator">F1</property>
                     <property name="command" cbtype="simple" type="command">on_click_info</property>
-                    <property name="label" translatable="yes">File Info...</property>
+                    <property name="label" translatable="yes">File Info</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_13">
+                    <property name="command" type="command" cbtype="simple">on_click_open_externally</property>
+                    <property name="label" translatable="yes">Open File Externally</property>
                   </object>
                 </child>
                 <child>
@@ -1008,7 +1014,10 @@
         <property name="height">200</property>
         <property name="padding">10</property>
         <property name="width">200</property>
-        <layout manager="pack" />
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">x</property>
+        </layout>
         <child>
           <object class="ttk.Labelframe" id="labelframe_5">
             <property name="height">200</property>
@@ -1016,7 +1025,6 @@
             <property name="text" translatable="yes">Time-Domain Transform</property>
             <property name="width">200</property>
             <layout manager="pack">
-              <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>
               <property name="padx">5</property>
@@ -1140,7 +1148,6 @@
             <property name="text" translatable="yes">GUI Theme</property>
             <property name="width">200</property>
             <layout manager="pack">
-              <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>
               <property name="padx">5</property>
@@ -1154,6 +1161,32 @@
                   <property name="expand">true</property>
                   <property name="fill">x</property>
                   <property name="padx">10</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="ext_ed_box" named="True">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">External Editor</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="fill">x</property>
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Entry" id="entry_ext_ed" named="True">
+                <property name="textvariable">string:ext_ed</property>
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">x</property>
+                  <property name="padx">10</property>
+                  <property name="side">top</property>
                 </layout>
               </object>
             </child>

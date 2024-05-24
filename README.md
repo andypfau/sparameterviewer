@@ -81,7 +81,6 @@ Roadmap
 - Allow user to select between generic and file-specific generated expressions
 - Equation-based plot type
 - Log output for equations (so that you can also print some data or status)
-- Table view of data
 - Allow to provide regex to strip names in expression plots
 - File type registration script for Windows (using `assoc` and `ftype`)
 
