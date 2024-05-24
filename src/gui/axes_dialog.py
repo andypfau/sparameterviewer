@@ -23,6 +23,8 @@ class SparamviewerAxesDialog(PygubuApp):
     def __init__(self, master, callback, x0, x1, xauto, y0, y1, yauto):
         super().__init__(master)
         self.callback = callback
+        
+        AppGlobal.set_toplevel_icon(self.toplevel_axes)
 
         self.x0, self.x1, self.xauto, self.y0, self.y1, self.yauto = x0, x1, xauto, y0, y1, yauto
 
