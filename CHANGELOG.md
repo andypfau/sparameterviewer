@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.17b1 (2024-06-24)
+-------------------
+
+- bugfix: showing export dialog when clicking that export item, added new menu item to view tabular data
+
+
 0.16b4 (2024-05-24)
 -------------------
 

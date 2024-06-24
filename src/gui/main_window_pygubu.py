@@ -156,6 +156,10 @@ class PygubuApp:
             label='File Info')
         self.submenu_1.add(
             "command",
+            command=self.on_view_tabular,
+            label='View Tabular Data')
+        self.submenu_1.add(
+            "command",
             command=self.on_click_open_externally,
             label='Open File Externally')
         self.submenu_1.add("separator")
@@ -329,6 +333,9 @@ class PygubuApp:
         pass
 
     def on_click_info(self):
+        pass
+
+    def on_view_tabular(self):
         pass
 
     def on_click_open_externally(self):

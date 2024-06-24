@@ -621,6 +621,61 @@ class SparamviewerMainDialog(PygubuApp):
             self.update_plot()
 
     
+    def on_view_tabular(self):
+
+        class Dialog:
+            def __init__(self, columns, rows, master=None):
+                import tkinter as tk
+                import tkinter.ttk as ttk
+                from pygubu.widgets.scrollbarhelper import ScrollbarHelper
+                from lib import TkText, AppGlobal, TkCommon
+                self.toplevel_info = tk.Tk() if master is None else tk.Toplevel(master)
+                self.toplevel_info.configure(height=600, width=800)
+                self.toplevel_info.title("Tabular Data")
+                self.frame1 = ttk.Frame(self.toplevel_info)
+                self.frame1.configure(height=200, padding=10, width=200)
+                self.scrollbarhelper1 = ScrollbarHelper(self.frame1, scrolltype="both")
+                self.scrollbarhelper1.configure(usemousewheel=False)
+                self.listbox = ttk.Treeview(self.scrollbarhelper1.container, columns=columns)
+                self.listbox.pack(expand="true", fill="both", side="top")
+                self.listbox.column("#0", width=0, stretch=NO)
+                self.listbox.heading("#0", text="", anchor=W)
+                for col in cols:
+                    self.listbox.column(col, anchor=E, width=120)
+                    self.listbox.heading(col, text=col, anchor=E)
+                for row in rows:
+                    self.listbox.insert('', 'end', values=row)
+                self.scrollbarhelper1.add_child(self.listbox)
+                self.scrollbarhelper1.pack(expand="true", fill="both", side="top")
+                self.frame1.pack(expand="true", fill="both", side="top")
+                self.mainwindow = self.toplevel_info
+            def run(self):
+                self.mainwindow.mainloop()
+        
+        selected_files = [file for file in self.files if file.tag in self.treeview_files.selection()]
+        if len(selected_files) != 1:
+            messagebox.showerror('Error', 'Exactly one file must be selected')
+            return
+        file = selected_files[0]
+        
+        cols = ['Frequency']
+        for ep in range(file.nw.nports):
+            for ip in range(file.nw.nports):
+                cols.append(f'S{ep+1},{ip+1}')
+        
+        def v2db(v):
+            return 20*np.log10(np.maximum(1e-15,np.abs(v)))
+        rows = []
+        for i,f in enumerate(file.nw.f):
+            row = [f'{f/1e9:.4g} GHz']
+            for ep in range(file.nw.nports):
+                for ip in range(file.nw.nports):
+                    row.append(f'\t{v2db(file.nw.s[i,ep-1,ip-1]):+.4g} dB')
+            rows.append(row)
+        
+        Dialog(cols, rows).run()
+
+
     def on_export(self):
 
         if len(self.plot.plots)<1:
