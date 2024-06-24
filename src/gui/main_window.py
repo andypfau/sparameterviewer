@@ -367,6 +367,8 @@ class SparamviewerMainDialog(PygubuApp):
 
     def on_gen_expr(self, event):
 
+        selected_file_names = [file.name for file in self.files if file.tag in self.treeview_files.selection()]
+
         def set_expression(*expressions):
             current = TkText.get_text(self.text_expr).strip()
             new = '\n'.join(expressions)
@@ -405,13 +407,26 @@ class SparamviewerMainDialog(PygubuApp):
                            "sel_nws().losslessness('ii').plot()", "sel_nws().losslessness('ij').plot()")
         
         def cascade():
-            set_expression("(nw('network1*') ** nw('network2*')).s(2,1).plot()")
+            if len(selected_file_names) >= 2:
+                names = selected_file_names
+            else:
+                names = ['network1*', 'network2*']
+            nws = ' ** '.join([f'nw(\'{name}\')' for name in names])
+            set_expression(f'({nws}).s(2,1).plot()')
         
         def deembed():
-            set_expression("(nw('network1*').invert() ** nw('network1and2*')).s(2,1).plot()")
+            if len(selected_file_names) == 2:
+                [n1, n2] = selected_file_names
+            else:
+                n1, n2 = 'network1*', 'network2*'
+            set_expression(f'(nw(\'{n1}\').invert() ** nw(\'{n2}\')).s(2,1).plot()')
 
         def renorm():
             set_expression('sel_nws().renorm([50,75]).s(2,1).plot()')
+        
+        def all_sel_files():
+            expressions = [f'nw(\'{name}\').s().plot()' for name in selected_file_names]
+            set_expression(*expressions)
 
         menu = Menu(self.toplevel_main, tearoff=False)
         menu.add_command(label='As Currently Selected', command=as_currently_selected, state='disabled' if len(self.generated_expressions)<1 else 'normal')
@@ -427,6 +442,8 @@ class SparamviewerMainDialog(PygubuApp):
         menu.add_command(label='Template: Impedance Renormalization', command=renorm)
         menu.add_command(label='Template: Cascade Networks', command=cascade)
         menu.add_command(label='Template: De-Embed Network', command=deembed)
+        menu.add_separator()
+        menu.add_command(label='Template: All selected files', command=all_sel_files)
         
         # show poupu at cursor
         x, y = event.x_root, event.y_root
