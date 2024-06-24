@@ -16,7 +16,7 @@ from types import NoneType
 class Network:
 
     
-    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None):
+    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None, name: str = None):
         self.nw: skrf.Network
         if isinstance(nw, SParamFile):
             self.nw = nw.nw
@@ -26,6 +26,13 @@ class Network:
             self.nw = nw
         else:
             raise ValueError(f'Invalid type to init Network object (<{nw}>)')
+        if name is not None:
+            self.nw.name = name
+    
+
+    @property
+    def name(self):
+        return self.nw.name
     
 
     @staticmethod
@@ -37,8 +44,10 @@ class Network:
         f_max = min(max(a.nw.f), max(b.nw.f))
         f_new = np.array([f for f in a.nw.f if f_min<=f<=f_max])
         freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
+        if freq_new.npoints < 1:
+            raise RuntimeError(f'The networks "{a.name}" and "{b.name}" have no overlapping frequency range')
         a_nw = a.nw.interpolate(freq_new)
-        b_nw = a.nw.interpolate(freq_new)
+        b_nw = b.nw.interpolate(freq_new)
         return a_nw,b_nw
 
 
@@ -48,7 +57,7 @@ class Network:
 
     def __pow__(self, other: "Network") -> "Network":
         a_nw,b_nw = Network._get_adapted_networks(self, other)
-        return Network(a_nw**b_nw)
+        return Network(a_nw**b_nw, a_nw.name+'+'+b_nw.name)
     
 
     def __repr__(self):
@@ -220,11 +229,11 @@ class Network:
     
 
     def flip(self) -> "Network":
-        return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'))
+        return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name)
     
 
     def invert(self) -> "Network":
-        return Network(self.nw.inv)
+        return Network(self.nw.inv, name='!'+self.name)
 
 
     def _get_added_2port(self, s_matrix: np.ndarray, port: int) -> "Network":
