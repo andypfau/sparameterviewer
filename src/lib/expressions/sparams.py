@@ -63,6 +63,14 @@ class SParam:
         return SParam._op(other, self, lambda a,b: a*b)
 
         
+    def __pow__(self, other: "SParam|float") -> "SParam":
+        return SParam._op(self, other, lambda a,b: a**b)
+
+
+    def __rpow__(self, other: "SParam|float") -> "SParam":
+        return SParam._op(other, self, lambda a,b: a**b)
+
+        
     def __add__(self, other: "SParam|float") -> "SParam":
         return SParam._op(self, other, lambda a,b: a+b)
 
@@ -205,6 +213,14 @@ class SParams:
 
     def __rmul__(self, others: "SParams|float") -> "SParams":
         return self._binary_op(SParam.__rmul__, others, True)
+
+        
+    def __pow__(self, others: "SParams|float") -> "SParams":
+        return self._binary_op(SParam.__pow__, others, True)
+
+
+    def __rpow__(self, others: "SParams|float") -> "SParams":
+        return self._binary_op(SParam.__rpow__, others, True)
         
 
     def __add__(self, others: "SParams|float") -> "SParams":

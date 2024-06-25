@@ -2,10 +2,18 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.17b2 (2024-06-25)
+-------------------
+
+- new: power operation on S-parameter expressions
+
+
 0.17b1 (2024-06-24)
 -------------------
 
 - bugfix: showing export dialog when clicking that export item, added new menu item to view tabular data
+- bugfix: fixed frequency interpolation, and improved names of processed networks
+- new: using selected networks for some templates, and added a template for selected networks only
 
 
 0.16b4 (2024-05-24)
