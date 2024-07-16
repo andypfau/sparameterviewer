@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.18b1 (2024-07-16)
+-------------------
+
+- new: selectable tabular format, copy table to clipboard
+
+
 0.17b2 (2024-06-25)
 -------------------
 

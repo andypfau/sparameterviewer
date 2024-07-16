@@ -6,6 +6,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 import os, glob, appdirs, math, copy, logging, traceback, datetime, io
 import numpy as np
 import re
+import cmath
 
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
@@ -646,12 +647,28 @@ class SparamviewerMainDialog(PygubuApp):
                 import tkinter.ttk as ttk
                 from pygubu.widgets.scrollbarhelper import ScrollbarHelper
                 from lib import TkText, AppGlobal, TkCommon
+                self.cols, self.rows = cols, rows
+                self.clipboard_data = ''
                 self.toplevel_info = tk.Tk() if master is None else tk.Toplevel(master)
                 self.toplevel_info.configure(height=600, width=800)
                 self.toplevel_info.title("Tabular Data")
                 self.frame1 = ttk.Frame(self.toplevel_info)
-                self.frame1.configure(height=200, padding=10, width=200)
-                self.scrollbarhelper1 = ScrollbarHelper(self.frame1, scrolltype="both")
+                self.frame1.configure(padding=10)
+                self.frame1.pack(expand="true", fill="x", side="top")
+                self.combobox_format = ttk.Combobox(self.frame1)
+                self.combobox_format.configure(state="readonly")
+                self.combobox_format.grid(column=1, row=0)
+                self.combobox_format.bind("<<ComboboxSelected>>", self.on_change_format, add="")
+                self.combobox_format['values'] = ['Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
+                self.combobox_format.current(0)
+                self.combobox_format.pack(side='left')
+                self.button_copy = ttk.Button(self.frame1)
+                self.button_copy.configure(text='Copy')
+                self.button_copy.configure(command=self.on_copy)
+                self.button_copy.pack(side='right')
+                self.frame2 = ttk.Frame(self.toplevel_info)
+                self.frame2.configure(padding=10)
+                self.scrollbarhelper1 = ScrollbarHelper(self.frame2, scrolltype="both")
                 self.scrollbarhelper1.configure(usemousewheel=False)
                 self.listbox = ttk.Treeview(self.scrollbarhelper1.container, columns=columns)
                 self.listbox.pack(expand="true", fill="both", side="top")
@@ -660,14 +677,50 @@ class SparamviewerMainDialog(PygubuApp):
                 for col in cols:
                     self.listbox.column(col, anchor=E, width=120)
                     self.listbox.heading(col, text=col, anchor=E)
-                for row in rows:
-                    self.listbox.insert('', 'end', values=row)
                 self.scrollbarhelper1.add_child(self.listbox)
-                self.scrollbarhelper1.pack(expand="true", fill="both", side="top")
-                self.frame1.pack(expand="true", fill="both", side="top")
+                self.scrollbarhelper1.pack(expand="true", fill="both", side="bottom")
+                self.frame2.pack(expand="true", fill="both", side="top")
                 self.mainwindow = self.toplevel_info
+                self.update_data()
+            
             def run(self):
                 self.mainwindow.mainloop()
+            
+            def on_change_format(self, event=None):
+                self.update_data()
+            
+            def update_data(self):
+                
+                f_formatter = lambda f,u: f'{f/1e9:.4g} GHz' if u else f'{f:.4g}'
+
+                format_selection = self.combobox_format.current()
+                if format_selection==0:
+                    formatter = lambda x,u: f'{20*math.log10(max(1e-15,abs(x))):+.4g}' + (' dB' if u else '')
+                elif format_selection==1:
+                    formatter = lambda x,u: f'{abs(x):.4g}'
+                elif format_selection==2:
+                    formatter = lambda x,u: f'{x.real:.4g}{x.imag:+.4g}j'
+                elif format_selection==3:
+                    formatter = lambda x,u: f'{cmath.phase(x):4g}'
+                elif format_selection==4:
+                    formatter = lambda x,u: f'{cmath.phase(x)*math.pi/180:.4g}' + ('°' if u else '')
+                else:
+                    raise ValueError(f'Invalid combobox selection: {format}')
+                
+                self.listbox.delete(*self.listbox.get_children())
+                self.clipboard_data = '\t'.join(self.cols) + '\n'
+                for row in self.rows:
+                    formatted_row = [f_formatter(row[0],True)] + ['\t'+formatter(x,True) for x in row[1:]]
+                    self.listbox.insert('', 'end', values=formatted_row)
+                    self.clipboard_data += '\t'.join([f_formatter(row[0],False)] + [formatter(x,False) for x in row[1:]]) + '\n'
+            
+            def on_copy(self):
+                r = Tk()
+                r.withdraw()
+                r.clipboard_clear()
+                r.clipboard_append(self.clipboard_data)
+                r.update()
+                r.destroy()
         
         selected_files = [file for file in self.files if file.tag in self.treeview_files.selection()]
         if len(selected_files) != 1:
@@ -680,14 +733,13 @@ class SparamviewerMainDialog(PygubuApp):
             for ip in range(file.nw.nports):
                 cols.append(f'S{ep+1},{ip+1}')
         
-        def v2db(v):
-            return 20*np.log10(np.maximum(1e-15,np.abs(v)))
         rows = []
         for i,f in enumerate(file.nw.f):
-            row = [f'{f/1e9:.4g} GHz']
+            row = [f]
             for ep in range(file.nw.nports):
                 for ip in range(file.nw.nports):
-                    row.append(f'\t{v2db(file.nw.s[i,ep-1,ip-1]):+.4g} dB')
+                    #row.append(f'\t{v2db(file.nw.s[i,ep-1,ip-1]):+.4g} dB')
+                    row.append(file.nw.s[i,ep-1,ip-1])
             rows.append(row)
         
         Dialog(cols, rows).run()
