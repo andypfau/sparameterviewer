@@ -1,8 +1,12 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import messagebox
 from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 import math
 import cmath
+import logging
+
+from lib import Clipboard
 
 
 
@@ -87,9 +91,8 @@ class TabularDialog:
     
 
     def on_copy(self):
-        r = tk.Tk()
-        r.withdraw()
-        r.clipboard_clear()
-        r.clipboard_append(self.clipboard_data)
-        r.update()
-        r.destroy()
+        try:
+            Clipboard.copy_string(self.clipboard_data)
+        except Exception as ex:
+            logging.exception(f'Copying CSV-data to clipboard failed: {ex}')
+            messagebox.showerror('Error', str(ex))

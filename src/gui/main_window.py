@@ -23,6 +23,7 @@ from .settings_dialog import SparamviewerSettingsDialog
 from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
 from .tabular_dialog import TabularDialog
+from lib import Clipboard
 from info import Info
 
 from lib import sparam_to_timedomain, get_sparam_name
@@ -712,24 +713,7 @@ class SparamviewerMainDialog(PygubuApp):
             return
 
         try:
-            import io
-            import win32clipboard
-            from PIL import Image
-
-            rgba_buffer = self.plot.fig.canvas.buffer_rgba()
-            w = int(self.plot.fig.get_figwidth() * self.plot.fig.dpi)
-            h = int(self.plot.fig.get_figheight() * self.plot.fig.dpi)
-            im = Image.frombuffer('RGBA', (w,h), rgba_buffer)
-            
-            io_buffer = io.BytesIO()
-            im.convert("RGB").save(io_buffer, "BMP")
-            data = io_buffer.getvalue()[14:]
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-            win32clipboard.CloseClipboard()
-            io_buffer.close()
-            
+            Clipboard.copy_figure(self.plot.fig)
         except Exception as ex:
             logging.exception(f'Copying plot to clipboard failed: {ex}')
             messagebox.showerror('Error', str(ex))
