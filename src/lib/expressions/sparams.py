@@ -28,7 +28,7 @@ class SParam:
         f_min = max(min(a.f), min(b.f))
         f_max = min(max(a.f), max(b.f))
         f_new = np.array([f for f in a.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.fromf(f_new, unit='Hz')
+        freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
         a_nw = skrf.Network(f=a.f, s=a.s, f_unit='Hz').interpolate(freq_new)
         b_nw = skrf.Network(f=b.f, s=b.s, f_unit='Hz').interpolate(freq_new)
         return a_nw,b_nw

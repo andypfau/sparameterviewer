@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.18b1 (2024-07-12)
+-------------------
+
+- bugfix: "type object 'Frequency' has no attribute 'fromf'" on certain expressions
+
+
 0.18b1 (2024-07-16)
 -------------------
 
