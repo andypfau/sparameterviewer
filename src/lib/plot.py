@@ -5,6 +5,7 @@ from .shortstr import remove_common_prefixes_and_suffixes
 import math
 import re
 import numpy as np
+import logging
 from dataclasses import dataclass
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
@@ -166,6 +167,10 @@ class PlotHelper:
 
 
     def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str):
+        assert len(x)==len(y)
+        if len(x) < 1:
+            logging.info(f'Ignoring plot "{name}" (contains zero points)')
+            return
         
         self.x_range = [min(self.x_range[0],min(x)), max(self.x_range[1],max(x))]
         self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
