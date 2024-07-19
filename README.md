@@ -74,6 +74,7 @@ Roadmap
 
 ### Missing Features
 
+- Tabular view: allow to select which file or plot is printed
 - Read citi-file format
 - Display: more presets, to quickly scroll through all S-parameters
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
