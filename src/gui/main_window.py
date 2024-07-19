@@ -22,7 +22,7 @@ from .log_dialog import SparamviewerLogDialog, LogHandler
 from .settings_dialog import SparamviewerSettingsDialog
 from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
-from .tabular_dialog import TabularDialog
+from .tabular_dialog import TabularDialog, TabularDataset, TabularDatasetFile, TabularDatasetPlot
 from lib import Clipboard
 from info import Info
 
@@ -41,7 +41,8 @@ class SparamviewerMainDialog(PygubuApp):
         try:
             self.directories = []
             self.next_file_tag = 1
-            self.files = [] # type: list[SParamFile]
+            self.files: list[SParamFile]
+            self.files = []
             self.generated_expressions = ''
             self.plot_mouse_down = False
             self.cursor_dialog = None # type: SparamviewerCursorDialog
@@ -644,26 +645,16 @@ class SparamviewerMainDialog(PygubuApp):
     def on_view_tabular(self):
         
         selected_files = [file for file in self.files if file.tag in self.treeview_files.selection()]
-        if len(selected_files) != 1:
-            messagebox.showerror('Error', 'Exactly one file must be selected')
-            return
-        file = selected_files[0]
-        
-        cols = ['Frequency']
-        for ep in range(file.nw.nports):
-            for ip in range(file.nw.nports):
-                cols.append(f'S{ep+1},{ip+1}')
-        
-        rows = []
-        for i,f in enumerate(file.nw.f):
-            row = [f]
-            for ep in range(file.nw.nports):
-                for ip in range(file.nw.nports):
-                    #row.append(f'\t{v2db(file.nw.s[i,ep-1,ip-1]):+.4g} dB')
-                    row.append(file.nw.s[i,ep-1,ip-1])
-            rows.append(row)
-        
-        TabularDialog(cols, rows).run()
+
+        datasets = []
+        selection = None
+        for i,file in enumerate(self.files):
+            if (selection is None) and (file.tag in self.treeview_files.selection()):
+                selection = i
+            datasets.append(TabularDatasetFile(file))
+        for plot in self.plot.plots:
+            datasets.append(TabularDatasetPlot(plot))
+        TabularDialog(datasets=datasets, initial_selection=selection, master=self.toplevel_main).run()
 
 
     def on_export(self):

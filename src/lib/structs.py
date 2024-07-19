@@ -60,6 +60,6 @@ class PlotData:
     name: str
     x: PlotDataQuantity
     y: PlotDataQuantity
-    z: PlotDataQuantity
+    z: "PlotDataQuantity|None"
     style: str
     color: object

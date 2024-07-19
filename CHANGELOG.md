@@ -2,7 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.18b1 (2024-07-12)
+0.18b3 (2024-07-19)
+-------------------
+
+- new: allow to select which file or plot to show in tabular dialog
+
+
+0.18b2 (2024-07-18)
 -------------------
 
 - bugfix: "type object 'Frequency' has no attribute 'fromf'" on certain expressions
