@@ -22,7 +22,7 @@ from .log_dialog import SparamviewerLogDialog, LogHandler
 from .settings_dialog import SparamviewerSettingsDialog
 from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
-from .tabular_dialog import TabularDialog, TabularDataset, TabularDatasetFile, TabularDatasetPlot
+from .tabular_dialog import TabularDialog, TabularDataset, TabularDatasetSFile, TabularDatasetPlot
 from lib import Clipboard
 from info import Info
 
@@ -651,7 +651,7 @@ class SparamviewerMainDialog(PygubuApp):
         for i,file in enumerate(self.files):
             if (selection is None) and (file.tag in self.treeview_files.selection()):
                 selection = i
-            datasets.append(TabularDatasetFile(file))
+            datasets.append(TabularDatasetSFile(file))
         for plot in self.plot.plots:
             datasets.append(TabularDatasetPlot(plot))
         TabularDialog(datasets=datasets, initial_selection=selection, master=self.toplevel_main).run()

@@ -8,8 +8,10 @@ import cmath
 import logging
 import io
 import pandas as pd
+import numpy as np
+import itertools
 
-from lib import Clipboard, SParamFile, PlotData, Si, AppGlobal
+from lib import SParamFile, PlotData, Si, AppGlobal
 
 
 
@@ -18,35 +20,53 @@ class TabularDataset:
     def name(self) -> str:
         raise NotImplementedError()
     @property
-    def columns(self) -> list[str]:
+    def name(self) -> str:
         raise NotImplementedError()
     @property
-    def rows(self) -> list[list[complex]]:
+    def xcol(self) -> str:
+        raise NotImplementedError()
+    @property
+    def ycols(self) -> list[str]:
+        raise NotImplementedError()
+    @property
+    def xcol_data(self) -> np.ndarray:
+        raise NotImplementedError()
+    @property
+    def ycol_datas(self) -> list[np.ndarray]:
+        raise NotImplementedError()
+    @property
+    def is_spar(self) -> bool:
         raise NotImplementedError()
     
 @dataclasses.dataclass
-class TabularDatasetFile(TabularDataset):
+class TabularDatasetSFile(TabularDataset):
     file: SParamFile
     @property
     def name(self) -> str:
         return self.file.name
     @property
-    def columns(self) -> list[str]:
-        cols = ['Frequency']
+    def xcol(self) -> str:
+        return 'Frequency'
+    @property
+    def ycols(self) -> list[str]:
+        cols = []
         for ep in range(self.file.nw.nports):
             for ip in range(self.file.nw.nports):
                 cols.append(f'S{ep+1},{ip+1}')
         return cols
     @property
-    def rows(self) -> list[list[complex]]:
-        rows = []
-        for i,f in enumerate(self.file.nw.f):
-            row = [f]
-            for ep in range(self.file.nw.nports):
-                for ip in range(self.file.nw.nports):
-                    row.append(self.file.nw.s[i,ep-1,ip-1])
-            rows.append(row)
-        return rows
+    def xcol_data(self) -> np.ndarray:
+        return self.file.nw.f
+    @property
+    def ycol_datas(self) -> list[np.ndarray]:
+        result = []
+        for ep in range(self.file.nw.nports):
+            for ip in range(self.file.nw.nports):
+                result.append(self.file.nw.s[:,ep-1,ip-1])
+        return result
+    @property
+    def is_spar(self) -> bool:
+        return True
     
 @dataclasses.dataclass
 class TabularDatasetPlot(TabularDataset):
@@ -55,17 +75,35 @@ class TabularDatasetPlot(TabularDataset):
     def name(self) -> str:
         return self.plot.name
     @property
-    def columns(self) -> list[str]:
-        if self.plot.z is not None:
-            return [self.plot.x.name, self.plot.y.name, self.plot.z.name]
-        else:
-            return [self.plot.x.name, self.plot.y.name]
+    def xcol(self) -> str:
+        return self.plot.x.name
     @property
-    def rows(self) -> list[list[complex]]:
-        if self.plot.z is not None:
-            return [[x,y,z] for (x,y,z) in zip(self.plot.x.values, self.plot.y.values, self.plot.z.values)]
-        else:
-            return [[x,y] for (x,y) in zip(self.plot.x.values, self.plot.y.values)]
+    def ycols(self) -> list[str]:
+        cols = [self.plot.y.name]
+        if (self.plot.z is not None):
+            cols.append(self.plot.z.name)
+        return cols
+    @property
+    def xcol_data(self) -> np.ndarray:
+        return self.plot.x.values
+    @property
+    def ycol_datas(self) -> list[np.ndarray]:
+        result = [self.plot.y.values]
+        if (self.plot.z is not None):
+            result.append(self.plot.z.values)
+        return result
+    @property
+    def is_spar(self) -> bool:
+        return False
+
+@dataclasses.dataclass
+class FormattedTabularDataset:
+    name: str
+    xcol: str
+    ycols: list[str]
+    xcol_data: np.ndarray
+    ycol_datas: list[np.ndarray]
+
     
 
 
@@ -73,7 +111,7 @@ class TabularDialog:
 
     
     DISPLAY_PREC = 4
-    EXPORT_PREC  = 8
+    FORMATS = ['Mag / dB, Phase / Rad', 'Mag / dB, Phase / Deg', 'Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
 
 
     def __init__(self, datasets: list[TabularDataset], initial_selection: int, master=None):
@@ -82,8 +120,8 @@ class TabularDialog:
         self.datasets = datasets
 
         def get_display_name(item):
-            if isinstance(item, TabularDatasetFile):
-                return 'File: ' + item.name
+            if isinstance(item, TabularDatasetSFile):
+                return 'S-Param: ' + item.name
             if isinstance(item, TabularDatasetPlot):
                 return 'Plot: ' + item.name
             raise ValueError()
@@ -104,7 +142,7 @@ class TabularDialog:
         self.combobox_format = ttk.Combobox(self.frame_top)
         self.combobox_format.configure(state="readonly")
         self.combobox_format.bind("<<ComboboxSelected>>", self.on_change_format, add="")
-        self.combobox_format['values'] = ['Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
+        self.combobox_format['values'] = TabularDialog.FORMATS
         self.combobox_format.current(0)
         self.combobox_format.pack(side='left')
         self.frame_top.pack(fill="x", side="top")
@@ -126,7 +164,7 @@ class TabularDialog:
         self.menu_main.add(tk.CASCADE, menu=self.submenu_file, label='File')
         self.submenu_file.add("command", command=self.on_save_single, label='Save...')
         self.submenu_file.add("command", command=self.on_save_all, label='Save All...')
-        self.submenu_edit = tk.Menu(self.menu_main)
+        self.submenu_edit = tk.Menu(self.menu_main, tearoff="false")
         self.menu_main.add(tk.CASCADE, menu=self.submenu_edit, label='Edit')
         self.submenu_edit.add("command", command=self.on_copy, label='Copy')
         self.toplevel_tabular.configure(menu=self.menu_main)
@@ -208,54 +246,35 @@ class TabularDialog:
         
     def plot_data(self, dataset: "TabularDataset"):
 
-        x_convert, x_format = self.get_x_formatter()
-        _, y_convert, y_format, y_unit = self.get_y_formatter()
+        ds_fmt = self.format_dataset(dataset)
+
+        cols = [ds_fmt.xcol] + list(ds_fmt.ycols)
+        all_columns = [ds_fmt.xcol_data] + list(ds_fmt.ycol_datas)
+        rows = zip(*all_columns)
         
-        self.listbox['columns'] = dataset.columns
-        for col in dataset.columns:
-            unit = '' if (y_unit is None) else (' / ' + y_unit)
+        self.listbox['columns'] = cols
+        for col in cols:
             self.listbox.column(col, anchor=tk.E, width=100, minwidth=60, stretch=0)
-            self.listbox.heading(col, text=col+unit, anchor=tk.E)
+            self.listbox.heading(col, text=col, anchor=tk.E)
 
         self.listbox.delete(*self.listbox.get_children())
-        for row in dataset.rows:
-            display_row   = [x_format(x_convert(row[0]))] + ['\t'+y_format(y_convert(y)) for y in row[1:]]
-            self.listbox.insert('', 'end', values=display_row)
+        for row in rows:
+            formatted_row = self.stringify_row(row)
+            self.listbox.insert('', 'end', values=formatted_row)
 
         
     def copy_data(self, dataset: "TabularDataset"):
 
-        df = self.get_dataframe(dataset)
+        ds_fmt = self.format_dataset(dataset)
+        df = self.get_dataframe(ds_fmt)
         df.to_clipboard(index=False)
     
 
     def get_dataframe(self, dataset: "TabularDataset") -> "pd.DataFrame":
-
-        x_convert, _ = self.get_x_formatter()
-        is_re_im, y_convert, _, y_unit = self.get_y_formatter()
-
-        processed_cols = [dataset.columns[0]]
-        for col in dataset.columns[1:]:
-            unit = '' if (y_unit is None) else (' / ' + y_unit)
-            if is_re_im:
-                processed_cols.append(col + ' real' + unit)
-                processed_cols.append(col + ' imag' + unit)
-            else:
-                processed_cols.append(col + unit)
-        
-        processed_rows = []
-        for row in dataset.rows:
-            col_data = [x_convert(row[0])]
-            for col in row[1:]:
-                if is_re_im:
-                    (re,im) = y_convert(col)
-                    col_data.append(re)
-                    col_data.append(im)
-                else:
-                    col_data.append(y_convert(col))
-            processed_rows.append(col_data)
-        
-        return pd.DataFrame(processed_rows, columns=processed_cols)
+        data = { dataset.xcol: dataset.xcol_data }
+        for name,arr in zip(dataset.ycols,dataset.ycol_datas):
+            data[name] = arr
+        return pd.DataFrame(data)
 
 
     def save_csv(self, dataset: "TabularDataset", filename: str):
@@ -278,56 +297,65 @@ class TabularDialog:
         writer.close()
     
 
-    def get_x_formatter(self):
+    def format_dataset(self, dataset: TabularDataset) -> FormattedTabularDataset:
         
-        prec = TabularDialog.DISPLAY_PREC
+        def interleave_lists(*lists):
+            return list(itertools.chain(*zip(*lists)))
         
-        converter = lambda value: value
-        formatter = lambda value: str(Si(value, significant_digits=prec))
+        ycols = dataset.ycols
+        ycol_datas = dataset.ycol_datas
 
-        return converter, formatter
-    
+        if dataset.is_spar:
+            selected_format = TabularDialog.FORMATS[self.combobox_format.current()]
+            if selected_format == 'Mag / dB, Phase / Rad':
+                ycols = interleave_lists(
+                    [name+' / dB' for name in ycols],
+                    [name+' / Rad' for name in ycols])
+                ycol_datas = interleave_lists(
+                    [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas],
+                    [np.angle(col) for col in dataset.ycol_datas])
+            
+            elif selected_format == 'Mag / dB, Phase / Deg':
+                ycols = interleave_lists(
+                    [name+' / dB' for name in ycols],
+                    [name+' / Deg' for name in ycols])
+                ycol_datas = interleave_lists(
+                    [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas],
+                    [np.angle(col)*180/math.pi for col in dataset.ycol_datas])
 
-    def get_y_formatter(self):
-        
-        prec = TabularDialog.DISPLAY_PREC
-        format_selection = self.combobox_format.current()
-        is_re_im = False
+            elif selected_format == 'Mag / dB':
+                ycols = [name+' / dB' for name in ycols]
+                ycol_datas = [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas]
 
-        if format_selection==0: # dB
-            converter = lambda value: 20*math.log10(max(1e-15,abs(value)))
-            formatter = lambda db: f'{db:.{prec}g}'
-            unit = 'dB'
+            elif selected_format == 'Mag (linear)':
+                ycol_datas = [np.abs(col) for col in dataset.ycol_datas]
 
-        elif format_selection==1: # linear
-            converter = lambda value: value
-            formatter = lambda linval: str(Si(linval, significant_digits=prec))
-            unit = None
-
-        elif format_selection==2: # complex
-            is_re_im = True
-            converter = lambda value: (value.real, value.imag)
-            def complex_formatter(value):
-                (re, im) = value
-                if im==0:
-                    return f'{re:.{prec}g}'
-                if re==0:
-                    return f'{im:.{prec}g}j'
-                return f'{re:.{prec}g}{im:+.{prec}g}j'
-            formatter = complex_formatter
-            unit = None
-        
-        elif format_selection==3: # rad
-            converter = lambda value: cmath.phase(value)
-            formatter = lambda rad: f'{rad:.{prec}g}'
-            unit = 'rad'
-        
-        elif format_selection==4: # degrees
-            converter = lambda value: cmath.phase(value)*180/math.pi
-            formatter = lambda deg: f'{deg:.{prec}g}'
-            unit = 'deg'
-        
+            elif selected_format == 'Complex':
+                ycols = interleave_lists(
+                    [name+' / re' for name in ycols],
+                    [name+' / im' for name in ycols])
+                ycol_datas = interleave_lists(
+                    [np.real(col) for col in dataset.ycol_datas],
+                    [np.imag(col) for col in dataset.ycol_datas])
+            
+            elif selected_format == 'Phase / Rad':
+                ycols = [name+' / rad' for name in ycols]
+                ycol_datas = [np.angle(col) for col in dataset.ycol_datas]
+            
+            elif selected_format == 'Phase / Deg':
+                ycols = [name+' / deg' for name in ycols]
+                ycol_datas = [np.angle(col)*180/math.pi for col in dataset.ycol_datas]
+            
+            else:
+                raise ValueError(f'Invalid combobox selection: {format}')
         else:
-            raise ValueError(f'Invalid combobox selection: {format}')
+            # dataset is not S-params, so formatting of the data is probably not intended
+            pass
+        
+        return FormattedTabularDataset( dataset.name, dataset.xcol, ycols, dataset.xcol_data, ycol_datas)
     
-        return is_re_im, converter, formatter, unit
+
+    def stringify_row(self, row: list[complex]) -> list[str]:
+        return \
+            [ str(Si(row[0])) ] + \
+            list([ f'{y:.{TabularDialog.DISPLAY_PREC}g}' for y in row[1:] ])
