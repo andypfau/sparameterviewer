@@ -112,6 +112,7 @@ class TabularDialog:
     
     DISPLAY_PREC = 4
     FORMATS = ['Mag / dB, Phase / Rad', 'Mag / dB, Phase / Deg', 'Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
+    DEFAULT_FORMAT = 2
 
 
     def __init__(self, datasets: list[TabularDataset], initial_selection: int, master=None):
@@ -143,7 +144,7 @@ class TabularDialog:
         self.combobox_format.configure(state="readonly")
         self.combobox_format.bind("<<ComboboxSelected>>", self.on_change_format, add="")
         self.combobox_format['values'] = TabularDialog.FORMATS
-        self.combobox_format.current(0)
+        self.combobox_format.current(TabularDialog.DEFAULT_FORMAT)
         self.combobox_format.pack(side='left')
         self.frame_top.pack(fill="x", side="top")
         
@@ -186,7 +187,7 @@ class TabularDialog:
         
         if self.selected_dataset is not None:
             can_change_format = self.selected_dataset.is_spar
-            self.combobox_format['state'] = 'normal' if can_change_format else 'disabled'
+            self.combobox_format['state'] = 'readonly' if can_change_format else 'disabled'
 
         self.update_data()
 
