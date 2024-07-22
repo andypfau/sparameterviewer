@@ -183,6 +183,11 @@ class TabularDialog:
 
     
     def on_select_file(self, event=None):
+        
+        if self.selected_dataset is not None:
+            can_change_format = self.selected_dataset.is_spar
+            self.combobox_format['state'] = 'normal' if can_change_format else 'disabled'
+
         self.update_data()
 
 

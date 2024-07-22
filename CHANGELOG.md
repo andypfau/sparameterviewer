@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.19b1 (2024-07-22)
+-------------------
+
+- new: finished functionality of the tabular data dialog, removed all redundant functionality (i.e. menu commands for export data and copy data)
+
+
 0.18b3 (2024-07-19)
 -------------------
 
