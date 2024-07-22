@@ -27,7 +27,7 @@ from lib import Clipboard
 from info import Info
 
 from lib import sparam_to_timedomain, get_sparam_name
-from lib import Si, DataExport
+from lib import Si
 from lib import SParamFile, PlotHelper
 from lib import ExpressionParser
 from lib import TkText, TkCommon, AppGlobal
@@ -657,27 +657,6 @@ class SparamviewerMainDialog(PygubuApp):
         TabularDialog(datasets=datasets, initial_selection=selection, master=self.toplevel_main).run()
 
 
-    def on_export(self):
-
-        if len(self.plot.plots)<1:
-            return
-
-        try:
-            filename = filedialog.asksaveasfilename(
-                title='Export Trace Data', confirmoverwrite=True, defaultextension='.csv',
-                filetypes=(
-                    ('CSV','.csv'),
-                    ('Spreadsheet','.xlsx'),
-                    ('All Files','*'),
-                ))
-            if not filename:
-                return
-            DataExport.auto(self.plot.plots, filename)
-        except Exception as ex:
-            logging.exception(f'Exporting failed: {ex}')
-            messagebox.showerror('Error', str(ex))
-
-
     def on_save_plot_graphic(self):
 
         if not self.plot.fig:
@@ -705,20 +684,6 @@ class SparamviewerMainDialog(PygubuApp):
 
         try:
             Clipboard.copy_figure(self.plot.fig)
-        except Exception as ex:
-            logging.exception(f'Copying plot to clipboard failed: {ex}')
-            messagebox.showerror('Error', str(ex))
-    
-
-    def on_copy_plot_data_to_clipboard(self):
-
-        if not self.plot.fig:
-            return
-
-        try:
-            df = DataExport.to_pandas(self.plot.plots)
-            df.to_clipboard(index=False)
-
         except Exception as ex:
             logging.exception(f'Copying plot to clipboard failed: {ex}')
             messagebox.showerror('Error', str(ex))

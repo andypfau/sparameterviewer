@@ -264,7 +264,6 @@ class TabularDialog:
 
         
     def copy_data(self, dataset: "TabularDataset"):
-
         ds_fmt = self.format_dataset(dataset)
         df = self.get_dataframe(ds_fmt)
         df.to_clipboard(index=False)

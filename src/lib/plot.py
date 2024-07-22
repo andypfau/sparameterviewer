@@ -3,12 +3,12 @@ from .structs import PlotData, PlotDataQuantity
 from .shortstr import remove_common_prefixes_and_suffixes
 
 import math
-import re
 import numpy as np
 import logging
 from dataclasses import dataclass
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
+import pandas as pd
 
 
 @dataclass

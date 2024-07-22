@@ -325,13 +325,6 @@
                   <object class="tk.Menuitem.Separator" id="separator_2" />
                 </child>
                 <child>
-                  <object class="tk.Menuitem.Command" id="command_export">
-                    <property name="accelerator">Ctrl+E</property>
-                    <property name="command" cbtype="simple" type="command">on_export</property>
-                    <property name="label" translatable="yes">Export Trace Data...</property>
-                  </object>
-                </child>
-                <child>
                   <object class="tk.Menuitem.Command" id="command_7">
                     <property name="command" cbtype="simple" type="command">on_save_plot_graphic</property>
                     <property name="label" translatable="yes">Save Plot Image...</property>
@@ -424,12 +417,6 @@
                   <object class="tk.Menuitem.Command" id="command_copy_plot" named="True">
                     <property name="command" cbtype="simple" type="command">on_copy_plot_image_to_clipboard</property>
                     <property name="label" translatable="yes">Copy Image to Clipboard</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="tk.Menuitem.Command" id="command_copy_data" named="True">
-                    <property name="command" cbtype="simple" type="command">on_copy_plot_data_to_clipboard</property>
-                    <property name="label" translatable="yes">Copy Data to Clipboard</property>
                   </object>
                 </child>
                 <child>

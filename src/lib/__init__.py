@@ -8,7 +8,6 @@ from .expressions import ExpressionParser
 from .tkinter_helpers import TkText, TkCommon
 from .appglobal import AppGlobal
 from .spreadsheet import SpreadsheetGen
-from .data_export import DataExport
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 from .shortstr import remove_common_prefixes, remove_common_suffixes, remove_common_prefixes_and_suffixes

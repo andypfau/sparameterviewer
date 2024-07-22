@@ -141,11 +141,6 @@ class PygubuApp:
         self.submenu_1.add("separator")
         self.submenu_1.add(
             "command",
-            accelerator="Ctrl+E",
-            command=self.on_export,
-            label='Export Trace Data...')
-        self.submenu_1.add(
-            "command",
             command=self.on_save_plot_graphic,
             label='Save Plot Image...')
         self.submenu_1.add("separator")
@@ -157,7 +152,7 @@ class PygubuApp:
         self.submenu_1.add(
             "command",
             command=self.on_view_tabular,
-            label='View Tabular Data')
+            label='View/Export Tabular Data')
         self.submenu_1.add(
             "command",
             command=self.on_click_open_externally,
@@ -209,10 +204,6 @@ class PygubuApp:
             "command",
             command=self.on_copy_plot_image_to_clipboard,
             label='Copy Image to Clipboard')
-        self.submenu_2.add(
-            "command",
-            command=self.on_copy_plot_data_to_clipboard,
-            label='Copy Data to Clipboard')
         self.submenu_2.add("separator")
         self.submenu_2.add(
             "checkbutton",
@@ -326,9 +317,6 @@ class PygubuApp:
     def on_reload_all_files(self):
         pass
 
-    def on_export(self):
-        pass
-
     def on_save_plot_graphic(self):
         pass
 
@@ -360,9 +348,6 @@ class PygubuApp:
         pass
 
     def on_copy_plot_image_to_clipboard(self):
-        pass
-
-    def on_copy_plot_data_to_clipboard(self):
         pass
 
     def on_change_logf(self):
