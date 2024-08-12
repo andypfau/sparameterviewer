@@ -513,7 +513,7 @@ class SparamviewerMainDialog(PygubuApp):
         n_pts = len(sparam_file.nw.f)
         dir, fname = os.path.split(sparam_file.file_path)
         dir = os.path.abspath(dir)
-        comm = sparam_file.nw.comments.strip()
+        comm = '' if sparam_file.nw.comments is None else sparam_file.nw.comments.strip()
         n_ports = sparam_file.nw.s.shape[1]
         if (sparam_file.nw.z0 == sparam_file.nw.z0[0,0]).all():
             z0 = str(Si(sparam_file.nw.z0[0,0],'Ohm'))
@@ -760,7 +760,9 @@ class SparamviewerMainDialog(PygubuApp):
         try:
             
             absdir = os.path.abspath(dir)
-            all_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.[Ss]*[Pp]')))
+            all_touchstone_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.[Ss]*[Pp]')))
+            all_citi_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.cti')))
+            all_files = all_touchstone_files + all_citi_files
             
             for filename in all_files:
                 try:

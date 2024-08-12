@@ -1,5 +1,6 @@
 import os
 from .si import Si, SiFmt
+from .citi import CitiReader
 
 import dataclasses
 import numpy as np
@@ -30,7 +31,13 @@ class SParamFile:
         if not self._nw:
             try:
                 logging.debug(f'Loading network "{self.file_path}"')
-                self._nw = skrf.network.Network(self.file_path)
+                ext = os.path.splitext(self.file_path)[1].lower()
+                if ext == '.cti':
+                    citi = CitiReader(self.file_path)
+                    nw = citi.get_network(None, {}, select_default=True)
+                else:
+                    nw = skrf.network.Network(self.file_path)
+                self._nw = nw
             except Exception as ex:
                 logging.exception(f'Unable to load network from "{self.file_path}" ({ex})')
                 self._error = str(ex)
