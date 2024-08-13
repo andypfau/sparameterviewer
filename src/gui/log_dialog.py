@@ -24,6 +24,8 @@ class LogHandler(logging.Handler):
     
     def __init__(self, level):
         self.entries = []
+        self.latest_levelno = None
+        self.latest_message = None
         self._observers = []
         super().__init__(level)
     
@@ -35,6 +37,8 @@ class LogHandler(logging.Handler):
 
     def emit(self, record):
         self.entries.append(f'{record.levelname}: {record.message} ({record.exc_text})')
+        self.latest_levelno = record.levelno
+        self.latest_message = record.message
         self.notify()
 
 

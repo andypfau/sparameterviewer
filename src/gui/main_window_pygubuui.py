@@ -41,6 +41,20 @@ class PygubuAppUI:
             self.on_select_plotunit,
             add="")
         self.frame_2.pack(expand=False, fill="x", side="top")
+        self.frame_6 = ttk.Frame(self.frame_11)
+        self.frame_6.configure(height=200, width=200)
+        self.entry_err = ttk.Entry(self.frame_6)
+        self.eval_err_msg = tk.StringVar()
+        self.entry_err.configure(
+            state="readonly",
+            textvariable=self.eval_err_msg)
+        self.entry_err.pack(expand=False, fill="x", side="bottom")
+        self.frame_6.pack(
+            expand=False,
+            fill="x",
+            ipadx=5,
+            padx=5,
+            side="bottom")
         self.frame_1 = ttk.Frame(self.frame_11)
         self.frame_1.configure(height=150, padding=5, width=150)
         self.notebook_mode = ttk.Notebook(self.frame_1)
@@ -95,20 +109,6 @@ class PygubuAppUI:
         self.scrollbarhelper_2.add_child(self.text_expr)
         self.scrollbarhelper_2.pack(
             expand=True, fill="both", padx=5, side="top")
-        self.frame_6 = ttk.Frame(self.frame_8)
-        self.frame_6.configure(height=200, width=200)
-        self.entry_err = ttk.Entry(self.frame_6)
-        self.eval_err_msg = tk.StringVar()
-        self.entry_err.configure(
-            state="readonly",
-            textvariable=self.eval_err_msg)
-        self.entry_err.pack(expand=False, fill="x", side="top")
-        self.frame_6.pack(
-            expand=False,
-            fill="x",
-            ipadx=5,
-            padx=5,
-            side="bottom")
         self.frame_8.pack(side="top")
         self.notebook_mode.add(self.frame_8, text='Expressions')
         self.notebook_mode.pack(expand=True, fill="both", side="top")

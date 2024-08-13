@@ -119,6 +119,30 @@
                       </object>
                     </child>
                     <child>
+                      <object class="ttk.Frame" id="frame_6">
+                        <property name="height">200</property>
+                        <property name="width">200</property>
+                        <layout manager="pack">
+                          <property name="expand">false</property>
+                          <property name="fill">x</property>
+                          <property name="ipadx">5</property>
+                          <property name="padx">5</property>
+                          <property name="side">bottom</property>
+                        </layout>
+                        <child>
+                          <object class="ttk.Entry" id="entry_err">
+                            <property name="state">readonly</property>
+                            <property name="textvariable">string:eval_err_msg</property>
+                            <layout manager="pack">
+                              <property name="expand">false</property>
+                              <property name="fill">x</property>
+                              <property name="side">bottom</property>
+                            </layout>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
                       <object class="ttk.Frame" id="frame_1">
                         <property name="height">150</property>
                         <property name="padding">5</property>
@@ -269,30 +293,6 @@
                                             <layout manager="pack">
                                               <property name="expand">true</property>
                                               <property name="fill">both</property>
-                                              <property name="side">top</property>
-                                            </layout>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="ttk.Frame" id="frame_6">
-                                        <property name="height">200</property>
-                                        <property name="width">200</property>
-                                        <layout manager="pack">
-                                          <property name="expand">false</property>
-                                          <property name="fill">x</property>
-                                          <property name="ipadx">5</property>
-                                          <property name="padx">5</property>
-                                          <property name="side">bottom</property>
-                                        </layout>
-                                        <child>
-                                          <object class="ttk.Entry" id="entry_err">
-                                            <property name="state">readonly</property>
-                                            <property name="textvariable">string:eval_err_msg</property>
-                                            <layout manager="pack">
-                                              <property name="expand">false</property>
-                                              <property name="fill">x</property>
                                               <property name="side">top</property>
                                             </layout>
                                           </object>

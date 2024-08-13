@@ -49,7 +49,6 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.plot_axes_are_valid = False
             self.lock_xaxis = False
             self.lock_yaxis = False
-            self.eval_error_list = []
 
             # init UI
             AppGlobal.set_toplevel_icon(self.toplevel_main)
@@ -884,6 +883,9 @@ class SparamviewerMainDialog(PygubuAppUI):
                 gd = np.insert(gd, 0, gd[0]) # repeat 1st value, so that the f-axis is correct
                 return gd
 
+            self.show_error(None)              
+            n_log_entries_before = len(LogHandler.instance.entries)
+
             data_expr_based = Settings.plot_mode==self.MODE_EXPR
             qty_db = (Settings.plot_unit == self.UNIT_DB)
             qty_lin_mag = (Settings.plot_unit == self.UNIT_LIN_MAG)
@@ -985,26 +987,9 @@ class SparamviewerMainDialog(PygubuAppUI):
                 raw_exprs = TkText.get_text(self.text_expr)
                 Settings.expression = raw_exprs
 
-                self.show_error(None)              
-                self.eval_error_list = []
-                log_entries_before = len(LogHandler.instance.entries)
-                ex_msg = None
                 ExpressionParser.touched_files = []
-                try:
-                    ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
-                except Exception as ex:
-                    logging.exception(ex)
-                    ex_msg = str(ex)
+                ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
                 touched_files.extend(ExpressionParser.touched_files)
-                log_entries_after = len(LogHandler.instance.entries)
-                n_new_entries = log_entries_after - log_entries_before
-                if n_new_entries > 0:
-                    self.eval_error_list = LogHandler.instance.entries[-n_new_entries:]
-                    self.fig.clf()
-                    if ex_msg is not None:
-                        self.show_error(ex_msg)
-                    else:
-                        self.show_error('Error while parsing expressions')
 
             else:
 
@@ -1044,6 +1029,11 @@ class SparamviewerMainDialog(PygubuAppUI):
             for f in touched_files:
                 self.update_file_in_list(f)
             
+            log_entries_after = len(LogHandler.instance.entries)
+            n_new_entries = log_entries_after - n_log_entries_before
+            if n_new_entries > 0:
+                self.show_error(LogHandler.instance.latest_message)
+
             self.plot.render()
 
             #if not polar and not smith and not timedomain and not qty_group_delay:
