@@ -3,7 +3,7 @@ from lib import AppGlobal
 import tkinter as tk
 
 from .settings import Settings
-from .axes_dialog_pygubu import PygubuApp
+from .axes_dialog_pygubuui import PygubuAppUI
 
 
 
@@ -19,7 +19,7 @@ def parse(text: str) -> float:
 
 
 # extend auto-generated UI code
-class SparamviewerAxesDialog(PygubuApp):
+class SparamviewerAxesDialog(PygubuAppUI):
     def __init__(self, master, callback, x0, x1, xauto, y0, y1, yauto):
         super().__init__(master)
         self.callback = callback

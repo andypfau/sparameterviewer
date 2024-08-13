@@ -8,7 +8,7 @@ import numpy as np
 import skrf, copy, math, cmath, glob, os
 
 from lib import SParamFile, AppGlobal, BodeFano
-from .rl_dialog_pygubu import PygubuApp
+from .rl_dialog_pygubuui import PygubuAppUI
 
 
 
@@ -18,7 +18,7 @@ def v2db(v):
 
 
 # extend auto-generated UI code
-class SparamviewerReturnlossDialog(PygubuApp):
+class SparamviewerReturnlossDialog(PygubuAppUI):
     def __init__(self, master, files: "list[SParamFile]", selected_tag: any = None):
         super().__init__(master)
         

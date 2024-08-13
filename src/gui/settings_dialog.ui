@@ -1,0 +1,214 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.4" author="PygubuDesigner 0.39.3">
+  <project>
+    <settings>
+      <setting id="name">settings_dialog</setting>
+      <setting id="description">Settings dialog</setting>
+      <setting id="module_name">settings_dialog_pygubu</setting>
+      <setting id="template">codescript</setting>
+      <setting id="main_widget">toplevel_settings</setting>
+      <setting id="main_classname">PygubuApp</setting>
+      <setting id="main_menu" />
+      <setting id="output_dir" />
+      <setting id="output_dir2" />
+      <setting id="import_tkvariables">False</setting>
+      <setting id="use_ttk_styledefinition_file">False</setting>
+      <setting id="use_i18n">False</setting>
+      <setting id="all_ids_attributes">True</setting>
+      <setting id="generate_code_onsave">True</setting>
+      <setting id="use_window_centering_code">False</setting>
+      <setting id="ttk_style_definition_file" />
+    </settings>
+    <customwidgets />
+  </project>
+  <object class="tk.Toplevel" id="toplevel_settings" named="True">
+    <property name="height">200</property>
+    <property name="title" translatable="yes">Settings</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Frame" id="frame_13">
+        <property name="height">200</property>
+        <property name="padding">10</property>
+        <property name="width">200</property>
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">x</property>
+        </layout>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe_5">
+            <property name="height">200</property>
+            <property name="padding">5</property>
+            <property name="text" translatable="yes">Time-Domain Transform</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Label" id="label_6">
+                <property name="text" translatable="yes">Window:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">0</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Combobox" id="combobox_window" named="True">
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_win_sel" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">0</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="label_7">
+                <property name="text" translatable="yes">Parameter:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Spinbox" id="spinbox_3">
+                <property name="from_">0</property>
+                <property name="increment">0.1</property>
+                <property name="textvariable">double:win_param</property>
+                <property name="to">1000</property>
+                <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_arg" add="" />
+                <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_arg" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">1</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Label" id="label_8">
+                <property name="text" translatable="yes">Shift:</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">2</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Frame" id="frame_12">
+                <property name="height">200</property>
+                <property name="width">200</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">2</property>
+                </layout>
+                <child>
+                  <object class="ttk.Spinbox" id="spinbox_2">
+                    <property name="from_">-10000</property>
+                    <property name="increment">10</property>
+                    <property name="textvariable">double:shift_ps</property>
+                    <property name="to">10000</property>
+                    <bind sequence="&lt;&lt;Decrement&gt;&gt;" handler="on_change_shift" add="" />
+                    <bind sequence="&lt;&lt;Increment&gt;&gt;" handler="on_change_shift" add="" />
+                    <layout manager="pack">
+                      <property name="padx">5</property>
+                      <property name="pady">3</property>
+                      <property name="side">left</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Label" id="label_10">
+                    <property name="text" translatable="yes">ps</property>
+                    <layout manager="pack">
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbox_impedance" named="True">
+                <property name="command" type="command" cbtype="simple">on_impedance_change</property>
+                <property name="offvalue">gamma</property>
+                <property name="onvalue">impedance</property>
+                <property name="text" translatable="yes">Convert to Impedance</property>
+                <property name="variable">string:impedance</property>
+                <bind sequence="&lt;1&gt;" handler="callback" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="padx">5</property>
+                  <property name="pady">3</property>
+                  <property name="row">3</property>
+                  <property name="sticky">w</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe_8">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">GUI Theme</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Combobox" id="combobox_theme" named="True">
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_theme_sel" add="" />
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">x</property>
+                  <property name="padx">10</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="ext_ed_box" named="True">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">External Editor</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="fill">x</property>
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Entry" id="entry_ext_ed" named="True">
+                <property name="textvariable">string:ext_ed</property>
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">x</property>
+                  <property name="padx">10</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

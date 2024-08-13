@@ -14,7 +14,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from lib.si import SiFmt
 import scipy.signal
 
-from .main_window_pygubu import PygubuApp
+from .main_window_pygubuui import PygubuAppUI
 from .info_dialog import SparamviewerInfoDialog
 from .rl_dialog import SparamviewerReturnlossDialog
 from .cursor_dialog import SparamviewerCursorDialog
@@ -34,7 +34,7 @@ from lib import TkText, TkCommon, AppGlobal
 
 
 # extend auto-generated UI code
-class SparamviewerMainDialog(PygubuApp):
+class SparamviewerMainDialog(PygubuAppUI):
     def __init__(self, filenames: "list[str]"):
         super().__init__()
 

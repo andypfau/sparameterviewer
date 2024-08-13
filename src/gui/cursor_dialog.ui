@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.4" author="PygubuDesigner 0.39.3">
+  <project>
+    <settings>
+      <setting id="name">cursor_dialog</setting>
+      <setting id="description">Cursor dialog</setting>
+      <setting id="module_name">cursor_dialog_pygubu</setting>
+      <setting id="template">codescript</setting>
+      <setting id="main_widget">toplevel_cursor</setting>
+      <setting id="main_classname">PygubuApp</setting>
+      <setting id="main_menu" />
+      <setting id="output_dir" />
+      <setting id="output_dir2" />
+      <setting id="import_tkvariables">False</setting>
+      <setting id="use_ttk_styledefinition_file">False</setting>
+      <setting id="use_i18n">False</setting>
+      <setting id="all_ids_attributes">True</setting>
+      <setting id="generate_code_onsave">True</setting>
+      <setting id="use_window_centering_code">False</setting>
+      <setting id="ttk_style_definition_file" />
+    </settings>
+    <customwidgets />
+  </project>
+  <object class="tk.Toplevel" id="toplevel_cursor">
+    <property name="height">600</property>
+    <property name="title" translatable="yes">Trace Cursors</property>
+    <property name="width">400</property>
+    <child>
+      <object class="ttk.Frame" id="frame3">
+        <property name="height">200</property>
+        <property name="padding">10</property>
+        <property name="width">200</property>
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">both</property>
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe1">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">Selection</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="expand">false</property>
+              <property name="fill">x</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Radiobutton" id="radiobutton_c1">
+                <property name="command" cbtype="simple" type="command">on_sel_cursor1</property>
+                <property name="text" translatable="yes">Cursor 1</property>
+                <property name="value">cursor_1</property>
+                <property name="variable">string:var_selected_cursor</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Combobox" id="combobox_c1">
+                <property name="state">readonly</property>
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_sel_trace1" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Radiobutton" id="radiobutton_c2">
+                <property name="command" cbtype="simple" type="command">on_sel_cursor2</property>
+                <property name="text" translatable="yes">Cursor 2</property>
+                <property name="value">cursor_2</property>
+                <property name="variable">string:var_selected_cursor</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Combobox" id="combobox_c2">
+                <property name="state">readonly</property>
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_sel_trace2" add="" />
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_auto_cursor">
+                <property name="command" cbtype="simple" type="command">on_auto_cursor</property>
+                <property name="offvalue">manual</property>
+                <property name="onvalue">auto</property>
+                <property name="text" translatable="yes">Auto</property>
+                <property name="variable">string:var_auto_cursor</property>
+                <layout manager="grid">
+                  <property name="column">0</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_auto_trace">
+                <property name="command" cbtype="simple" type="command">on_auto_trace</property>
+                <property name="offvalue">manual</property>
+                <property name="onvalue">auto</property>
+                <property name="text" translatable="yes">Auto</property>
+                <property name="variable">string:var_auto_trace</property>
+                <layout manager="grid">
+                  <property name="column">1</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton_syncx" named="True">
+                <property name="command" cbtype="simple" type="command">on_sync_x</property>
+                <property name="offvalue">indep</property>
+                <property name="onvalue">sync</property>
+                <property name="text" translatable="yes">Sync X</property>
+                <property name="variable">string:var_sync_x</property>
+                <layout manager="grid">
+                  <property name="column">2</property>
+                  <property name="row">2</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Labelframe" id="labelframe2">
+            <property name="height">200</property>
+            <property name="padding">5</property>
+            <property name="text" translatable="yes">Readouts</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="expand">true</property>
+              <property name="fill">both</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="pygubu.builder.widgets.scrollbarhelper" id="scrollbarhelper2">
+                <property name="scrolltype">both</property>
+                <property name="usemousewheel">false</property>
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">both</property>
+                  <property name="side">top</property>
+                </layout>
+                <child>
+                  <object class="tk.Text" id="text_readout">
+                    <property name="height">5</property>
+                    <property name="width">60</property>
+                    <layout manager="pack">
+                      <property name="expand">true</property>
+                      <property name="fill">both</property>
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

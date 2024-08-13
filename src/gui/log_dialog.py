@@ -1,5 +1,5 @@
 from tkinter import END
-from .log_dialog_pygubu import PygubuApp
+from .log_dialog_pygubuui import PygubuAppUI
 from lib import TkText, AppGlobal, TkCommon
 from .settings import Settings
 
@@ -57,7 +57,7 @@ class LogHandler(logging.Handler):
 
 
 # extend auto-generated UI code
-class SparamviewerLogDialog(PygubuApp):
+class SparamviewerLogDialog(PygubuAppUI):
     def __init__(self, master):
         super().__init__(master)
 

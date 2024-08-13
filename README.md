@@ -93,6 +93,6 @@ Roadmap
 Development
 -----------
 
-To modify the UI, you need `pygubu-designer`. To generate UI code, in the "Code" tab, make sure you select "Template": "Code Script", and "All IDs as class attributes".
+To modify the UI, you need `pygubu-designer` 0.39.
 
 There are sample .json-files in the `res` folder for VS Code.

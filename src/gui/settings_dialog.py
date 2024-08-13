@@ -2,7 +2,7 @@ from lib import AppGlobal
 from tkinter import ttk
 
 from .settings import Settings
-from .settings_dialog_pygubu import PygubuApp
+from .settings_dialog_pygubuui import PygubuAppUI
 
 
 WINDOWS = [
@@ -15,7 +15,7 @@ WINDOWS = [
 
 
 # extend auto-generated UI code
-class SparamviewerSettingsDialog(PygubuApp):
+class SparamviewerSettingsDialog(PygubuAppUI):
     def __init__(self, master, callback):
         super().__init__(master)
         self.callback = callback

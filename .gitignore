@@ -4,3 +4,4 @@ src/dist
 src/build
 share
 .vscode
+src/gui/*_pygubu.py
