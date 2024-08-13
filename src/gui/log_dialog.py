@@ -51,7 +51,7 @@ class LogHandler(logging.Handler):
     
     def detach(self, callback: "callable[None,None]"):
         try:
-            self._observers.remove[callback]
+            self._observers.remove(callback)
         except: pass
 
 
