@@ -1,10 +1,10 @@
-from .CITIfile import read_citifile
+from CITIfile import read_citifile
 
 import numpy as np
 import skrf
 import re
 import os
-import warnings
+import logging
 import difflib
 
 
@@ -47,7 +47,7 @@ class CitiReader:
         
         for given_coord_name in at_coords.keys():
             if given_coord_name == frequency_coord:
-                raise RuntimeError('The name of the frequency coordinate of CITI file must not be selected')
+                raise RuntimeError(f'The name of the frequency coordinate ("{frequency_coord}") of CITI file must be available as an independent variable')
             if given_coord_name not in self.coords.keys():
                 raise RuntimeError()
         for required_coord_name in self.coords.keys():
@@ -56,10 +56,10 @@ class CitiReader:
             if required_coord_name not in at_coords.keys():
                 if select_default:
                     value = np.array(self.coords[required_coord_name])[0]
-                    warnings.warn(f'Using the value {value} for coordinate {required_coord_name} to read CITI file')
+                    logging.warning(f'Using the default value {value} for coordinate "{required_coord_name}" to read CITI file, because no explicit value was provided')
                     at_coords[required_coord_name] = value
                 else:
-                    raise RuntimeError(f'No value given for the CITI corrdinate "{required_coord_name}"')
+                    raise RuntimeError(f'No value given for the CITI coordinate "{required_coord_name}"')
 
         f = None
         s_dict = {}
