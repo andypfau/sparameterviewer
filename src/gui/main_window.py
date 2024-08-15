@@ -1060,4 +1060,6 @@ class SparamviewerMainDialog(PygubuAppUI):
 
         except Exception as ex:
             logging.exception(f'Plotting failed: {ex}')
+            self.fig.clf()
+            self.show_error(f'ERROR: {ex}')
             raise ex

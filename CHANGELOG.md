@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.20b2 (2024-08-15)
+-------------------
+
+- bugfix: better reporting when error happens in expression
+- bugfix: `nw()` now raises a warning instead of an exception when it does not match exactly a single network
+
+
 0.20b1 (2024-08-11)
 -------------------
 

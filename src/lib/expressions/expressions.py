@@ -35,7 +35,9 @@ class ExpressionParser:
             logging.debug(f'Expression pattern "{pattern}" matched "' + '", "'.join([n.name for n in nws]) + '"')
             if single:
                 if len(nws) != 1:
-                    raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
+                    #raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
+                    logging.warning(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
+                    nws = []
             for nw in nws:
                 if nws not in ExpressionParser.touched_files:
                     ExpressionParser.touched_files.append(nw)
