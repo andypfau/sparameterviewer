@@ -1,0 +1,147 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.4" author="PygubuDesigner 0.39.3">
+  <project>
+    <settings>
+      <setting id="name">tabular_dialog</setting>
+      <setting id="description">Tabular dialog</setting>
+      <setting id="module_name">tabular_dialog_pygubu</setting>
+      <setting id="template">codescript</setting>
+      <setting id="main_widget">tabular_dialog</setting>
+      <setting id="main_classname">PygubuApp</setting>
+      <setting id="main_menu" />
+      <setting id="output_dir" />
+      <setting id="output_dir2" />
+      <setting id="import_tkvariables">False</setting>
+      <setting id="use_ttk_styledefinition_file">False</setting>
+      <setting id="use_i18n">False</setting>
+      <setting id="all_ids_attributes">True</setting>
+      <setting id="generate_code_onsave">True</setting>
+      <setting id="use_window_centering_code">False</setting>
+      <setting id="ttk_style_definition_file" />
+    </settings>
+    <customwidgets />
+  </project>
+  <object class="tk.Toplevel" id="tabular_dialog" named="True">
+    <property name="height">500</property>
+    <property name="overrideredirect">False</property>
+    <property name="title" translatable="yes">Tabular Data</property>
+    <property name="width">600</property>
+    <child>
+      <object class="ttk.Frame" id="frame_5">
+        <property name="height">200</property>
+        <property name="width">200</property>
+        <layout manager="pack">
+          <property name="expand">true</property>
+          <property name="fill">both</property>
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="ttk.Frame" id="frame1">
+            <property name="height">200</property>
+            <property name="padding">0</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="fill">x</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Combobox" id="combobox_file" named="True">
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_select_file" add="" />
+                <layout manager="pack">
+                  <property name="fill">x</property>
+                  <property name="padx">5</property>
+                  <property name="pady">5</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Combobox" id="combobox_format" named="True">
+                <bind sequence="&lt;&lt;ComboboxSelected&gt;&gt;" handler="on_change_format" add="" />
+                <layout manager="pack">
+                  <property name="padx">5</property>
+                  <property name="pady">5</property>
+                  <property name="side">left</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Frame" id="frame2">
+            <property name="height">200</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="expand">true</property>
+              <property name="fill">both</property>
+              <property name="side">bottom</property>
+            </layout>
+            <child>
+              <object class="pygubu.builder.widgets.scrollbarhelper" id="scrollbarhelper1">
+                <property name="scrolltype">both</property>
+                <property name="usemousewheel">false</property>
+                <layout manager="pack">
+                  <property name="expand">true</property>
+                  <property name="fill">both</property>
+                  <property name="padx">5</property>
+                  <property name="pady">5</property>
+                  <property name="side">top</property>
+                </layout>
+                <child>
+                  <object class="ttk.Treeview" id="listbox" named="True">
+                    <property name="selectmode">extended</property>
+                    <layout manager="pack">
+                      <property name="expand">true</property>
+                      <property name="fill">both</property>
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="pygubu.builder.widgets.toplevelmenu" id="toplevelmenu_1">
+        <child>
+          <object class="tk.Menu" id="menu_2">
+            <child>
+              <object class="tk.Menuitem.Submenu" id="submenu_1">
+                <property name="cursor">arrow</property>
+                <property name="font">TkDefaultFont</property>
+                <property name="label" translatable="yes">File</property>
+                <property name="tearoff">false</property>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_1">
+                    <property name="command" type="command" cbtype="simple">on_save_single</property>
+                    <property name="label" translatable="yes">Save...</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_8">
+                    <property name="command" type="command" cbtype="simple">on_save_all</property>
+                    <property name="label" translatable="yes">Save All...</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="tk.Menuitem.Submenu" id="submenu_2">
+                <property name="label" translatable="yes">Edit</property>
+                <property name="tearoff">false</property>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command_plot_expr">
+                    <property name="command" type="command" cbtype="simple">on_copy</property>
+                    <property name="label" translatable="yes">Copy</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

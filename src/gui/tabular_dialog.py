@@ -1,16 +1,12 @@
 import tkinter as tk
-import tkinter.ttk as ttk
-from tkinter import filedialog, messagebox
-from pygubu.widgets.scrollbarhelper import ScrollbarHelper
+from tkinter import filedialog
 import dataclasses
 import math
-import cmath
-import logging
-import io
 import pandas as pd
 import numpy as np
 import itertools
 
+from .tabular_dialog_pygubuui import PygubuAppUI
 from lib import SParamFile, PlotData, Si, AppGlobal
 
 
@@ -107,7 +103,7 @@ class FormattedTabularDataset:
     
 
 
-class TabularDialog:
+class TabularDialog(PygubuAppUI):
 
     
     DISPLAY_PREC = 4
@@ -117,6 +113,9 @@ class TabularDialog:
 
     def __init__(self, datasets: list[TabularDataset], initial_selection: int, master=None):
         
+        super().__init__(master)
+        AppGlobal.set_toplevel_icon(self.tabular_dialog)
+
         assert initial_selection < len(datasets)
         self.datasets = datasets
 
@@ -127,51 +126,15 @@ class TabularDialog:
                 return 'Plot: ' + item.name
             raise ValueError()
         
-        self.toplevel_tabular = tk.Tk() if master is None else tk.Toplevel(master)
-        self.toplevel_tabular.configure(height=600, width=800)
-        self.toplevel_tabular.title("Tabular Data")
-        AppGlobal.set_toplevel_icon(self.toplevel_tabular)
-        
-        self.frame_top = ttk.Frame(self.toplevel_tabular)
-        self.frame_top.configure(padding=10)
-        self.combobox_file = ttk.Combobox(self.frame_top)
-        self.combobox_file.configure(state="readonly")
-        self.combobox_file.bind("<<ComboboxSelected>>", self.on_select_file, add="")
         self.combobox_file['values'] = [get_display_name(item) for item in self.datasets]
         self.combobox_file.current(initial_selection)
-        self.combobox_file.pack(side='top', fill='x')
-        self.combobox_format = ttk.Combobox(self.frame_top)
-        self.combobox_format.configure(state="readonly")
-        self.combobox_format.bind("<<ComboboxSelected>>", self.on_change_format, add="")
+
         self.combobox_format['values'] = TabularDialog.FORMATS
         self.combobox_format.current(TabularDialog.DEFAULT_FORMAT)
-        self.combobox_format.pack(side='left')
-        self.frame_top.pack(fill="x", side="top")
-        
-        self.frame_main = ttk.Frame(self.toplevel_tabular)
-        self.frame_main.configure(padding=10)
-        self.scrollbarhelper1 = ScrollbarHelper(self.frame_main, scrolltype="both")
-        self.scrollbarhelper1.configure(usemousewheel=False)
-        self.listbox = ttk.Treeview(self.scrollbarhelper1.container, columns=[])
+
         self.listbox.column("#0", width=0, stretch=tk.NO)
         self.listbox.heading("#0", text="", anchor=tk.W)
-        self.listbox.pack(fill="both", side="top")
-        self.scrollbarhelper1.add_child(self.listbox)
-        self.scrollbarhelper1.pack(fill="both", side="top", expand='true')
-        self.frame_main.pack(fill='both', side="top", expand='true')
-        
-        self.menu_main = tk.Menu(self.toplevel_tabular)
-        self.submenu_file = tk.Menu(self.menu_main, tearoff="false")
-        self.menu_main.add(tk.CASCADE, menu=self.submenu_file, label='File')
-        self.submenu_file.add("command", command=self.on_save_single, label='Save...')
-        self.submenu_file.add("command", command=self.on_save_all, label='Save All...')
-        self.submenu_edit = tk.Menu(self.menu_main, tearoff="false")
-        self.menu_main.add(tk.CASCADE, menu=self.submenu_edit, label='Edit')
-        self.submenu_edit.add("command", command=self.on_copy, label='Copy')
-        self.toplevel_tabular.configure(menu=self.menu_main)
-        
-        self.mainwindow = self.toplevel_tabular
-        
+
         self.update_data()
     
 
