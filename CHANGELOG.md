@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.21b1 (2024-08-19)
+-------------------
+
+- new: info dialog show frequency spacing
+
+
 0.20b2 (2024-08-15)
 -------------------
 

@@ -525,7 +525,13 @@ class SparamviewerMainDialog(PygubuAppUI):
         if len(comm)>0:
             info += comm + '\n\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
-        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_pts:,.0f} point{"s" if n_pts!=0 else ""}\n\n'
+        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}'
+        freq_steps = np.diff(sparam_file.nw.f)
+        if np.allclose(freq_steps,freq_steps[0]):
+            info += f', {Si(freq_steps[0],"Hz")} spacing ({n_pts:,.0f} point{"s" if n_pts!=0 else ""})'
+        else:
+            info += f', {n_pts:,.0f} point{"s" if n_pts!=0 else ""} (not equidistant)'
+        info += '\n\n'
 
         info += f'File created: {created}, last modified: {modified}\n'
         info += f'File size: {size}\n'
