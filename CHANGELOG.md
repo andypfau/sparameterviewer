@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.21b2 (2024-08-20)
+-------------------
+
+- change: revised expresion templates
+
+
 0.21b1 (2024-08-19)
 -------------------
 

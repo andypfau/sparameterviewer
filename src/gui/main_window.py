@@ -399,37 +399,45 @@ class SparamviewerMainDialog(PygubuAppUI):
         def return_loss():
             set_expression('sel_nws().s(rl_only=True).plot()')
         
-        def mixed_mode():
-            set_expression("sel_nws().s2m(['p1','p2','n1','n2']).s('dd21').plot()")
-        
         def stability():
-            set_expression('sel_nws().mu(1).plot()', 'sel_nws().mu(2).plot()')
+            set_expression('sel_nws().mu(1).plot()',
+                           'sel_nws().mu(2).plot()')
         
         def check():
-            set_expression('sel_nws().reciprocity().plot()', 'sel_nws().passivity().plot()',
-                           "sel_nws().losslessness('ii').plot()", "sel_nws().losslessness('ij').plot()")
+            set_expression('sel_nws().reciprocity().plot()',
+                           'sel_nws().passivity().plot()',
+                           "sel_nws().losslessness('ii').plot()",
+                           "sel_nws().losslessness('ij').plot()")
         
         def cascade():
-            if len(selected_file_names) >= 2:
-                names = selected_file_names
-            else:
-                names = ['network1*', 'network2*']
-            nws = ' ** '.join([f'nw(\'{name}\')' for name in names])
+            assert len(selected_file_names) == 2, 'This command only works for two or more selected networks'
+            nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names])
             set_expression(f'({nws}).s(2,1).plot()')
         
         def deembed():
-            if len(selected_file_names) == 2:
-                [n1, n2] = selected_file_names
-            else:
-                n1, n2 = 'network1*', 'network2*'
-            set_expression(f'(nw(\'{n1}\').invert() ** nw(\'{n2}\')).s(2,1).plot()')
-
-        def renorm():
-            set_expression('sel_nws().renorm([50,75]).s(2,1).plot()')
+            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
+            [n1, n2] = selected_file_names
+            set_expression(f"(nw('{n1}').invert() ** nw('{n2}')).s(2,1).plot()")
         
-        def all_sel_files():
-            expressions = [f'nw(\'{name}\').s().plot()' for name in selected_file_names]
+        def ratio_of_two():
+            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
+            [n1, n2] = selected_file_names
+            set_expression(f"(nw('{n1}').s(2,1)/nw('{n2}').s(2,1)).plot()")
+        
+        def template_mixed_mode():
+            expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names]
             set_expression(*expressions)
+
+        def template_z_renorm():
+            expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names]
+            set_expression(*expressions)
+        
+        def template_all_selected():
+            expressions = [f"nw('{n}').s().plot()" for n in selected_file_names]
+            set_expression(*expressions)
+        
+        def menuenable(expr):
+            return NORMAL if expr else DISABLED
 
         menu = Menu(self.toplevel_main, tearoff=False)
         menu.add_command(label='As Currently Selected', command=as_currently_selected, state='disabled' if len(self.generated_expressions)<1 else 'normal')
@@ -439,14 +447,15 @@ class SparamviewerMainDialog(PygubuAppUI):
         menu.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
         menu.add_command(label='Return Loss', command=return_loss)
         menu.add_command(label='Stability', command=stability)
-        menu.add_command(label='Network Check', command=check)
+        menu.add_command(label='Reciprocity/Passivity/Losslessness', command=check)
         menu.add_separator()
-        menu.add_command(label='Template: Single-Ended to Mixed-Mode', command=mixed_mode)
-        menu.add_command(label='Template: Impedance Renormalization', command=renorm)
-        menu.add_command(label='Template: Cascade Networks', command=cascade)
-        menu.add_command(label='Template: De-Embed Network', command=deembed)
+        menu.add_command(label='Cascade Selected Networks', command=cascade, state=menuenable(len(selected_file_names)>=2))
+        menu.add_command(label='De-Embed First Selected Network from Second', command=deembed, state=menuenable(len(selected_file_names)==2))
+        menu.add_command(label='Ratio of Two Selected Networks', command=ratio_of_two, state=menuenable(len(selected_file_names)==2))
         menu.add_separator()
-        menu.add_command(label='Template: All selected files', command=all_sel_files)
+        menu.add_command(label='Template: Single-Ended to Mixed-Mode', command=template_mixed_mode, state=menuenable(len(selected_file_names)>=1))
+        menu.add_command(label='Template: Impedance Renormalization', command=template_z_renorm, state=menuenable(len(selected_file_names)>=1))
+        menu.add_command(label='Template: All selected files', command=template_all_selected)
         
         # show poupu at cursor
         x, y = event.x_root, event.y_root
