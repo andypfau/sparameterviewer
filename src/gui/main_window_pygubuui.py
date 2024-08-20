@@ -151,10 +151,12 @@ class PygubuAppUI:
             label='File Info')
         self.submenu_1.add(
             "command",
+            accelerator="Ctrl+T",
             command=self.on_view_tabular,
             label='View Tabular Data')
         self.submenu_1.add(
             "command",
+            accelerator="Ctrl+E",
             command=self.on_click_open_externally,
             label='Open File Externally')
         self.submenu_1.add("separator")

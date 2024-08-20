@@ -8,6 +8,7 @@ S-Parameter Viewer Changelog
 - change: revised expresion templates
 - new: more detailed display of CITI file coordinates and data variables
 - new: more convenient selection of external editor
+- change: new/fixed keyboard shortcuts
 
 
 0.21b1 (2024-08-19)

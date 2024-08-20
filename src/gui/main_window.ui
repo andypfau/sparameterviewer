@@ -363,12 +363,14 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_viewtab">
+                    <property name="accelerator">Ctrl+T</property>
                     <property name="command" cbtype="simple" type="command">on_view_tabular</property>
                     <property name="label" translatable="yes">View Tabular Data</property>
                   </object>
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_13">
+                    <property name="accelerator">Ctrl+E</property>
                     <property name="command" type="command" cbtype="simple">on_click_open_externally</property>
                     <property name="label" translatable="yes">Open File Externally</property>
                   </object>

@@ -213,8 +213,11 @@ class SparamviewerMainDialog(PygubuAppUI):
         if key=='l' and ctrl_only:
             self.on_load_expr()
             return 'break'
+        if key=='t' and ctrl_only:
+            self.on_view_tabular()
+            return 'break'
         if key=='e' and ctrl_only:
-            self.on_export()
+            self.on_click_open_externally()
             return 'break'
         return
 
