@@ -96,11 +96,20 @@ class CitiReader:
         for k,v in at_coords.items():
             name += f', {k}={v}'
         
-        comment = f'CITI file'
-        if len(at_coords.keys()) >= 1:
-            comment += '\nCoordinates:'
-            for k,v in at_coords.items():
-                comment += f'\n- <{k}> = {v}'
+        comment = self._citi.attrs.get('comments', '')
+        
+        comment += '\nCITI coordinates:'
+        for cname in self._citi.coords:
+            cdata = self._citi.coords[cname].data
+            csel = ''
+            if cname in at_coords:
+                csel = f', using coordinate value {at_coords[cname]}'
+            comment += f'\n- {cname}: {len(cname)} ({cdata}, {cdata.dtype}{csel})'
+        
+        comment += '\nCITI data variables:'
+        for vname in self._citi.data_vars:
+            vdata = self._citi.data_vars[vname]
+            comment += f'\n- {vname}: {vdata.dtype}'
 
         nw = skrf.Network(f=f, f_unit='Hz', name=name, s=s_matrix, comments=comment)
         return nw

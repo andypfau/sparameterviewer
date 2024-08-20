@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - change: revised expresion templates
+- new: more detailed display of CITI file coordinates and data variables
 
 
 0.21b1 (2024-08-19)
