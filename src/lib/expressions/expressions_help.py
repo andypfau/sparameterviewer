@@ -67,7 +67,7 @@ Networks
 
         losslessness(<egress_port_or_kind>,<ingress_port=None>) -> SParams
             Returns the losslessness metric S^T·S^* For a lossless component, the diagonal (i.e. indices i,i)
-            must be 1, and all other elements (i.e. indices i,j) must be 0 for a lossless network.
+            must be 1, and all other elements (i.e. indices i,j) must be 0.
             You can either request a specific matrix element, e.g. with losslessness(2,1), or you can request
             the worst of all diagonal elements with <losslessness('ii')> (which must all be 1 for a lossless
             network), or you can request the worst of all non-diagonal elements with <losslessness('ij')>
