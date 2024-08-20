@@ -32,7 +32,7 @@
         <property name="width">200</property>
         <layout manager="pack">
           <property name="expand">true</property>
-          <property name="fill">x</property>
+          <property name="fill">both</property>
         </layout>
         <child>
           <object class="ttk.Labelframe" id="labelframe_5">
@@ -202,7 +202,17 @@
                   <property name="expand">true</property>
                   <property name="fill">x</property>
                   <property name="padx">10</property>
-                  <property name="side">top</property>
+                  <property name="side">left</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="button1">
+                <property name="command" type="command" cbtype="simple">on_sel_ext_editor</property>
+                <property name="text" translatable="yes">...</property>
+                <layout manager="pack">
+                  <property name="expand">false</property>
+                  <property name="side">right</property>
                 </layout>
               </object>
             </child>

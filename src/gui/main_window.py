@@ -566,6 +566,12 @@ class SparamviewerMainDialog(PygubuAppUI):
 
     def on_click_open_externally(self):
 
+        if not Settings.ext_editor_cmd:
+            messagebox.showerror(title='Open File', message=f'No external editor specified. Please select one.')
+            dialog_result = SparamviewerSettingsDialog.let_user_select_ext_editor()
+            if not dialog_result:
+                return
+
         files = []
         for file in self.files:
             if file.tag in self.treeview_files.selection():
@@ -575,7 +581,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             import subprocess
             subprocess.run([Settings.ext_editor_cmd, *files])
         except Exception as ex:
-            messagebox.showerror(title='Open File', message=f'Unable to open file with external editor ({str(ex)}). Did you set up the external editor path (currently <{Settings.ext_editor_cmd}>) in the settings dialog?')
+            messagebox.showerror(title='Open File', message=f'Unable to open file with external editor ({str(ex)}).')
 
 
     def on_show_legend(self):

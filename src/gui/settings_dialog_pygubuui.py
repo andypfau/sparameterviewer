@@ -86,7 +86,11 @@ class PygubuAppUI:
         self.entry_ext_ed = ttk.Entry(self.ext_ed_box, name="entry_ext_ed")
         self.ext_ed = tk.StringVar()
         self.entry_ext_ed.configure(textvariable=self.ext_ed)
-        self.entry_ext_ed.pack(expand=True, fill="x", padx=10, side="top")
+        self.entry_ext_ed.pack(expand=True, fill="x", padx=10, side="left")
+        self.button1 = ttk.Button(self.ext_ed_box)
+        self.button1.configure(text='...')
+        self.button1.pack(expand=False, side="right")
+        self.button1.configure(command=self.on_sel_ext_editor)
         self.ext_ed_box.pack(
             fill="x",
             ipadx=5,
@@ -94,7 +98,7 @@ class PygubuAppUI:
             padx=5,
             pady=5,
             side="top")
-        self.frame_13.pack(expand=True, fill="x")
+        self.frame_13.pack(expand=True, fill="both")
 
         # Main widget
         self.mainwindow = self.toplevel_settings
@@ -118,6 +122,9 @@ class PygubuAppUI:
         pass
 
     def on_theme_sel(self, event=None):
+        pass
+
+    def on_sel_ext_editor(self):
         pass
 
 

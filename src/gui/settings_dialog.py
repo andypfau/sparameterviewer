@@ -1,8 +1,11 @@
 from lib import AppGlobal
-from tkinter import ttk
+from tkinter import ttk, filedialog
 
 from .settings import Settings
 from .settings_dialog_pygubuui import PygubuAppUI
+from lib.utils import is_windows
+
+import os
 
 
 WINDOWS = [
@@ -84,3 +87,26 @@ class SparamviewerSettingsDialog(PygubuAppUI):
             self.ttk_style.theme_use(theme)
         except:
             pass
+    
+    def on_sel_ext_editor(self):
+        SparamviewerSettingsDialog.let_user_select_ext_editor()
+        self.ext_ed.set(Settings.ext_editor_cmd or '')
+    
+    @staticmethod
+    def let_user_select_ext_editor() -> str:
+        kwargs = {}
+        if is_windows:
+            kwargs['filetypes'] = (('Executables','*.exe'),('All Files','*'))
+        else:
+            kwargs['filetypes'] = (('All Files','*'))
+        if Settings.ext_editor_cmd:
+            if os.path.exists(Settings.ext_editor_cmd):
+                kwargs['initialdir'] = os.path.split(Settings.ext_editor_cmd)[0]
+                kwargs['initialfile'] = Settings.ext_editor_cmd
+        filename = filedialog.askopenfilename(title='Select External Editor', multiple=False, **kwargs)
+        if filename:
+            Settings.ext_editor_cmd = filename
+            Settings.save()
+            return filename
+        else:
+            return None
