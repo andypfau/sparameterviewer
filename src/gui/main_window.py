@@ -917,7 +917,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             qty_group_delay = (Settings.plot_unit == self.UNIT_GROUP_DELAY)
             qty_re = (Settings.plot_unit == self.UNIT_RE_IM_VS_F) or (Settings.plot_unit == self.UNIT_RE_VS_F)
             qty_im = (Settings.plot_unit == self.UNIT_RE_IM_VS_F) or (Settings.plot_unit == self.UNIT_IM_VS_F)
-            qty_phase = (Settings.plot_unit == self.UNIT_DEG) or (Settings.plot_unit == self.UNIT_DEG_UNWRAP)
+            qty_phase = (Settings.plot_unit == self.UNIT_DEG) or (Settings.plot_unit == self.UNIT_DEG_UNWRAP) or (Settings.plot_unit == self.UNIT_DEG_REMLIN)
             unwrap_phase = (Settings.plot_unit == self.UNIT_DEG_UNWRAP)
             remove_lin_phase = (Settings.plot_unit == self.UNIT_DEG_REMLIN)
             polar = (Settings.plot_unit == self.UNIT_RE_IM_POLAR)

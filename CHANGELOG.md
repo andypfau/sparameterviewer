@@ -9,6 +9,7 @@ S-Parameter Viewer Changelog
 - new: more detailed display of CITI file coordinates and data variables
 - new: more convenient selection of external editor
 - change: new/fixed keyboard shortcuts
+- bugfix: Y-axis unit is now degrees when plotting de-trended phase
 
 
 0.21b1 (2024-08-19)
