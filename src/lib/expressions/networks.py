@@ -306,26 +306,66 @@ class Network:
         return self._get_added_z(1/(1j*math.tau*self.nw.f*capacitance), port, 'parallel')
     
 
-    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Network":
-        z0_self = self.nw.z0[0,0]
-        z0 = z0 if z0 is not None else z0_self
-
+    @staticmethod
+    def _tline(arg, z0_line, z0_system) -> np.ndarray:
+        s_matrix = np.zeros([len(arg),2,2], dtype=complex)
+        
         # see https://cds.cern.ch/record/1415639/files/p67.pdf
-        s_matrix = np.zeros([len(self.nw.f),2,2], dtype=complex)
-        arg = 1j*degrees*math.pi/180 * self.nw.f/frequency_hz + loss
         sh = np.sinh(arg)
         ch = np.cosh(arg)
-        zzpzz = z0*z0 + z0_self*z0_self
-        zzmzz = z0*z0 - z0_self*z0_self
-        ds = 2*z0*z0_self*ch + zzpzz*sh
+        zzpzz = z0_system*z0_system + z0_line*z0_line
+        zzmzz = z0_system*z0_system - z0_line*z0_line
+        ds = 2*z0_system*z0_line*ch + zzpzz*sh
         s_matrix[:,0,0] = s_matrix[:,1,1] = (zzmzz*sh)/ds
-        s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0*z0_self)/ds
+        s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0_system*z0_line)/ds
+
+        return s_matrix
+    
+
+    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss_db: float = 0, port: int = 1) -> "Network":
+        """
+        Add ideal transmission line to the network
+        Arguments:
+            degrees:      phase shift of the transmission line, in degrees, at a given frequency (see next argument)
+            frequency_hz: the frequency at which the phase shift is defined
+            loss_db:      loss of the tranmission line, in dB; loss is frequency-independent
+            port:         at which end of the network to add this transmission line
+        """
         
+        # complex argument for simple transmission line
+        loss_v = pow(10, loss_db/20) # dB to volts
+        arg_mag = math.log(loss_v) # compensate for the exp-function in the tline equation
+        arg_pha = math.radians(degrees) * (self.nw.f/frequency_hz)
+
+        z0_system = self.nw.z0[0,0]
+        z0_line = z0 if z0 is not None else z0_system
+        s_matrix = Network._tline(1j*arg_pha+arg_mag, z0_line, z0_system)
         return self._get_added_2port(s_matrix, port)
     
 
-    def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m: float = 0, db_m2: float = 0, port: int = 1) -> "Network":
-        raise NotImplementedError()
+    def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m_mhz: float = 0, db_m_sqmhz: float = 0, port: int = 1) -> "Network":
+        """
+        Add lossy transmission line to the network
+        Arguments:
+            eps_r:     dielectric constant of transmission line material
+            z0:        wave impedance of the transmission line
+            db_m_mhz:  loss of the tranmission line, in dB/(m*MHz)
+            db_m_sqmhz: loss of the tranmission line, in dB/(m*√MHz)
+            port:      at which end of the network to add this transmission line
+        """
+        
+        # complex argument for lossy transmission line; see Pozar, Microwave Engineering, sections 2.7 (tlines) and 4.4 (ABCD-params of tlines)
+        loss_db = db_m_mhz*(self.nw.f/1e6)*len_m + db_m_sqmhz*np.sqrt(self.nw.f/1e6)*len_m
+        loss_v = pow(10, loss_db/20) # dB to volts
+        arg_mag = np.log(loss_v) # compensate for the exp-function in the tline equation
+        C0 = 299792458
+        c_in_dielectric = C0 / math.sqrt(eps_r)
+        l = len_m * self.nw.f / c_in_dielectric
+        arg_pha = l * math.tau
+
+        z0_system = self.nw.z0[0,0]
+        z0_line = z0 if z0 is not None else z0_system
+        s_matrix = Network._tline(1j*arg_pha+arg_mag, z0_line, z0_system)
         return self._get_added_2port(s_matrix, port)
 
     
@@ -542,9 +582,13 @@ class Networks:
         return self._unary_op(Network.add_pc, Networks, capacitance=capacitance, port=port)
         
     
-    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss: float = 0, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_tl, Networks, degrees=degrees, frequency_hz=frequency_hz, z0=z0, loss=loss, port=port)
-        
+    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss_db: float = 0, port: int = 1) -> "Network":
+        return self._unary_op(Network.add_tl, Networks, degrees=degrees, frequency_hz=frequency_hz, z0=z0, loss_db=loss_db, port=port)
+    
+
+    def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m_mhz: float = 0, db_m_sqmhz: float = 0, port: int = 1) -> "Network":
+        return self._unary_op(Network.add_ltl, Networks, len_m=len_m, eps_r=eps_r, z0=z0, db_m_mhz=db_m_mhz, db_m_sqmhz=db_m_sqmhz, port=port)
+
 
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)

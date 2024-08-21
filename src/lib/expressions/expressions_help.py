@@ -110,10 +110,17 @@ Networks
             Returns a network with a parallel inductance attached to the specified port.
             Works only for 1-ports and 2-ports.
         
-        add_tl(degrees, frequency_hz=1e9[, <z0=default>][, <loss=0>][, <port=1>]) -> Networks
-            Returns a network with a transmission line attached to the specified port.
+        add_tl(degrees, frequency_hz=1e9[, <z0=default>][, <loss_db=0>][, <port=1>]) -> Networks
+            Returns a network with anideal transmission line attached to the specified port.
             Works only for 1-ports and 2-ports. The length is specified in degrees at the given frequency.
-            The loss is the real part of the propagation constant.
+            The loss is the real part of the propagation constant, and is constant over frequency.
+            If Z0 is not provided, the reference impedance of the corresponding port is used.
+        
+        add_ltl(degrees, len_m, eps_r[, <db_m_mhz=0>][, <db_m_sqmhz=0>][, <port=1>]) -> Networks
+            Returns a network with a lossy transmission line attached to the specified port.
+            Works only for 1-ports and 2-ports. The length is specified in meters, and the
+            dielectric constant must be provided as well. The loss is specified in two terms,
+            one in dB/(m⋅Hz), one in dB/(m⋅√Hz).
             If Z0 is not provided, the reference impedance of the corresponding port is used.
         
         rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParams

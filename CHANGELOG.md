@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.22b1 (2024-08-21)
+-------------------
+
+- new: expression `add_ltl` to add a lossy transmission line
+
+
 0.21b2 (2024-08-20)
 -------------------
 
