@@ -36,9 +36,9 @@ class SParam:
 
     @staticmethod
     def _op(a: "SParam", b: "SParam", op: "callable") -> "SParam":
-        if isinstance(a,int) or isinstance(a,float):
+        if isinstance(a, (int,float,complex,np.ndarray)):
             return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0)
-        if isinstance(b,int) or isinstance(b,float):
+        if isinstance(b, (int,float,complex,np.ndarray)):
             return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0)
         a_nw, b_nw = SParam._adapt_f(a, b)
         a_s = np.array(np.ndarray.flatten(a_nw.s))
@@ -164,9 +164,11 @@ class SParams:
 
 
     def _broadcast(self, sp: "SParams") -> "SParams":
-        if isinstance(sp,int) or isinstance(sp,float):
+        if isinstance(sp, (int,float,complex,np.ndarray)):
             return [sp] * len(self.sps)
-        elif len(sp.sps) == 1:
+        if not isinstance(sp, SParams):
+            raise ValueError('Expected operand of type S-parameters, or numeric')
+        if len(sp.sps) == 1:
             return [sp.sps[0]] * len(self.sps)
         elif len(sp.sps) == len(self.sps):
             return self.sps

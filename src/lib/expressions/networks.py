@@ -217,9 +217,9 @@ class Network:
             from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
             deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw)
             if side==1:
-                return Network(deembed.s_side1)
+                return Network(deembed.s_side1, name=self.name+'_side1')
             elif side==2:
-                return Network(deembed.s_side2)
+                return Network(deembed.s_side2.flipped(), name=self.name+'_side2')
             else:
                 raise ValueError(f'half(): Invalid side, must be 1 or 2')
         elif method=='ChopInHalf':
@@ -322,6 +322,11 @@ class Network:
         s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0*z0_self)/ds
         
         return self._get_added_2port(s_matrix, port)
+    
+
+    def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m: float = 0, db_m2: float = 0, port: int = 1) -> "Network":
+        raise NotImplementedError()
+        return self._get_added_2port(s_matrix, port)
 
     
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
@@ -419,7 +424,7 @@ class Networks:
             return [n.nws[0]] * len(self.nws)
         elif len(n.nws) == len(self.nws):
             return self.nws
-        raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nw)}')
+        raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nws)}')
     
 
     def _unary_op(self, fn, return_type, *args, **kwargs):
