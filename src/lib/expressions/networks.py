@@ -384,6 +384,14 @@ class Network:
     
 
     def s2m(self, ports: list = None) -> "Network":
+        """
+        Argument <ports>: list of ports of the single-ended input network, e.g.
+            ["p1","p2","n1","n2"], which means:
+            - port 1 is differential-1-positive
+            - port 2 is differential-2-positive
+            - port 3 is differential-1-negative
+            - port 4 is differential-2-negative
+        """
         new_nw = self.nw.copy()
         
         if ports is not None:
@@ -414,6 +422,15 @@ class Network:
     
 
     def m2s(self, ports: list = None) -> "Network":
+        """
+        Argument <ports>: list of ports of the differential input network, e.g.
+            ["d1","c1","d2","c2"], which means:
+            - port 1 is differential-1
+            - port 2 is commonmode-1
+            - port 3 is differential-2
+            - port 4 is commonmode-2
+        """
+
         new_nw = self.nw.copy()
         
         if ports is not None:
