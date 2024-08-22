@@ -1,12 +1,16 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
+from ..utils import sanitize_filename
+from ..citi import CitiWriter
 
 import skrf, math, os
 import numpy as np
 import fnmatch
 import logging
 import scipy.signal
+import os
+import re
 
 
 
@@ -152,6 +156,35 @@ class SParam:
         return SParam(self.name, f, s, self.z0)
     
 
+    def save(self, filename: str):
+        
+        ext = os.path.splitext(filename)[1].lower()
+
+        s = np.ndarray([len(self.f),1,1], dtype=complex)
+        s[:,0,0] = self.s
+        nw = skrf.Network(s=s, f=self.f, f_unit='Hz', z0=self.z0, comment=self.name)
+        
+        if ext=='.cti' or ext=='.citi':
+            CitiWriter().write(nw, filename)
+        
+        elif m := re.match(r'\.s([0-9])+p', ext):
+            n = int(m.group(1))
+            if n != nw.nports:
+                logging.warning(f'Saving {nw.nports}-port into .s{n}p-file.')
+            nw.write_touchstone(filename)
+        
+        elif ext=='.xls' or ext=='.xlsx':
+            nw.write_spreadsheet(filename, form='db', file_type='excel')
+        
+        elif ext=='.csv':
+            nw.write_spreadsheet(filename, form='db', file_type='csv')
+        
+        else:
+            raise ValueError(f'Unknown file extension: "{ext}"')
+
+        logging.info(f'Saved parameter <{self.name}> to <{filename}>')
+    
+
     def __repr__(self):
         return f'<SParam("{self.name}", f={self.f}, s={self.s})>'
 
@@ -271,6 +304,21 @@ class SParams:
 
     def rl_opt(self, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> "SParams":
         return self._unary_op(SParam.rl_opt, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
+    
+
+    def save(self, filename: str):
+        WILDCARD = '$$'
+        
+        if len(self.sps) > 1:
+            if WILDCARD not in filename:
+                raise RuntimeError(f'Please add a wildcard ("{WILDCARD}") to the filename if you want to save multiple parameters.')
+        
+        for sp in self.sps:
+            [directory, name] = os.path.split(filename)
+            [name, ext] = os.path.splitext(name)
+            name = sanitize_filename(name.replace(WILDCARD, sp.name))
+            path = os.path.join(directory, name+ext)
+            sp.save(path)
     
 
     def __repr__(self):

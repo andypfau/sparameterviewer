@@ -1,4 +1,4 @@
-import os
+import os, string
 
 
 def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "list[str]":
@@ -53,3 +53,9 @@ def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int
 
 def is_windows():
     return True if os.name=='nt' else False
+
+
+def sanitize_filename(filename: str) -> str:
+    VALID_CHARS = '+-_' + string.ascii_letters + string.digits
+    sanitized = [char for char in filename if char in VALID_CHARS]
+    return ''.join(sanitized)

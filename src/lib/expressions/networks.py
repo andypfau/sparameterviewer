@@ -3,12 +3,16 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, get_quick_params
 from .sparams import SParam, SParams
+from ..utils import sanitize_filename
+from ..citi import CitiWriter
+from info import Info
 
 import math
 import skrf
 import numpy as np
 import logging
 import re
+import os
 from types import NoneType
 
 
@@ -465,6 +469,34 @@ class Network:
         return Network(nw)
 
 
+    def save(self, filename: str):
+        
+        nw = self.nw.copy()
+        nw.comments += f'\nExported from {Info.AppName} {Info.AppVersionStr}'
+        
+        ext = os.path.splitext(filename)[1].lower()
+        
+        if ext=='.cti' or ext=='.citi':
+            CitiWriter().write(nw, filename)
+        
+        elif m := re.match(r'\.s([0-9])+p', ext):
+            n = int(m.group(1))
+            if n != nw.nports:
+                logging.warning(f'Saving {nw.nports}-port into .s{n}p-file.')
+            nw.write_touchstone(filename)
+        
+        elif ext=='.xls' or ext=='.xlsx':
+            nw.write_spreadsheet(filename, form='db', file_type='excel')
+        
+        elif ext=='.csv':
+            nw.write_spreadsheet(filename, form='db', file_type='csv')
+        
+        else:
+            raise ValueError(f'Unknown file extension: "{ext}"')
+
+        logging.info(f'Saved network <{nw.name}> to <{filename}>')
+
+
 
 class Networks:
     
@@ -625,7 +657,22 @@ class Networks:
 
     def renorm(self, z: "complex|list[complex]") -> "Networks":
         return self._unary_op(Network.renorm, Networks, z=z)
-    
-    
+
+
+    def save(self, filename: str):
+        WILDCARD = '$$'
+        
+        if len(self.nws) > 1:
+            if WILDCARD not in filename:
+                raise RuntimeError(f'Please add a wildcard ("{WILDCARD}") to the filename if you want to save multiple files.')
+        
+        for nw in self.nws:
+            [directory, name] = os.path.split(filename)
+            [name, ext] = os.path.splitext(name)
+            name = sanitize_filename(name.replace(WILDCARD, nw.name))
+            path = os.path.join(directory, name+ext)
+            nw.save(path)
+
+
     def _count(self) -> int:
         return len(self.nws)
