@@ -106,7 +106,7 @@ class FormattedTabularDataset:
 class TabularDialog(PygubuAppUI):
 
     
-    DISPLAY_PREC = 4
+    DISPLAY_PREC = 5
     FORMATS = ['Mag / dB, Phase / Rad', 'Mag / dB, Phase / Deg', 'Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
     DEFAULT_FORMAT = 2
 
@@ -325,5 +325,5 @@ class TabularDialog(PygubuAppUI):
 
     def stringify_row(self, row: list[complex]) -> list[str]:
         return \
-            [ str(Si(row[0])) ] + \
+            [ str(Si(row[0],significant_digits=TabularDialog.DISPLAY_PREC)) ] + \
             list([ f'{y:.{TabularDialog.DISPLAY_PREC}g}' for y in row[1:] ])

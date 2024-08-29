@@ -9,6 +9,7 @@ import skrf, copy, math, cmath, glob, os
 
 from lib import SParamFile, AppGlobal, BodeFano
 from .rl_dialog_pygubuui import PygubuAppUI
+from .settings import Settings
 
 
 
@@ -36,7 +37,7 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         if len(values)>0:
             self.combobox_files.current(idx_to_select)
 
-        pyplot.style.use('bmh')
+        pyplot.style.use(Settings.plot_style if Settings.plot_style is not None else 'bmh')
         self.fig = Figure()
         panel = self.frame_rlplot
         self.canvas = FigureCanvasTkAgg(self.fig, master=panel)  

@@ -60,6 +60,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.logf.set('1' if Settings.log_freq else '0')
             self.lock_plot_xaxis.set('1' if self.lock_xaxis else '0')
             self.lock_plot_yaxis.set('1' if self.lock_yaxis else '0')
+            self.plot_mark_points.set('1' if Settings.plot_mark_points else '0')
             self.combobox_mode['values']= (
                 'All S-Params',
                 'All S-Params (reciprocal/1st IL only)',
@@ -154,7 +155,7 @@ class SparamviewerMainDialog(PygubuAppUI):
 
             # create plot
             try:
-                pyplot.style.use('bmh')
+                pyplot.style.use(Settings.plot_style if Settings.plot_style is not None else 'bmh')
                 self.plot = None # type: PlotHelper
                 self.fig = Figure()
                 panel = self.frame_plot
@@ -387,6 +388,11 @@ class SparamviewerMainDialog(PygubuAppUI):
             TkText.set_text(self.text_expr, new)
             self.on_use_expr()
         
+        def switch_to_linear_scale():
+            idx = self.combobox_unit['values'].index('Linear Magnitude')
+            self.combobox_unit.current(idx)
+            self.on_select_plotunit(None)
+        
         def as_currently_selected():
             set_expression(self.generated_expressions)
         
@@ -415,16 +421,22 @@ class SparamviewerMainDialog(PygubuAppUI):
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
         
         def stability():
-            set_expression('sel_nws().mu(1).plot()', 'sel_nws().mu(2).plot()')
+            set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
+                           'sel_nws().mu(2).plot() # should be > 1 for stable network')
+            switch_to_linear_scale()
         
         def reciprocity():
-            set_expression('sel_nws().reciprocity().plot()')
+            set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
+            switch_to_linear_scale()
         
         def passivity():
-            set_expression('sel_nws().passivity().plot()')
+            set_expression('sel_nws().passivity().plot() # should be <= 1 for passive network')
+            switch_to_linear_scale()
         
         def losslessness():
-            set_expression("sel_nws().losslessness('ii').plot()", "sel_nws().losslessness('ij').plot()")
+            set_expression("sel_nws().losslessness('ii').plot() # should be 1 for lossless network",
+                           "sel_nws().losslessness('ij').plot() # should be 0 for lossless network")
+            switch_to_linear_scale()
         
         def cascade():
             assert len(selected_file_names) == 2, 'This command only works for two or more selected networks'
@@ -456,19 +468,19 @@ class SparamviewerMainDialog(PygubuAppUI):
             [n1, n2] = selected_file_names
             set_expression(f"(nw('{n1}').s(2,1)/nw('{n2}').s(2,1)).plot()")
         
-        def template_mixed_mode():
+        def mixed_mode():
             expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names]
             set_expression(*expressions)
 
-        def template_z_renorm():
+        def z_renorm():
             expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names]
             set_expression(*expressions)
 
-        def add_line():
+        def add_tline():
             expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names]
             set_expression(*expressions)
         
-        def template_all_selected():
+        def all_selected():
             expressions = [f"nw('{n}').s().plot()" for n in selected_file_names]
             set_expression(*expressions)
         
@@ -500,11 +512,11 @@ class SparamviewerMainDialog(PygubuAppUI):
 
         submenu_templates = Menu(menu, tearoff=False)
         menu.add(CASCADE, menu=submenu_templates, label='Operations on Selected Networks')
-        submenu_templates.add_command(label='Single-Ended to Mixed-Mode', command=template_mixed_mode, state=menuenable(len(selected_file_names)>=1))
-        submenu_templates.add_command(label='Impedance Renormalization', command=template_z_renorm, state=menuenable(len(selected_file_names)>=1))
-        submenu_templates.add_command(label='Add Line To Network', command=add_line, state=menuenable(len(selected_file_names)>=1))
+        submenu_templates.add_command(label='Single-Ended to Mixed-Mode', command=mixed_mode, state=menuenable(len(selected_file_names)>=1))
+        submenu_templates.add_command(label='Impedance Renormalization', command=z_renorm, state=menuenable(len(selected_file_names)>=1))
+        submenu_templates.add_command(label='Add Line To Network', command=add_tline, state=menuenable(len(selected_file_names)>=1))
         submenu_templates.add_separator()
-        submenu_templates.add_command(label='Just Plot All Selected Files', command=template_all_selected, state=menuenable(len(selected_file_names)>=1))
+        submenu_templates.add_command(label='Just Plot All Selected Files', command=all_selected, state=menuenable(len(selected_file_names)>=1))
         
         submenu_2nw = Menu(menu, tearoff=False)
         menu.add(CASCADE, menu=submenu_2nw, label='Operations on Two Selected Networks')
@@ -597,10 +609,22 @@ class SparamviewerMainDialog(PygubuAppUI):
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
         info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}'
         freq_steps = np.diff(sparam_file.nw.f)
+        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
         if np.allclose(freq_steps,freq_steps[0]):
-            info += f', {Si(freq_steps[0],"Hz")} spacing ({n_pts:,.0f} point{"s" if n_pts!=0 else ""})'
+            freq_step = freq_steps[0]
+            info += f', {Si(freq_step,"Hz")} equidistant spacing ({n_points_str})'
         else:
-            info += f', {n_pts:,.0f} point{"s" if n_pts!=0 else ""} (not equidistant)'
+            non_equi = True
+            if np.all(sparam_file.nw.f != 0):
+                freq_ratios = np.exp(np.diff(np.log(sparam_file.nw.f)))
+                if np.allclose(freq_ratios,freq_ratios[0]):
+                    non_equi = False
+                    freq_step = np.mean(freq_steps)
+                    freq_ratio = freq_ratios[0]
+                    info += f', {freq_ratio:.4g}x logarithmic spacing ({n_points_str}, average spacing {Si(freq_step,"Hz")})'
+            if non_equi:
+                freq_step = np.mean(freq_steps)
+                info += f', non-equidistant spacing ({n_points_str}, average spacing {Si(freq_step,"Hz")})'
         info += '\n\n'
 
         info += f'File created: {created}, last modified: {modified}\n'
@@ -669,6 +693,11 @@ class SparamviewerMainDialog(PygubuAppUI):
         self.lock_xaxis = (self.lock_plot_xaxis.get() == '1')
         if not self.lock_xaxis:
             self.update_plot()
+
+
+    def on_mark_points(self):
+        Settings.plot_mark_points = (self.plot_mark_points.get() == '1')
+        self.update_plot()
 
 
     def on_lock_yaxis(self):
@@ -1029,6 +1058,9 @@ class SparamviewerMainDialog(PygubuAppUI):
                     style2 = '-.'
                 elif style=='-.':
                     style2 = ':'
+                if Settings.plot_mark_points:
+                    style += 'o'
+                    style2 += 'o'
 
                 if polar or smith:
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style)

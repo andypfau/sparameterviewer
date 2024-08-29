@@ -145,7 +145,7 @@ class Network:
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
         if mu!=1 and mu!=2:
-            raise RuntimeError(f'Network.mu(mu): mu must be 1 or 2')
+            raise RuntimeError(f'Network.mu(mu): argument mu must be 1 or 2')
         # see https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability
         if mu==1:
             p1,p2 = 0,1

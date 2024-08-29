@@ -19,6 +19,8 @@ class SParamViewerAppSettings(AppSettings):
     mainwin_geom: str = None
     ttk_theme: str = ''
     ext_editor_cmd: str = ''
+    plot_style: str = None
+    plot_mark_points: bool = False
 
 
 Settings = SParamViewerAppSettings(

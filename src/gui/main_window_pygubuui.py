@@ -180,6 +180,7 @@ class PygubuAppUI:
         self.logf = tk.StringVar()
         self.lock_plot_xaxis = tk.StringVar()
         self.lock_plot_yaxis = tk.StringVar()
+        self.plot_mark_points = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_show_legend,
@@ -245,6 +246,14 @@ class PygubuAppUI:
             "command",
             command=self.on_manual_axes,
             label='Manual axes...')
+        self.submenu_2.add("separator")
+        self.submenu_2.add(
+            "checkbutton",
+            command=self.on_mark_points,
+            label='Mark Points',
+            offvalue=0,
+            onvalue=1,
+            variable=self.plot_mark_points)
         self.submenu_2.add("separator")
         self.submenu_2.add(
             "command",
@@ -371,6 +380,9 @@ class PygubuAppUI:
         pass
 
     def on_manual_axes(self):
+        pass
+
+    def on_mark_points(self):
         pass
 
     def on_cursor_cmd(self):

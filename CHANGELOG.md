@@ -2,6 +2,15 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.23b1 (2024-08-29)
+-------------------
+
+- new: more detailed info about frequency spacing
+- new: allow to mark data points via menu command
+- new: allow to select plot theme
+- change: finer resolution of frequency in tabular data dialog
+
+
 0.22b1 (2024-08-21)
 -------------------
 

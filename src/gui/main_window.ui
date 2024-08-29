@@ -500,6 +500,18 @@
                   </object>
                 </child>
                 <child>
+                  <object class="tk.Menuitem.Separator" id="separator2" />
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Checkbutton" id="checkbutton1">
+                    <property name="command" type="command" cbtype="simple">on_mark_points</property>
+                    <property name="label" translatable="yes">Mark Points</property>
+                    <property name="offvalue">0</property>
+                    <property name="onvalue">1</property>
+                    <property name="variable">string:plot_mark_points</property>
+                  </object>
+                </child>
+                <child>
                   <object class="tk.Menuitem.Separator" id="separator1" />
                 </child>
                 <child>

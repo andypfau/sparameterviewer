@@ -4,6 +4,7 @@ from tkinter import ttk, filedialog
 from .settings import Settings
 from .settings_dialog_pygubuui import PygubuAppUI
 from lib.utils import is_windows
+import matplotlib.pyplot as pyplot
 
 import os
 
@@ -69,6 +70,10 @@ class SparamviewerSettingsDialog(PygubuAppUI):
         self.combobox_theme['values'] = themes
         if Settings.ttk_theme != '':
             self.combobox_theme.current(theme_sel)
+
+        self.combobox_plotstyle['values'] = pyplot.style.available
+        if Settings.plot_style in pyplot.style.available:
+            self.combobox_plotstyle.current(pyplot.style.available.index(Settings.plot_style))
         
         self.ext_ed.set(Settings.ext_editor_cmd)
     
@@ -84,9 +89,17 @@ class SparamviewerSettingsDialog(PygubuAppUI):
         try:
             theme = self.theme_map[self.combobox_theme.current()]
             Settings.ttk_theme = theme
+            Settings.save()
             self.ttk_style.theme_use(theme)
         except:
             pass
+    
+
+    def on_plotstyle_sel(self, event=None):
+        Settings.plot_style = pyplot.style.available[self.combobox_plotstyle.current()]
+        Settings.save()
+        pyplot.style.use(Settings.plot_style)
+
     
     def on_sel_ext_editor(self):
         SparamviewerSettingsDialog.let_user_select_ext_editor()

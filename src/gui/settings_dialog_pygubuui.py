@@ -71,13 +71,27 @@ class PygubuAppUI:
         self.checkbox_impedance.bind("<1>", self.callback, add="")
         self.labelframe_5.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
         self.labelframe_8 = ttk.Labelframe(self.frame_13)
-        self.labelframe_8.configure(height=200, text='GUI Theme', width=200)
+        self.labelframe_8.configure(height=200, text='Theme', width=200)
         self.combobox_theme = ttk.Combobox(
             self.labelframe_8, name="combobox_theme")
-        self.combobox_theme.pack(expand=True, fill="x", padx=10)
+        self.combobox_theme.grid(column=1, padx=3, pady=3, row=0, sticky="w")
         self.combobox_theme.bind(
             "<<ComboboxSelected>>",
             self.on_theme_sel,
+            add="")
+        self.label1 = ttk.Label(self.labelframe_8)
+        self.label1.configure(text='GUI:')
+        self.label1.grid(column=0, padx=3, pady=3, row=0)
+        self.label2 = ttk.Label(self.labelframe_8)
+        self.label2.configure(text='Plot:')
+        self.label2.grid(column=0, padx=3, pady=3, row=1)
+        self.combobox_plotstyle = ttk.Combobox(
+            self.labelframe_8, name="combobox_plotstyle")
+        self.combobox_plotstyle.grid(
+            column=1, padx=3, pady=3, row=1, sticky="w")
+        self.combobox_plotstyle.bind(
+            "<<ComboboxSelected>>",
+            self.on_plotstyle_sel,
             add="")
         self.labelframe_8.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
         self.ext_ed_box = ttk.Labelframe(self.frame_13, name="ext_ed_box")
@@ -122,6 +136,9 @@ class PygubuAppUI:
         pass
 
     def on_theme_sel(self, event=None):
+        pass
+
+    def on_plotstyle_sel(self, event=None):
         pass
 
     def on_sel_ext_editor(self):

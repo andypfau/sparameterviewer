@@ -62,8 +62,8 @@ Networks
             Returns the K (Rollet) stability factor (should be >1, or >0 dB).
 
         mu(<mu=1>) -> SParams
-            Returns the µ or µ' (Edwards-Sinsky) stability factor (should be >1, or >0 dB;
-            mu must be 1 or 2, default is 1).
+            Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Sinsky).
+            Should be >1 (or >0 dB).
 
         losslessness(<egress_port_or_kind>,<ingress_port=None>) -> SParams
             Returns the losslessness metric S^T·S^* For a lossless component, the diagonal (i.e. indices i,i)
