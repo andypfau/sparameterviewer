@@ -88,6 +88,12 @@ class SparamviewerLogDialog(PygubuAppUI):
             LogHandler.instance.detach(update_log_callback)
             self.toplevel_log.destroy()
         self.toplevel_log.protocol("WM_DELETE_WINDOW", on_close)
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def update_log_text(self):

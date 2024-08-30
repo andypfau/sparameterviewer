@@ -41,6 +41,12 @@ class SparamviewerAxesDialog(PygubuAppUI):
             self.trigger_callback()
         self.xauto_var.trace('w', on_auto_change)
         self.yauto_var.trace('w', on_auto_change)
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
 
 
     def trigger_callback(self):

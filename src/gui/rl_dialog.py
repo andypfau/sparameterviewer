@@ -63,6 +63,12 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
 
         # update
         self.on_change()
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def on_change(self, *args, **kwargs):

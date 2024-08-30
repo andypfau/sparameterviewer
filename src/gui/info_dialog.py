@@ -18,6 +18,12 @@ class SparamviewerInfoDialog(PygubuAppUI):
 
         TkText.default_keyhandler(self.text_info, readonly=True, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(is_textbox=True,**kwargs))
         TkText.set_text(self.text_info, text)
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def on_check_for_global_keystrokes(self, is_textbox, key, ctrl, alt, **kwargs):

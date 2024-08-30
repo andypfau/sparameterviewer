@@ -31,6 +31,12 @@ class SparamviewerCursorDialog(PygubuAppUI):
         self.var_auto_trace.set('auto')
 
         self.update()
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def on_close(self):

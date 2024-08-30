@@ -76,6 +76,12 @@ class SparamviewerSettingsDialog(PygubuAppUI):
             self.combobox_plotstyle.current(pyplot.style.available.index(Settings.plot_style))
         
         self.ext_ed.set(Settings.ext_editor_cmd)
+        
+
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def on_win_sel(self, event=None):

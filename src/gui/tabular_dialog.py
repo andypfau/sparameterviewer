@@ -136,10 +136,12 @@ class TabularDialog(PygubuAppUI):
         self.listbox.heading("#0", text="", anchor=tk.W)
 
         self.update_data()
-    
+        
 
-    def run(self):
-        self.mainwindow.mainloop()
+    def run(self, focus: bool = True):
+        if focus:
+            self.mainwindow.focus_force()
+        super().run()
     
 
     def on_change_format(self, event=None):
