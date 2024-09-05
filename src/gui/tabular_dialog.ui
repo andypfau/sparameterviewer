@@ -133,8 +133,23 @@
                 <property name="tearoff">false</property>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_plot_expr">
-                    <property name="command" type="command" cbtype="simple">on_copy</property>
-                    <property name="label" translatable="yes">Copy</property>
+                    <property name="command" type="command" cbtype="simple">on_copy_tab</property>
+                    <property name="hidemargin">false</property>
+                    <property name="label" translatable="yes">Copy Tab-Separated</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command1">
+                    <property name="command" type="command" cbtype="simple">on_copy_semicolon</property>
+                    <property name="hidemargin">false</property>
+                    <property name="label" translatable="yes">Copy Semicolon-Separated</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command2">
+                    <property name="command" type="command" cbtype="simple">on_copy_numpy</property>
+                    <property name="hidemargin">false</property>
+                    <property name="label" translatable="yes">Copy Numpy</property>
                   </object>
                 </child>
               </object>

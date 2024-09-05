@@ -67,7 +67,21 @@ class PygubuAppUI:
             label='Save All...')
         self.submenu_2 = tk.Menu(self.menu_2, tearoff=False)
         self.menu_2.add(tk.CASCADE, menu=self.submenu_2, label='Edit')
-        self.submenu_2.add("command", command=self.on_copy, label='Copy')
+        self.submenu_2.add(
+            "command",
+            command=self.on_copy_tab,
+            hidemargin=False,
+            label='Copy Tab-Separated')
+        self.submenu_2.add(
+            "command",
+            command=self.on_copy_semicolon,
+            hidemargin=False,
+            label='Copy Semicolon-Separated')
+        self.submenu_2.add(
+            "command",
+            command=self.on_copy_numpy,
+            hidemargin=False,
+            label='Copy Numpy')
         self.tabular_dialog.configure(menu=self.menu_2)
 
         # Main widget
@@ -88,7 +102,13 @@ class PygubuAppUI:
     def on_save_all(self):
         pass
 
-    def on_copy(self):
+    def on_copy_tab(self):
+        pass
+
+    def on_copy_semicolon(self):
+        pass
+
+    def on_copy_numpy(self):
         pass
 
 

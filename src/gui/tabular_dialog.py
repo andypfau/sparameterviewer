@@ -2,12 +2,14 @@ import tkinter as tk
 from tkinter import filedialog
 import dataclasses
 import math
+import re
 import pandas as pd
 import numpy as np
 import itertools
 
+
 from .tabular_dialog_pygubuui import PygubuAppUI
-from lib import SParamFile, PlotData, Si, AppGlobal
+from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard
 
 
 
@@ -157,11 +159,25 @@ class TabularDialog(PygubuAppUI):
         self.update_data()
 
 
-    def on_copy(self):
+    def on_copy_tab(self):
         dataset = self.selected_dataset
         if dataset is None:
             return
-        self.copy_data(dataset)
+        self.copy_data_csv(dataset, '\t')
+
+
+    def on_copy_semicolon(self):
+        dataset = self.selected_dataset
+        if dataset is None:
+            return
+        self.copy_data_csv(dataset, ';')
+
+
+    def on_copy_numpy(self):
+        dataset = self.selected_dataset
+        if dataset is None:
+            return
+        self.copy_data_numpy(dataset)
 
 
     def on_save_single(self):
@@ -234,10 +250,23 @@ class TabularDialog(PygubuAppUI):
             self.listbox.insert('', 'end', values=formatted_row)
 
         
-    def copy_data(self, dataset: "TabularDataset"):
+    def copy_data_csv(self, dataset: "TabularDataset", separator: str = '\t'):
         ds_fmt = self.format_dataset(dataset)
         df = self.get_dataframe(ds_fmt)
-        df.to_clipboard(index=False)
+        df.to_clipboard(index=False, sep=separator)
+
+        
+    def copy_data_numpy(self, dataset: "TabularDataset"):
+        def sanitize_name(name: str) -> str:
+            return re.sub('\W|^(?=\d)', '_', name)
+        def fmt(x) -> str:
+            return f'{x:.{TabularDialog.DISPLAY_PREC}g}'
+        py = 'import numpy as np\n'
+        py += f'# {dataset.name}\n'
+        py += f'{sanitize_name(dataset.xcol)} = np.array([{", ".join([fmt(x) for x in dataset.xcol_data])}])\n'
+        for n,d in zip(dataset.ycols,dataset.ycol_datas):
+            py += f'{sanitize_name(n)} = np.array([{", ".join([fmt(x) for x in d])}])\n'
+        Clipboard.copy_string(py)
     
 
     def get_dataframe(self, dataset: "TabularDataset") -> "pd.DataFrame":

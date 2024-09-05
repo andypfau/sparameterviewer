@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.24b1 (2024-09-05)
+-------------------
+
+- new: copy tabular data in different formats
+
+
 0.23b1 (2024-08-29)
 -------------------
 
