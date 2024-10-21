@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.25b1 (2024-10-21)
+-------------------
+
+- new: functions and templates for impedance and admittance
+
+
 0.24b1 (2024-09-05)
 -------------------
 
