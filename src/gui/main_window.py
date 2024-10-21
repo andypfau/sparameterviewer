@@ -33,6 +33,11 @@ from lib import ExpressionParser
 from lib import TkText, TkCommon, AppGlobal
 
 
+
+MAX_DIRECTORY_HISTORY_SIZE = 10
+
+
+
 # extend auto-generated UI code
 class SparamviewerMainDialog(PygubuAppUI):
     def __init__(self, filenames: "list[str]"):
@@ -123,6 +128,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             def on_click_errors(event):
                 self.open_error_dialog()
             self.entry_err.bind('<Button-1>', on_click_errors)
+            self.update_most_recent_directories_menu()
 
             # load TTK theme
             try:
@@ -875,9 +881,44 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.directories = [absdir]
             self.load_files_in_directory(absdir)
             self.update_file_list(selected_filenames=filenames_or_directory)
+    
+
+    def load_recent_directory(self, dir: str):
+        if not os.path.exists(dir):
+            logging.error(f'Cannot load recent directory <{dir}> (does not exist)')
+            return
+        absdir = os.path.abspath(dir)
+        self.directories = [absdir]
+        self.clear_loaded_files()
+        self.load_files_in_directory(absdir)
+        self.update_file_list(only_select_first=True)
+    
+
+    def update_most_recent_directories_menu(self):
+        
+        self.menuitem_recent.delete(0, 'end')
+        for dir in Settings.last_directories:
+            self.menuitem_recent.add_command(label=dir, command=lambda: self.load_recent_directory(dir))
+        
+    
+    def add_to_most_recent_directories(self, dir: str):
+        if dir in Settings.last_directories:
+            idx = Settings.last_directories.index(dir)
+            del Settings.last_directories[idx]
+        
+        Settings.last_directories.insert(0, dir)
+        
+        while len(Settings.last_directories) > MAX_DIRECTORY_HISTORY_SIZE:
+            del Settings.last_directories[-1]
+        
+        Settings.save()
+
+        self.update_most_recent_directories_menu()
 
 
     def load_files_in_directory(self, dir: str):
+
+        self.add_to_most_recent_directories(dir)
 
         try:
             

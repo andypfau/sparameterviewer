@@ -319,8 +319,9 @@
       <object class="pygubu.builder.widgets.toplevelmenu" id="toplevelmenu_1">
         <child>
           <object class="tk.Menu" id="menu_2">
+            <property name="cursor">arrow</property>
             <child>
-              <object class="tk.Menuitem.Submenu" id="submenu_1">
+              <object class="tk.Menuitem.Submenu" id="topmenu_main_files" named="True">
                 <property name="label" translatable="yes">File</property>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_1">
@@ -333,6 +334,12 @@
                   <object class="tk.Menuitem.Command" id="command_8">
                     <property name="command" type="command" cbtype="simple">on_append_dir</property>
                     <property name="label" translatable="yes">Append Directory...</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Submenu" id="menuitem_recent" named="True">
+                    <property name="label" translatable="yes">Recent Directories</property>
+                    <property name="tearoff">false</property>
                   </object>
                 </child>
                 <child>

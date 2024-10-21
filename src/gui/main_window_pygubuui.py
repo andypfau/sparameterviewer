@@ -122,56 +122,63 @@ class PygubuAppUI:
         self.panedwindow_1.pack(expand=True, fill="both", side="top")
         self.frame_5.pack(expand=True, fill="both", side="top")
         self.menu_2 = tk.Menu(self.toplevel_main)
-        self.submenu_1 = tk.Menu(self.menu_2)
-        self.menu_2.add(tk.CASCADE, menu=self.submenu_1, label='File')
-        self.submenu_1.add(
+        self.menu_2.configure(cursor="arrow")
+        self.topmenu_main_files = tk.Menu(self.menu_2)
+        self.menu_2.add(tk.CASCADE, menu=self.topmenu_main_files, label='File')
+        self.menuitem_recent = tk.Menu(self.topmenu_main_files, tearoff=False)
+        self.topmenu_main_files.add(
+            tk.CASCADE,
+            menu=self.menuitem_recent,
+            label='Recent Directories')
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+O",
             command=self.on_open_dir,
             label='Open Directory...')
-        self.submenu_1.add(
+        self.topmenu_main_files.add(
             "command",
             command=self.on_append_dir,
             label='Append Directory...')
-        self.submenu_1.add(
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+F5",
             command=self.on_reload_all_files,
             label='Reload All Files')
-        self.submenu_1.add("separator")
-        self.submenu_1.add(
+        self.topmenu_main_files.add("separator")
+        self.topmenu_main_files.add(
             "command",
             command=self.on_save_plot_graphic,
             label='Save Plot Image...')
-        self.submenu_1.add("separator")
-        self.submenu_1.add(
+        self.topmenu_main_files.add("separator")
+        self.topmenu_main_files.add(
             "command",
             accelerator="F1",
             command=self.on_click_info,
             label='File Info')
-        self.submenu_1.add(
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+T",
             command=self.on_view_tabular,
             label='View Tabular Data')
-        self.submenu_1.add(
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+E",
             command=self.on_click_open_externally,
             label='Open File Externally')
-        self.submenu_1.add("separator")
-        self.submenu_1.add(
+        self.topmenu_main_files.add("separator")
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+L",
             command=self.on_load_expr,
             label='Load Expressions...')
-        self.submenu_1.add(
+        self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+S",
             command=self.on_save_expr,
             label='Save Expressions...')
-        self.submenu_1.add("separator")
-        self.submenu_1.add("command", command=self.on_exit_cmd, label='Exit')
+        self.topmenu_main_files.add("separator")
+        self.topmenu_main_files.add(
+            "command", command=self.on_exit_cmd, label='Exit')
         self.submenu_2 = tk.Menu(self.menu_2)
         self.menu_2.add(tk.CASCADE, menu=self.submenu_2, label='Plot')
         self.show_legend = tk.StringVar()

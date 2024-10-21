@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: functions and templates for impedance and admittance
+- new: most recent directories in main menu
 
 
 0.24b1 (2024-09-05)
