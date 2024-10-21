@@ -480,6 +480,14 @@ class SparamviewerMainDialog(PygubuAppUI):
             expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names]
             set_expression(*expressions)
         
+        def impedance():
+            set_expression('sel_nws().s2z().s(rl_only=True).plot()')
+            switch_to_linear_scale()
+        
+        def admittance():
+            set_expression('sel_nws().s2y().s(rl_only=True).plot()')
+            switch_to_linear_scale()
+
         def all_selected():
             expressions = [f"nw('{n}').s().plot()" for n in selected_file_names]
             set_expression(*expressions)
@@ -502,6 +510,10 @@ class SparamviewerMainDialog(PygubuAppUI):
         submenu_plotting.add_command(label='S11, S21, S22', command=quick112122)
         submenu_plotting.add_command(label='S11, S21, S12, S22', command=quick11211222)
         submenu_plotting.add_command(label='S11, S21, S22, S31, S32, S33', command=quick112122313233)
+        submenu_plotting.add_separator()
+        submenu_plotting.add_command(label='Impedance', command=impedance)
+        submenu_plotting.add_command(label='Admittance', command=admittance)
+
         submenu_analysis = Menu(menu, tearoff=False)
         
         menu.add(CASCADE, menu=submenu_analysis, label='Network Analysis')

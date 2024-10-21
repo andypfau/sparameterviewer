@@ -152,6 +152,12 @@ Networks
                 <inp=['d1','d2','c1','c2']>.
             The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
         
+        s2z():
+            Converts to Z-parameter; useful to plot port impedance.
+        
+        s2y():
+            Converts to Y-parameter; useful to plot port admittance.
+        
         renorm(z):
             Renormalize to a specific reference impedance. <z> can be a scalar, or a list of scalars (one per port).
 

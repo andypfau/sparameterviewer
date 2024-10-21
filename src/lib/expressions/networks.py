@@ -461,6 +461,20 @@ class Network:
 
         new_nw.gmm2se(new_nw.nports // 2)
         return Network(new_nw)
+    
+
+    def s2z(self) -> "Network":
+        nw = self.nw.copy()
+        nw.s = nw.z
+        nw.name += ' Impedance'
+        return Network(nw)
+
+
+    def s2y(self) -> "Network":
+        nw = self.nw.copy()
+        nw.s = nw.y
+        nw.name += ' Admittance'
+        return Network(nw)
 
 
     def renorm(self, z: "complex|list[complex]") -> "Network":
@@ -653,6 +667,14 @@ class Networks:
     
     def s2m(self, ports: list = None) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
+    
+
+    def s2z(self) -> "Networks":
+        return self._unary_op(Network.s2z, Networks)
+    
+
+    def s2y(self) -> "Networks":
+        return self._unary_op(Network.s2y, Networks)
     
 
     def renorm(self, z: "complex|list[complex]") -> "Networks":
