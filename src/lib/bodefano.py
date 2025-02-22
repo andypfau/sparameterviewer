@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import skrf
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 
 
 
@@ -13,7 +13,7 @@ def crop_xrange(x, y, xmin=-1e99, xmax=+1e99):
 
 
 def integrate(f, s):
-    integral = trapz(np.log(1/np.abs(s)), f*math.tau)
+    integral = trapezoid(np.log(1/np.abs(s)), f*math.tau)
     return integral
 
 

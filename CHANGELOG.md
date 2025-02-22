@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.25b2 (2025-02-22)
+-------------------
+
+- change: adapted to latest scipy (`trapz` no longer exists)
+
+
 0.25b1 (2024-10-21)
 -------------------
 
