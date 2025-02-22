@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog
 import dataclasses
-import math
+import io
 import re
 import pandas as pd
 import numpy as np
-import itertools
 
 
 from .tabular_dialog_pygubuui import PygubuAppUI
@@ -253,7 +252,9 @@ class TabularDialog(PygubuAppUI):
     def copy_data_csv(self, dataset: "TabularDataset", separator: str = '\t'):
         ds_fmt = self.format_dataset(dataset)
         df = self.get_dataframe(ds_fmt)
-        df.to_clipboard(index=False, sep=separator)
+        sio = io.StringIO()
+        df.to_csv(sio, index=None)
+        Clipboard.copy_string(sio.getvalue())
 
         
     def copy_data_numpy(self, dataset: "TabularDataset"):
