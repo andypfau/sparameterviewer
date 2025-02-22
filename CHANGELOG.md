@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 0.25b2 (2025-02-22)
 -------------------
 
+- new: function `ml()` to calculate mismatch loss
 - change: adapted to latest scipy (`trapz` no longer exists)
 
 
@@ -33,7 +34,7 @@ S-Parameter Viewer Changelog
 0.22b1 (2024-08-21)
 -------------------
 
-- new: expression `add_ltl` to add a lossy transmission line
+- new: expression `add_ltl()` to add a lossy transmission line
 
 
 0.21b2 (2024-08-20)
@@ -152,21 +153,21 @@ S-Parameter Viewer Changelog
 0.12b1 (2023-07-12)
 -------------------
 
-- new: `phase` function
+- new: `phase()` function
 - new: plot phase with linear phase removed
 
 
 0.11b2 (2023-06-14)
 -------------------
 
-- new: `s2m` and `m2s`  for single-ended / mixed-mode S-parameter conversion
-- new: `quick` methods on Network objects
+- new: `s2m()` and `m2s()` for single-ended / mixed-mode S-parameter conversion
+- new: `quick()` methods on Network objects
 
 
 0.11b1 (2023-06-09)
 -------------------
 
-- new: `quick` plot function
+- new: `quick()` plot function
 
 
 0.10b14 (2023-06-05)

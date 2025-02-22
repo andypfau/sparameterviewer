@@ -103,6 +103,10 @@ class SParam:
         return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
 
     
+    def ml(self) -> "SParam":
+        return SParam(self.name + ' ML', self.f, 1-(np.abs(self.s)**2), self.z0)
+
+    
     def phase(self, processing: "str|None" = None) -> "SParam":
         s = self.s
         s = np.angle(s)
@@ -284,6 +288,10 @@ class SParams:
 
     def db(self) -> "SParams":
         return self._unary_op(SParam.db, True)
+    
+
+    def ml(self) -> "SParams":
+        return self._unary_op(SParam.ml, True)
 
     
     def phase(self, processing: "str|None" = None) -> "SParams":

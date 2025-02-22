@@ -413,6 +413,9 @@ class SparamviewerMainDialog(PygubuAppUI):
         
         def return_loss():
             set_expression('sel_nws().s(rl_only=True).plot()')
+        
+        def mismatch_loss():
+            set_expression('sel_nws().s(rl_only=True).ml().plot()')
 
         def quick11():
             set_expression('quick(11)')
@@ -511,6 +514,7 @@ class SparamviewerMainDialog(PygubuAppUI):
         submenu_plotting.add_command(label='Insertion Loss', command=insertion_loss)
         submenu_plotting.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
         submenu_plotting.add_command(label='Return Loss', command=return_loss)
+        submenu_plotting.add_command(label='Mismatch Loss', command=mismatch_loss)
         submenu_plotting.add_separator()
         submenu_plotting.add_command(label='S11', command=quick11)
         submenu_plotting.add_command(label='S11, S21, S22', command=quick112122)

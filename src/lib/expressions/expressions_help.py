@@ -57,7 +57,7 @@ Networks
             Chops the network in half (e.g. for 2xTHRU de-embedding).
             Allowed methods are 'IEEE370NZC' (IEEE-370, no Z-compensation), or 'ChopInHalf'. For IEEE-370,
             an additional argument <side> can be provided, to return the left side (1) or the right side (2).
-
+        
         k() -> SParams
             Returns the K (Rollet) stability factor (should be >1, or >0 dB).
 
@@ -179,22 +179,25 @@ SParams
 
     Methods
 
-        plot([<label=None>],[<style="-">]) -> Network
+        plot([<label=None>],[<style="-">])
             Plots the data. <label> is any string. "%n" is replaced with the name of the parameter.
             <style> is a matplotlib-compatible format (e.g. "-", ":", "--", "o-").
 
-        db() -> Network
+        ml() -> SParams
+            Mismatch loss: calculates <1-|S²|> (does not convert to dB automatically)
+
+        db() -> SParams
             Converts all values to dB.
 
-        abs() -> SParam
+        abs() -> SParams
             Takes abs() of each value.
 
-        phase([processing=None]) -> SParam
+        phase([processing=None]) -> SParams
             Takes the phase of each value.
             <processing> can be None, 'unwrap' (unwrap phase), or 'remove_linear' (unwrap, then
             remove linear phase).
 
-        crop_f([f_start=-inf], [f_end=+inf]) -> SParam.
+        crop_f([f_start=-inf], [f_end=+inf]) -> SParams.
             Returns the same S-Param, but with a reduced frequency range.
 
     Unary Operators
