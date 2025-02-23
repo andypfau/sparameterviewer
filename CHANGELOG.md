@@ -2,11 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.25b2 (2025-02-22)
+0.25b2 (2025-02-23)
 -------------------
 
 - new: function `ml()` to calculate mismatch loss
+- new: added `src/env/Pipfile`
 - change: adapted to latest scipy (`trapz` no longer exists)
+- change: using packet `copykitten` to copy images to clipboard cross-platform
 
 
 0.25b1 (2024-10-21)

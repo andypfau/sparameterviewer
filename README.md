@@ -22,8 +22,8 @@ Prerequisites
 - Packet dependencies: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow pandas CITIfile`
     - Under Feodora Linux, you may have to install `python3-pillow-tk` via `dnf`
 - Optional packet dependencies:
+    - `copykitten`: to copy images to clipboard
     - `pyinstaller`: to compile a binary
-    - `pywin32`: to copy plot image to clipboard (Windows only)
 
 
 Usage
