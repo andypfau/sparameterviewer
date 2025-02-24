@@ -184,7 +184,10 @@ SParams
             <style> is a matplotlib-compatible format (e.g. "-", ":", "--", "o-").
 
         ml() -> SParams
-            Mismatch loss: calculates <1-|S²|> (does not convert to dB automatically)
+            Mismatch loss: calculates <1-|S²|> (does not convert to dB automatically).
+
+        vswr() -> SParams
+            Voltage Standing Wave Ratio: calculates <(1+|S²|)/(1-|S²|)>.
 
         db() -> SParams
             Converts all values to dB.

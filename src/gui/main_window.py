@@ -399,35 +399,53 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.combobox_unit.current(idx)
             self.on_select_plotunit(None)
         
+        def switch_to_logarithmic_scale():
+            idx = self.combobox_unit['values'].index('dB')
+            self.combobox_unit.current(idx)
+            self.on_select_plotunit(None)
+        
         def as_currently_selected():
             set_expression(self.generated_expressions)
         
         def all_sparams():
             set_expression('sel_nws().s().plot()')
+            switch_to_logarithmic_scale()
         
         def insertion_loss():
             set_expression('sel_nws().s(il_only=True).plot()')
+            switch_to_logarithmic_scale()
         
         def insertion_loss_reciprocal():
             set_expression('sel_nws().s(fwd_il_only=True).plot()')
+            switch_to_logarithmic_scale()
         
         def return_loss():
             set_expression('sel_nws().s(rl_only=True).plot()')
+            switch_to_logarithmic_scale()
+        
+        def vswr():
+            set_expression('sel_nws().s(rl_only=True).vswr().plot()')
+            switch_to_linear_scale()
         
         def mismatch_loss():
             set_expression('sel_nws().s(rl_only=True).ml().plot()')
+            switch_to_logarithmic_scale()
 
         def quick11():
             set_expression('quick(11)')
+            switch_to_logarithmic_scale()
         
         def quick112122():
             set_expression('quick(11)', 'quick(21)', 'quick(22)')
+            switch_to_logarithmic_scale()
         
         def quick11211222():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)')
+            switch_to_logarithmic_scale()
 
         def quick112122313233():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
+            switch_to_logarithmic_scale()
         
         def stability():
             set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
@@ -514,6 +532,7 @@ class SparamviewerMainDialog(PygubuAppUI):
         submenu_plotting.add_command(label='Insertion Loss', command=insertion_loss)
         submenu_plotting.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
         submenu_plotting.add_command(label='Return Loss', command=return_loss)
+        submenu_plotting.add_command(label='VSWR', command=vswr)
         submenu_plotting.add_command(label='Mismatch Loss', command=mismatch_loss)
         submenu_plotting.add_separator()
         submenu_plotting.add_command(label='S11', command=quick11)

@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.25b3 (2025-02-24)
+-------------------
+
+- new: function `vswr()` to calculate VSWR
+- new: new sample `dipole.s1p`
+- bugfix: no longer showing losslessness ij metric for 1-ports
+
 0.25b2 (2025-02-23)
 -------------------
 

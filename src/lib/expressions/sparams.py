@@ -107,6 +107,10 @@ class SParam:
         return SParam(self.name + ' ML', self.f, 1-(np.abs(self.s)**2), self.z0)
 
     
+    def vswr(self) -> "SParam":
+        return SParam(self.name + ' VSWR', self.f, (1+np.abs(self.s))/(1-np.abs(self.s)), self.z0)
+
+    
     def phase(self, processing: "str|None" = None) -> "SParam":
         s = self.s
         s = np.angle(s)
@@ -292,6 +296,10 @@ class SParams:
 
     def ml(self) -> "SParams":
         return self._unary_op(SParam.ml, True)
+    
+
+    def vswr(self) -> "SParams":
+        return self._unary_op(SParam.vswr, True)
 
     
     def phase(self, processing: "str|None" = None) -> "SParams":
