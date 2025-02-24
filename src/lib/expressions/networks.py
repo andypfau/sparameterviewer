@@ -167,6 +167,8 @@ class Network:
             worst_idx = np.argmax(np.abs(diag-1), (1)) # find the indices where the diagonal is the farthest away from 1
             matrix = np.take_along_axis(diag, np.expand_dims(worst_idx, 1), 1)
         elif (egress_port_or_kind == 'ij') and ingress_port is None:
+            if self.nw.nports < 2:
+                return []
             name = 'Losslessness_ij,worst'
             antidiag = np.copy(prod)
             for i in range(antidiag.shape[1]):
@@ -196,6 +198,8 @@ class Network:
     
 
     def reciprocity(self, egress_port: int = None, ingress_port: int = None):
+        if self.nw.nports < 2:
+            raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.nw.name} (only valid for 2-port or higher networks)')
         s = self.nw.s
         if egress_port is None and ingress_port is None:
             name = 'Reciprocity_worst'
