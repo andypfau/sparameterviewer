@@ -74,6 +74,16 @@ Roadmap
 
 ### Missing Features
 
+- Documentation
+    - What does the optimum RL calculator do?
+    - What are all those parameters, e.g. Insertion Loss, reciprocal only, ...?
+    - What are all those representations, e.g. dB, linear magnitude, step response...?
+    - How are certain things calculated, e.g. the DC extrapolation for TDR, the expressions, ...?
+    - Explain all settings.
+    - What can the tabular dialog do, what file formats are supported?
+    - What do the items under "Plot" do?
+    - How do I trace cursors?
+    - How do I get started with expressions? Give some examples!
 - Display: more presets, to quickly scroll through all S-parameters
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
     - The idea is that the GUI has 3 steps: transform -> select parameter -> plot format
