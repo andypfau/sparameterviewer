@@ -100,13 +100,13 @@ class PygubuAppUI:
             text='RL vs. Frequency',
             value="rl_vs_f",
             variable=self.plot_kind)
-        self.radiobutton1.grid(column=0, row=0)
+        self.radiobutton1.grid(column=0, pady=5, row=0)
         self.radiobutton2 = ttk.Radiobutton(self.frame2)
         self.radiobutton2.configure(
             text='RL Histogram',
             value="rl_hist",
             variable=self.plot_kind)
-        self.radiobutton2.grid(column=1, row=0)
+        self.radiobutton2.grid(column=1, padx=10, pady=5, row=0)
         self.frame2.pack(fill="x", side="top")
         self.frame_rlplot = ttk.Frame(self.frame_10)
         self.frame_rlplot.configure(height=400, width=600)
