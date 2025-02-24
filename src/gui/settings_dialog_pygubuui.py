@@ -69,7 +69,14 @@ class PygubuAppUI:
             column=1, padx=5, pady=3, row=3, sticky="w")
         self.checkbox_impedance.configure(command=self.on_impedance_change)
         self.checkbox_impedance.bind("<1>", self.callback, add="")
-        self.labelframe_5.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
+        self.labelframe_5.pack(
+            anchor="w",
+            fill="x",
+            ipadx=5,
+            ipady=5,
+            padx=5,
+            pady=5,
+            side="top")
         self.labelframe_8 = ttk.Labelframe(self.frame_13)
         self.labelframe_8.configure(height=200, text='Theme', width=200)
         self.combobox_theme = ttk.Combobox(
@@ -93,7 +100,34 @@ class PygubuAppUI:
             "<<ComboboxSelected>>",
             self.on_plotstyle_sel,
             add="")
-        self.labelframe_8.pack(ipadx=5, ipady=5, padx=5, pady=5, side="top")
+        self.labelframe_8.pack(
+            anchor="w",
+            fill="x",
+            ipadx=5,
+            ipady=5,
+            padx=5,
+            pady=5,
+            side="top")
+        self.labelframe1 = ttk.Labelframe(self.frame_13)
+        self.labelframe1.configure(height=200, text='Miscellaneous', width=200)
+        self.checkbutton1 = ttk.Checkbutton(self.labelframe1)
+        self.comment_existing_expr = tk.StringVar()
+        self.checkbutton1.configure(
+            cursor="arrow",
+            offvalue="keep",
+            onvalue="comment",
+            text='Comment-Out Existing Expressions\nWhen Adding New From Template',
+            variable=self.comment_existing_expr)
+        self.checkbutton1.pack(side="top")
+        self.checkbutton1.configure(command=self.on_comment_expr_change)
+        self.labelframe1.pack(
+            anchor="w",
+            fill="x",
+            ipadx=5,
+            ipady=5,
+            padx=5,
+            pady=5,
+            side="top")
         self.ext_ed_box = ttk.Labelframe(self.frame_13, name="ext_ed_box")
         self.ext_ed_box.configure(
             height=200, text='External Editor', width=200)
@@ -106,6 +140,7 @@ class PygubuAppUI:
         self.button1.pack(expand=False, side="right")
         self.button1.configure(command=self.on_sel_ext_editor)
         self.ext_ed_box.pack(
+            anchor="w",
             fill="x",
             ipadx=5,
             ipady=5,
@@ -139,6 +174,9 @@ class PygubuAppUI:
         pass
 
     def on_plotstyle_sel(self, event=None):
+        pass
+
+    def on_comment_expr_change(self):
         pass
 
     def on_sel_ext_editor(self):

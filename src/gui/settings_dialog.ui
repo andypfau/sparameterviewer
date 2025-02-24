@@ -41,6 +41,8 @@
             <property name="text" translatable="yes">Time-Domain Transform</property>
             <property name="width">200</property>
             <layout manager="pack">
+              <property name="anchor">w</property>
+              <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>
               <property name="padx">5</property>
@@ -164,6 +166,8 @@
             <property name="text" translatable="yes">Theme</property>
             <property name="width">200</property>
             <layout manager="pack">
+              <property name="anchor">w</property>
+              <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>
               <property name="padx">5</property>
@@ -219,11 +223,42 @@
           </object>
         </child>
         <child>
+          <object class="ttk.Labelframe" id="labelframe1">
+            <property name="height">200</property>
+            <property name="text" translatable="yes">Miscellaneous</property>
+            <property name="width">200</property>
+            <layout manager="pack">
+              <property name="anchor">w</property>
+              <property name="fill">x</property>
+              <property name="ipadx">5</property>
+              <property name="ipady">5</property>
+              <property name="padx">5</property>
+              <property name="pady">5</property>
+              <property name="side">top</property>
+            </layout>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton1">
+                <property name="command" type="command" cbtype="simple">on_comment_expr_change</property>
+                <property name="cursor">arrow</property>
+                <property name="offvalue">keep</property>
+                <property name="onvalue">comment</property>
+                <property name="text" translatable="yes">Comment-Out Existing Expressions
+When Adding New From Template</property>
+                <property name="variable">string:comment_existing_expr</property>
+                <layout manager="pack">
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
           <object class="ttk.Labelframe" id="ext_ed_box" named="True">
             <property name="height">200</property>
             <property name="text" translatable="yes">External Editor</property>
             <property name="width">200</property>
             <layout manager="pack">
+              <property name="anchor">w</property>
               <property name="fill">x</property>
               <property name="ipadx">5</property>
               <property name="ipady">5</property>

@@ -386,10 +386,13 @@ class SparamviewerMainDialog(PygubuAppUI):
             current = TkText.get_text(self.text_expr).strip()
             new = '\n'.join(expressions)
             for line in current.splitlines():
-                commented = '#' + line.strip() if not line.startswith('#') else line.strip()
+                if Settings.comment_existing_expr:
+                    existing_line = '#' + line.strip() if not line.startswith('#') else line.strip()
+                else:
+                    existing_line = line
                 if len(new)>0:
                     new += '\n'
-                new += commented
+                new += existing_line
             Settings.expression = new
             TkText.set_text(self.text_expr, new)
             self.on_use_expr()

@@ -22,6 +22,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_style: str = None
     plot_mark_points: bool = False
     last_directories: list[str] = []
+    comment_existing_expr: bool = True
 
 
 Settings = SParamViewerAppSettings(
