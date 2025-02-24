@@ -81,9 +81,33 @@ class PygubuAppUI:
         self.labelframe_3.pack(fill="x", side="top")
         self.labelframe_4 = ttk.Labelframe(self.frame_9)
         self.labelframe_4.configure(
-            height=200, padding=5, text='Output', width=200)
+            height=200, padding=5, text='Result', width=200)
         self.frame_10 = ttk.Frame(self.labelframe_4)
         self.frame_10.configure(height=200, width=200)
+        self.result_box = tk.Text(self.frame_10, name="result_box")
+        self.result_box.configure(
+            height=3,
+            relief="flat",
+            setgrid=False,
+            state="disabled",
+            width=50)
+        self.result_box.pack(expand=True, fill="x", side="top")
+        self.frame2 = ttk.Frame(self.frame_10)
+        self.frame2.configure(height=200, width=200)
+        self.radiobutton1 = ttk.Radiobutton(self.frame2)
+        self.plot_kind = tk.StringVar(value='rl_vs_f')
+        self.radiobutton1.configure(
+            text='RL vs. Frequency',
+            value="rl_vs_f",
+            variable=self.plot_kind)
+        self.radiobutton1.grid(column=0, row=0)
+        self.radiobutton2 = ttk.Radiobutton(self.frame2)
+        self.radiobutton2.configure(
+            text='RL Histogram',
+            value="rl_hist",
+            variable=self.plot_kind)
+        self.radiobutton2.grid(column=1, row=0)
+        self.frame2.pack(fill="x", side="top")
         self.frame_rlplot = ttk.Frame(self.frame_10)
         self.frame_rlplot.configure(height=400, width=600)
         self.frame_rlplot.pack(expand=True, fill="both", side="top")

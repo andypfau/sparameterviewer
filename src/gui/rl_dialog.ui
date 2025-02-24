@@ -172,7 +172,7 @@
           <object class="ttk.Labelframe" id="labelframe_4">
             <property name="height">200</property>
             <property name="padding">5</property>
-            <property name="text" translatable="yes">Output</property>
+            <property name="text" translatable="yes">Result</property>
             <property name="width">200</property>
             <layout manager="pack">
               <property name="expand">true</property>
@@ -188,6 +188,52 @@
                   <property name="fill">both</property>
                   <property name="side">top</property>
                 </layout>
+                <child>
+                  <object class="tk.Text" id="result_box" named="True">
+                    <property name="height">3</property>
+                    <property name="relief">flat</property>
+                    <property name="setgrid">false</property>
+                    <property name="state">disabled</property>
+                    <property name="width">50</property>
+                    <layout manager="pack">
+                      <property name="expand">true</property>
+                      <property name="fill">x</property>
+                      <property name="side">top</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Frame" id="frame2">
+                    <property name="height">200</property>
+                    <property name="width">200</property>
+                    <layout manager="pack">
+                      <property name="fill">x</property>
+                      <property name="side">top</property>
+                    </layout>
+                    <child>
+                      <object class="ttk.Radiobutton" id="radiobutton1">
+                        <property name="text" translatable="yes">RL vs. Frequency</property>
+                        <property name="value">rl_vs_f</property>
+                        <property name="variable">string:plot_kind</property>
+                        <layout manager="grid">
+                          <property name="column">0</property>
+                          <property name="row">0</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="ttk.Radiobutton" id="radiobutton2">
+                        <property name="text" translatable="yes">RL Histogram</property>
+                        <property name="value">rl_hist</property>
+                        <property name="variable">string:plot_kind</property>
+                        <layout manager="grid">
+                          <property name="column">1</property>
+                          <property name="row">0</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
                 <child>
                   <object class="ttk.Frame" id="frame_rlplot">
                     <property name="height">400</property>

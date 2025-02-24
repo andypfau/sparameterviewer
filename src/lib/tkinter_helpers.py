@@ -74,8 +74,15 @@ class TkText:
 
     @staticmethod
     def set_text(tk_text: Text, text: str):
+        disabled = tk_text.cget('state') == 'disabled'
+        if disabled:
+            tk_text.config(state=NORMAL)
+
         tk_text.delete(0.0, END)
         tk_text.insert(END, text)
+        
+        if disabled:
+            tk_text.config(state=DISABLED)
     
 
     @staticmethod
