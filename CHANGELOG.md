@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: load .zip-files
+- change: improved information from delta cursors
 
 
 0.25b3 (2025-02-24)

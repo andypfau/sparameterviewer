@@ -317,16 +317,21 @@ class SparamviewerMainDialog(PygubuAppUI):
             readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
             if self.cursor_dialog.enable_cursor_1:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
+                dx_str = str(Si(dx,si_fmt=xf))
+                if xf.unit=='s' and dx!=0:
+                    dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
                 if yf.unit=='dB' or yf.unit=='°':
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    readout += f'Delta: {Si(dx,si_fmt=xf)} | {Si(dy,si_fmt=yf)}\n'
+                    readout += f'Delta X: {dx_str} | Delta Y:{Si(dy,si_fmt=yf)}\n'
                 else:
+                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
+                    dys = Si.to_significant_digits(dy, 4)
                     if self.plot.cursors[0].y==0:
-                        dys = '[error]'
+                        rys = 'N/A'
                     else:
-                        dy = self.plot.cursors[1].y / self.plot.cursors[0].y
-                        dys = Si.to_significant_digits(dy, 4)
-                    readout += f'Delta: {Si(dx,si_fmt=self.plot.x_fmt)} | Ratio: {dys}\n'
+                        ry = self.plot.cursors[1].y / self.plot.cursors[0].y
+                        rys = Si.to_significant_digits(ry, 4)
+                    readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
         self.cursor_dialog.update_readout(readout)
         
         self.canvas.draw()
