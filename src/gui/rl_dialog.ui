@@ -23,7 +23,7 @@
   </project>
   <object class="tk.Toplevel" id="toplevel_rl">
     <property name="height">600</property>
-    <property name="title" translatable="yes">Return Loss Optimizer</property>
+    <property name="title" translatable="yes">Optimum RL Calculator</property>
     <property name="width">400</property>
     <child>
       <object class="ttk.Frame" id="frame_9">
