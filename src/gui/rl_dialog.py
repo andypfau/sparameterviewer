@@ -102,7 +102,7 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
 
         message = \
             f'Current avg. RL (integration range): {bodefano.db_total:+.3g} dB ({Si(bodefano.f_integration_actual_start_hz,"Hz")}..{Si(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
-            f'Achievable avg. RL (target range): {bodefano.db_current:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})\n' + \
+            f'Current avg. RL (target range): {bodefano.db_current:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})\n' + \
             f'Achievable avg. RL (target range): {bodefano.db_optimized:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})'
         TkText.set_text(self.result_box, message)
 
