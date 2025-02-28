@@ -72,12 +72,16 @@ class SparamviewerSettingsDialog(PygubuAppUI):
         self.combobox_plotstyle['values'] = pyplot.style.available
         if Settings.plot_style in pyplot.style.available:
             self.combobox_plotstyle.current(pyplot.style.available.index(Settings.plot_style))
-        
 
         def on_comment_expr_change(var, index, mode):
             Settings.comment_existing_expr = self.comment_existing_expr.get()=='comment'
         self.comment_existing_expr.set('comment' if Settings.comment_existing_expr else 'keep')
         self.comment_existing_expr.trace_add('write', on_comment_expr_change)
+
+        def on_extract_zip_change(var, index, mode):
+            Settings.extract_zip = self.extract_zip.get()=='extract'
+        self.extract_zip.set('extract' if Settings.extract_zip else 'ignore')
+        self.extract_zip.trace_add('write', on_extract_zip_change)
         
         self.ext_ed.set(Settings.ext_editor_cmd)
         

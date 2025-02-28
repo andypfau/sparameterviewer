@@ -20,6 +20,7 @@ class SParamViewerAppSettings(AppSettings):
     ttk_theme: str = ''
     ext_editor_cmd: str = ''
     plot_style: str = None
+    extract_zip: bool = False
     plot_mark_points: bool = False
     last_directories: list[str] = []
     comment_existing_expr: bool = True

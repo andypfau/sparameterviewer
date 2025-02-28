@@ -6,6 +6,8 @@ import dataclasses
 import numpy as np
 import skrf
 import logging
+import zipfile
+import tempfile
 
 
 
@@ -13,35 +15,58 @@ class SParamFile:
     """Wrapper for a skrf.Network"""
 
 
-    def __init__(self, file_path: str, tag: int = None, name: str = None, short_name: str = None):
+    def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
 
         self.file_path = file_path
+        self._archive_path = archive_path
         self.filename = os.path.split(self.file_path)[1]
         self.tag = tag
 
         self._nw = None
         self._error = None
 
-        self.name = name if name is not None else self.filename
-        self.short_name = short_name if short_name is not None else os.path.splitext(self.filename)[0]
+        if archive_path is not None:
+            name_prefix = os.path.split(archive_path)[1] + '/'
+        else:
+            name_prefix = ''
+        self.name = name if name is not None else name_prefix+self.filename
+        self.short_name = short_name if short_name is not None else name_prefix+os.path.splitext(self.filename)[0]
     
+
+    def _load(self):
+        if self._nw is not None:
+            return
+
+        def load(path):
+            try:
+                logging.debug(f'Loading network "{path}" from "{self._archive_path}"')
+                ext = os.path.splitext(path)[1].lower()
+                if ext == '.cti':
+                    citi = CitiReader(path)
+                    nw = citi.get_network(None, {}, select_default=True)
+                else:
+                    nw = skrf.network.Network(path)
+                self._nw = nw
+            except Exception as ex:
+                logging.exception(f'Unable to load network from "{path}" ({ex})')
+                self._error = str(ex)
+                self._nw = None
+        
+        if self._archive_path is not None:
+            with tempfile.TemporaryDirectory() as tempdir:
+                with zipfile.ZipFile(self._archive_path, 'r') as zf:
+                    try:
+                        zipped_filename = zf.extract(self.file_path, tempdir)
+                        load(zipped_filename)
+                        os.remove(zipped_filename)
+                    except Exception as ex:
+                        logging.warning(f'Unable to extract "{self.file_path}" from "{self._archive_path}" ({ex})')
+        else:
+            load(self.file_path)
 
     @property
     def nw(self):
-        if not self._nw:
-            try:
-                logging.debug(f'Loading network "{self.file_path}"')
-                ext = os.path.splitext(self.file_path)[1].lower()
-                if ext == '.cti':
-                    citi = CitiReader(self.file_path)
-                    nw = citi.get_network(None, {}, select_default=True)
-                else:
-                    nw = skrf.network.Network(self.file_path)
-                self._nw = nw
-            except Exception as ex:
-                logging.exception(f'Unable to load network from "{self.file_path}" ({ex})')
-                self._error = str(ex)
-                self._nw = None
+        self._load()
         return self._nw
     
 

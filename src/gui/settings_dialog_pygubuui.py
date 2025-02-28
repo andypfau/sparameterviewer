@@ -118,8 +118,18 @@ class PygubuAppUI:
             onvalue="comment",
             text='Comment-Out Existing Expressions\nWhen Adding New From Template',
             variable=self.comment_existing_expr)
-        self.checkbutton1.pack(side="top")
+        self.checkbutton1.pack(anchor="w", side="top")
         self.checkbutton1.configure(command=self.on_comment_expr_change)
+        self.checkbutton2 = ttk.Checkbutton(self.labelframe1)
+        self.extract_zip = tk.StringVar()
+        self.checkbutton2.configure(
+            cursor="arrow",
+            offvalue="ignore",
+            onvalue="extract",
+            text='Extract .zip-files When Loading Directory',
+            variable=self.extract_zip)
+        self.checkbutton2.pack(anchor="w", side="top")
+        self.checkbutton2.configure(command=self.on_comment_expr_change)
         self.labelframe1.pack(
             anchor="w",
             fill="x",

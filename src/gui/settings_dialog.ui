@@ -246,6 +246,21 @@
 When Adding New From Template</property>
                 <property name="variable">string:comment_existing_expr</property>
                 <layout manager="pack">
+                  <property name="anchor">w</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Checkbutton" id="checkbutton2">
+                <property name="command" type="command" cbtype="simple">on_comment_expr_change</property>
+                <property name="cursor">arrow</property>
+                <property name="offvalue">ignore</property>
+                <property name="onvalue">extract</property>
+                <property name="text" translatable="yes">Extract .zip-files When Loading Directory</property>
+                <property name="variable">string:extract_zip</property>
+                <layout manager="pack">
+                  <property name="anchor">w</property>
                   <property name="side">top</property>
                 </layout>
               </object>

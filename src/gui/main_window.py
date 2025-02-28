@@ -7,6 +7,7 @@ import os, glob, appdirs, math, copy, logging, traceback, datetime, io
 import numpy as np
 import re
 import cmath
+import zipfile
 
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
@@ -947,20 +948,46 @@ class SparamviewerMainDialog(PygubuAppUI):
         self.add_to_most_recent_directories(dir)
 
         try:
-            
+
             absdir = os.path.abspath(dir)
-            all_touchstone_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.[Ss]*[Pp]')))
-            all_citi_files = sorted(list(glob.glob(f'{glob.escape(absdir)}/*.cti')))
-            all_files = all_touchstone_files + all_citi_files
             
-            for filename in all_files:
+            def filetype_matches(path):
+                ext = os.path.splitext(path)[1]
+                return re.match(r'(\.ci?ti)|(\.s[0-9]+p)', ext, re.IGNORECASE)
+        
+            def load_file(filename, archive_path=None):
                 try:
                     tag = f'file{self.next_file_tag}'
-                    file = SParamFile(filename, tag=tag)
+                    file = SParamFile(filename, tag=tag, archive_path=archive_path)
                     self.files.append(file)
                     self.next_file_tag += 1
                 except Exception as ex:
                     logging.info(f'Ignoring file <{filename}>: {ex}')
+            
+            def find_all_files(path):
+                all_items = [os.path.join(path,f) for f in os.listdir(path)]
+                return sorted(list([f for f in all_items if os.path.isfile(f)]))
+
+            all_files = find_all_files(absdir)
+
+            for filename in all_files:
+                if not filetype_matches(filename):
+                    continue
+                load_file(filename)
+
+            if Settings.extract_zip:
+                for zip_filename in all_files:
+                    ext = os.path.splitext(zip_filename)[1].lower()
+                    if ext != '.zip':
+                        continue
+                    try:
+                        with zipfile.ZipFile(zip_filename, 'r') as zf:
+                            for internal_name in zf.namelist():
+                                if not filetype_matches(internal_name):
+                                    continue
+                                load_file(internal_name, archive_path=zip_filename)
+                    except Exception as ex:
+                        logging.warning(f'Unable to open zip file <{zip_filename}>: {ex}')
         
         except Exception as ex:
             logging.exception(f'Unable to load files: {ex}')
@@ -983,7 +1010,7 @@ class SparamviewerMainDialog(PygubuAppUI):
     def update_file_in_list(self, file: "SParamFile"):
         
         tag = file.tag
-        name_str = os.path.split(file.file_path)[1]
+        name_str = file.name
         prop_str = self.get_file_prop_str(file)
         
         self.treeview_files.item(tag, values=(name_str,prop_str))
@@ -1016,7 +1043,7 @@ class SparamviewerMainDialog(PygubuAppUI):
         for i,file in enumerate(self.files):
             
             tag = file.tag
-            name_str = os.path.split(file.file_path)[1]
+            name_str = file.name
             prop_str = self.get_file_prop_str(file)
             
             self.treeview_files.insert('', 'end', tag, values=(name_str,prop_str))
