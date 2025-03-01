@@ -12,7 +12,8 @@ Main Features
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay.
 - Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness.
     - to learn more about this feature, open the "Expressions" tab, and click "Help".
-- Export to CSV or XLSX.
+- Viewing data n various table formats.
+- Export data to .csv or .xlsx, copy data as Python code, save plots as images.
 
 Documentation
 -------------

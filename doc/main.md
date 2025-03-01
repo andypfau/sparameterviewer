@@ -45,6 +45,22 @@ Supported Formats
     - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
 - Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (see [Settings](settings.md)).
 
+Plot Menu
+---------
+
+In the main window, the *Plot* menu has some useful functions:
+- *Show Legend*: show legend in plot.
+- *Hide Single-Item Legend*: hide the legend if only one single trace is shown.
+- *Shorten Legen Items*: attempt to shorten the legend such that it is still readable an unambiguous.
+- *Copy Image to Clipboard*: copy the plot to clipboard (requires the optional `copykitten` Python package).
+- *Logarithmic Frequency*: X-axis is logarithmic; otherwise it is linear.
+- *Lock Y-Axis* / *Lock Y-Axis* / *Lock both Axes*: keep the current scale of the X/Y axis, even when selecting differnet files.
+- *Unlock both Axes*: reverts axis locking.
+- *Re-scale locked Axes*: when scales are locked, re-scale them once, then keep them locked again.
+- *Manual axes...*: opens a dialog where you can specify exact axis ranges.
+- *Mark points*: show markers on every data point.
+- *Update Plot From Expressions*: when you edit expressions (see next section), the plot is only updated after you click this (or press F5).
+
 Expressions
 -----------
 

@@ -1,12 +1,39 @@
 Additional Tools
 ================
 
-Tablular
+Tabular Data
+------------
+
+Shows the data as a table.
+
+In the main window go *File* → *View Tabular Data*.
+
+You may select:
+- Which file to display, and 
+- How to display the data, e.g. as real/imaginary, db/degrees, etc.
+
+From the menu, you can:
+- *Save*: export as .csv (tab-separated) or as .xlsx (spreadsheet).
+- *Edit*: copy to clipboard, either as CSV-data (comma- or tab-separated), or as Python code which can be used with [NumPy](https://numpy.org/).
+
+Trace Cursors
+-------------
+
+Allows you to read values from the plot using cursors.
+
+In the main window go *Tools* → *Trace Cursors*.
+
+Just click in the plot, and the reading is shown in the dialog. You may select one of two cursors, or let the tool select the closest cursor automatically (*Auto*). You may specify a specific trace, or let the tool snap the cursor to the closest trace (*Auto*).
+
+⚠️ Pitfall: if you selected a tool the pan or zoom tool in the plot, it will pan/zoom! De-select the tools in the plot before using cursors.
+
 
 Optimum RL Calculator
 ---------------------
 
 Allows you to calculate the maximum achievable return loss (RL), if matched optimally.
+
+In the main window go *Tools* → *Optimum RL Calculator*.
 
 This is done by calculating the integral of the RL over a given (wide) freqeuncy interval, and then calculating the mean RL in a narrower freqeuncy interval (Bode-Fano limit).
 

@@ -3,6 +3,8 @@ from tkinter import filedialog
 import dataclasses
 import io
 import re
+import math
+import itertools
 import pandas as pd
 import numpy as np
 
@@ -108,7 +110,7 @@ class TabularDialog(PygubuAppUI):
 
     
     DISPLAY_PREC = 5
-    FORMATS = ['Mag / dB, Phase / Rad', 'Mag / dB, Phase / Deg', 'Mag / dB', 'Mag (linear)', 'Complex', 'Phase / Rad', 'Phase / Deg']
+    FORMATS = ['Mag / dB, Phase / Rad', 'Mag / dB, Phase / Deg', 'Mag / dB', 'Mag (linear)', 'Real, Imaginary', 'Phase / Rad', 'Phase / Deg']
     DEFAULT_FORMAT = 2
 
 

@@ -1,7 +1,7 @@
 Settings
 ========
 
-In the main window, go Tools -> Settings.
+In the main window, go *Tools* → *Settings*.
 
 Time-Domain Transformation
 --------------------------
