@@ -1,0 +1,554 @@
+# Expressions
+
+
+Basics
+------
+
+The basic concept is to load one (`nw(name)`) or multiple (`nws()`) networks, get a specific S-parameter (`s(i,j)`), and plot it (`plot()`):
+
+```python
+    nws("*amp.s2p").s(2,1).plot("IL")
+```
+
+Which could be re-written as:
+
+```python
+    n = nws("*amp.s2p")  # type: Networks
+    s = n.s(2,1)         # type: SParams
+    s.plot("IL")
+```
+
+However, there is also a quicker way if you don't need full control:
+
+```python
+    quick(21)
+```
+
+The expressions use [Python](https://docs.python.org/3/) syntax. You have access to:
+- The global functions described in the section below;
+- The classes `Networks` and `SParams`, described in the sections below;
+- The libraries `math` ([math](https://docs.python.org/3/library/math.html)) and `np` ([NumPy](https://numpy.org/doc/)).
+
+
+Global Functions
+----------------
+
+### quick()
+
+```python
+quick(*parameters)
+```
+
+Quick plotting of some parameters, indicated either as an integer (e.g. 21 to plot S21), or by a tuple (e.g. (2,1) to plot S21.). For example, to plot S21 and S22, call `quick(21, 22)`.
+
+
+### nws()
+
+```python
+nws(pattern=None)
+```
+
+If no pattern is provided, returns a `Networks` object that contains all networks.
+
+If a pattern is provided, returns a `Networks` object that contains all networks that match the given pattern, e.g. `'*.s2p'`. Note that this returns an empty `Networks` object if the pattern does not match anything (instead of raising an error).
+
+### sel_nws()
+
+```python
+sel_nws(pattern=None)
+```
+
+Same as `nws()`, except that it only matches networks that are currently selected.
+
+
+### nw()
+
+```python
+nw(pattern=None)
+```
+
+Same as `nws()`, except that it is intended to select exactly one network. Throws an error if zero or more than one network is matched.
+
+
+Classes
+-------
+
+- `Networks`: a container for one or more RF networks.
+- `SParams`: a container for one or more S-parameters, or X-/Y-data in general.
+
+
+### Networks
+
+A container for one or more S-parameter networks.
+
+To get a `Networks` object, call the global functions `nws()`, `sel_nws()` or `nw()`.
+
+Note that any operation on the object may, by design, fail silently. For example, if an object contains a 1-port and a 2-port, and you attempt to invert the object (an operation that only works on 2-ports), the 1-port will silently be dropped. This is to avoid excessive errors when applying general expressions on a large set of networks.
+
+#### Methods
+
+##### s()
+
+```python
+s(egress_port=None, ingress_port=None, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) -> SParams
+```
+
+Returns S-parameters (an `SParams` object) of a network.
+
+`egress_port` and `ingress_port` can be set to a number, or kept at `None` (wildcard). Further filtering can be applied with `rl_only`, `il_only`, `fwd_il_only`, `rev_il_only`.
+
+For a mixed-mode network, you may also format a string instead of `egress_port` (and omit `ingress_port`), e.g. `'dd21'` od `'cd4,3'`. The mixed-mode network must have port order <diff1, diff2, ..., comm1, comm2, ...>.
+
+If no explicit name is provided, a reasonable name is selected, e.g. `'S21'`.
+
+Examples:
+```python
+s(2,1)           # S21
+s('dd21')        # SDD21
+s(rl_only=True)  # S11, S22, ...
+plot(None, 1)    # S11, S21, ...
+```
+
+##### invert()
+
+```python
+invert() -> Networks
+```
+
+Inverts the network (e.g. for de-embedding).
+
+##### flip()
+
+```python
+flip() -> Networks
+```
+
+Flips the ports (e.g. to use it in reverse direction).
+
+##### half()
+
+```python
+half(method='IEEE370NZC', side=1) -> Networks
+```
+
+Chops the network in half (e.g. for 2xTHRU de-embedding).
+
+Allowed methods are `'IEEE370NZC'` (IEEE-370, no Z-compensation), or 'ChopInHalf'. For IEEE-370, an additional argument `side` may be provided, to return the left side (`1`) or the right side (`2`).
+
+##### k()
+
+```python
+k() -> SParams
+```
+
+Returns the K (Rollet) stability factor. For a stable network, this should be >1 (or >0 dB).
+
+##### mu()
+
+```python
+mu(mu=1) -> SParams
+```
+
+Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Sinsky). For a stable network, this should be >1 (or >0 dB).
+
+##### losslessness()
+
+```python
+losslessness(egress_port_or_kind,ingress_port=None) -> SParams
+```
+
+Returns the losslessness metric S^T·S^* For a lossless network, the diagonal (i.e. indices i,i) should be 1, and all other elements (i.e. indices i,j) should be 0.
+
+You can either request a specific matrix element, e.g. with losslessness(2,1), or you can request the worst of all diagonal elements with `losslessness('ii')` (which must all be 1 for a lossless network), or you can request the worst of all non-diagonal elements with `losslessness('ij')` (which must all be 0 for a lossless network).
+
+
+##### passivity()
+
+```python
+passivity() -> SParams
+```
+
+Returns the passivity metric Eigenvalues(S^H·S). For a passive network, this should be ≤ 1.
+
+
+##### reciprocity()
+
+```python
+reciprocity(egress_port=None, ingress_port=None) -> SParams
+```
+Returns the reciprocity metric S[i,j]-S[j,i]. For a reciprocal network, this should be 0.
+
+You can either request a specific matrix element, e.g. with `reciprocity(2,1)`, or you can request the worst of all elements with `reciprocity()`.
+
+
+##### crop_f()
+
+```python
+crop_f(f_start=-inf, f_end=+inf) -> Networks
+```
+
+Returns the same network, but with a reduced frequency range
+
+
+##### add_sr()
+
+```python
+add_sr(resistance, port=]) -> Networks
+```
+
+Returns a network with a series resistance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_sl()
+
+```python
+add_sl(inductance, port=1) -> Networks
+```
+
+Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_sc()
+
+```python
+add_sc(capacitance, port=1) -> Networks
+```
+
+Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_pr()
+
+```python
+add_pr(resistance, port=1) -> Networks
+```
+
+Returns a network with a parallel resistance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_pl()
+
+```python
+add_pl(inductance, port=1) -> Networks
+```
+
+Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_pc()
+
+```python
+add_pc(capacitance, port=1) -> Networks
+```
+Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
+
+
+##### add_tl()
+
+```python
+add_tl(degrees, frequency_hz=1e9, z0=None, loss_db=0, port=1]) -> Networks
+```
+
+Returns a network with anideal transmission line attached to the specified port. Works only for 1-ports and 2-ports.
+
+The length is specified in degrees at the given frequency.
+
+The loss is the real part of the propagation constant, and is constant over frequency.
+
+If `z0` is not provided, the reference impedance of the corresponding port is used.
+
+
+##### add_ltl()
+
+```python
+add_ltl(degrees, len_m, eps_r, db_m_mhz=0, db_m_sqmhz=0, port=1) -> Networks
+```
+
+Returns a network with a lossy transmission line attached to the specified port. Works only for 1-ports and 2-ports.
+
+The length is specified in meters, and the dielectric constant must be provided as well.
+
+The loss is specified in two terms, one in dB/(m⋅Hz), one in dB/(m⋅√Hz).
+
+If `z0` is not provided, the reference impedance of the corresponding port is used.
+
+
+##### rl_avg()
+
+```python
+rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParams
+```
+
+Calculates the average return loss over the given frequency range.
+
+
+##### rl_opt()
+
+```python
+rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) -> SParams
+```
+
+Integrates the return loss over the given integration frequency range, then uses the Bode-Fano limit to calculate the maximum achievable return loss over the given target frequency range.
+
+
+##### plot_stab()
+
+```python
+plot_stab(frequency_hz, port=2, n_points=101, label=None, style='-')
+```
+
+Plots the stability circle at the given frequency.
+
+Set `port=1` if you want to calculate the stability at the input, otherwise the output is calculated.
+
+It adds "s.i." (stable inside circle) or "s.o." (stable outside of the circle) to the plot name.
+
+
+##### s2m()
+
+```python
+s2m(ports):
+```
+
+Single-ended to mixed-mode conversion.
+
+The expected port order for the single-ended network is <pos1, neg1, pos2, neg2, ...>.
+
+You may define your own mapping with <inp>; e.g. if your data is <pos1, pos2, neg1, neg2>, you can provide <inp=['p1','p2','n1','n2']>.
+
+The generated mixed-mode network has port order <diff1, diff2, ..., comm1, comm2, ...>.
+
+##### m2s()
+
+```python
+m2s([inp=<ports>][, outp=<ports>]):
+```
+
+Mixed-mode to single-ended conversion.
+
+The expected port order for the single-ended network is <diff1, diff2, ..., comm1, comm_2, ..>.
+
+You may define your own mapping with <inp>; e.g. if your data is <diff1, diff2, comm1, comm2>, you can provide <inp=['d1','d2','c1','c2']>.
+
+The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
+
+
+##### s2z()
+
+```python
+s2z()
+```
+
+Converts to Z-parameter; useful to plot port impedance.
+
+
+##### s2y()
+
+```python
+s2y()
+```
+
+Converts to Y-parameter; useful to plot port admittance.
+
+
+##### renorm()
+
+```python
+renorm(z)
+```
+
+Renormalize to a specific reference impedance. <z> can be a scalar, or a list of scalars (one per port).
+
+
+##### quick()
+
+```python
+quick(quick(parameter[, parameter...]))
+```
+
+Does the same as the global `quick()` function, see section above.
+
+
+#### Unary Operators
+
+##### Inversion
+
+```python
+~
+```
+
+Same as `invert()`.
+
+
+#### Binary Operators
+
+##### Cascade
+
+```python
+**
+```
+
+Cascades two networks. Frequency grids are interpolated accordingly.
+
+
+### SParams
+
+A container for one or more S-parameters, or X-/Y-data in general.
+
+To get an `SParams` object, call `s()` on a `Networks` object.
+
+#### Methods
+
+
+##### plot()
+
+```python
+plot(label=None, style='-')
+```
+
+Plots the data. `label` is any string. The placeholder `'%n'` is replaced with the name of the parameter.
+
+`style` is a [matplotlib](https://matplotlib.org/stable/users)-compatible format (e.g. `'-'`, `':'`, `'--'`, `'o-'`).
+
+
+##### db()
+
+```python
+db() -> SParams
+```
+
+Returns $20 \cdot \log_{10} S$.
+
+Plot this on a linear scale (otherwise the logarithm is applied *twice*).
+
+##### db20()
+
+```python
+db20() -> SParams
+```
+
+Same as `db20()`.
+
+Plot this on a linear scale (otherwise the logarithm is applied *twice*).
+
+##### db10()
+
+```python
+db10() -> SParams
+```
+
+Returns $10 \cdot \log_{10}S$.
+
+Plot this on a linear scale (otherwise the logarithm is applied *twice*).
+
+
+##### ml()
+
+```python
+ml() -> SParams
+```
+
+Mismatch loss: returns $1-|S²|$.
+
+Plot this on a dB-scale, or use the `db()` function.
+
+
+##### vswr()
+
+```python
+vswr() -> SParams
+```
+
+Voltage Standing Wave Ratio: returns $(1+|S²|)/(1-|S²|)$.
+
+Plot this on a linear scale.
+
+
+
+##### abs()
+
+```python
+abs() -> SParams
+```
+
+Returns $|S|$.
+
+
+##### phase()
+
+```python
+phase(processing=None) -> SParams
+```
+
+Returns the phase.
+
+`processing` can be `None`, `'unwrap'` (unwrap phase), or `'remove_linear'` (unwrap, then remove linear phase).
+
+Plot this on a linear scale.
+
+
+##### crop_f()
+
+```python
+crop_f(f_start=-inf, f_end=+inf) -> SParams.
+```
+
+Returns the same S-Param, but with a reduced frequency range.
+
+#### Unary Operators
+
+
+##### Inversion
+
+```python
+~
+```
+
+Returns the inverse (i.e. $1/S$).
+
+#### Binary Operators
+
+
+```python
++ - * /
+```
+Applies the corresponding mathematical operator. Each operand can also be a numeric constant.
+
+
+Examples
+========
+
+Basic
+-----
+
+```python
+nws().s(1,1).plot("RL")              # plot S11 of all network
+sel_nws().s(1,2).plot("Reverse IL")  # plot S12 of selected networks
+nws("amp.s2p").s(2,1).plot("IL")     # plot S21 of a specific network
+nw("amp.s2p").s(1,1).plot("RL",":")  # plot S11 of a specific network, dashed line
+```
+
+Advanced
+--------
+
+```python
+# calculate directivity (S42/S32) of a directional coupler
+# note that this example requires plotting in linear units, as the values are already converted to dB
+(nw("coupler_4port.s4p").s(4,2).db() - nw("coupler_4port.s4p").s(3,2).db()).plot("Directivity")
+
+# de-embed a 2xTHRU
+(nw("thru.s2p").half(side=1).invert() ** nw("atty_10db.s2p") ** nw("thru.s2p").half(side=2).flip()).s(2,1).plot("De-embedded")
+
+# crop frequency range; this can be handy e.g. if you want to see the Smith-chart only for a specific frequency range
+nws("amp.s2p").crop_f(10e9,11e9).s(1,1).plot("RL",":")
+
+# calculate stability factor
+nws("amp.s2p").mu().plot("µ Stability Factor",":")
+
+# add elements to a network (in this case, a parallel cap, followed by a short transmission line)
+nws("amp.s2p").s(1,1).plot("Baseline",":")
+nws("amp.s2p").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
+
+# Compare S21 of all available networks to the currently selected one
+(nws().s(2,1) / sel_nws().s(2,1)).plot()
+```

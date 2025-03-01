@@ -4,7 +4,6 @@ from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_quick_params
 from .networks import Networks
 from .sparams import SParam, SParams
-from .expressions_help import help
 
 import math
 import numpy as np
@@ -72,8 +71,3 @@ class ExpressionParser:
         }
         
         exec(code, vars_global, vars_local)
-
-
-    @staticmethod
-    def help() -> str:
-        return help()
