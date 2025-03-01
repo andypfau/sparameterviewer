@@ -148,7 +148,7 @@ class PygubuAppUI:
         self.topmenu_main_files.add("separator")
         self.topmenu_main_files.add(
             "command",
-            accelerator="F1",
+            accelerator="Ctrl+I",
             command=self.on_click_info,
             label='File Info')
         self.topmenu_main_files.add(
@@ -288,6 +288,11 @@ class PygubuAppUI:
         self.menu_2.add(tk.CASCADE, menu=self.submenu_4, label='Help')
         self.submenu_4.add(
             "command",
+            accelerator="F1",
+            command=self.on_menu_help,
+            label='Help')
+        self.submenu_4.add(
+            "command",
             command=self.on_menu_about,
             label='About')
         self.toplevel_main.configure(menu=self.menu_2)
@@ -395,6 +400,9 @@ class PygubuAppUI:
         pass
 
     def on_open_settings_click(self):
+        pass
+
+    def on_menu_help(self):
         pass
 
     def on_menu_about(self):

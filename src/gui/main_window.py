@@ -24,9 +24,10 @@ from .settings_dialog import SparamviewerSettingsDialog
 from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
 from .tabular_dialog import TabularDialog, TabularDataset, TabularDatasetSFile, TabularDatasetPlot
-from lib import Clipboard
 from info import Info
 
+from lib import Clipboard
+from lib import open_file_in_default_viewer
 from lib import sparam_to_timedomain, get_sparam_name
 from lib import Si
 from lib import SParamFile, PlotHelper
@@ -201,7 +202,7 @@ class SparamviewerMainDialog(PygubuAppUI):
         no_mod = not ctrl and not alt
         ctrl_only = ctrl and not alt
         if key=='F1' and no_mod:
-            self.on_click_info()
+            self.on_menu_help()
             return 'break'
         if key=='F3' and no_mod:
             self.on_cursor_cmd()
@@ -226,6 +227,9 @@ class SparamviewerMainDialog(PygubuAppUI):
             return 'break'
         if key=='e' and ctrl_only:
             self.on_click_open_externally()
+            return 'break'
+        if key=='i' and ctrl_only:
+            self.on_click_info()
             return 'break'
         return
 
@@ -583,6 +587,24 @@ class SparamviewerMainDialog(PygubuAppUI):
         # show poupu at cursor
         x, y = event.x_root, event.y_root
         menu.post(x, y)
+    
+
+    def on_menu_help(self):
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            help_dir = os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'doc')
+            help_doc = os.path.join(help_dir, 'main.md')
+            if not os.path.exists(help_doc):
+                raise RuntimeError(f'<{help_doc}> not exists')
+        except Exception as ex:
+            logging.exception(f'Unable to locate documentation: {ex}')
+            messagebox.showerror('Unable to locate documentation', f'Unable to locate documentation; try to locate <sparameterviewer/docs> yourself ({ex}).')
+        
+        try:
+            open_file_in_default_viewer(help_doc)
+        except Exception as ex:
+            logging.exception(f'Unable to show documentation ({help_doc}): {ex}')
+            messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{help_doc}> yourself ({ex}).')
 
 
     def on_load_expr(self):

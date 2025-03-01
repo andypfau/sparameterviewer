@@ -1,7 +1,9 @@
-import os, string
+import os
+import string
+import subprocess
 
 
-def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "list[str]":
+def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "str":
     def is_unique(item: str, all: "list[str]") -> bool:
         hits = 0
         for other in all:
@@ -59,3 +61,10 @@ def sanitize_filename(filename: str) -> str:
     VALID_CHARS = '+-_' + string.ascii_letters + string.digits
     sanitized = [char for char in filename if char in VALID_CHARS]
     return ''.join(sanitized)
+
+
+def open_file_in_default_viewer(filename: str):
+    if is_windows():
+        os.startfile(filename)
+    else:
+        subprocess.run(['xdg-open', filename], check=True)

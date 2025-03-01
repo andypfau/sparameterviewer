@@ -353,7 +353,7 @@
                 </child>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_info">
-                    <property name="accelerator">F1</property>
+                    <property name="accelerator">Ctrl+I</property>
                     <property name="command" cbtype="simple" type="command">on_click_info</property>
                     <property name="label" translatable="yes">File Info</property>
                   </object>
@@ -562,6 +562,13 @@
                 <property name="tearoff">false</property>
                 <child>
                   <object class="tk.Menuitem.Command" id="command_4">
+                    <property name="accelerator">F1</property>
+                    <property name="command" type="command" cbtype="simple">on_menu_help</property>
+                    <property name="label" translatable="yes">Help</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command1">
                     <property name="command" cbtype="simple" type="command">on_menu_about</property>
                     <property name="label" translatable="yes">About</property>
                   </object>
