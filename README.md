@@ -6,13 +6,20 @@ A cross-platform S-parameter Viewer written in Python.
 <img src="./doc/screenshot_mainwin_s2p.png" width="250" /> <img src="./doc/screenshot_mainwin_markers.png" width="300" /> <img src="./doc/screenshot_mainwin_expr.png" width="250" />
 
 
+Documentation
+-------------
+
+[See here](./doc/main.md).
+
+
 Main Features
 -------------
 
-- Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay
-- Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness, and for Bode-Fano optimum RL estimation
-    - to learn more about this feature, open the "Expressions" tab, and click "Help"
-- Export to CSV or XLSX
+- Read touchstone (.s#p) and CITI (.cti/.citi) files, including those in .zip-files.
+- Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay.
+- Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness.
+    - to learn more about this feature, open the "Expressions" tab, and click "Help".
+- Export to CSV or XLSX.
 
 
 Prerequisites
