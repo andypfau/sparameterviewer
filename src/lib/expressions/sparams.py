@@ -103,6 +103,14 @@ class SParam:
         return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
 
     
+    def db10(self) -> "SParam":
+        return SParam(self.name, self.f, 10*np.log10(np.maximum(1e-30,np.abs(self.s))), self.z0)
+
+    
+    def db20(self) -> "SParam":
+        return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
+
+    
     def ml(self) -> "SParam":
         return SParam(self.name + ' ML', self.f, 1-(np.abs(self.s)**2), self.z0)
 
