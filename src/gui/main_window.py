@@ -585,10 +585,6 @@ class SparamviewerMainDialog(PygubuAppUI):
         menu.post(x, y)
 
 
-    def on_expr_help(self):
-        dlg = SparamviewerInfoDialog(self.toplevel_main, title='Expression Help', text=ExpressionParser.help())
-
-
     def on_load_expr(self):
 
         if len(TkText.get_text(self.text_expr).strip())>0:

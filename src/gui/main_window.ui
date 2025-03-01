@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.4" author="PygubuDesigner 0.39.3">
+<interface version="1.4" author="PygubuDesigner 0.40.2">
   <project>
     <settings>
       <setting id="name">main_window</setting>
@@ -260,16 +260,6 @@
                                             <layout manager="pack">
                                               <property name="fill">x</property>
                                               <property name="pady">5</property>
-                                              <property name="side">top</property>
-                                            </layout>
-                                          </object>
-                                        </child>
-                                        <child>
-                                          <object class="ttk.Button" id="button_expr_help">
-                                            <property name="command" cbtype="simple" type="command">on_expr_help</property>
-                                            <property name="text" translatable="yes">Help</property>
-                                            <layout manager="pack">
-                                              <property name="pady">10</property>
                                               <property name="side">top</property>
                                             </layout>
                                           </object>
