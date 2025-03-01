@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 
 
 class PygubuAppUI:
-    def __init__(self, master=None):
+    def __init__(self, master=None, data_pool=None):
         # build ui
         self.toplevel_settings = tk.Tk() if master is None else tk.Toplevel(master)
         self.toplevel_settings.configure(height=200, width=200)
@@ -116,7 +116,7 @@ class PygubuAppUI:
             cursor="arrow",
             offvalue="keep",
             onvalue="comment",
-            text='Comment-Out Existing Expressions\nWhen Adding New From Template',
+            text='Comment-Out Existing Expressions',
             variable=self.comment_existing_expr)
         self.checkbutton1.pack(anchor="w", side="top")
         self.checkbutton1.configure(command=self.on_comment_expr_change)
@@ -126,7 +126,7 @@ class PygubuAppUI:
             cursor="arrow",
             offvalue="ignore",
             onvalue="extract",
-            text='Extract .zip-files When Loading Directory',
+            text='Extract .zip-Files',
             variable=self.extract_zip)
         self.checkbutton2.pack(anchor="w", side="top")
         self.checkbutton2.configure(command=self.on_comment_expr_change)

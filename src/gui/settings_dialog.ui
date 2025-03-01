@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.4" author="PygubuDesigner 0.39.3">
+<interface version="1.4" author="PygubuDesigner 0.40.2">
   <project>
     <settings>
       <setting id="name">settings_dialog</setting>
@@ -242,8 +242,7 @@
                 <property name="cursor">arrow</property>
                 <property name="offvalue">keep</property>
                 <property name="onvalue">comment</property>
-                <property name="text" translatable="yes">Comment-Out Existing Expressions
-When Adding New From Template</property>
+                <property name="text" translatable="yes">Comment-Out Existing Expressions</property>
                 <property name="variable">string:comment_existing_expr</property>
                 <layout manager="pack">
                   <property name="anchor">w</property>
@@ -257,7 +256,7 @@ When Adding New From Template</property>
                 <property name="cursor">arrow</property>
                 <property name="offvalue">ignore</property>
                 <property name="onvalue">extract</property>
-                <property name="text" translatable="yes">Extract .zip-files When Loading Directory</property>
+                <property name="text" translatable="yes">Extract .zip-Files</property>
                 <property name="variable">string:extract_zip</property>
                 <layout manager="pack">
                   <property name="anchor">w</property>
