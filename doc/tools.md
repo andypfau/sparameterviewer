@@ -12,9 +12,22 @@ You may select:
 - Which file to display, and 
 - How to display the data, e.g. as real/imaginary, db/degrees, etc.
 
+You can also apply filters:
+- *X*: filter X-values (typically the frequency):
+    - E.g. "1e9-10e9" to filter from 1 GHz to 10 GHz.
+    - E.g. "1e9-*" to filter from 1 GHz, and anything above.
+    - E.g. "*-1e9" to filter to 1 GHz, and anything below.
+- *Cols*: filter for cols; just use the name you see in the table columns, separated by whitespace:
+    - E.g. "S2,1 S2,2" to filter for these two S-parameters.
+    - This filter is ignored for plotted data (which only has one column).
+- Clear the filter text to disable filtering (i.e. show all X-values / columns).
+- Any invalid filter will result in empty table data.
+- Filters are also used when saving files, and when copying data (see below).
+
 From the menu, you can:
 - *Save*: export as .csv (tab-separated) or as .xlsx (spreadsheet).
 - *Edit*: copy to clipboard, either as CSV-data (comma- or tab-separated), or as Python code which can be used with [NumPy](https://numpy.org/).
+- Filters are applied to saved/copied data (see above).
 
 Trace Cursors
 -------------

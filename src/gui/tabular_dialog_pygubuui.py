@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None):
+    def __init__(self, master=None, data_pool=None):
         # build ui
         self.tabular_dialog = tk.Tk() if master is None else tk.Toplevel(master)
         self.tabular_dialog.configure(height=500, width=600)
@@ -21,13 +21,35 @@ class PygubuAppUI:
             "<<ComboboxSelected>>",
             self.on_select_file,
             add="")
+        self.frame3 = ttk.Frame(self.frame1)
+        self.frame3.configure(height=200, width=200)
         self.combobox_format = ttk.Combobox(
-            self.frame1, name="combobox_format")
+            self.frame3, name="combobox_format")
         self.combobox_format.pack(padx=5, pady=5, side="left")
         self.combobox_format.bind(
             "<<ComboboxSelected>>",
             self.on_change_format,
             add="")
+        self.label1 = ttk.Label(self.frame3)
+        self.label1.configure(text='X')
+        self.label1.pack(padx=5, pady=5, side="left")
+        self.entry_x = ttk.Entry(self.frame3, name="entry_x")
+        self.filter_x = tk.StringVar()
+        self.entry_x.configure(textvariable=self.filter_x)
+        self.entry_x.pack(expand=True, fill="x", padx=5, pady=5, side="left")
+        self.label2 = ttk.Label(self.frame3)
+        self.label2.configure(text='Cols')
+        self.label2.pack(padx=5, pady=5, side="left")
+        self.entry_cols = ttk.Entry(self.frame3, name="entry_cols")
+        self.filter_cols = tk.StringVar()
+        self.entry_cols.configure(textvariable=self.filter_cols)
+        self.entry_cols.pack(
+            expand=True,
+            fill="x",
+            padx=5,
+            pady=5,
+            side="left")
+        self.frame3.pack(expand=True, fill="x", side="left")
         self.frame1.pack(fill="x", side="top")
         self.frame2 = ttk.Frame(self.frame_5)
         self.frame2.configure(height=200, width=200)
@@ -82,6 +104,12 @@ class PygubuAppUI:
             command=self.on_copy_numpy,
             hidemargin=False,
             label='Copy Numpy')
+        self.submenu_2.add("separator")
+        self.submenu_2.add(
+            "command",
+            accelerator="Esc",
+            command=self.on_clear_filter,
+            label='Reset Filters')
         self.tabular_dialog.configure(menu=self.menu_2)
 
         # Main widget
@@ -109,6 +137,9 @@ class PygubuAppUI:
         pass
 
     def on_copy_numpy(self):
+        pass
+
+    def on_clear_filter(self):
         pass
 
 

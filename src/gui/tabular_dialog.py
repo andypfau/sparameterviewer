@@ -7,17 +7,15 @@ import math
 import itertools
 import pandas as pd
 import numpy as np
+import copy
 
 
 from .tabular_dialog_pygubuui import PygubuAppUI
-from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard
+from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, TkCommon, TkText
 
 
 
-class TabularDataset:
-    @property
-    def name(self) -> str:
-        raise NotImplementedError()
+class TabularDatasetBase:
     @property
     def name(self) -> str:
         raise NotImplementedError()
@@ -36,6 +34,28 @@ class TabularDataset:
     @property
     def is_spar(self) -> bool:
         raise NotImplementedError()
+    
+class TabularDataset(TabularDatasetBase):
+    def __init__(self, name: str, xcol: str, ycols: list[str], xcol_data: np.ndarray, ycol_datas: list[np.ndarray], is_spar: bool):
+        self._name, self._xcol, self._ycols, self._xcol_data, self._ycol_datas, self._is_spar = name, xcol, ycols, xcol_data, ycol_datas, is_spar
+    @property
+    def name(self) -> str:
+        return self._name
+    @property
+    def xcol(self) -> str:
+        return self._xcol
+    @property
+    def ycols(self) -> list[str]:
+        return self._ycols
+    @property
+    def xcol_data(self) -> np.ndarray:
+        return self._xcol_data
+    @property
+    def ycol_datas(self) -> list[np.ndarray]:
+        return self._ycol_datas
+    @property
+    def is_spar(self) -> bool:
+        return self._is_spar
     
 @dataclasses.dataclass
 class TabularDatasetSFile(TabularDataset):
@@ -94,15 +114,6 @@ class TabularDatasetPlot(TabularDataset):
     @property
     def is_spar(self) -> bool:
         return False
-
-@dataclasses.dataclass
-class FormattedTabularDataset:
-    name: str
-    xcol: str
-    ycols: list[str]
-    xcol_data: np.ndarray
-    ycol_datas: list[np.ndarray]
-
     
 
 
@@ -138,7 +149,33 @@ class TabularDialog(PygubuAppUI):
         self.listbox.column("#0", width=0, stretch=tk.NO)
         self.listbox.heading("#0", text="", anchor=tk.W)
 
+        def on_change_filter(*args, **kwargs):
+            self.on_change_filter()
+        self.filter_x.trace_add('write', on_change_filter)
+        self.filter_cols.trace_add('write', on_change_filter)
+        
+        TkCommon.default_keyhandler(self.tabular_dialog, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
+        TkText.default_keyhandler(self.entry_x, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
+        TkText.default_keyhandler(self.entry_cols, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
+
         self.update_data()
+    
+
+    def on_check_for_global_keystrokes(self, key, ctrl, alt, **kwargs):
+        no_mod = not ctrl and not alt
+        if key=='Escape' and no_mod:
+            self.on_clear_filter()
+            return 'break'
+        return
+    
+
+    def on_change_filter(self):
+        self.update_data()
+
+
+    def on_clear_filter(self):
+        self.filter_x.set('')
+        self.filter_cols.set('')
         
 
     def run(self, focus: bool = True):
@@ -185,6 +222,7 @@ class TabularDialog(PygubuAppUI):
         dataset = self.selected_dataset
         if dataset is None:
             return
+        dataset = self.filter_dataset(dataset)
 
         filename = filedialog.asksaveasfilename(
             title='Save Tabular Data', confirmoverwrite=True, defaultextension='.csv',
@@ -234,7 +272,7 @@ class TabularDialog(PygubuAppUI):
         
     def plot_data(self, dataset: "TabularDataset"):
 
-        ds_fmt = self.format_dataset(dataset)
+        ds_fmt = self.format_dataset(self.filter_dataset(dataset))
 
         cols = [ds_fmt.xcol] + list(ds_fmt.ycols)
         all_columns = [ds_fmt.xcol_data] + list(ds_fmt.ycol_datas)
@@ -252,14 +290,15 @@ class TabularDialog(PygubuAppUI):
 
         
     def copy_data_csv(self, dataset: "TabularDataset", separator: str = '\t'):
-        ds_fmt = self.format_dataset(dataset)
+        ds_fmt = self.format_dataset(self.filter_dataset(dataset))
         df = self.get_dataframe(ds_fmt)
         sio = io.StringIO()
-        df.to_csv(sio, index=None)
+        df.to_csv(sio, index=None, sep=separator)
         Clipboard.copy_string(sio.getvalue())
 
         
     def copy_data_numpy(self, dataset: "TabularDataset"):
+        dataset = self.filter_dataset(dataset)
         def sanitize_name(name: str) -> str:
             return re.sub('\W|^(?=\d)', '_', name)
         def fmt(x) -> str:
@@ -291,7 +330,7 @@ class TabularDialog(PygubuAppUI):
 
     def save_spreadsheets_all(self, filename: str):
         names = [dataset.name for dataset in self.datasets]
-        dataframes = [self.get_dataframe(dataset) for dataset in self.datasets]
+        dataframes = [self.get_dataframe(self.filter_dataset(dataset)) for dataset in self.datasets]
 
         writer = pd.ExcelWriter(filename)
         for name,df in zip(names,dataframes):
@@ -299,7 +338,92 @@ class TabularDialog(PygubuAppUI):
         writer.close()
     
 
-    def format_dataset(self, dataset: TabularDataset) -> FormattedTabularDataset:
+    def get_filters(self):
+        
+        def parse_x(s):
+            s = s.strip()
+            if s=='':
+                return any
+            
+            def extract_float(s):
+                if (m := re.match(r'^[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?', s)):
+                    return float(m.group()), s[len(m.group()):].strip()
+                return False
+            
+            if s.startswith('*'):
+                s = s[1:].strip()
+                if s.startswith('-'):
+                    s = s[1:].strip()
+                    if (m := extract_float(s)):
+                        (b,s) = m
+                        if s == '':
+                            return -1e99,b
+                    
+            if (m := extract_float(s)):
+                (a,s) = m
+                s = s.strip()
+                if s.startswith('-'):
+                    s = s[1:].strip()
+                    if (m := extract_float(s)):
+                        (b,s) = m
+                        if s.strip() == '':
+                            return a,b
+                    elif s.startswith('*'):
+                        s = s[1:].strip()
+                        if s.strip() == '':
+                            return a,+1e99
+
+            return None
+        
+        def parse_cols(s):
+            s = s.strip()
+            if s=='':
+                return any
+            parts = [p for p in re.split(r'\s+', s) if p!='']
+            return parts
+
+        filter_x = parse_x(self.filter_x.get())
+        filter_cols = parse_cols(self.filter_cols.get())
+
+        return filter_x, filter_cols
+
+
+    def filter_dataset(self, dataset: TabularDataset) -> TabularDataset:
+        
+        ycols = dataset.ycols
+        xcol_data = dataset.xcol_data
+        ycol_datas = dataset.ycol_datas
+
+        filter_x, filter_cols = self.get_filters()
+
+        if not dataset.is_spar:
+            filter_cols = any  # ignore filter
+        
+        if filter_x is None or filter_cols is None:
+            return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
+        
+        if filter_cols is not any:
+            ycols_filtered = []
+            ycol_datas_filtered = []
+            for col in filter_cols:
+                for colname,coldata in zip(ycols, ycol_datas):
+                    if colname == col:
+                        ycols_filtered.append(colname)
+                        ycol_datas_filtered.append(coldata)
+                        break
+            ycols, ycol_datas = ycols_filtered, ycol_datas_filtered
+        
+        if filter_x is not any:
+            (x1, x2) = filter_x
+            mask = (xcol_data >= x1) & (xcol_data <= x2)
+            xcol_data = xcol_data[mask]
+            for i in range(len(ycol_datas)):
+                ycol_datas[i] = ycol_datas[i][mask]
+        
+        return TabularDataset(dataset.name, dataset.xcol, ycols, xcol_data, ycol_datas, dataset.is_spar)
+
+
+    def format_dataset(self, dataset: TabularDataset) -> TabularDataset:
         
         def interleave_lists(*lists):
             return list(itertools.chain(*zip(*lists)))
@@ -314,8 +438,8 @@ class TabularDialog(PygubuAppUI):
                     [name+' / dB' for name in ycols],
                     [name+' / Rad' for name in ycols])
                 ycol_datas = interleave_lists(
-                    [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas],
-                    [np.angle(col) for col in dataset.ycol_datas])
+                    [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in ycol_datas],
+                    [np.angle(col) for col in ycol_datas])
             
             elif selected_format == 'Mag / dB, Phase / Deg':
                 ycols = interleave_lists(
@@ -332,7 +456,7 @@ class TabularDialog(PygubuAppUI):
             elif selected_format == 'Mag (linear)':
                 ycol_datas = [np.abs(col) for col in dataset.ycol_datas]
 
-            elif selected_format == 'Complex':
+            elif selected_format == 'Real, Imaginary':
                 ycols = interleave_lists(
                     [name+' / re' for name in ycols],
                     [name+' / im' for name in ycols])
@@ -354,7 +478,7 @@ class TabularDialog(PygubuAppUI):
             # dataset is not S-params, so formatting of the data is probably not intended
             pass
         
-        return FormattedTabularDataset( dataset.name, dataset.xcol, ycols, dataset.xcol_data, ycol_datas)
+        return TabularDataset( dataset.name, dataset.xcol, ycols, dataset.xcol_data, ycol_datas, dataset.is_spar)
     
 
     def stringify_row(self, row: list[complex]) -> list[str]:
