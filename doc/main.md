@@ -11,7 +11,7 @@ Getting Started
 3. At the bottom of the main window, select one or multiple files (hold CTRL to select multiple).
 4. Select the parameters you want to see, e.g. *Insertion Loss*, and a format, e.g. *dB*.
 
-### Parameters
+### Plottable Parameters
 
 - *All S-Params*: all terms
 - *Insertion Loss*: only the $S_{i,j}$-terms, e.g. $S_{21}$ or $S_{12}$.
@@ -19,7 +19,7 @@ Getting Started
 - *Return Loss*: only the $S_{i,i}$-terms, e.g. $S_{11}$ or $S_{22}$.
 - *Expression-Based*: use expressions (see later section).
 
-### Formats
+### Plot Formats
 - *dB*: logarithmic magnitude in decibels (20⋅log10), vs. frequency.
 - *Log. Magnitude*: logarithmic magnitude vs. frequency.
 - *Linear Magnitude*: linear magnitude vs. frequency; useful to plot some metrics like e.g. VSWR, stability, etc.
@@ -36,22 +36,26 @@ Getting Started
 - *Impulse Response*: impulse response vs. time (i.e. time-domain transformation). See also notes below.
 - *Step Response*: same as before, but integrated to get step response.
 
-### Expressions
+Supported Formats
+-----------------
+
+- Touchtone files (.s1p, .s2p, etc.): standard S-parameter files.
+- CITI files (.cti or .citi): a data format for n-dimensional data. Since there is no hard specification on the variable names, the following names are assumed (case-insensitive):
+    - Frequency: `f`, `freq` or `frequency`.
+    - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
+- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (see [Settings](settings.md)).
+
+Expressions
+-----------
 
 [See here](expressions.md).
-
 
 Additional Tools
 ----------------
 
-### Optimum RL Calculator
+[See here](tools.md).
 
-Allows you to calculate the maximum achievable return loss (RL), if matched optimally.
+Settings
+-----------
 
-This is done by calculating the integral of the RL over a given (wide) freqeuncy interval, and then calculating the mean RL in a narrower freqeuncy interval (Bode-Fano limit).
-
-Example: you have an RF structure that must be operational from 4 GHz to 6 GHz. You measure the S-parameters from 10 MHz to 8 GHz, and the calculated mean RL (result of the integration) is 10 dB. With optimum matching, using only reactive components, you could theoretically achieve 39.95 dB RL in the 4..6 GHz region. This of course would mean that the frequencies below 4 GHz, and above 6 GHz would then have to be completely mismatched.
-
-One theoretical example of such a scenario could be an inductive series element, which ruins the match. Adding capacitve pads to either end of the inductive element could form a band-pass structure, which has the same or at least similar integrated RL, but a much better RL within a narrow frequency interval, while outside of that interval the RL becomes worse.
-
-This tool can make no suggestions about *how* to achieve the matching.
+[See here](settings.md).
