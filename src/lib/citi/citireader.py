@@ -64,13 +64,20 @@ class CitiReader:
         f = None
         s_dict = {}
         highest_port = 0
+
+        def parse_sparam_name(name):
+            if (m := re.match(r'S[\(\[]([0-9]+),([0-9]+)[\]\)]', data_name, re.IGNORECASE)):
+                return int(m.group(1)), int(m.group(2))
+            if (m := re.match(r'S[\(\[]([0-9])([0-9])[\]\)]', data_name, re.IGNORECASE)):
+                return int(m.group(1)), int(m.group(2))
+            return None, None
+
         for data_name in self.datas:
 
-            m = re.match(r'S[\(\[]([0-9]+),([0-9]+)[\]\)]', data_name)
-            if not m:
+            egress_port, ingress_port = parse_sparam_name(data_name)
+            if egress_port is None or ingress_port is None:
                 continue
-            egress_port = int(m.group(1))
-            ingress_port = int(m.group(2))
+            
             dict_key = (egress_port,ingress_port)
             highest_port = max(highest_port, max(egress_port, ingress_port))
 
