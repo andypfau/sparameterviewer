@@ -68,6 +68,10 @@ class SParamFile:
     def nw(self):
         self._load()
         return self._nw
+
+    @property
+    def archive_path(self):
+        return self._archive_path
     
 
     def loaded(self) -> bool:

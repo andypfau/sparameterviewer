@@ -649,21 +649,51 @@ class SparamviewerMainDialog(PygubuAppUI):
 
     def get_info_str(self, sparam_file: SParamFile) -> str:
         
-        try:
-            size = f'{os.path.getsize(sparam_file.file_path):,.0f} B'
-            fmt_tstamp = lambda ts: f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
-            created = fmt_tstamp(os.path.getctime(sparam_file.file_path))
-            modified = fmt_tstamp(os.path.getmtime(sparam_file.file_path))
-        except:
-            size = 'unknown'
-            created = 'unknown'
-            modified = 'unknown'
         f0, f1 = sparam_file.nw.f[0], sparam_file.nw.f[-1]
         n_pts = len(sparam_file.nw.f)
-        dir, fname = os.path.split(sparam_file.file_path)
-        dir = os.path.abspath(dir)
-        comm = '' if sparam_file.nw.comments is None else sparam_file.nw.comments.strip()
+        _, fname = os.path.split(sparam_file.file_path)
+        comm = '' if sparam_file.nw.comments is None else sparam_file.nw.comments
         n_ports = sparam_file.nw.s.shape[1]
+
+        fileinfo = ''
+        def fmt_tstamp(ts):
+            return f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
+        if sparam_file.archive_path is not None:
+            fileinfo += f'Archive path: {os.path.abspath(sparam_file.archive_path)}\n'
+            try:
+                created = fmt_tstamp(os.path.getctime(sparam_file.archive_path))
+                fileinfo += f'Archive created: {created}, '
+            except:
+                fileinfo += f'Archive created: unknoown, '
+            try:
+                modified = fmt_tstamp(os.path.getmtime(sparam_file.archive_path))
+                fileinfo += f'last modified: {modified}\n'
+            except:
+                fileinfo += f'last modified: unknown\n'
+            try:
+                size = f'{os.path.getsize(sparam_file.archive_path):,.0f} B'
+                fileinfo += f'Archive size: {size}\n'
+            except:
+                fileinfo += f'Archive size: unknown\n'
+            fileinfo += f'File path in archive: {sparam_file.file_path}\n'
+        else:
+            fileinfo += f'File path: {os.path.abspath(sparam_file.file_path)}\n'
+            try:
+                created = fmt_tstamp(os.path.getctime(sparam_file.file_path))
+                fileinfo += f'File created: {created}, '
+            except:
+                fileinfo += f'File created: unknoown, '
+            try:
+                modified = fmt_tstamp(os.path.getmtime(sparam_file.file_path))
+                fileinfo += f'last modified: {modified}\n'
+            except:
+                fileinfo += f'last modified: unknown\n'
+            try:
+                size = f'{os.path.getsize(sparam_file.file_path):,.0f} B'
+                fileinfo += f'File size: {size}\n'
+            except:
+                fileinfo += f'File size: unknown\n'
+        
         if (sparam_file.nw.z0 == sparam_file.nw.z0[0,0]).all():
             z0 = str(Si(sparam_file.nw.z0[0,0],'Ohm'))
         else:
@@ -673,9 +703,12 @@ class SparamviewerMainDialog(PygubuAppUI):
         info += '-'*len(fname)+'\n\n'
         
         if len(comm)>0:
-            info += comm + '\n\n'
+            for comm_line in comm.splitlines():
+                info += comm_line.strip() + '\n'
+            info += '\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
         info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}'
+        
         freq_steps = np.diff(sparam_file.nw.f)
         n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
         if np.allclose(freq_steps,freq_steps[0]):
@@ -695,9 +728,7 @@ class SparamviewerMainDialog(PygubuAppUI):
                 info += f', non-equidistant spacing ({n_points_str}, average spacing {Si(freq_step,"Hz")})'
         info += '\n\n'
 
-        info += f'File created: {created}, last modified: {modified}\n'
-        info += f'File size: {size}\n'
-        info += f'File path: {os.path.join(dir, fname)}'
+        info += fileinfo
 
         return info
 
