@@ -2,10 +2,11 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.27b1 (2025-03-01)
+0.27b1 (2025-03-02)
 -------------------
 
 - new: filters in tabular dialog
+- change: more intuitive input handling of frequency ranges, e.g. "1G - 10G"
 
 
 0.26b1 (2025-02-28)
