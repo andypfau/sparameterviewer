@@ -39,10 +39,11 @@ class PygubuAppUI:
             variable=self.enable_filter_x)
         self.checkbutton1.pack(padx=5, pady=5, side="left")
         self.checkbutton1.configure(command=self.on_enable_filter)
-        self.entry_x = ttk.Entry(self.frame3, name="entry_x")
+        self.entry_x = ttk.Combobox(self.frame3, name="entry_x")
         self.filter_x = tk.StringVar()
-        self.entry_x.configure(textvariable=self.filter_x)
+        self.entry_x.configure(textvariable=self.filter_x, validate="all")
         self.entry_x.pack(expand=True, fill="x", padx=5, pady=5, side="left")
+        self.entry_x.configure(validatecommand=self.on_change_filter_x)
         self.checkbutton2 = ttk.Checkbutton(self.frame3)
         self.enable_filter_cols = tk.StringVar()
         self.checkbutton2.configure(
@@ -52,15 +53,18 @@ class PygubuAppUI:
             variable=self.enable_filter_cols)
         self.checkbutton2.pack(padx=5, pady=5, side="left")
         self.checkbutton2.configure(command=self.on_enable_filter)
-        self.entry_cols = ttk.Entry(self.frame3, name="entry_cols")
+        self.entry_cols = ttk.Combobox(self.frame3, name="entry_cols")
         self.filter_cols = tk.StringVar()
-        self.entry_cols.configure(textvariable=self.filter_cols)
+        self.entry_cols.configure(
+            textvariable=self.filter_cols,
+            validate="all")
         self.entry_cols.pack(
             expand=True,
             fill="x",
             padx=5,
             pady=5,
             side="left")
+        self.entry_cols.configure(validatecommand=self.on_change_filter_cols)
         self.frame3.pack(expand=True, fill="x", side="left")
         self.frame1.pack(fill="x", side="top")
         self.frame2 = ttk.Frame(self.frame_5)
@@ -131,6 +135,12 @@ class PygubuAppUI:
         pass
 
     def on_enable_filter(self):
+        pass
+
+    def on_change_filter_x(self):
+        pass
+
+    def on_change_filter_cols(self):
         pass
 
     def on_save_single(self):

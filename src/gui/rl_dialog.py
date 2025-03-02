@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import skrf, copy, math, cmath, glob, os
 
-from lib import SParamFile, AppGlobal, BodeFano, TkText, Si, parse_si_range
+from lib import SParamFile, AppGlobal, BodeFano, TkText, Si, parse_si_range, format_si_range
 from .rl_dialog_pygubuui import PygubuAppUI
 from .settings import Settings
 
@@ -46,17 +46,23 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         toolbar.update()
         self.canvas.get_tk_widget().pack(expand=True, fill='both')
         
+        self.entry_int['values'] = (
+            format_si_range(any, any, allow_total_wildcard=True),
+            format_si_range(0, 100e9),
+        )
+        self.entry_tgt['values'] = (
+            format_si_range(1e9, 2e9),
+        )
+        
         # defaults
         self.port.set("1")
-        self.int_range.set("0 - 100G")
-        self.target_range.set("1G - 2G")
+        self.int_range.set(format_si_range(0, 100e9))
+        self.tgt_range.set(format_si_range(1e9, 2e9))
 
-        def on_change(*args, **kwargs):
-            self.on_change()
-        self.port.trace_add('write', on_change)
-        self.int_range.trace_add('write', on_change)
-        self.target_range.trace_add('write', on_change)
-        self.plot_kind.trace_add('write', on_change)
+        self.port.trace_add('write', self.on_change)
+        self.int_range.trace_add('write', self.on_change)
+        self.tgt_range.trace_add('write', self.on_change)
+        self.plot_kind.trace_add('write', self.on_change)
 
         # update
         self.on_change()
@@ -78,7 +84,7 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
             file = self.files[self.combobox_files.current()]
             port = int(self.port.get())
             (int0, int1) = parse_si_range(self.int_range.get())
-            (tgt0, tgt1) = parse_si_range(self.target_range.get(), wildcard_low=None, wildcard_high=None)
+            (tgt0, tgt1) = parse_si_range(self.tgt_range.get(), wildcard_low=None, wildcard_high=None)
             plot_kind = self.plot_kind.get()
         except Exception as ex:
             error(f'Unable to parse input ({ex})')

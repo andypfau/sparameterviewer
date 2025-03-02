@@ -11,7 +11,7 @@ import copy
 
 
 from .tabular_dialog_pygubuui import PygubuAppUI
-from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, TkCommon, TkText, parse_si_range
+from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, TkCommon, TkText, parse_si_range, format_si_range
 
 
 
@@ -148,18 +148,23 @@ class TabularDialog(PygubuAppUI):
 
         self.listbox.column("#0", width=0, stretch=tk.NO)
         self.listbox.heading("#0", text="", anchor=tk.W)
+        
+        self.entry_x['values'] = (
+            format_si_range(any, any, allow_total_wildcard=True),
+            format_si_range(0, 100e9),
+        )
+        self.filter_x.set(format_si_range(0, 100e9))
 
-        self.filter_x.set('0 - 100G')
+        self.entry_cols['values'] = (
+            'S2,1',
+            'S1,1 S2,1 S2,2',
+            'S1,1 S2,1 S1,2 S2,2',
+            'S1,1 S2,2',
+        )
         self.filter_cols.set('S1,1 S2,1 S2,2')
 
-        def on_change_filter(*args, **kwargs):
-            self.on_change_filter()
-        self.filter_x.trace_add('write', on_change_filter)
-        self.filter_cols.trace_add('write', on_change_filter)
-        
-        TkCommon.default_keyhandler(self.tabular_dialog, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
-        TkText.default_keyhandler(self.entry_x, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
-        TkText.default_keyhandler(self.entry_cols, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(**kwargs))
+        self.filter_x.trace_add('write', self.on_change_filter_x)
+        self.filter_cols.trace_add('write', self.on_change_filter_cols)
 
         self.update_data()
     
@@ -172,11 +177,17 @@ class TabularDialog(PygubuAppUI):
         return
     
 
-    def on_enable_filter(self):
+    def on_enable_filter(self, *args):
         self.update_data()
     
 
-    def on_change_filter(self):
+    def on_change_filter_x(self, *args):
+        self.enable_filter_x.set('filter')
+        self.update_data()
+    
+
+    def on_change_filter_cols(self, *args):
+        self.enable_filter_cols.set('filter')
         self.update_data()
         
 

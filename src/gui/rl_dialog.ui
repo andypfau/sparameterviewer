@@ -101,8 +101,11 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Entry" id="entry_1">
+              <object class="ttk.Combobox" id="entry_int" named="True">
                 <property name="textvariable">string:int_range</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="">on_change</property>
+                <property name="values">int_range</property>
                 <layout manager="pack">
                   <property name="padx">5</property>
                   <property name="pady">5</property>
@@ -121,8 +124,11 @@
               </object>
             </child>
             <child>
-              <object class="ttk.Entry" id="entry1">
-                <property name="textvariable">string:target_range</property>
+              <object class="ttk.Combobox" id="entry_tgt" named="True">
+                <property name="textvariable">string:tgt_range</property>
+                <property name="validate">all</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="">on_change</property>
+                <property name="values">tgt_range</property>
                 <layout manager="pack">
                   <property name="padx">5</property>
                   <property name="pady">5</property>

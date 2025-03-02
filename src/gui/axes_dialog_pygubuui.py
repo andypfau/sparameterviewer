@@ -14,47 +14,48 @@ class PygubuAppUI:
         self.labelframe_7.configure(
             height=200,
             padding=5,
+            relief="flat",
             text='Vertical / Y',
             width=200)
-        self.entry_7 = ttk.Entry(self.labelframe_7)
+        self.combo_y = ttk.Combobox(self.labelframe_7, name="combo_y")
         self.y_var = tk.StringVar()
-        self.entry_7.configure(textvariable=self.y_var, validate="all")
-        self.entry_7.pack(padx=3, pady=3, side="top")
-        _validatecmd = (self.entry_7.register(self.on_y), "%P", "%V")
-        self.entry_7.configure(validatecommand=_validatecmd)
-        self.button1 = ttk.Button(self.labelframe_7)
-        self.button1.configure(text='Auto')
-        self.button1.pack(padx=3, pady=3, side="left")
-        self.button1.configure(command=self.on_auto_y)
-        self.button2 = ttk.Button(self.labelframe_7)
-        self.button2.configure(text='Fixed')
-        self.button2.pack(padx=3, pady=3, side="right")
-        self.button2.configure(command=self.on_fixed_y)
+        self.combo_y.configure(textvariable=self.y_var, validate="all")
+        self.combo_y.pack(side="top")
+        _validatecmd = (self.combo_y.register(self.on_y), "%P", "%V")
+        self.combo_y.configure(validatecommand=_validatecmd)
         self.labelframe_7.grid(column=0, row=0)
         self.labelframe_6 = ttk.Labelframe(self.frame_15)
         self.labelframe_6.configure(
             height=200,
             padding=5,
+            relief="flat",
             text='Horizontal / X',
             width=200)
-        self.entry_9 = ttk.Entry(self.labelframe_6)
+        self.combo_x = ttk.Combobox(self.labelframe_6, name="combo_x")
         self.x_var = tk.StringVar()
-        self.entry_9.configure(textvariable=self.x_var, validate="all")
-        self.entry_9.pack(padx=3, pady=3, side="top")
-        _validatecmd = (self.entry_9.register(self.on_x), "%P", "%V")
-        self.entry_9.configure(validatecommand=_validatecmd)
-        self.button3 = ttk.Button(self.labelframe_6)
-        self.button3.configure(text='Auto')
-        self.button3.pack(padx=3, pady=3, side="left")
-        self.button3.configure(command=self.on_auto_x)
-        self.button4 = ttk.Button(self.labelframe_6)
-        self.button4.configure(text='Fixed')
-        self.button4.pack(padx=3, pady=3, side="right")
-        self.button4.configure(command=self.on_fixed_x)
+        self.combo_x.configure(textvariable=self.x_var, validate="all")
+        self.combo_x.pack(side="top")
+        _validatecmd = (self.combo_x.register(self.on_x), "%P", "%V")
+        self.combo_x.configure(validatecommand=_validatecmd)
         self.labelframe_6.grid(column=1, row=1)
-        self.label1 = ttk.Label(self.frame_15)
-        self.label1.configure(text='Plot')
-        self.label1.grid(column=1, row=0)
+        self.frame1 = ttk.Frame(self.frame_15)
+        self.frame1.configure(height=200, width=200)
+        self.frame2 = ttk.Frame(self.frame1)
+        self.frame2.configure(height=200, width=200)
+        self.separator2 = ttk.Separator(self.frame2)
+        self.separator2.configure(orient="vertical")
+        self.separator2.pack(expand=True, fill="y", side="left")
+        self.label1 = ttk.Label(self.frame2)
+        self.label1.configure(
+            justify="center",
+            padding=10,
+            text='    Plot    ')
+        self.label1.pack(side="right")
+        self.frame2.pack(anchor="sw", expand=True, fill="both", side="top")
+        self.separator1 = ttk.Separator(self.frame1)
+        self.separator1.configure(orient="horizontal")
+        self.separator1.pack(expand=True, fill="x", side="bottom")
+        self.frame1.grid(column=1, row=0)
         self.frame_15.pack(side="top")
 
         # Main widget
@@ -66,19 +67,7 @@ class PygubuAppUI:
     def on_y(self, p_entry_value, v_condition):
         pass
 
-    def on_auto_y(self):
-        pass
-
-    def on_fixed_y(self):
-        pass
-
     def on_x(self, p_entry_value, v_condition):
-        pass
-
-    def on_auto_x(self):
-        pass
-
-    def on_fixed_x(self):
         pass
 
 

@@ -46,17 +46,25 @@ class PygubuAppUI:
         self.label2 = ttk.Label(self.labelframe_2)
         self.label2.configure(text='Integration:')
         self.label2.pack(padx=5, pady=5, side="left")
-        self.entry_1 = ttk.Entry(self.labelframe_2)
+        self.entry_int = ttk.Combobox(self.labelframe_2, name="entry_int")
         self.int_range = tk.StringVar()
-        self.entry_1.configure(textvariable=self.int_range)
-        self.entry_1.pack(padx=5, pady=5, side="left")
+        self.entry_int.configure(
+            textvariable=self.int_range,
+            validate="all",
+            values='int_range')
+        self.entry_int.pack(padx=5, pady=5, side="left")
+        self.entry_int.configure(validatecommand=self.on_change)
         self.label1 = ttk.Label(self.labelframe_2)
         self.label1.configure(text='Target:')
         self.label1.pack(padx=5, pady=5, side="left")
-        self.entry1 = ttk.Entry(self.labelframe_2)
-        self.target_range = tk.StringVar()
-        self.entry1.configure(textvariable=self.target_range)
-        self.entry1.pack(padx=5, pady=5, side="left")
+        self.entry_tgt = ttk.Combobox(self.labelframe_2, name="entry_tgt")
+        self.tgt_range = tk.StringVar()
+        self.entry_tgt.configure(
+            textvariable=self.tgt_range,
+            validate="all",
+            values='tgt_range')
+        self.entry_tgt.pack(padx=5, pady=5, side="left")
+        self.entry_tgt.configure(validatecommand=self.on_change)
         self.labelframe_2.pack(fill="x", side="top")
         self.labelframe_4 = ttk.Labelframe(self.frame_9)
         self.labelframe_4.configure(

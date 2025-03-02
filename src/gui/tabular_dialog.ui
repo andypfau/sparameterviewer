@@ -89,10 +89,12 @@
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Entry" id="entry_x" named="True">
+                  <object class="ttk.Combobox" id="entry_x" named="True">
                     <property name="textvariable">string:filter_x</property>
+                    <property name="validate">all</property>
+                    <property name="validatecommand" type="command" cbtype="entry_validate" args="">on_change_filter_x</property>
                     <layout manager="pack">
-                      <property name="expand">True</property>
+                      <property name="expand">true</property>
                       <property name="fill">x</property>
                       <property name="padx">5</property>
                       <property name="pady">5</property>
@@ -115,8 +117,10 @@
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Entry" id="entry_cols" named="True">
+                  <object class="ttk.Combobox" id="entry_cols" named="True">
                     <property name="textvariable">string:filter_cols</property>
+                    <property name="validate">all</property>
+                    <property name="validatecommand" type="command" cbtype="entry_validate" args="">on_change_filter_cols</property>
                     <layout manager="pack">
                       <property name="expand">true</property>
                       <property name="fill">x</property>
