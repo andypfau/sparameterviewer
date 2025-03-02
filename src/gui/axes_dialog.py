@@ -42,11 +42,12 @@ class SparamviewerAxesDialog(PygubuAppUI):
 
         self.update_ui_vars_from_status_vars()
         
+        self.toplevel_axes.grab_set()  # modal dialog
 
-    def run(self, focus: bool = True):
-        if focus:
-            self.mainwindow.focus_force()
-        super().run()
+
+    def update_vars(self, x0, x1, xauto, y0, y1, yauto):
+        self.x0, self.x1, self.xauto, self.y0, self.y1, self.yauto = x0, x1, xauto, y0, y1, yauto
+        self.update_ui_vars_from_status_vars()
     
 
     def update_ui_vars_from_status_vars(self):
