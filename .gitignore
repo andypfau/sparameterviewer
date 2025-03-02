@@ -1,5 +1,6 @@
 **/__pycache__
-src/sparamviewer.log
+**/sparamviewer.log
+**/sparamviewer.log.*
 src/dist
 src/build
 share
