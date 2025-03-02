@@ -95,6 +95,10 @@ class PygubuAppUI:
         self.button_gen_expr = ttk.Button(self.frame2)
         self.button_gen_expr.configure(text='Template...')
         self.button_gen_expr.pack(fill="x", pady=5, side="top")
+        self.button1 = ttk.Button(self.frame2)
+        self.button1.configure(text='Help')
+        self.button1.pack(fill="x", pady=15, side="top")
+        self.button1.configure(command=self.on_expr_help)
         self.frame2.pack(anchor="n", side="left")
         self.scrollbarhelper_2 = ScrollbarHelper(
             self.frame_8, scrolltype="both")
@@ -319,6 +323,9 @@ class PygubuAppUI:
         pass
 
     def callback(self, event=None):
+        pass
+
+    def on_expr_help(self):
         pass
 
     def on_tab_change(self, event=None):

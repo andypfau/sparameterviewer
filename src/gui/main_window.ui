@@ -264,6 +264,17 @@
                                             </layout>
                                           </object>
                                         </child>
+                                        <child>
+                                          <object class="ttk.Button" id="button1">
+                                            <property name="command" type="command" cbtype="simple">on_expr_help</property>
+                                            <property name="text" translatable="yes">Help</property>
+                                            <layout manager="pack">
+                                              <property name="fill">x</property>
+                                              <property name="pady">15</property>
+                                              <property name="side">top</property>
+                                            </layout>
+                                          </object>
+                                        </child>
                                       </object>
                                     </child>
                                     <child>

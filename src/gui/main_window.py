@@ -590,19 +590,11 @@ class SparamviewerMainDialog(PygubuAppUI):
     
 
     def on_menu_help(self):
-        try:
-            helpfile_path = os.path.join(AppGlobal.get_help_dir(), 'main.md')
-            if not os.path.exists(helpfile_path):
-                raise RuntimeError(f'<{helpfile_path}> not exists')
-        except Exception as ex:
-            logging.exception(f'Unable to locate documentation: {ex}')
-            messagebox.showerror('Unable to locate documentation', f'Unable to locate documentation; try to locate <sparameterviewer/docs> yourself ({ex}).')
-        
-        try:
-            open_file_in_default_viewer(helpfile_path)
-        except Exception as ex:
-            logging.exception(f'Unable to show documentation ({helpfile_path}): {ex}')
-            messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{helpfile_path}> yourself ({ex}).')
+        AppGlobal.show_help()
+
+
+    def on_expr_help(self):
+        AppGlobal.show_help('expressions.md')
 
 
     def on_load_expr(self):

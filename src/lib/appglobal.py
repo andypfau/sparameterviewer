@@ -1,10 +1,10 @@
-from tkinter import Toplevel
+from tkinter import Toplevel, messagebox
 import os
 import logging
 import sys
 import tkinter
 
-from .utils import is_windows
+from .utils import is_windows, open_file_in_default_viewer
 
 
 class AppGlobal:
@@ -63,3 +63,21 @@ class AppGlobal:
 
         except Exception as ex:
             logging.exception(f'Unable to set toplevel icon: {ex}')
+
+
+
+    @staticmethod
+    def show_help(doc: str = 'main.md'):
+        try:
+            helpfile_path = os.path.join(AppGlobal.get_help_dir(), doc)
+            if not os.path.exists(helpfile_path):
+                raise RuntimeError(f'<{helpfile_path}> not exists')
+        except Exception as ex:
+            logging.exception(f'Unable to locate documentation: {ex}')
+            messagebox.showerror('Unable to locate documentation', f'Unable to locate documentation; try to locate <sparameterviewer/docs> yourself ({ex}).')
+        
+        try:
+            open_file_in_default_viewer(helpfile_path)
+        except Exception as ex:
+            logging.exception(f'Unable to show documentation ({helpfile_path}): {ex}')
+            messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{helpfile_path}> yourself ({ex}).')
