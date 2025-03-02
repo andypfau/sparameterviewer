@@ -46,7 +46,7 @@ class SparamviewerMainDialog(PygubuAppUI):
         super().__init__()
 
         try:
-            self.directories = []
+            self.directories = [] # type: list[str]
             self.next_file_tag = 1
             self.files: list[SParamFile]
             self.files = []
@@ -591,20 +591,18 @@ class SparamviewerMainDialog(PygubuAppUI):
 
     def on_menu_help(self):
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            help_dir = os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'doc')
-            help_doc = os.path.join(help_dir, 'main.md')
-            if not os.path.exists(help_doc):
-                raise RuntimeError(f'<{help_doc}> not exists')
+            helpfile_path = os.path.join(AppGlobal.get_help_dir(), 'main.md')
+            if not os.path.exists(helpfile_path):
+                raise RuntimeError(f'<{helpfile_path}> not exists')
         except Exception as ex:
             logging.exception(f'Unable to locate documentation: {ex}')
             messagebox.showerror('Unable to locate documentation', f'Unable to locate documentation; try to locate <sparameterviewer/docs> yourself ({ex}).')
         
         try:
-            open_file_in_default_viewer(help_doc)
+            open_file_in_default_viewer(helpfile_path)
         except Exception as ex:
-            logging.exception(f'Unable to show documentation ({help_doc}): {ex}')
-            messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{help_doc}> yourself ({ex}).')
+            logging.exception(f'Unable to show documentation ({helpfile_path}): {ex}')
+            messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{helpfile_path}> yourself ({ex}).')
 
 
     def on_load_expr(self):

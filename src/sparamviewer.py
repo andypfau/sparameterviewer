@@ -10,15 +10,13 @@ from lib import AppGlobal, is_windows
 if __name__ == '__main__':
 
     
-    AppGlobal.set_root_path(os.path.split(os.path.realpath(__file__))[0])
-
     LOG_FORMAT = '%(asctime)s: %(message)s (%(filename)s:%(lineno)d:%(funcName)s, %(levelname)s)'
     logging.captureWarnings(True)
     logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, stream=None)
 
     try:
         # add a second logger that logs critical errors to file
-        logToFile = logging.FileHandler(os.path.join(AppGlobal.get_root_path(), 'sparamviewer.log'))
+        logToFile = logging.FileHandler(os.path.join(AppGlobal.get_log_dir(), 'sparamviewer.log'))
         logToFile.setFormatter(logging.Formatter(LOG_FORMAT))
         logToFile.setLevel(logging.ERROR)
         logging.getLogger().addHandler(logToFile)
@@ -35,7 +33,7 @@ if __name__ == '__main__':
     LogHandler.set_up()
 
     # splashscreen (pyinstaller only)
-    if getattr(sys, 'frozen', False):
+    if AppGlobal.is_running_from_binary():
         try:
             import pyi_splash
             pyi_splash.close()

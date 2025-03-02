@@ -13,6 +13,16 @@ datas.extend([
 ])
 
 
+# add help
+datas.extend([
+    ('../doc/main.md', './doc/'),
+    ('../doc/howtorun.md', './doc/'),
+    ('../doc/tools.md', './doc/'),
+    ('../doc/expressions.md', './doc/'),
+    ('../doc/settings.md', './doc/'),
+])
+
+
 # Fix to get skrf required data folder included, see <https://github.com/scikit-rf/scikit-rf/issues/276>
 import os, skrf as rf
 skrf_data_dir = os.path.join(os.path.dirname(rf.__file__), 'data/*')

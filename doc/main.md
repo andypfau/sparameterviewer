@@ -5,7 +5,7 @@ S-Parameter Viewer Documentation
 Getting Started
 ---------------
 
-1. Start the app (see [readme](../README.md)).
+1. Start the app (see [readme](howtorun.md)).
 2. Go *File* → *Open Directory*, and open a directory that contains S-parameter files.
     - Supported format: Touchstone (`.s1p`, `.s2p`...), CITI (`.cti`/`.citi`).
 3. At the bottom of the main window, select one or multiple files (hold CTRL to select multiple).
