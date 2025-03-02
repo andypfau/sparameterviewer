@@ -352,7 +352,7 @@ class TabularDialog(PygubuAppUI):
             parts = [p for p in re.split(r'\s+', s) if p!='']
             return parts
 
-        filter_x = parse_si_range(self.filter_x.get()) if (self.enable_filter_x.get()=='filter') else (any,any)
+        filter_x = parse_si_range(self.filter_x.get()) if (self.enable_filter_x.get()=='filter') else (-1e99, +1e99)
         filter_cols = parse_cols(self.filter_cols.get()) if (self.enable_filter_cols.get()=='filter') else any
 
         return filter_x, filter_cols
@@ -376,18 +376,21 @@ class TabularDialog(PygubuAppUI):
             ycols_filtered = []
             ycol_datas_filtered = []
             for col in filter_cols:
+                found = False
                 for colname,coldata in zip(ycols, ycol_datas):
                     if colname == col:
+                        found = True
                         ycols_filtered.append(colname)
                         ycol_datas_filtered.append(coldata)
                         break
+                if not found:
+                    return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
             ycols, ycol_datas = ycols_filtered, ycol_datas_filtered
         
-        if filter_x0 is not any or filter_x1 is not any:
-            mask = (xcol_data >= filter_x0) & (xcol_data <= filter_x1)
-            xcol_data = xcol_data[mask]
-            for i in range(len(ycol_datas)):
-                ycol_datas[i] = ycol_datas[i][mask]
+        mask = (xcol_data >= filter_x0) & (xcol_data <= filter_x1)
+        xcol_data = xcol_data[mask]
+        for i in range(len(ycol_datas)):
+            ycol_datas[i] = ycol_datas[i][mask]
         
         return TabularDataset(dataset.name, dataset.xcol, ycols, xcol_data, ycol_datas, dataset.is_spar)
 

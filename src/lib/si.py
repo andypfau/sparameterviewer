@@ -92,21 +92,22 @@ class Si:
         return self.__str__()
 
 
-def parse_si_range(s):
+def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99):
     """
     Parse a numeric range, given as float or SI-prefixed numbers.
     Returns the range `(a,b)` if successful, or `(None,None)` on invalid input.
-    Start and end may be returned as `any` (wildcard).
     Suported formats include e.g.:
     - "1m-1G": ragne from 1e-3 to 1e9
-    - "*-1G": range from anything to 1e9
-    - "1m-*": range from 1e-3 to anything
+    - "*-1G": range from `wildcard_low` to 1e9
+    - "1m-*": range from 1e-3 to `wildcard_high`
     - "", "*": any range
+    `wildcard_low` and `wildcard_high` can be disabled by setting them to None.
     """
     
     s = s.strip()
-    if s=='' or s=='*':
-        return any, any
+    if (wildcard_low is not None) and (wildcard_high is not None):
+        if (s=='') or (s=='*') or re.match(r'\*\s*-\s*\*', s):
+            return wildcard_low, wildcard_high
 
     REX_FLOAT = r'[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?'
     REX_SI_FLOAT = REX_FLOAT + r'\s*[fpnuµmkMGTE]?'
@@ -120,13 +121,13 @@ def parse_si_range(s):
                 s = s[:-1]
         return factor * float(s)
 
-    if (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
-        a = parse_si_float(m.group(1))
-        return a, any
-    
-    if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
+    if (wildcard_low is not None) and (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
         b = parse_si_float(m.group(1))
-        return any, b
+        return wildcard_low, b
+    
+    if (wildcard_high is not None) and (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
+        a = parse_si_float(m.group(1))
+        return a, wildcard_high
     
     if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
         a, b = parse_si_float(m.group(1)), parse_si_float(m.group(2))

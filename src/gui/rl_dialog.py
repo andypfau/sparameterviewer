@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import skrf, copy, math, cmath, glob, os
 
-from lib import SParamFile, AppGlobal, BodeFano, TkText, Si
+from lib import SParamFile, AppGlobal, BodeFano, TkText, Si, parse_si_range
 from .rl_dialog_pygubuui import PygubuAppUI
 from .settings import Settings
 
@@ -48,18 +48,14 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         
         # defaults
         self.port.set("1")
-        self.int0.set("0")
-        self.int1.set("999")
-        self.tgt0.set("0")
-        self.tgt1.set("10")
+        self.int_range.set("0 - 100G")
+        self.target_range.set("1G - 2G")
 
         def on_change(*args, **kwargs):
             self.on_change()
         self.port.trace_add('write', on_change)
-        self.int0.trace_add('write', on_change)
-        self.int1.trace_add('write', on_change)
-        self.tgt0.trace_add('write', on_change)
-        self.tgt1.trace_add('write', on_change)
+        self.int_range.trace_add('write', on_change)
+        self.target_range.trace_add('write', on_change)
         self.plot_kind.trace_add('write', on_change)
 
         # update
@@ -73,32 +69,40 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
     
 
     def on_change(self, *args, **kwargs):
+
+        def error(msg):
+            TkText.set_text(self.result_box, msg)
+            self.fig.clf()
+
         try:
             file = self.files[self.combobox_files.current()]
             port = int(self.port.get())
-            int0 = float(self.int0.get())*1e9
-            int1 = float(self.int1.get())*1e9
-            tgt0 = float(self.tgt0.get())*1e9
-            tgt1 = float(self.tgt1.get())*1e9
+            (int0, int1) = parse_si_range(self.int_range.get())
+            (tgt0, tgt1) = parse_si_range(self.target_range.get(), wildcard_low=None, wildcard_high=None)
             plot_kind = self.plot_kind.get()
         except Exception as ex:
-            self.err_msg.set(f'Unable to parse input ({ex})')
-            self.fig.clf()
+            error(f'Unable to parse input ({ex})')
+            return
+        
+        if int0 is None or int1 is None:
+            error('Invlaid integration range')
+            return
+        if tgt0 is None or tgt1 is None:
+            error('Invlaid target range')
             return
         
         try:
             self.update_plot(file, port, int0, int1, tgt0, tgt1, plot_kind)
         except Exception as ex:
-            self.err_msg.set(f'Unable to plot ({ex})')
-            self.fig.clf()
+            error(f'Unable to plot ({ex})')
             return
-        
-        self.err_msg.set('')
     
 
     def update_plot(self, file: SParamFile, port: int, int0: float, int1: float, tgt0: float, tgt1: float, plot_kind:str):
         
         bodefano = BodeFano.from_network(file.nw, port, int0, int1, tgt0, tgt1)
+
+        int0, int1 = bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz
 
         message = \
             f'Current avg. RL (integration range): {bodefano.db_total:+.3g} dB ({Si(bodefano.f_integration_actual_start_hz,"Hz")}..{Si(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
