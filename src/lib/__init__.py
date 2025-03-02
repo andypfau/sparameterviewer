@@ -1,5 +1,5 @@
 from .sparam_helpers import get_sparam_name, sparam_to_timedomain
-from .si import Si, SiFmt
+from .si import Si, SiFmt, parse_si_range
 from .structs import SParamFile, PlotData, PlotDataQuantity
 from .plot import PlotHelper
 from .appsettings import AppSettings

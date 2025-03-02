@@ -11,7 +11,7 @@ import copy
 
 
 from .tabular_dialog_pygubuui import PygubuAppUI
-from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, TkCommon, TkText
+from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, TkCommon, TkText, parse_si_range
 
 
 
@@ -149,6 +149,9 @@ class TabularDialog(PygubuAppUI):
         self.listbox.column("#0", width=0, stretch=tk.NO)
         self.listbox.heading("#0", text="", anchor=tk.W)
 
+        self.filter_x.set('0 - 100G')
+        self.filter_cols.set('S1,1 S2,1 S2,2')
+
         def on_change_filter(*args, **kwargs):
             self.on_change_filter()
         self.filter_x.trace_add('write', on_change_filter)
@@ -169,13 +172,12 @@ class TabularDialog(PygubuAppUI):
         return
     
 
+    def on_enable_filter(self):
+        self.update_data()
+    
+
     def on_change_filter(self):
         self.update_data()
-
-
-    def on_clear_filter(self):
-        self.filter_x.set('')
-        self.filter_cols.set('')
         
 
     def run(self, focus: bool = True):
@@ -300,7 +302,7 @@ class TabularDialog(PygubuAppUI):
     def copy_data_numpy(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
         def sanitize_name(name: str) -> str:
-            return re.sub('\W|^(?=\d)', '_', name)
+            return re.sub(r'\W|^(?=\d)', '_', name)
         def fmt(x) -> str:
             return f'{x:.{TabularDialog.DISPLAY_PREC}g}'
         py = 'import numpy as np\n'
@@ -340,50 +342,18 @@ class TabularDialog(PygubuAppUI):
 
     def get_filters(self):
         
-        def parse_x(s):
-            s = s.strip()
-            if s=='':
-                return any
-            
-            def extract_float(s):
-                if (m := re.match(r'^[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?', s)):
-                    return float(m.group()), s[len(m.group()):].strip()
-                return False
-            
-            if s.startswith('*'):
-                s = s[1:].strip()
-                if s.startswith('-'):
-                    s = s[1:].strip()
-                    if (m := extract_float(s)):
-                        (b,s) = m
-                        if s == '':
-                            return -1e99,b
-                    
-            if (m := extract_float(s)):
-                (a,s) = m
-                s = s.strip()
-                if s.startswith('-'):
-                    s = s[1:].strip()
-                    if (m := extract_float(s)):
-                        (b,s) = m
-                        if s.strip() == '':
-                            return a,b
-                    elif s.startswith('*'):
-                        s = s[1:].strip()
-                        if s.strip() == '':
-                            return a,+1e99
-
-            return None
-        
         def parse_cols(s):
+            s = s.strip()
+            if s=='' or s=='*':
+                return any
             s = s.strip()
             if s=='':
                 return any
             parts = [p for p in re.split(r'\s+', s) if p!='']
             return parts
 
-        filter_x = parse_x(self.filter_x.get())
-        filter_cols = parse_cols(self.filter_cols.get())
+        filter_x = parse_si_range(self.filter_x.get()) if (self.enable_filter_x.get()=='filter') else (any,any)
+        filter_cols = parse_cols(self.filter_cols.get()) if (self.enable_filter_cols.get()=='filter') else any
 
         return filter_x, filter_cols
 
@@ -394,12 +364,12 @@ class TabularDialog(PygubuAppUI):
         xcol_data = dataset.xcol_data
         ycol_datas = dataset.ycol_datas
 
-        filter_x, filter_cols = self.get_filters()
+        (filter_x0, filter_x1), filter_cols = self.get_filters()
 
         if not dataset.is_spar:
             filter_cols = any  # ignore filter
         
-        if filter_x is None or filter_cols is None:
+        if filter_x0 is None or filter_x1 is None:
             return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
         
         if filter_cols is not any:
@@ -413,9 +383,8 @@ class TabularDialog(PygubuAppUI):
                         break
             ycols, ycol_datas = ycols_filtered, ycol_datas_filtered
         
-        if filter_x is not any:
-            (x1, x2) = filter_x
-            mask = (xcol_data >= x1) & (xcol_data <= x2)
+        if filter_x0 is not any or filter_x1 is not any:
+            mask = (xcol_data >= filter_x0) & (xcol_data <= filter_x1)
             xcol_data = xcol_data[mask]
             for i in range(len(ycol_datas)):
                 ycol_datas[i] = ycol_datas[i][mask]

@@ -75,8 +75,12 @@
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Label" id="label1">
-                    <property name="text" translatable="yes">X</property>
+                  <object class="ttk.Checkbutton" id="checkbutton1">
+                    <property name="command" type="command" cbtype="simple">on_enable_filter</property>
+                    <property name="offvalue">ignore</property>
+                    <property name="onvalue">filter</property>
+                    <property name="text" translatable="yes">X:</property>
+                    <property name="variable">string:enable_filter_x</property>
                     <layout manager="pack">
                       <property name="padx">5</property>
                       <property name="pady">5</property>
@@ -97,8 +101,12 @@
                   </object>
                 </child>
                 <child>
-                  <object class="ttk.Label" id="label2">
-                    <property name="text" translatable="yes">Cols</property>
+                  <object class="ttk.Checkbutton" id="checkbutton2">
+                    <property name="command" type="command" cbtype="simple">on_enable_filter</property>
+                    <property name="offvalue">ignore</property>
+                    <property name="onvalue">filter</property>
+                    <property name="text" translatable="yes">Cols:</property>
+                    <property name="variable">string:enable_filter_cols</property>
                     <layout manager="pack">
                       <property name="padx">5</property>
                       <property name="pady">5</property>
@@ -205,16 +213,6 @@
                     <property name="command" type="command" cbtype="simple">on_copy_numpy</property>
                     <property name="hidemargin">false</property>
                     <property name="label" translatable="yes">Copy Numpy</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="tk.Menuitem.Separator" id="separator1" />
-                </child>
-                <child>
-                  <object class="tk.Menuitem.Command" id="command3">
-                    <property name="accelerator">Esc</property>
-                    <property name="command" type="command" cbtype="simple">on_clear_filter</property>
-                    <property name="label" translatable="yes">Reset Filters</property>
                   </object>
                 </child>
               </object>

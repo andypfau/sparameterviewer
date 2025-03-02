@@ -12,7 +12,7 @@ You may select:
 - Which file to display, and 
 - How to display the data, e.g. as real/imaginary, db/degrees, etc.
 
-You can also apply filters:
+You can also apply filters by checking the corresponding checkboxes:
 - *X*: filter X-values (typically the frequency):
     - E.g. "1e9-10e9" to filter from 1 GHz to 10 GHz.
     - E.g. "1e9-*" to filter from 1 GHz, and anything above.

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from os import stat
 from unicodedata import decimal
 import numpy as np
+import re
 
 
 @dataclass
@@ -89,3 +90,47 @@ class Si:
 
     def __repr__(self):
         return self.__str__()
+
+
+def parse_si_range(s):
+    """
+    Parse a numeric range, given as float or SI-prefixed numbers.
+    Returns the range `(a,b)` if successful, or `(None,None)` on invalid input.
+    Start and end may be returned as `any` (wildcard).
+    Suported formats include e.g.:
+    - "1m-1G": ragne from 1e-3 to 1e9
+    - "*-1G": range from anything to 1e9
+    - "1m-*": range from 1e-3 to anything
+    - "", "*": any range
+    """
+    
+    s = s.strip()
+    if s=='' or s=='*':
+        return any, any
+
+    REX_FLOAT = r'[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?'
+    REX_SI_FLOAT = REX_FLOAT + r'\s*[fpnuµmkMGTE]?'
+
+    def parse_si_float(s):
+        PREFIXES = {'f':1e-15, 'p':1e-12, 'n':1e-9, 'u': 1e-6, 'µ': 1e-6, 'm':1e-3, 'k':1e3, 'M':1e6, 'G':1e9, 'T':1e12, 'E':1e15}
+        factor = 1
+        if len(s) >= 2:
+            if s[-1] in PREFIXES.keys():
+                factor = PREFIXES[s[-1]]
+                s = s[:-1]
+        return factor * float(s)
+
+    if (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
+        a = parse_si_float(m.group(1))
+        return a, any
+    
+    if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
+        b = parse_si_float(m.group(1))
+        return any, b
+    
+    if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
+        a, b = parse_si_float(m.group(1)), parse_si_float(m.group(2))
+        if a <= b:
+            return a, b
+
+    return None, None
