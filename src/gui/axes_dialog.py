@@ -1,4 +1,4 @@
-from lib import AppGlobal
+from lib import AppGlobal, parse_si_range, format_si_range
 
 import tkinter as tk
 
@@ -27,65 +27,73 @@ class SparamviewerAxesDialog(PygubuAppUI):
         AppGlobal.set_toplevel_icon(self.toplevel_axes)
 
         self.x0, self.x1, self.xauto, self.y0, self.y1, self.yauto = x0, x1, xauto, y0, y1, yauto
-
-        self.x0_var.set(format(x0))
-        self.x1_var.set(format(x1))
-        self.xauto_var.set('auto' if xauto else 'manual')
-        self.y0_var.set(format(y0))
-        self.y1_var.set(format(y1))
-        self.yauto_var.set('auto' if yauto else 'manual')
-        
-        def on_auto_change(var, index, mode):
-            self.xauto = self.xauto_var.get() == 'auto'
-            self.yauto = self.yauto_var.get() == 'auto'
-            self.trigger_callback()
-        self.xauto_var.trace('w', on_auto_change)
-        self.yauto_var.trace('w', on_auto_change)
+        self.update_ui_vars_from_status_vars()
         
 
     def run(self, focus: bool = True):
         if focus:
             self.mainwindow.focus_force()
         super().run()
+    
+
+    def on_auto_x(self):
+        self.xauto = True
+        self.update_ui_vars_from_status_vars()
+        self.trigger_callback()
+    
+
+    def on_auto_y(self):
+        self.yauto = True
+        self.update_ui_vars_from_status_vars()
+        self.trigger_callback()
+    
+
+    def on_fixed_x(self):
+        self.xauto = False
+        self.update_ui_vars_from_status_vars()
+        self.trigger_callback()
+    
+
+    def on_fixed_y(self):
+        self.yauto = False
+        self.update_ui_vars_from_status_vars()
+        self.trigger_callback()
+    
+
+    def update_ui_vars_from_status_vars(self):
+        
+        if self.xauto:
+            self.x_var.set(format_si_range(any, any, allow_total_wildcard=True))
+        else:
+            self.x_var.set(format_si_range(self.x0, self.x1))
+        
+        if self.yauto:
+            self.y_var.set(format_si_range(any, any, allow_total_wildcard=True))
+        else:
+            self.y_var.set(format_si_range(self.y0, self.y1))
 
 
     def trigger_callback(self):
         self.callback(self.x0, self.x1, self.xauto, self.y0, self.y1, self.yauto)
 
 
-    def _handle_text_change(self, text, trigger, text_var, default_value):
-        update_ui = trigger == 'focusout'
-        value = parse(text)
-        ok = value is not None
-        if update_ui:
-            text_var.set(format(value if ok else default_value))
-        return ok, value
-
-
-    def on_x0(self, text, trigger):
-        ok, value = self._handle_text_change(text, trigger, self.x0_var, self.x0)
-        if ok:
-            self.x0 = value
+    def on_x(self, text, condition):
+        x0, x1 = parse_si_range(text, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True)
+        if x0 is any and x1 is any:
+            self.xauto = True
+            self.trigger_callback()
+        elif x0 is not None and x1 is not None:
+            self.x0, self.x1, self.xauto = x0, x1, False
             self.trigger_callback()
         return True
 
-    def on_x1(self, text, trigger):
-        ok, value = self._handle_text_change(text, trigger, self.x1_var, self.x1)
-        if ok:
-            self.x1 = value
-            self.trigger_callback()
-        return True
 
-    def on_y0(self, text, trigger):
-        ok, value = self._handle_text_change(text, trigger, self.y0_var, self.y0)
-        if ok:
-            self.y0 = value
+    def on_y(self, text, condition):
+        y0, y1 = parse_si_range(text, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True)
+        if y0 is any and y1 is any:
+            self.yauto = True
             self.trigger_callback()
-        return True
-
-    def on_y1(self, text, trigger):
-        ok, value = self._handle_text_change(text, trigger, self.y1_var, self.y1)
-        if ok:
-            self.y1 = value
+        elif y0 is not None and y1 is not None:
+            self.y0, self.y1, self.yauto = y0, y1, False
             self.trigger_callback()
         return True

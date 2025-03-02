@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.4" author="PygubuDesigner 0.39.3">
+<interface version="1.4" author="PygubuDesigner 0.40.2">
   <project>
     <settings>
       <setting id="name">axes_dialog</setting>
@@ -29,80 +29,50 @@
         <property name="height">200</property>
         <property name="padding">10</property>
         <property name="width">200</property>
-        <layout manager="pack" />
+        <layout manager="pack">
+          <property name="side">top</property>
+        </layout>
         <child>
           <object class="ttk.Labelframe" id="labelframe_7">
             <property name="height">200</property>
             <property name="padding">5</property>
             <property name="text" translatable="yes">Vertical / Y</property>
             <property name="width">200</property>
-            <layout manager="pack">
-              <property name="ipadx">5</property>
-              <property name="ipady">5</property>
-              <property name="padx">5</property>
-              <property name="pady">5</property>
-              <property name="side">left</property>
+            <layout manager="grid">
+              <property name="column">0</property>
+              <property name="row">0</property>
             </layout>
             <child>
-              <object class="ttk.Label" id="label_15">
-                <property name="text" translatable="yes">Top:</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="row">0</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
               <object class="ttk.Entry" id="entry_7">
-                <property name="textvariable">string:y1_var</property>
+                <property name="textvariable">string:y_var</property>
                 <property name="validate">all</property>
-                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_y1</property>
-                <layout manager="grid">
-                  <property name="column">1</property>
-                  <property name="padx">5</property>
-                  <property name="pady">5</property>
-                  <property name="row">0</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Label" id="label_14">
-                <property name="text" translatable="yes">Bottom:</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="row">1</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Entry" id="entry_8">
-                <property name="textvariable">string:y0_var</property>
-                <property name="validate">all</property>
-                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_y0</property>
-                <layout manager="grid">
-                  <property name="column">1</property>
-                  <property name="padx">5</property>
-                  <property name="pady">5</property>
-                  <property name="row">1</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Checkbutton" id="checkbutton_4" named="True">
-                <property name="offvalue">manual</property>
-                <property name="onvalue">auto</property>
-                <property name="text" translatable="yes">Automatic</property>
-                <property name="variable">string:yauto_var</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="columnspan">2</property>
-                  <property name="padx">5</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_y</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
                   <property name="pady">3</property>
-                  <property name="row">2</property>
+                  <property name="side">top</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="button1">
+                <property name="command" type="command" cbtype="simple">on_auto_y</property>
+                <property name="text" translatable="yes">Auto</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
+                  <property name="pady">3</property>
+                  <property name="side">left</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="button2">
+                <property name="command" type="command" cbtype="simple">on_fixed_y</property>
+                <property name="text" translatable="yes">Fixed</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
+                  <property name="pady">3</property>
+                  <property name="side">right</property>
                 </layout>
               </object>
             </child>
@@ -114,76 +84,53 @@
             <property name="padding">5</property>
             <property name="text" translatable="yes">Horizontal / X</property>
             <property name="width">200</property>
-            <layout manager="pack">
-              <property name="ipadx">5</property>
-              <property name="ipady">5</property>
-              <property name="padx">5</property>
-              <property name="pady">5</property>
-              <property name="side">right</property>
+            <layout manager="grid">
+              <property name="column">1</property>
+              <property name="row">1</property>
             </layout>
             <child>
-              <object class="ttk.Label" id="label_11">
-                <property name="text" translatable="yes">Left:</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="row">0</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
               <object class="ttk.Entry" id="entry_9">
-                <property name="textvariable">string:x0_var</property>
+                <property name="textvariable">string:x_var</property>
                 <property name="validate">all</property>
-                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_x0</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="padx">5</property>
-                  <property name="pady">5</property>
-                  <property name="row">1</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Label" id="label_12">
-                <property name="text" translatable="yes">Right:</property>
-                <layout manager="grid">
-                  <property name="column">1</property>
-                  <property name="row">0</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Entry" id="entry_10">
-                <property name="textvariable">string:x1_var</property>
-                <property name="validate">all</property>
-                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_x1</property>
-                <layout manager="grid">
-                  <property name="column">1</property>
-                  <property name="padx">5</property>
-                  <property name="pady">5</property>
-                  <property name="row">1</property>
-                  <property name="sticky">w</property>
-                </layout>
-              </object>
-            </child>
-            <child>
-              <object class="ttk.Checkbutton" id="checkbutton_3" named="True">
-                <property name="offvalue">manual</property>
-                <property name="onvalue">auto</property>
-                <property name="text" translatable="yes">Automatic</property>
-                <property name="variable">string:xauto_var</property>
-                <layout manager="grid">
-                  <property name="column">0</property>
-                  <property name="columnspan">2</property>
-                  <property name="padx">5</property>
+                <property name="validatecommand" type="command" cbtype="entry_validate" args="%P %V">on_x</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
                   <property name="pady">3</property>
-                  <property name="row">2</property>
+                  <property name="side">top</property>
                 </layout>
               </object>
             </child>
+            <child>
+              <object class="ttk.Button" id="button3">
+                <property name="command" type="command" cbtype="simple">on_auto_x</property>
+                <property name="text" translatable="yes">Auto</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
+                  <property name="pady">3</property>
+                  <property name="side">left</property>
+                </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Button" id="button4">
+                <property name="command" type="command" cbtype="simple">on_fixed_x</property>
+                <property name="text" translatable="yes">Fixed</property>
+                <layout manager="pack">
+                  <property name="padx">3</property>
+                  <property name="pady">3</property>
+                  <property name="side">right</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label1">
+            <property name="text" translatable="yes">Plot</property>
+            <layout manager="grid">
+              <property name="column">1</property>
+              <property name="row">0</property>
+            </layout>
           </object>
         </child>
       </object>
