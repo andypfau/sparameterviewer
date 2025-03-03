@@ -697,25 +697,28 @@ class SparamviewerMainDialog(PygubuAppUI):
                 info += comm_line.strip() + '\n'
             info += '\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
-        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}'
+
+        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
         
         freq_steps = np.diff(sparam_file.nw.f)
-        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
-        if np.allclose(freq_steps,freq_steps[0]):
+        freq_equidistant = np.allclose(freq_steps,freq_steps[0])
+        if freq_equidistant:
             freq_step = freq_steps[0]
-            info += f', {Si(freq_step,"Hz")} equidistant spacing ({n_points_str})'
+            spacing_str =  f'{Si(freq_step,"Hz")} equidistant spacing'
         else:
-            non_equi = True
+            freq_arbitrary = True
             if np.all(sparam_file.nw.f != 0):
                 freq_ratios = np.exp(np.diff(np.log(sparam_file.nw.f)))
                 if np.allclose(freq_ratios,freq_ratios[0]):
-                    non_equi = False
+                    freq_arbitrary = False
                     freq_step = np.mean(freq_steps)
                     freq_ratio = freq_ratios[0]
-                    info += f', {freq_ratio:.4g}x logarithmic spacing ({n_points_str}, average spacing {Si(freq_step,"Hz")})'
-            if non_equi:
+                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {Si(freq_step,"Hz")}'
+            if freq_arbitrary:
                 freq_step = np.mean(freq_steps)
-                info += f', non-equidistant spacing ({n_points_str}, average spacing {Si(freq_step,"Hz")})'
+                spacing_str =  f'non-equidistant spacing, average spacing {Si(freq_step,"Hz")}'
+        
+        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_points_str}, {spacing_str}'
         info += '\n\n'
 
         info += fileinfo
