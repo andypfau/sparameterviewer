@@ -56,6 +56,9 @@ class Si:
 
 
     def __init__(self, value: float, unit: str = '', significant_digits: int = 3, use_si_prefix: bool = True, remove_trailing_zeros: bool = True, force_sign: bool = False, si_fmt: SiFmt = None):
+        if isinstance(value, complex):
+            if value.imag == 0:
+                value = value.real
         self.value = value
         if si_fmt is not None:
             self.format = si_fmt
