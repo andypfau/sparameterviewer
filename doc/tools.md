@@ -26,7 +26,7 @@ You can also apply filters by checking the corresponding checkboxes:
 
 From the menu, you can:
 - *Save*: export as .csv (tab-separated) or as .xlsx (spreadsheet).
-- *Edit*: copy to clipboard, either as CSV-data (comma- or tab-separated), or as Python code which can be used with [NumPy](https://numpy.org/).
+- *Edit*: copy to clipboard, either as CSV-data (comma- or tab-separated), or as Python code which can be used with [NumPy](https://numpy.org/) or with [Pandas](https://pandas.pydata.org/).
 - Filters are applied to saved/copied data (see above).
 
 Trace Cursors

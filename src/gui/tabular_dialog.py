@@ -231,6 +231,13 @@ class TabularDialog(PygubuAppUI):
         self.copy_data_numpy(dataset)
 
 
+    def on_copy_pandas(self):
+        dataset = self.selected_dataset
+        if dataset is None:
+            return
+        self.copy_data_pandas(dataset)
+
+
     def on_save_single(self):
         dataset = self.selected_dataset
         if dataset is None:
@@ -312,15 +319,37 @@ class TabularDialog(PygubuAppUI):
         
     def copy_data_numpy(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
-        def sanitize_name(name: str) -> str:
-            return re.sub(r'\W|^(?=\d)', '_', name)
-        def fmt(x) -> str:
+        def split_words(name: str) -> str:
+            return re.split(r'\W|^(?=\d)', name)
+        def sanitize_var_name(name: str) -> str:
+            return '_'.join([w.lower() for w in split_words(name)])
+        def sanitize_class_name(name: str) -> str:
+            return ''.join([w.capitalize() for w in split_words(name)])
+        def format_value(x) -> str:
             return f'{x:.{TabularDialog.DISPLAY_PREC}g}'
-        py = 'import numpy as np\n'
-        py += f'# {dataset.name}\n'
-        py += f'{sanitize_name(dataset.xcol)} = np.array([{", ".join([fmt(x) for x in dataset.xcol_data])}])\n'
+        py = 'import numpy as np\n\n'
+        py += f'class {sanitize_class_name(dataset.name)}:  # {dataset.name}\n'
+        py += f'\t{sanitize_var_name(dataset.xcol)} = np.array([{", ".join([format_value(x) for x in dataset.xcol_data])}])\n'
         for n,d in zip(dataset.ycols,dataset.ycol_datas):
-            py += f'{sanitize_name(n)} = np.array([{", ".join([fmt(x) for x in d])}])\n'
+            py += f'\t{sanitize_var_name(n)} = np.array([{", ".join([format_value(x) for x in d])}])\n'
+        Clipboard.copy_string(py)
+
+        
+    def copy_data_pandas(self, dataset: "TabularDataset"):
+        dataset = self.filter_dataset(dataset)
+        def split_words(name: str) -> str:
+            return re.split(r'\W|^(?=\d)', name)
+        def sanitize_var_name(name: str) -> str:
+            return '_'.join([w.lower() for w in split_words(name)])
+        def format_value(x) -> str:
+            return f'{x:.{TabularDialog.DISPLAY_PREC}g}'
+        py = 'import pandas as pd\n\n'
+        py += f'df_{sanitize_var_name(dataset.name)} = pd.DataFrame({{\n'
+        py += f'\t\'{dataset.xcol}\': [{", ".join([format_value(x) for x in dataset.xcol_data])}],\n'
+        for n,d in zip(dataset.ycols,dataset.ycol_datas):
+            py += f'\t\'{n}\': [{", ".join([format_value(x) for x in d])}],\n'
+        py += f'}})  # {dataset.name}\n\n'
+        py += f'display(df_{sanitize_var_name(dataset.name)})\n'
         Clipboard.copy_string(py)
     
 

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.4" author="PygubuDesigner 0.40.2">
+<interface version="1.4" author="PygubuDesigner 0.39.3">
   <project>
     <settings>
       <setting id="name">tabular_dialog</setting>
@@ -213,10 +213,20 @@
                   </object>
                 </child>
                 <child>
+                  <object class="tk.Menuitem.Separator" id="separator1" />
+                </child>
+                <child>
                   <object class="tk.Menuitem.Command" id="command2">
                     <property name="command" type="command" cbtype="simple">on_copy_numpy</property>
                     <property name="hidemargin">false</property>
-                    <property name="label" translatable="yes">Copy Numpy</property>
+                    <property name="label" translatable="yes">Copy Python Code (NumPy)</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="tk.Menuitem.Command" id="command3">
+                    <property name="command" type="command" cbtype="simple">on_copy_pandas</property>
+                    <property name="hidemargin">false</property>
+                    <property name="label" translatable="yes">Copy Python Code (Pandas)</property>
                   </object>
                 </child>
               </object>

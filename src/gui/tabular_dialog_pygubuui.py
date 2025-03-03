@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None, data_pool=None):
+    def __init__(self, master=None):
         # build ui
         self.tabular_dialog = tk.Tk() if master is None else tk.Toplevel(master)
         self.tabular_dialog.configure(height=500, width=600)
@@ -115,11 +115,17 @@ class PygubuAppUI:
             command=self.on_copy_semicolon,
             hidemargin=False,
             label='Copy Semicolon-Separated')
+        self.submenu_2.add("separator")
         self.submenu_2.add(
             "command",
             command=self.on_copy_numpy,
             hidemargin=False,
-            label='Copy Numpy')
+            label='Copy Python Code (NumPy)')
+        self.submenu_2.add(
+            "command",
+            command=self.on_copy_pandas,
+            hidemargin=False,
+            label='Copy Python Code (Pandas)')
         self.tabular_dialog.configure(menu=self.menu_2)
 
         # Main widget
@@ -156,6 +162,9 @@ class PygubuAppUI:
         pass
 
     def on_copy_numpy(self):
+        pass
+
+    def on_copy_pandas(self):
         pass
 
 
