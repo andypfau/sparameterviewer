@@ -32,9 +32,9 @@ class AppGlobal:
 
         # special case for compiled app
         if AppGlobal.is_running_from_binary():
-            if not os.path.exists(content_dir):
-                if os.path.exists(os.path.join(content_dir, '_internal')):
-                    content_dir = os.path.join(content_dir, '_internal')
+            binary_content_dir = os.path.join(content_dir, '_internal')
+            if os.path.exists(binary_content_dir):
+                content_dir = binary_content_dir
 
         AppGlobal._content_dir = content_dir
         return content_dir
