@@ -3,6 +3,7 @@ import os
 import logging
 import sys
 import tkinter
+from typing import Optional
 
 from .utils import is_windows, open_file_in_default_viewer
 
@@ -10,27 +11,48 @@ from .utils import is_windows, open_file_in_default_viewer
 class AppGlobal:
 
 
+    _content_dir: Optional[None] = None
+
+
     @staticmethod
-    def get_root_dir() -> str:
+    def _get_root_dir() -> str:
         lib_dir = os.path.abspath(os.path.dirname(__file__))
         src_dir = os.path.dirname(lib_dir)
         app_dir = os.path.dirname(src_dir)
         return app_dir
+    
+
+    @staticmethod
+    def _get_content_dir() -> str:
+        if AppGlobal._content_dir is not None:
+            return AppGlobal._content_dir
+
+        root_dir = AppGlobal._get_root_dir()
+        content_dir = root_dir
+
+        # special case for compiled app
+        if AppGlobal.is_running_from_binary():
+            if not os.path.exists(content_dir):
+                if os.path.exists(os.path.join(content_dir, '_internal')):
+                    content_dir = os.path.join(content_dir, '_internal')
+
+        AppGlobal._content_dir = content_dir
+        return content_dir
 
 
     @staticmethod
     def get_log_dir() -> str:
-        return AppGlobal.get_root_dir()
+        return AppGlobal._get_root_dir()
 
 
     @staticmethod
-    def get_help_dir() -> str:
-        root_dir = AppGlobal.get_root_dir()
-        if AppGlobal.is_running_from_binary():
-            help_dir = os.path.join(root_dir, '_internal', 'doc')
-            if os.path.exists(help_dir):
-                return help_dir
-        return os.path.join(root_dir, 'doc')
+    def get_resource_dir() -> str:
+        return os.path.join(AppGlobal._get_content_dir(), 'res')
+
+
+    @staticmethod
+    def get_doc_dir() -> str:
+        return os.path.join(AppGlobal._get_content_dir(), 'doc')
 
 
     @staticmethod
@@ -48,18 +70,14 @@ class AppGlobal:
     def set_toplevel_icon(toplevel: Toplevel):
         try:
             
-            dir = AppGlobal.get_root_dir()
-            if not os.path.exists(os.path.join(dir, 'res')):
-                dir = os.path.dirname(dir) # look in parent folder
-
             if is_windows():
-                toplevel.iconbitmap(os.path.join(dir, 'res/sparamviewer.ico'))
+                toplevel.iconbitmap(os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.ico'))
             else:
                 try:
-                    img = tkinter.PhotoImage(file=os.path.join(dir, 'res/sparamviewer.png'))
+                    img = tkinter.PhotoImage(file=os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.png'))
                     toplevel.tk.call('wm', 'iconphoto', toplevel._w, img)
                 except:
-                    toplevel.iconbitmap('@' + os.path.join(dir, 'res/sparamviewer.xbm'))
+                    toplevel.iconbitmap('@' + os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.xbm'))
 
         except Exception as ex:
             logging.exception(f'Unable to set toplevel icon: {ex}')
@@ -69,7 +87,7 @@ class AppGlobal:
     @staticmethod
     def show_help(doc: str = 'main.md'):
         try:
-            helpfile_path = os.path.join(AppGlobal.get_help_dir(), doc)
+            helpfile_path = os.path.join(AppGlobal.get_doc_dir(), doc)
             if not os.path.exists(helpfile_path):
                 raise RuntimeError(f'<{helpfile_path}> not exists')
         except Exception as ex:
