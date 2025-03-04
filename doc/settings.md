@@ -6,11 +6,14 @@ In the main window, go *Tools* → *Settings*.
 Time-Domain Transformation
 --------------------------
 
+See [Time-Domain Transformation](main.md) to learn more about the impact of these settings.
+
 - Window: the window function to apply to the spectrum before time-domain transformation.
     - All [SciPy window functions](https://docs.scipy.org/doc/scipy/reference/signal.windows.html) are supported.
 - Parameter: parameter for the window. This depends on the selected window.
-    - E.g. the Kaiser window has a parameter $\alpha$. Increasing this parameter makes the time-domain transformation more smooth, while reducing it can lead to ringing artifacts.
-- Shift: Shift of the time-domain transformation. If this is chosen too small, the vertical dimension of the time-domain transformation may be incorrect. Increase this until the time-domain signal appears to be "stable".
+    - E.g. the Kaiser window has a parameter $\alpha$. Many windows, e.g. Hann, do not have any parameter (in which case it is ignored).
+- Min. Size: the minimum number of samples to which is zero-padded.
+- Shift: Shift of the time-domain transformation.
 - Convert to Impedance: convert the vertical dimension of the time-domain transform to an impedance, in Ohm.
 
 Theme

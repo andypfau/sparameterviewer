@@ -36,14 +36,26 @@ Getting Started
 - *Impulse Response*: impulse response vs. time (i.e. time-domain transformation). See also notes below.
 - *Step Response*: same as before, but integrated to get step response.
 
-Supported Formats
------------------
+#### Time-Domain Transformation
 
-- Touchtone files (.s1p, .s2p, etc.): standard S-parameter files.
-- CITI files (.cti or .citi): a data format for n-dimensional data. Since there is no hard specification on the variable names, the following names are assumed (case-insensitive):
-    - Frequency: `f`, `freq` or `frequency`.
-    - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
-- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (see [Settings](settings.md)).
+The impulse response is calculated as follows:
+1. Extrapolate frequency axis to DC.
+    - The algorithm from [IEEE370](https://standards.ieee.org/ieee/370/6165/), Annex T is used.
+2. Interpolate frequency axis to get equidistant scaling.
+    - Interpolation is done in polar domain (i.e. interpolation of magnitude and of unwrapped phase separately).
+3. Apply window function.
+    - Window function can be chosen in [settings](settings.md).
+    - If you see excess ringing in the time-domain response, you may try to use e.g. a Kaiser window, and increase the parameter.
+    - If the time-domain response is too much smoothed-out, you may try to use e.g. a Kaiser window, and decrease the parameter.
+4. Apply zero-padding.
+    - Under [settings](settings.md), a minimum number of samples, to which is zero-padded, can be chosen.
+    - Increase this setting to get finer interpolation of the time axis.
+5. Apply inverse FFT.
+6. Shift samples.
+    - The amount of shift can be chosen in [settings](settings.md).
+    - If this setting is chosen too small, the vertical dimension of the time-domain transformation may be incorrect. Increase this setting until the time-domain signal appears to be "stable".
+
+The step response works the same, except that the result is integrated over time.
 
 Plot Menu
 ---------
@@ -75,3 +87,12 @@ Settings
 -----------
 
 [See here](settings.md).
+
+Supported File Formats
+----------------------
+
+- Touchtone files (.s1p, .s2p, etc.): standard S-parameter files.
+- CITI files (.cti or .citi): a data format for n-dimensional data. Since there is no hard specification on the variable names, the following names are assumed (case-insensitive):
+    - Frequency: `f`, `Freq` or `Frequency`.
+    - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
+- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (see [Settings](settings.md)).

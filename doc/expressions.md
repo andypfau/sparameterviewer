@@ -90,7 +90,7 @@ Note that any operation on the object may, by design, fail silently. For example
 ##### s()
 
 ```python
-s(egress_port=None, ingress_port=None, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) -> SParams
+s(egress_port=None, ingress_port=None, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
 ```
 
 Returns S-parameters (an `SParams` object) of a network.
@@ -112,7 +112,7 @@ plot(None, 1)    # S11, S21, ...
 ##### invert()
 
 ```python
-invert() -> Networks
+invert() → Networks
 ```
 
 Inverts the network (e.g. for de-embedding).
@@ -120,7 +120,7 @@ Inverts the network (e.g. for de-embedding).
 ##### flip()
 
 ```python
-flip() -> Networks
+flip() → Networks
 ```
 
 Flips the ports (e.g. to use it in reverse direction).
@@ -128,7 +128,7 @@ Flips the ports (e.g. to use it in reverse direction).
 ##### half()
 
 ```python
-half(method='IEEE370NZC', side=1) -> Networks
+half(method='IEEE370NZC', side=1) → Networks
 ```
 
 Chops the network in half (e.g. for 2xTHRU de-embedding).
@@ -138,7 +138,7 @@ Allowed methods are `'IEEE370NZC'` (IEEE-370, no Z-compensation), or 'ChopInHalf
 ##### k()
 
 ```python
-k() -> SParams
+k() → SParams
 ```
 
 Returns the K (Rollet) stability factor. For a stable network, this should be >1 (or >0 dB).
@@ -146,7 +146,7 @@ Returns the K (Rollet) stability factor. For a stable network, this should be >1
 ##### mu()
 
 ```python
-mu(mu=1) -> SParams
+mu(mu=1) → SParams
 ```
 
 Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Sinsky). For a stable network, this should be >1 (or >0 dB).
@@ -154,7 +154,7 @@ Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Si
 ##### losslessness()
 
 ```python
-losslessness(egress_port_or_kind,ingress_port=None) -> SParams
+losslessness(egress_port_or_kind,ingress_port=None) → SParams
 ```
 
 Returns the losslessness metric S^T·S^* For a lossless network, the diagonal (i.e. indices i,i) should be 1, and all other elements (i.e. indices i,j) should be 0.
@@ -165,7 +165,7 @@ You can either request a specific matrix element, e.g. with losslessness(2,1), o
 ##### passivity()
 
 ```python
-passivity() -> SParams
+passivity() → SParams
 ```
 
 Returns the passivity metric Eigenvalues(S^H·S). For a passive network, this should be ≤ 1.
@@ -174,7 +174,7 @@ Returns the passivity metric Eigenvalues(S^H·S). For a passive network, this sh
 ##### reciprocity()
 
 ```python
-reciprocity(egress_port=None, ingress_port=None) -> SParams
+reciprocity(egress_port=None, ingress_port=None) → SParams
 ```
 Returns the reciprocity metric S[i,j]-S[j,i]. For a reciprocal network, this should be 0.
 
@@ -184,7 +184,7 @@ You can either request a specific matrix element, e.g. with `reciprocity(2,1)`, 
 ##### crop_f()
 
 ```python
-crop_f(f_start=-inf, f_end=+inf) -> Networks
+crop_f(f_start=-inf, f_end=+inf) → Networks
 ```
 
 Returns the same network, but with a reduced frequency range
@@ -193,7 +193,7 @@ Returns the same network, but with a reduced frequency range
 ##### add_sr()
 
 ```python
-add_sr(resistance, port=]) -> Networks
+add_sr(resistance, port=]) → Networks
 ```
 
 Returns a network with a series resistance attached to the specified port. Works only for 1-ports and 2-ports.
@@ -202,7 +202,7 @@ Returns a network with a series resistance attached to the specified port. Works
 ##### add_sl()
 
 ```python
-add_sl(inductance, port=1) -> Networks
+add_sl(inductance, port=1) → Networks
 ```
 
 Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
@@ -211,7 +211,7 @@ Returns a network with a series inductance attached to the specified port. Works
 ##### add_sc()
 
 ```python
-add_sc(capacitance, port=1) -> Networks
+add_sc(capacitance, port=1) → Networks
 ```
 
 Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
@@ -220,7 +220,7 @@ Returns a network with a series inductance attached to the specified port. Works
 ##### add_pr()
 
 ```python
-add_pr(resistance, port=1) -> Networks
+add_pr(resistance, port=1) → Networks
 ```
 
 Returns a network with a parallel resistance attached to the specified port. Works only for 1-ports and 2-ports.
@@ -229,7 +229,7 @@ Returns a network with a parallel resistance attached to the specified port. Wor
 ##### add_pl()
 
 ```python
-add_pl(inductance, port=1) -> Networks
+add_pl(inductance, port=1) → Networks
 ```
 
 Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
@@ -238,7 +238,7 @@ Returns a network with a parallel inductance attached to the specified port. Wor
 ##### add_pc()
 
 ```python
-add_pc(capacitance, port=1) -> Networks
+add_pc(capacitance, port=1) → Networks
 ```
 Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
 
@@ -246,7 +246,7 @@ Returns a network with a parallel inductance attached to the specified port. Wor
 ##### add_tl()
 
 ```python
-add_tl(degrees, frequency_hz=1e9, z0=None, loss_db=0, port=1]) -> Networks
+add_tl(degrees, frequency_hz=1e9, z0=None, loss_db=0, port=1]) → Networks
 ```
 
 Returns a network with anideal transmission line attached to the specified port. Works only for 1-ports and 2-ports.
@@ -261,7 +261,7 @@ If `z0` is not provided, the reference impedance of the corresponding port is us
 ##### add_ltl()
 
 ```python
-add_ltl(degrees, len_m, eps_r, db_m_mhz=0, db_m_sqmhz=0, port=1) -> Networks
+add_ltl(degrees, len_m, eps_r, db_m_mhz=0, db_m_sqmhz=0, port=1) → Networks
 ```
 
 Returns a network with a lossy transmission line attached to the specified port. Works only for 1-ports and 2-ports.
@@ -276,7 +276,7 @@ If `z0` is not provided, the reference impedance of the corresponding port is us
 ##### rl_avg()
 
 ```python
-rl_avg(f_start_hz=-inf, f_stop_hz=+inf) -> SParams
+rl_avg(f_start_hz=-inf, f_stop_hz=+inf) → SParams
 ```
 
 Calculates the average return loss over the given frequency range.
@@ -285,7 +285,7 @@ Calculates the average return loss over the given frequency range.
 ##### rl_opt()
 
 ```python
-rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) -> SParams
+rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) → SParams
 ```
 
 Integrates the return loss over the given integration frequency range, then uses the Bode-Fano limit to calculate the maximum achievable return loss over the given target frequency range.
@@ -414,7 +414,7 @@ Plots the data. `label` is any string. The placeholder `'%n'` is replaced with t
 ##### db()
 
 ```python
-db() -> SParams
+db() → SParams
 ```
 
 Returns $20 \cdot \log_{10} S$.
@@ -424,7 +424,7 @@ Plot this on a linear scale (otherwise the logarithm is applied *twice*).
 ##### db20()
 
 ```python
-db20() -> SParams
+db20() → SParams
 ```
 
 Same as `db20()`.
@@ -434,7 +434,7 @@ Plot this on a linear scale (otherwise the logarithm is applied *twice*).
 ##### db10()
 
 ```python
-db10() -> SParams
+db10() → SParams
 ```
 
 Returns $10 \cdot \log_{10}S$.
@@ -445,7 +445,7 @@ Plot this on a linear scale (otherwise the logarithm is applied *twice*).
 ##### ml()
 
 ```python
-ml() -> SParams
+ml() → SParams
 ```
 
 Mismatch loss: returns $1-|S²|$.
@@ -456,7 +456,7 @@ Plot this on a dB-scale, or use the `db()` function.
 ##### vswr()
 
 ```python
-vswr() -> SParams
+vswr() → SParams
 ```
 
 Voltage Standing Wave Ratio: returns $(1+|S²|)/(1-|S²|)$.
@@ -468,7 +468,7 @@ Plot this on a linear scale.
 ##### abs()
 
 ```python
-abs() -> SParams
+abs() → SParams
 ```
 
 Returns $|S|$.
@@ -477,7 +477,7 @@ Returns $|S|$.
 ##### phase()
 
 ```python
-phase(processing=None) -> SParams
+phase(processing=None) → SParams
 ```
 
 Returns the phase.
@@ -490,7 +490,7 @@ Plot this on a linear scale.
 ##### crop_f()
 
 ```python
-crop_f(f_start=-inf, f_end=+inf) -> SParams.
+crop_f(f_start=-inf, f_end=+inf) → SParams.
 ```
 
 Returns the same S-Param, but with a reduced frequency range.

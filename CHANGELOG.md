@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.27b2 (2025-03-04)
+-------------------
+
+- new: interpolation of time-axis for impulse/step response
+- new: copy tabular data for use with Pandas
+- change: better format when copying data for use with NumPy
+
+
 0.27b1 (2025-03-02)
 -------------------
 
