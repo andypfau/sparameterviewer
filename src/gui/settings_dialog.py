@@ -29,7 +29,10 @@ class SparamviewerSettingsDialog(PygubuAppUI):
         win_sel = 0
         for i,win in enumerate(sorted(WINDOWS)):
             self.window_map[i] = win
-            window_list.append(win[0].upper() + win[1:].replace('_',' '))
+            if win == 'boxcar':
+                window_list.append('Boxcar (no windowing)')
+            else:
+                window_list.append(win[0].upper() + win[1:].replace('_',' '))
             if win == Settings.window_type:
                 win_sel = i
         self.combobox_window['values'] = window_list
