@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 
 
 class PygubuAppUI:
-    def __init__(self, master=None, data_pool=None):
+    def __init__(self, master=None):
         # build ui
         self.toplevel_settings = tk.Tk() if master is None else tk.Toplevel(master)
         self.toplevel_settings.configure(height=200, width=200)
@@ -40,7 +40,7 @@ class PygubuAppUI:
         self.spinbox_3.bind("<<Increment>>", self.on_change_arg, add="")
         self.label_8 = ttk.Label(self.labelframe_5)
         self.label_8.configure(text='Shift:')
-        self.label_8.grid(column=0, row=2, sticky="w")
+        self.label_8.grid(column=0, row=4, sticky="w")
         self.frame_12 = ttk.Frame(self.labelframe_5)
         self.frame_12.configure(height=200, width=200)
         self.spinbox_2 = ttk.Spinbox(self.frame_12)
@@ -56,7 +56,7 @@ class PygubuAppUI:
         self.label_10 = ttk.Label(self.frame_12)
         self.label_10.configure(text='ps')
         self.label_10.pack(side="top")
-        self.frame_12.grid(column=1, row=2)
+        self.frame_12.grid(column=1, row=4)
         self.checkbox_impedance = ttk.Checkbutton(
             self.labelframe_5, name="checkbox_impedance")
         self.impedance = tk.StringVar()
@@ -66,9 +66,19 @@ class PygubuAppUI:
             text='Convert to Impedance',
             variable=self.impedance)
         self.checkbox_impedance.grid(
-            column=1, padx=5, pady=3, row=3, sticky="w")
+            column=1, padx=5, pady=3, row=5, sticky="w")
         self.checkbox_impedance.configure(command=self.on_impedance_change)
         self.checkbox_impedance.bind("<1>", self.callback, add="")
+        self.label3 = ttk.Label(self.labelframe_5)
+        self.label3.configure(text='Min. Size:')
+        self.label3.grid(column=0, row=2, sticky="w")
+        self.combobox_minsize = ttk.Combobox(
+            self.labelframe_5, name="combobox_minsize")
+        self.combobox_minsize.grid(column=1, padx=5, pady=3, row=2, sticky="w")
+        self.combobox_minsize.bind(
+            "<<ComboboxSelected>>",
+            self.on_minsize_sel,
+            add="")
         self.labelframe_5.pack(
             anchor="w",
             fill="x",
@@ -178,6 +188,9 @@ class PygubuAppUI:
         pass
 
     def callback(self, event=None):
+        pass
+
+    def on_minsize_sel(self, event=None):
         pass
 
     def on_theme_sel(self, event=None):

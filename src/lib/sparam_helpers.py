@@ -71,7 +71,7 @@ def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.
     return ensure_equidistant_freq(f_complete, sp_complete)
 
 
-def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0, step_response: bool = False, window_type: str = 'boxcar', window_arg: float = None, cutoff: bool = True) -> "tuple(np.ndarray,np.ndarray)":
+def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0, step_response: bool = False, window_type: str = 'boxcar', window_arg: float = None, min_size: int = 0) -> "tuple(np.ndarray,np.ndarray)":
     
     f_dc,sp_dc = ensure_equidistant_freq_from_dc(f, spar)
 
@@ -82,22 +82,27 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0,
     
     win_2sided = scipy.signal.get_window(window, 2*len(sp_dc))
     win = win_2sided[len(sp_dc):]
+
+    sp_windowed = sp_dc * win
     
-    f_nyq = max(f)
+    next_pow_of_2 = 1
+    while next_pow_of_2 < max(len(sp_windowed), min_size):
+        next_pow_of_2 *= 2
+    n_missing = next_pow_of_2 - len(sp_windowed)
+    frequency_scaling = next_pow_of_2 / len(sp_windowed)  # padding increases the highest frequency!
+    sp_padded = np.concatenate([sp_windowed, np.zeros([n_missing], dtype=sp_windowed.dtype)])
+
+    f_nyq = max(f) * frequency_scaling
     f_sa = 2.0 * f_nyq
-    t_spc = 1.0 / f_sa
 
-    n_shift = round(shift/t_spc)
-
-    ir_unshifted = np.fft.irfft(sp_dc * win)
-    #ir = np.fft.fftshift(ir_unshifted)
-    ir_shifted = np.roll(ir_unshifted, n_shift)
-    if cutoff:
-        ir = ir_shifted[:len(ir_shifted)//2+n_shift]
-    else:
-        ir = ir_shifted
+    ir_unshifted = np.fft.irfft(sp_padded)
     
-    t_tot = (len(ir_unshifted)-1)*t_spc
+    sa_period = 1.0 / f_sa
+    n_shift = round(shift / sa_period)
+    ir_shifted = np.roll(ir_unshifted, n_shift)
+    ir = ir_shifted[:len(ir_shifted)//2+n_shift]
+    
+    t_tot = (len(ir_unshifted)-1) * sa_period
     t = np.linspace(0, t_tot, len(ir))
     t -= shift
 

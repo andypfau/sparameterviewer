@@ -48,7 +48,7 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         
         self.entry_int['values'] = (
             format_si_range(any, any, allow_total_wildcard=True),
-            format_si_range(0, 100e9),
+            format_si_range(0, 10e9),
         )
         self.entry_tgt['values'] = (
             format_si_range(1e9, 2e9),
@@ -56,7 +56,7 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         
         # defaults
         self.port.set("1")
-        self.int_range.set(format_si_range(0, 100e9))
+        self.int_range.set(format_si_range(any, any, allow_total_wildcard=True))
         self.tgt_range.set(format_si_range(1e9, 2e9))
 
         self.port.trace_add('write', self.on_change)

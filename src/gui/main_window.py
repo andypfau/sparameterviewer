@@ -1219,7 +1219,7 @@ class SparamviewerMainDialog(PygubuAppUI):
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style)
                 else:
                     if timedomain:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg)
+                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
                         if tdr_z:
                             lev[lev==0] = 1e-20 # avoid division by zero in the next step
                             imp = z0 * (1+lev) / (1-lev) # convert to impedance

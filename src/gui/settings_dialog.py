@@ -34,6 +34,17 @@ class SparamviewerSettingsDialog(PygubuAppUI):
                 win_sel = i
         self.combobox_window['values'] = window_list
         self.combobox_window.current(win_sel)
+        
+        self.minsize_map = {}
+        minsize_list = []
+        minsize_sel = 0
+        for i,minsize_k in enumerate([0, 1, 4, 16, 64, 256]):
+            self.minsize_map[i] = 1024*minsize_k
+            minsize_list.append('None' if minsize_k == 0 else f'{minsize_k} k')
+            if minsize_k*1024 == Settings.tdr_minsize:
+                minsize_sel = i
+        self.combobox_minsize['values'] = minsize_list
+        self.combobox_minsize.current(minsize_sel)
 
         self.win_param.set(Settings.window_arg)
         self.shift_ps.set(Settings.tdr_shift/1e-12)
@@ -96,6 +107,13 @@ class SparamviewerSettingsDialog(PygubuAppUI):
         win_id = self.combobox_window.current()
         typ = self.window_map[win_id]
         Settings.window_type = typ
+        self.callback()
+
+
+    def on_minsize_sel(self, event=None):
+        minsize_id = self.combobox_minsize.current()
+        minsize = self.minsize_map[minsize_id]
+        Settings.tdr_minsize = minsize
         self.callback()
     
 
