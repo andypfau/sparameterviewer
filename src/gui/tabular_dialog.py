@@ -330,8 +330,23 @@ class TabularDialog(PygubuAppUI):
         py = 'import numpy as np\n\n'
         py += f'class {sanitize_class_name(dataset.name)}:  # {dataset.name}\n'
         py += f'\t{sanitize_var_name(dataset.xcol)} = np.array([{", ".join([format_value(x) for x in dataset.xcol_data])}])\n'
-        for n,d in zip(dataset.ycols,dataset.ycol_datas):
-            py += f'\t{sanitize_var_name(n)} = np.array([{", ".join([format_value(x) for x in d])}])\n'
+        for col_name,col_data in zip(dataset.ycols,dataset.ycol_datas):
+            py += f'\t{sanitize_var_name(col_name)} = np.array([{", ".join([format_value(x) for x in col_data])}])\n'
+        if len(dataset.ycols) >= 1:
+            py += '\n'
+            py += 'import plotly.graph_objects as go\n\n'
+            py += f'fig = go.Figure()\n'
+            for col_name in dataset.ycols:
+                y_py = f'{sanitize_class_name(dataset.name)}.{sanitize_var_name(col_name)}'
+                if dataset.is_spar:
+                    y_py = f'20*np.log10(np.maximum(1e-15,np.abs({y_py})))'
+                n_py = col_name.replace("'",'"')
+                py += f'fig.add_trace(go.Scatter(x={sanitize_class_name(dataset.name)}.{sanitize_var_name(dataset.xcol)}, y={y_py}, name=\'{n_py}\'))\n'
+            x_py = dataset.xcol.replace("'",'"')
+            py += f'fig.update_layout(xaxis_title=\'{x_py}\')\n'
+            if dataset.is_spar:
+                py += 'fig.update_layout(yaxis_title=\'dB\')\n'
+            py += f'fig.show()\n'
         Clipboard.copy_string(py)
 
         
