@@ -957,22 +957,23 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.update_file_list(selected_filenames=filenames_or_directory)
     
 
-    def load_recent_directory(self, dir: str):
-        if not os.path.exists(dir):
-            logging.error(f'Cannot load recent directory <{dir}> (does not exist)')
-            return
-        absdir = os.path.abspath(dir)
-        self.directories = [absdir]
-        self.clear_loaded_files()
-        self.load_files_in_directory(absdir)
-        self.update_file_list(only_select_first=True)
-    
-
     def update_most_recent_directories_menu(self):
         
         self.menuitem_recent.delete(0, 'end')
+        def make_loader_closure(dir):
+            def load():
+                if not os.path.exists(dir):
+                    logging.error(f'Cannot load recent directory <{dir}> (does not exist any more)')
+                    return
+                absdir = os.path.abspath(dir)
+                self.directories = [absdir]
+                self.clear_loaded_files()
+                self.load_files_in_directory(absdir)
+                self.update_file_list(only_select_first=True)
+                self.add_to_most_recent_directories(dir)
+            return load
         for dir in Settings.last_directories:
-            self.menuitem_recent.add_command(label=dir, command=lambda: self.load_recent_directory(dir))
+           self.menuitem_recent.add_command(label=dir, command=make_loader_closure(dir))
         
     
     def add_to_most_recent_directories(self, dir: str):
