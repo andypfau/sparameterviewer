@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.27b3 (2025-03-06)
+-------------------
+
+- bugfix: loading recent now working properly
+- change: cleaned up the RL calculator
+
+
 0.27b2 (2025-03-04)
 -------------------
 
