@@ -1,48 +1,42 @@
 import numpy as np
 import math
 import skrf
-from scipy.integrate import trapezoid
-
-
-
-def crop_xrange(x, y, xmin=-1e99, xmax=+1e99):
-    cropped = [(xx,yy) for xx,yy in zip(x,y) if xmin<=xx<=xmax]
-    x_cropped = [xx for (xx,_) in cropped]
-    y_cropped = [yy for (_,yy) in cropped]
-    return np.array(x_cropped), np.array(y_cropped)
-
-
-def integrate(f, s):
-    integral = trapezoid(np.log(1/np.abs(s)), f*math.tau)
-    return integral
-
-
-def get_optimum_rl(integral, f0, f1):
-    omega0, omega1 = math.tau*f0, math.tau*f1
-    gamma = 1 / math.exp(integral / (omega1-omega0))
-    db = 20*math.log10(gamma)
-    return db
+import scipy.integrate
 
 
 class BodeFano:
 
 
-    def __init__(self, freuqencies_hz: "np.ndarray", sparam_rl: "np.ndarray",
+    def __init__(self, freuqencies_hz: "np.ndarray", sparam_sii_term: "np.ndarray",
             f_integration_start_hz: float, f_integration_stop_hz: float,
             f_target_start_hz: float, f_target_stop_hz: float):
+        
+        def crop_freq_range(freqs, sparam, f_min=-1e99, f_max=+1e99):
+            cropped = [(f,s) for f,s in zip(freqs,sparam) if f_min<=f<=f_max]
+            freqs_cropped = [f for (f,_) in cropped]
+            sparam_cropped = [s for (_,s) in cropped]
+            return np.array(freqs_cropped), np.array(sparam_cropped)
 
-        self.nw_f_intrange, self.nw_s_intrange = crop_xrange(freuqencies_hz, sparam_rl, f_integration_start_hz, f_integration_stop_hz)
-        self.nw_f_calcrange, self.nw_s_calcrange = crop_xrange(freuqencies_hz, sparam_rl, f_target_start_hz, f_target_stop_hz)
+        def bode_fano_integral(freqs, sparam):
+            return scipy.integrate.trapezoid(np.log(1/np.abs(sparam)), freqs*math.tau)
+
+        def calc_avg_rl(integral_value, f_min, f_max):
+            gamma = 1 / math.exp(integral_value / ((f_max-f_min)*math.tau))
+            db = 20*math.log10(gamma)
+            return db
+
+        self.nw_f_intrange, self.nw_s_intrange = crop_freq_range(freuqencies_hz, sparam_sii_term, f_integration_start_hz, f_integration_stop_hz)
+        self.nw_f_calcrange, self.nw_s_calcrange = crop_freq_range(freuqencies_hz, sparam_sii_term, f_target_start_hz, f_target_stop_hz)
         
         self.f_integration_actual_start_hz = min(self.nw_f_intrange)
         self.f_integration_actual_stop_hz = max(self.nw_f_intrange)
         
-        integral_intrange = integrate(self.nw_f_intrange, self.nw_s_intrange)
-        integral_calcrange = integrate(self.nw_f_calcrange, self.nw_s_calcrange)
+        integral_intrange = bode_fano_integral(self.nw_f_intrange, self.nw_s_intrange)
+        integral_calcrange = bode_fano_integral(self.nw_f_calcrange, self.nw_s_calcrange)
         
-        self.db_total = get_optimum_rl(integral_intrange, self.f_integration_actual_start_hz, self.f_integration_actual_stop_hz)
-        self.db_current = get_optimum_rl(integral_calcrange, f_target_start_hz, f_target_stop_hz)
-        self.db_optimized = get_optimum_rl(integral_intrange, f_target_start_hz, f_target_stop_hz)
+        self.db_available = calc_avg_rl(integral_intrange, self.f_integration_actual_start_hz, self.f_integration_actual_stop_hz)
+        self.db_current = calc_avg_rl(integral_calcrange, f_target_start_hz, f_target_stop_hz)
+        self.db_achievable = calc_avg_rl(integral_intrange, f_target_start_hz, f_target_stop_hz)
 
 
     @staticmethod

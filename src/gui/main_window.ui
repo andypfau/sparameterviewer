@@ -544,7 +544,7 @@
                 <child>
                   <object class="tk.Menuitem.Command" id="command_3">
                     <property name="command" cbtype="simple" type="command">on_call_optrlcalc</property>
-                    <property name="label" translatable="yes">Optimum RL Calculator</property>
+                    <property name="label" translatable="yes">Return Loss Integrator</property>
                   </object>
                 </child>
                 <child>

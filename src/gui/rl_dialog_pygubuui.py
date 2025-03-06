@@ -4,11 +4,11 @@ import tkinter.ttk as ttk
 
 
 class PygubuAppUI:
-    def __init__(self, master=None, data_pool=None):
+    def __init__(self, master=None):
         # build ui
         self.toplevel_rl = tk.Tk() if master is None else tk.Toplevel(master)
-        self.toplevel_rl.configure(height=600, width=400)
-        self.toplevel_rl.title("Optimum RL Calculator")
+        self.toplevel_rl.configure(cursor="arrow", height=600, width=400)
+        self.toplevel_rl.title("Return Loss Integrator")
         self.frame_9 = ttk.Frame(self.toplevel_rl)
         self.frame_9.configure(height=400, padding=10, width=200)
         self.labelframe_1 = ttk.Labelframe(self.frame_9)

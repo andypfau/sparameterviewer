@@ -276,19 +276,11 @@ If `z0` is not provided, the reference impedance of the corresponding port is us
 ##### rl_avg()
 
 ```python
-rl_avg(f_start_hz=-inf, f_stop_hz=+inf) → SParams
+rl_avg(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) → SParams
 ```
 
-Calculates the average return loss over the given frequency range.
+Does the same as the [Return Loss Integrator](tools.md): integrates the return loss over the given integration frequency range, then calculates the achievable RL over the target range.
 
-
-##### rl_opt()
-
-```python
-rl_opt(f_integrate_start_hz=-inf, f_integrate_stop_hz=+inf, f_target_start_hz=-inf, f_target_stop_hz=+inf) → SParams
-```
-
-Integrates the return loss over the given integration frequency range, then uses the Bode-Fano limit to calculate the maximum achievable return loss over the given target frequency range.
 
 
 ##### plot_stab()

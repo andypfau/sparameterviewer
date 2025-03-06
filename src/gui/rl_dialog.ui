@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<interface version="1.4" author="PygubuDesigner 0.40.2">
+<interface version="1.4" author="PygubuDesigner 0.39.3">
   <project>
     <settings>
       <setting id="name">rl_dialog</setting>
@@ -22,8 +22,9 @@
     <customwidgets />
   </project>
   <object class="tk.Toplevel" id="toplevel_rl">
+    <property name="cursor">arrow</property>
     <property name="height">600</property>
-    <property name="title" translatable="yes">Optimum RL Calculator</property>
+    <property name="title" translatable="yes">Return Loss Integrator</property>
     <property name="width">400</property>
     <child>
       <object class="ttk.Frame" id="frame_9">

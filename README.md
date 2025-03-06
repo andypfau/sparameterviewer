@@ -11,7 +11,7 @@ Main Features
 - Read touchstone (.s#p) and CITI (.cti/.citi) files, including those in .zip-files.
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay.
 - Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness.
-    - to learn more about this feature, open the "Expressions" tab, and click "Help".
+    - to learn more about this feature [see here](./doc/expressions.md).
 - Viewing data n various table formats.
 - Export data to .csv or .xlsx, copy data as Python code, save plots as images.
 

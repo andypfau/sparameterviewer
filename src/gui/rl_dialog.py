@@ -111,9 +111,9 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         int0, int1 = bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz
 
         message = \
-            f'Current avg. RL (integration range): {bodefano.db_total:+.3g} dB ({Si(bodefano.f_integration_actual_start_hz,"Hz")}..{Si(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
-            f'Current avg. RL (target range): {bodefano.db_current:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})\n' + \
-            f'Achievable avg. RL (target range): {bodefano.db_optimized:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})'
+            f'Available: {bodefano.db_available:+.3g} dB ({Si(bodefano.f_integration_actual_start_hz,"Hz")}..{Si(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
+            f'Current: {bodefano.db_current:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})\n' + \
+            f'Achievable: {bodefano.db_achievable:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})'
         TkText.set_text(self.result_box, message)
 
         self.fig.clf()
@@ -121,9 +121,9 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
 
         if plot_kind=='rl_hist':
             self.plot.hist(x=v2db(bodefano.nw_s_intrange), ls='-', color='darkblue', label=f'S{port}{port}')
-            self.plot.axvline(x=bodefano.db_total, ls=':', color='blue', label=f'Current avg. RL (integration range)')
-            self.plot.axvline(x=bodefano.db_current, ls='--', color='blue', label=f'Current avg. RL (target range)')
-            self.plot.axvline(x=bodefano.db_optimized, ls='-', color='green', label=f'Achievable avg. RL (target range)')
+            self.plot.axvline(x=bodefano.db_available, ls=':', color='blue', label=f'Available')
+            self.plot.axvline(x=bodefano.db_current, ls='--', color='blue', label=f'Current')
+            self.plot.axvline(x=bodefano.db_achievable, ls='-', color='green', label=f'Achievable')
             
             self.plot.set_xlabel('RL / dB')
             self.plot.set_ylabel('Histogram')
@@ -132,9 +132,9 @@ class SparamviewerReturnlossDialog(PygubuAppUI):
         elif plot_kind=='rl_vs_f':
             self.plot.fill_between(bodefano.nw_f_intrange/1e9, v2db(bodefano.nw_s_intrange), color='chartreuse', alpha=0.1)
             self.plot.plot(bodefano.nw_f_intrange/1e9, v2db(bodefano.nw_s_intrange), '-', color='darkblue', label=f'S{port}{port}')
-            self.plot.plot([bodefano.f_integration_actual_start_hz/1e9,bodefano.f_integration_actual_stop_hz/1e9], [bodefano.db_total,bodefano.db_total], ':', color='blue', label=f'Current avg. RL (integration range)')
-            self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_current,bodefano.db_current], '--', color='blue', label=f'Current avg. RL (target range)')
-            self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_optimized,bodefano.db_optimized], '-', color='green', label=f'Achievable avg. RL (target range)')
+            self.plot.plot([bodefano.f_integration_actual_start_hz/1e9,bodefano.f_integration_actual_stop_hz/1e9], [bodefano.db_available,bodefano.db_available], ':', color='blue', label=f'Available')
+            self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_current,bodefano.db_current], '--', color='blue', label=f'Current')
+            self.plot.plot([tgt0/1e9,tgt1/1e9], [bodefano.db_achievable,bodefano.db_achievable], '-', color='green', label=f'Achievable')
             
             self.plot.set_xlabel('f / GHz')
             self.plot.set_ylabel('RL / dB')

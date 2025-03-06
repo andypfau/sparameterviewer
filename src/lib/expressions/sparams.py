@@ -149,26 +149,27 @@ class SParam:
         return SParam(self.name, new_f, new_s, self.z0)
         
     
-    def rl_avg(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
-        f_start = f_start if f_start is not None else -1e99
-        f_end = f_end if f_end is not None else +1e99
-        bodefano = BodeFano(self.f, self.s, f_start, f_end, f_start, f_end)
-        f = np.array([bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz])
-        s11 = pow(10, bodefano.db_total/20)
-        s = np.array([s11, s11])
-        return SParam(self.name, f, s, self.z0)
+    def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParam":
+        
+        if f_integrate_start is any:
+            f_integrate_start = -1e99
+        if f_integrate_end is any:
+            f_integrate_end = +1e99
+        
+        if f_target_start is any or f_target_end is any:
+            
+            bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_integrate_start, f_integrate_end)
 
-    
-    def rl_opt(self, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> "SParam":
-        f_integrate_start = f_integrate_start if f_integrate_start is not None else -1e99
-        f_integrate_end = f_integrate_end if f_integrate_end is not None else +1e99
-        bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_integrate_start, f_integrate_end)
-        f_target_start = f_target_start if f_target_start is not None else bodefano.f_integration_actual_start_hz
-        f_target_end = f_target_end if f_target_end is not None else bodefano.f_integration_actual_stop_hz
+            if f_target_start is any:
+                f_target_start = bodefano.f_integration_actual_start_hz
+            if f_target_end is any:
+                f_target_end = bodefano.f_integration_actual_stop_hz
+        
         bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_target_start, f_target_end)
+        s11_linear = pow(10, bodefano.db_achievable/20)
+
         f = np.array([f_target_start, f_target_end])
-        s11 = pow(10, bodefano.db_optimized/20)
-        s = np.array([s11, s11])
+        s = np.array([s11_linear, s11_linear])
         return SParam(self.name, f, s, self.z0)
     
 
@@ -322,12 +323,8 @@ class SParams:
         return self._unary_op(SParam.crop_f, True, f_start=f_start, f_end=f_end)
     
 
-    def rl_avg(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParams":
-        return self._unary_op(SParam.rl_avg, True, f_start=f_start, f_end=f_end)
-    
-
-    def rl_opt(self, f_integrate_start: "float|None" = None, f_integrate_end: "float|None" = None, f_target_start: "float|None" = None, f_target_end: "float|None" = None) -> "SParams":
-        return self._unary_op(SParam.rl_opt, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
+    def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":
+        return self._unary_op(SParam.rl_avg, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
     
 
     def save(self, filename: str):

@@ -29,7 +29,7 @@ S-Parameter Viewer Changelog
 
 - new: function `vswr()` to calculate VSWR
 - new: new sample `dipole.s1p`
-- new: histogram in optimum RL calculator
+- new: histogram in RL integrator
 - new: option to comment exisiting expressions, when adding a new expression from a template (previously this way always the case)
 - bugfix: no longer showing losslessness ij metric for 1-ports
 

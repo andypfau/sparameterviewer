@@ -41,37 +41,31 @@ Just click in the plot, and the reading is shown in the dialog. You may select o
 ⚠️ Pitfall: if you selected a tool the pan or zoom tool in the plot, it will pan/zoom! De-select the tools in the plot before using cursors.
 
 
-Optimum RL Calculator
----------------------
+Return Loss Integrator
+----------------------
 
-Allows you to calculate the maximum achievable return loss (RL), if matched optimally with a *reactive* component.
-
-In the main window go *Tools* → *Optimum RL Calculator*.
-
-This is done by calculating the integral of the RL over a given (wide) freqeuncy interval, and then calculating the mean RL in a narrower freqeuncy interval. This is based on the idea of the [the Bode-Fano limit](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/07%3A_Chapter_7/7.2%3A_Fano-Bode_Limits).
+In the main window go *Tools* → *Return Loss Integrator*.
 
 ### Theoretical Background
 
-Example: you have an RF structure that must be operational from 4 GHz to 6 GHz. You measure the S-parameters from 10 MHz to 8 GHz (i.e. the intgration range), and the calculated mean RL (result of the integration) is 10 dB. When matching the network with a single reactive component, you could theoretically achieve 39.95 dB RL in the 4..6 GHz region (i.e. the target range). This of course would mean that the frequencies below 4 GHz, and above 6 GHz would then have to be completely mismatched.
+The Bode-Fano limit states that there is an upper bound for the integral over the return loss (RL), from DC to infinite frequency, for a given load circuit (1-port), and an optimum reactive matching network.
 
-A more practical example would be a bond wire. A bond wire will inherently behave inductively, thus deterioraring match (worse RL) towards higher frequencies. By adding a stub capacitor to GND (e.g. a small metal patch), match can be improved (better RL). However, this will also inherently reduce the bandwidth of the circuit. In this example:
-- The integration range is the frequency range over which you measure the return loss of the bond wire structure.
-- The target range is the frequency range over which you want to achieve optimum match. It is inherently lower than the integration range.
+This statement can be re-formulated as $BW \cdot RL_{avg} \le Q_{load}^{-1} \cdot const$. The maximum achievable average RL $RL_{avg}$ over a given frequency range $BW$ is limited by the Q-factor of the load $Q_{load}$ and some constant, such that a higher Q-factor means less (worse) achieavable RL. See also [the Bode-Fano limit](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/07%3A_Chapter_7/7.2%3A_Fano-Bode_Limits).
 
-You may also ask the opposite question: if I have a good match over a given integration range, what match could I achive oder a *wider* target range? This would of course yield an inferior match (worse RL).
+#### Example
 
-Note that:
-- This tool can make no suggestions about *how* the reactive matching network may look like.
-- With resistive matching, typically even better match can be achieved, at the expense of additional loss.
-- Even with purely reactive matching, sometimes even better match can be achieved when using *multiple* reactive elements.
+You have a load with a series inductance, e.g. a wire-bonded termination. The bondwire behaves inductively, forming a resonant circuit (with some Q-factor) together with the termination. Adding a capacitive patch may improve RL at lower frequencies, at the expense of RL at higher frequencies
 
-### Usage
+### How to Use
 
-Valid entries for the integrtion range:
-- E.g. "1e9-10e9" to integrate from 1 GHz to 10 GHz.
-- E.g. "1e9-*" to integrate from 1 GHz, to the highest frequency of the data.
-- E.g. "*-10e9" to integrate from the lowest frequency of the data, to 10 GHz.
+To analyze such circuit, you would do the following:
+1. Select the circuit; if it is a multi-port, select the appropriate *port*.
+2. Integrate over all frequencies, by setting the *Integration* range to "*" (or e.g "0 - 100 GHz").
+3. Enter the *Target* range, in which you want to achieve best match, e.g. "1G - 2G" (the wildcard "*" is *not* allowed here).
 
-Valid entries for the target range are the same, except that "*" is not allowed.
+This will display the following values, and also plot them:
+- *Available*: the average return loss over the *integration* range.
+- *Current*: the average return loss over the *tartget* range.
+- *Achievable*: the theoretical average return loss over the *target* range, *if* an optimum reactive matching network were used.
 
-The diagram can be switched between a Bode plot, and a histogram.
+Note that this tool cannot make any suggestions about *how* the matching network could look like. Neither can it estimate the achieavable RL for multi-ports, where a matching network could be added to each port individually.

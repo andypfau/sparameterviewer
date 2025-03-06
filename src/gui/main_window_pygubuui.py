@@ -277,7 +277,7 @@ class PygubuAppUI:
         self.submenu_3.add(
             "command",
             command=self.on_call_optrlcalc,
-            label='Optimum RL Calculator')
+            label='Return Loss Integrator')
         self.submenu_3.add("separator")
         self.submenu_3.add(
             "command",
