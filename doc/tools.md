@@ -50,7 +50,7 @@ In the main window go *Tools* → *Return Loss Integrator*.
 
 The Bode-Fano limit states that there is an upper bound for the integral over the return loss (RL), from DC to infinite frequency, for a given load circuit (1-port), and an optimum reactive matching network.
 
-This statement can be re-formulated as $BW \cdot RL_{avg} \le Q_{load}^{-1} \cdot const$. The maximum achievable average RL $RL_{avg}$ over a given frequency range $BW$ is limited by the Q-factor of the load $Q_{load}$ and some constant, such that a higher Q-factor means less (worse) achieavable RL. See also [the Bode-Fano limit](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/07%3A_Chapter_7/7.2%3A_Fano-Bode_Limits).
+This statement can be re-formulated as $BW / f_{center} \cdot RL_{avg} \le Q_{load}^{-1} \cdot const$. The maximum achievable average RL $RL_{avg}$ over a given fractional bandwidth $BW / f_{center}$ is limited by the Q-factor of the load $Q_{load}$ and some constant, such that a higher Q-factor means less (worse) achieavable RL. See also [the Bode-Fano limit](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/07%3A_Chapter_7/7.2%3A_Fano-Bode_Limits).
 
 #### Example
 
