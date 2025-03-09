@@ -129,8 +129,9 @@ class TabularDialog(PygubuAppUI):
         
         super().__init__(master)
         AppGlobal.set_toplevel_icon(self.tabular_dialog)
+        
+        self.tabular_dialog.maxsize(800, 600)  #prevent dialog from over-sizing on first population; see populate_table()
 
-        assert initial_selection < len(datasets)
         self.datasets = datasets
 
         def get_display_name(item):
@@ -141,7 +142,9 @@ class TabularDialog(PygubuAppUI):
             raise ValueError()
         
         self.combobox_file['values'] = [get_display_name(item) for item in self.datasets]
-        self.combobox_file.current(initial_selection)
+        if initial_selection is not None:
+            assert initial_selection < len(datasets)
+            self.combobox_file.current(initial_selection)
 
         self.combobox_format['values'] = TabularDialog.FORMATS
         self.combobox_format.current(TabularDialog.DEFAULT_FORMAT)
@@ -280,7 +283,7 @@ class TabularDialog(PygubuAppUI):
         dataset = self.selected_dataset
         if dataset is None:
             return
-        self.plot_data(dataset)
+        self.populate_table(dataset)
     
 
     @property
@@ -290,7 +293,7 @@ class TabularDialog(PygubuAppUI):
         return self.datasets[self.combobox_file.current()]
 
         
-    def plot_data(self, dataset: "TabularDataset"):
+    def populate_table(self, dataset: "TabularDataset"):
 
         ds_fmt = self.format_dataset(self.filter_dataset(dataset))
 
@@ -298,6 +301,10 @@ class TabularDialog(PygubuAppUI):
         all_columns = [ds_fmt.xcol_data] + list(ds_fmt.ycol_datas)
         rows = zip(*all_columns)
         
+        # hack to prevent window from resizing
+        previous_geometry = self.tabular_dialog.geometry()
+        self.listbox.pack_forget()
+
         self.listbox['columns'] = cols
         for col in cols:
             self.listbox.column(col, anchor=tk.E, width=100, minwidth=60, stretch=0)
@@ -307,6 +314,12 @@ class TabularDialog(PygubuAppUI):
         for row in rows:
             formatted_row = self.stringify_row(row)
             self.listbox.insert('', 'end', values=formatted_row)
+
+        # hack to prevent window from resizing
+        self.listbox.pack(expand=True, fill="both", side="top")
+        if previous_geometry !='1x1+0+0':
+            self.tabular_dialog.geometry(previous_geometry)
+        self.tabular_dialog.maxsize(9999,9999)  # allow user to scale manually now
 
         
     def copy_data_csv(self, dataset: "TabularDataset", separator: str = '\t'):

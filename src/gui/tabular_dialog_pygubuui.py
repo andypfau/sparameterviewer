@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None):
+    def __init__(self, master=None, data_pool=None):
         # build ui
         self.tabular_dialog = tk.Tk() if master is None else tk.Toplevel(master)
         self.tabular_dialog.configure(height=500, width=600)

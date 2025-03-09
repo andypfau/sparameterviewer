@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.27b4 (2025-03-09)
+-------------------
+
+- bugfix: preventing tabular dialog from re-sizing automatically
+
+
 0.27b3 (2025-03-06)
 -------------------
 
