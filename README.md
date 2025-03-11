@@ -26,6 +26,7 @@ Roadmap
 
 ### Missing Features
 
+- Statistics: mean, sdev, ...
 - Display: more presets, to quickly scroll through all S-parameters
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
     - The idea is that the GUI has 3 steps: transform → select parameter → plot format
