@@ -487,6 +487,63 @@ crop_f(f_start=-inf, f_end=+inf) → SParams.
 
 Returns the same S-Param, but with a reduced frequency range.
 
+
+##### mean()
+
+```python
+mean() → SParams.
+```
+
+Returns the arithmetic mean of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid.
+
+
+##### median()
+
+```python
+median() → SParams.
+```
+
+Returns the median of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid.
+
+
+##### sdev()
+
+```python
+sdev(ddof=1) → SParams.
+```
+
+Returns the standard deviation of multiple S-parameters. The paraemter `ddof` is the delta degrees of freedom which is handed into NumPy's `std()` function. Applies `interpolate()` first, to get a common frequency grid.
+
+
+##### interpolate()
+
+```python
+interpolate(n: int = None) → SParams.
+```
+
+Interpolates all S-parameters to have the same, equidistant frequency grid.
+
+The lowest and highest frequency of all S-parameters is taken as the new range, and the aveage number of points is used for the new frequency grid, unless `n` is explicitly given.
+
+
+##### interpolate_lin()
+
+```python
+interpolate_lin(f_start: float, f_end: float, n: int) → SParams.
+```
+
+Interpolates all S-parameters to have the same, equidistant frequency grid.
+
+
+##### interpolate_lin()
+
+```python
+interpolate_lin(f_start: float, f_end: float, n: int) → SParams.
+```
+
+Interpolates all S-parameters to have the same, logarithmic frequency grid.
+
+
 #### Unary Operators
 
 

@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.28b1 (2025-03-11)
+-------------------
+
+- new: statistical methods `mean()`, `median()`, `sdev()`
+- new: frequency interpolation methods `interpolate()`, `interpolate_lin()`, `interpolate_log()`
+
+
 0.27b4 (2025-03-09)
 -------------------
 

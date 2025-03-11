@@ -21,6 +21,9 @@ class SParam:
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
+        if len(f) != len(s):
+            print('!)')
+        assert len(f) == len(s)
         self.name, self.f, self.s, self.z0 = name, f, s, z0
     
 
@@ -321,6 +324,67 @@ class SParams:
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParams":
         return self._unary_op(SParam.crop_f, True, f_start=f_start, f_end=f_end)
+
+
+    def _interpolate(self, f: np.ndarray):
+        print(f'_interpolate(...)')
+        result = []
+        for sp in self.sps:
+            try:
+                mag, pha = np.abs(sp.s), np.unwrap(np.angle(sp.s))
+                mag_int, pha_int = np.interp(f, sp.f, mag), np.interp(f, sp.f, pha)
+                s_int = mag_int * np.exp(1j*pha_int)
+                result.append(SParam(sp.name, f, s_int, sp.z0))
+            except Exception as ex:
+                logging.warning(f'Interpolating <{sp.name}> failed ({ex}), ignoring')
+        return SParams(sps=result)
+
+
+    def interpolate_lin(self, f_start: float, f_end: float, n: int):
+        print(f'interpolate_lin({f_start},{f_end},{n})')
+        assert f_start <= f_end
+        assert n >= 1
+        return self._interpolate(np.linspace(f_start, f_end, n))
+
+
+    def interpolate_log(self, f_start: float, f_end: float, n: int):
+        print(f'interpolate_log({f_start},{f_end},{n})')
+        assert f_start > 0
+        assert f_start <= f_end
+        assert n >= 1
+        return self._interpolate(np.geomspace(f_start, f_end, n))
+
+
+    def interpolate(self, n: int = None):
+        print(f'interpolate()')
+        all_f = [sp.f for sp in self.sps]
+        f_start = np.min(all_f)
+        f_stop = np.max(all_f)
+        if n is None:
+            n = max(3, int(round(np.mean([len(f) for f in all_f]))))
+        return self.interpolate_lin(f_start, f_stop, n)
+
+
+    def _interpolated_fn(self, name, fn, min_size=1):
+        print(f'_interpolated_fn({fn},{min_size})')
+        sps = self.interpolate().sps
+        if len(sps) < min_size:
+            return []
+        f = sps[0].f
+        s = fn([sp.s for sp in sps])
+        return SParams(sps=[SParam(name, f, s, math.nan)])
+
+
+    def mean(self):
+        return self._interpolated_fn('Mean', lambda s: np.mean(s,axis=0))
+
+
+    def median(self):
+        return self._interpolated_fn('Median', lambda s: np.median(s,axis=0))
+
+
+    def sdev(self, ddof=1):
+        return self._interpolated_fn('StdDev', lambda s: np.std(s,axis=0,ddof=ddof), min_size=2)
     
 
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":
