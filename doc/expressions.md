@@ -559,6 +559,25 @@ sel_nws().s(1,1).map(lambda s: s**2).plot()  # squares the linear S-parameters
 ```
 
 
+##### rename()
+
+```python
+rename(name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None) → SParams.
+```
+
+Renames S-parameters; parameters:
+- `name`: if provided, replaces the whole name with `name`
+- `prefix`: if provided, prepends the existing name with `prefix`
+- `suffix`: if provided, appends `suffix` to the existing name
+- `pattern` and `subs`: if provided, the regex `pattern` is replaced with `subs`
+
+Example:
+
+```python
+sel_nws().s(2,1).rename(prefix='Gain of').plot()
+```
+
+
 #### Unary Operators
 
 

@@ -180,7 +180,21 @@ class SParam:
         s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
-        return SParam(self.name, self.f, s, self.z0)
+        return SParam(self.name, self.f, s, self.z0)    
+    
+    def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
+        new_name = self.name
+        if name is not None:
+            new_name = name
+        if prefix is not None:
+            new_name = prefix + new_name
+        if suffix is not None:
+            new_name = new_name + suffix
+        if pattern is not None or subs is not None:
+            if pattern is None or subs is None:
+                raise ValueError('SParam.rename(): pattern and subs must be specified together')
+            new_name = re.sub(pattern, subs, new_name)
+        return SParam(new_name, self.f, self.s, self.z0)
     
 
     def save(self, filename: str):
@@ -395,6 +409,10 @@ class SParams:
 
     def map(self, fn: "Callable[np.ndarray,np.ndarray]"):
         return SParams(sps=[s.map(fn) for s in self.sps])
+
+    
+    def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
+        return self._unary_op(SParam.rename, True, name=name, prefix=prefix, suffix=suffix, pattern=pattern, subs=subs)
     
 
     def save(self, filename: str):
