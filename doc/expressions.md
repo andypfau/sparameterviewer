@@ -352,6 +352,27 @@ renorm(z)
 Renormalize to a specific reference impedance. <z> can be a scalar, or a list of scalars (one per port).
 
 
+##### rewire()
+
+```python
+rewire(ports: list[int])
+```
+
+Re-wires a network. The argument is the list of ports to keep.
+
+Examples:
+```python
+# swap ports of a 2-port
+nw('amp').rewire([2,1]).plot()
+
+# only keep port 2
+nw('multiport').rewire([2]).plot()
+
+# remove (i.e. terminate) 3rd port
+nw('coupler').rewire([1,2,4]).plot()
+```
+
+
 ##### quick()
 
 ```python

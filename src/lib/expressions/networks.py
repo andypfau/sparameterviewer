@@ -487,6 +487,18 @@ class Network:
         return Network(nw)
 
 
+    def rewire(self, ports: list[int]) -> "Network":
+        nw = self.nw.copy()
+        if len(ports) != nw.nports:
+            indices_to_keep = [p-1 for p in ports]
+            nw_renumbered = nw.subnetwork(indices_to_keep)
+        else:
+            old_indices = [i for i in range(len(ports))]
+            new_indices = [p-1 for p in ports]
+            nw_renumbered = nw.renumbered(old_indices, new_indices)
+        return Network(nw_renumbered)
+
+
     def save(self, filename: str):
         
         nw = self.nw.copy()
@@ -683,6 +695,10 @@ class Networks:
 
     def renorm(self, z: "complex|list[complex]") -> "Networks":
         return self._unary_op(Network.renorm, Networks, z=z)
+
+
+    def rewire(self, ports: list[int]) -> "Networks":
+        return self._unary_op(Network.rewire, Networks, ports=ports)
 
 
     def save(self, filename: str):

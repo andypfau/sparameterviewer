@@ -7,6 +7,7 @@ S-Parameter Viewer Changelog
 
 - new: method `SParams.map()`, which allows to apply arbitrary NumPy functions to S-parameters
 - new: method `SParams.rename()` to rename a trace
+- new: method `Networks.rewire()`, which allows to re-map port numbers
 
 
 0.28b1 (2025-03-11)
