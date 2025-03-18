@@ -22,8 +22,6 @@ class SParam:
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
-        if len(f) != len(s):
-            print('!)')
         assert len(f) == len(s)
         self.name, self.f, self.s, self.z0 = name, f, s, z0
     
@@ -336,7 +334,6 @@ class SParams:
 
 
     def _interpolate(self, f: np.ndarray):
-        print(f'_interpolate(...)')
         result = []
         for sp in self.sps:
             try:
@@ -350,14 +347,12 @@ class SParams:
 
 
     def interpolate_lin(self, f_start: float, f_end: float, n: int):
-        print(f'interpolate_lin({f_start},{f_end},{n})')
         assert f_start <= f_end
         assert n >= 1
         return self._interpolate(np.linspace(f_start, f_end, n))
 
 
     def interpolate_log(self, f_start: float, f_end: float, n: int):
-        print(f'interpolate_log({f_start},{f_end},{n})')
         assert f_start > 0
         assert f_start <= f_end
         assert n >= 1
@@ -365,7 +360,6 @@ class SParams:
 
 
     def interpolate(self, n: int = None):
-        print(f'interpolate()')
         all_f = [sp.f for sp in self.sps]
         f_start = np.min(all_f)
         f_stop = np.max(all_f)
@@ -375,7 +369,6 @@ class SParams:
 
 
     def _interpolated_fn(self, name, fn, min_size=1):
-        print(f'_interpolated_fn({fn},{min_size})')
         sps = self.interpolate().sps
         if len(sps) < min_size:
             return []
