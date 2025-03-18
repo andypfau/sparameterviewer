@@ -544,6 +544,21 @@ interpolate_lin(f_start: float, f_end: float, n: int) → SParams.
 Interpolates all S-parameters to have the same, logarithmic frequency grid.
 
 
+##### map()
+
+```python
+map(fn: callable) → SParams.
+```
+
+Applies an arbitrary function to each S-parameter. The function `fn` is called for each S-parameter (`numpy.ndarray`) individually.
+
+Example:
+
+```python
+sel_nws().s(1,1).map(lambda s: s**2).plot()  # squares the linear S-parameters
+```
+
+
 #### Unary Operators
 
 

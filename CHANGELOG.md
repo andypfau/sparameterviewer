@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.28b2 (2025-03-18)
+-------------------
+
+- new: method `map()`, which allows to apply arbitrary NumPy functions to S-parameters
+
+
 0.28b1 (2025-03-11)
 -------------------
 

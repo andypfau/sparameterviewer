@@ -11,6 +11,7 @@ import logging
 import scipy.signal
 import os
 import re
+from typing import Callable
 
 
 
@@ -174,6 +175,14 @@ class SParam:
         f = np.array([f_target_start, f_target_end])
         s = np.array([s11_linear, s11_linear])
         return SParam(self.name, f, s, self.z0)
+    
+        
+
+    def map(self, fn: "Callable[np.ndarray,np.ndarray]"):
+        s = np.array(fn(self.s))
+        if s.shape != self.s.shape:
+            raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
+        return SParam(self.name, self.f, s, self.z0)
     
 
     def save(self, filename: str):
@@ -389,6 +398,10 @@ class SParams:
 
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":
         return self._unary_op(SParam.rl_avg, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
+    
+
+    def map(self, fn: "Callable[np.ndarray,np.ndarray]"):
+        return SParams(sps=[s.map(fn) for s in self.sps])
     
 
     def save(self, filename: str):
