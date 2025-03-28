@@ -18,7 +18,7 @@ class SParamFile:
     def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
 
         self.file_path = file_path
-        self._archive_path = archive_path
+        self.archive_path = archive_path
         self.filename = os.path.split(self.file_path)[1]
         self.tag = tag
 
@@ -39,7 +39,7 @@ class SParamFile:
 
         def load(path):
             try:
-                logging.debug(f'Loading network "{path}" from "{self._archive_path}"')
+                logging.debug(f'Loading network "{path}" from "{self.archive_path}"')
                 ext = os.path.splitext(path)[1].lower()
                 if ext == '.cti':
                     citi = CitiReader(path)
@@ -52,15 +52,15 @@ class SParamFile:
                 self._error = str(ex)
                 self._nw = None
         
-        if self._archive_path is not None:
+        if self.archive_path is not None:
             with tempfile.TemporaryDirectory() as tempdir:
-                with zipfile.ZipFile(self._archive_path, 'r') as zf:
+                with zipfile.ZipFile(self.archive_path, 'r') as zf:
                     try:
                         zipped_filename = zf.extract(self.file_path, tempdir)
                         load(zipped_filename)
                         os.remove(zipped_filename)
                     except Exception as ex:
-                        logging.warning(f'Unable to extract "{self.file_path}" from "{self._archive_path}" ({ex})')
+                        logging.warning(f'Unable to extract "{self.file_path}" from "{self.archive_path}" ({ex})')
         else:
             load(self.file_path)
 
@@ -68,10 +68,6 @@ class SParamFile:
     def nw(self):
         self._load()
         return self._nw
-
-    @property
-    def archive_path(self):
-        return self._archive_path
     
 
     def loaded(self) -> bool:

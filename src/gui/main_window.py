@@ -946,15 +946,27 @@ class SparamviewerMainDialog(PygubuAppUI):
 
         is_dir = os.path.isdir(filenames_or_directory[0])
         if is_dir:
-            absdir = os.path.abspath(filenames_or_directory[0])
+            directory = filenames_or_directory
+            absdir = os.path.abspath(directory[0])
             self.directories = [absdir]
             self.load_files_in_directory(absdir)
             self.update_file_list(only_select_first=True)
         else:
-            absdir = os.path.split(filenames_or_directory[0])[0]
+            filenames = filenames_or_directory
+            if not Settings.extract_zip:
+                contains_archives = False
+                for filename in filenames:
+                    ext = os.path.splitext(filename)[1].lower()
+                    if ext in ['.zip']:
+                        contains_archives = True
+                        break
+                if contains_archives:
+                    if messagebox.askyesno('Extract .zip Files', 'A .zip-file was selected, but the option to extract .zip-files is disabled. Do you want to enable it?'):
+                        Settings.extract_zip = True
+            absdir = os.path.split(filenames[0])[0]
             self.directories = [absdir]
             self.load_files_in_directory(absdir)
-            self.update_file_list(selected_filenames=filenames_or_directory)
+            self.update_file_list(selected_filenames=filenames)
     
 
     def update_most_recent_directories_menu(self):
@@ -1088,6 +1100,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.search_str.set('')
 
         self.treeview_files.delete(*self.treeview_files.get_children())
+        selected_archives = set()
         for i,file in enumerate(self.files):
             
             tag = file.tag
@@ -1103,6 +1116,11 @@ class SparamviewerMainDialog(PygubuAppUI):
                 do_select = True
             elif os.path.abspath(file.file_path) in [os.path.abspath(f) for f in selected_filenames]:
                 do_select = True
+            elif (file.archive_path is not None) and (os.path.abspath(file.archive_path) in [os.path.abspath(f) for f in selected_filenames]):
+                if file.archive_path not in selected_archives:
+                    # only select the 1st file in any archive, to avoid excessive loading time
+                    selected_archives.add(file.archive_path)
+                    do_select = True
             elif search is not None:
                 try:
                     if re.search(search, file.filename, re.IGNORECASE):
