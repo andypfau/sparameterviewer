@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None):
+    def __init__(self, master=None, data_pool=None):
         # build ui
         self.toplevel_log = tk.Tk() if master is None else tk.Toplevel(master)
         self.toplevel_log.configure(height=200, width=200)
@@ -29,7 +29,7 @@ class PygubuAppUI:
         self.combobox1.configure(
             state="readonly",
             textvariable=self.log_level,
-            values='Debug Info Warning Error')
+            values='Debug Info Warning Error Critical')
         self.combobox1.pack(side="left")
         self.combobox1.bind("<<ComboboxSelected>>", self.on_set_level, add="")
         self.button2 = ttk.Button(self.frame5)

@@ -3,7 +3,7 @@
 import sys, os, logging
 
 from gui.main_window import SparamviewerMainDialog
-from gui.log_dialog import LogHandler
+from gui.log_handler import LogHandler
 from lib import AppGlobal, is_windows
 
 
@@ -12,7 +12,10 @@ if __name__ == '__main__':
     
     LOG_FORMAT = '%(asctime)s: %(message)s (%(filename)s:%(lineno)d:%(funcName)s, %(levelname)s)'
     logging.captureWarnings(True)
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, stream=None)
+    logging.basicConfig(level=logging.ERROR, format=LOG_FORMAT, stream=None)
+    logging.getLogger().setLevel(logging.DEBUG)
+    
+    LogHandler.inst()  # trigger initialization
 
     try:
         # add a second logger that logs critical errors to file
@@ -29,8 +32,6 @@ if __name__ == '__main__':
         logging.getLogger('matplotlib.ticker').disabled = True
     except Exception as ex:
         pass # ignore
-    
-    LogHandler.set_up()
 
     # splashscreen (pyinstaller only)
     if AppGlobal.is_running_from_binary():

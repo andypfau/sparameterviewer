@@ -1,62 +1,10 @@
 from tkinter import END
 from .log_dialog_pygubuui import PygubuAppUI
+from .log_handler import LogHandler
 from lib import TkText, AppGlobal, TkCommon
 from .settings import Settings
 
 import logging
-
-
-
-
-
-class LogHandler(logging.Handler):
-
-    instance: "LogHandler"
-    
-    @staticmethod
-    def set_up():
-        LogHandler.instance = LogHandler(Settings.log_level)
-        logging.getLogger().addHandler(LogHandler.instance)
-        def settings_changed():
-            LogHandler.instance.setLevel(Settings.log_level)
-        Settings.attach(settings_changed)
-    
-    
-    def __init__(self, level):
-        self.entries = []
-        self.latest_levelno = None
-        self.latest_message = None
-        self._observers = []
-        super().__init__(level)
-    
-
-    def clear(self):
-        self.entries = []
-        self.notify()
-
-
-    def emit(self, record):
-        self.entries.append(f'{record.levelname}: {record.message} ({record.exc_text})')
-        self.latest_levelno = record.levelno
-        self.latest_message = record.message
-        self.notify()
-
-
-    def notify(self):
-        for callback in self._observers:
-            try:
-                callback()
-            except: pass
-
-
-    def attach(self, callback: "callable[None,None]"):
-        self._observers.append(callback)
-
-    
-    def detach(self, callback: "callable[None,None]"):
-        try:
-            self._observers.remove(callback)
-        except: pass
 
 
 
@@ -71,7 +19,9 @@ class SparamviewerLogDialog(PygubuAppUI):
         TkText.default_keyhandler(self.toplevel_log, readonly=True, custom_handler=lambda **kwargs: self.on_check_for_global_keystrokes(is_textbox=True,**kwargs))
         self.update_log_text()
 
-        if Settings.log_level >= logging.ERROR:
+        if Settings.log_level >= logging.CRITICAL:
+            self.log_level.set('Critical')
+        elif Settings.log_level >= logging.ERROR:
             self.log_level.set('Error')
         elif Settings.log_level >= logging.WARNING:
             self.log_level.set('Warning')
@@ -82,10 +32,10 @@ class SparamviewerLogDialog(PygubuAppUI):
 
         def update_log_callback():
             self.update_log_text()
-        LogHandler.instance.attach(update_log_callback)
+        LogHandler.inst().attach(update_log_callback)
 
         def on_close():
-            LogHandler.instance.detach(update_log_callback)
+            LogHandler.inst().detach(update_log_callback)
             self.toplevel_log.destroy()
         self.toplevel_log.protocol("WM_DELETE_WINDOW", on_close)
         
@@ -97,7 +47,7 @@ class SparamviewerLogDialog(PygubuAppUI):
     
 
     def update_log_text(self):
-        text = '\n'.join(reversed(LogHandler.instance.entries))
+        text = '\n'.join(reversed(LogHandler.inst().get_messages(Settings.log_level)))
         TkText.set_text(self.log_text, text)
     
 
@@ -115,7 +65,7 @@ class SparamviewerLogDialog(PygubuAppUI):
 
 
     def on_clear(self):
-        LogHandler.instance.clear()
+        LogHandler.inst().clear()
         #TkText.set_text(self.toplevel_log, '')
 
 
@@ -128,5 +78,8 @@ class SparamviewerLogDialog(PygubuAppUI):
             Settings.log_level = logging.WARNING
         elif self.log_level.get() == 'Error':
             Settings.log_level = logging.ERROR
+        elif self.log_level.get() == 'Critical':
+            Settings.log_level = logging.CRITICAL
         else:
             raise ValueError(f'Invalid log level: "{self.log_level.get()}"')
+        self.update_log_text()

@@ -19,7 +19,8 @@ from .main_window_pygubuui import PygubuAppUI
 from .info_dialog import SparamviewerInfoDialog
 from .rl_dialog import SparamviewerReturnlossDialog
 from .cursor_dialog import SparamviewerCursorDialog
-from .log_dialog import SparamviewerLogDialog, LogHandler
+from .log_dialog import SparamviewerLogDialog
+from .log_handler import LogHandler
 from .settings_dialog import SparamviewerSettingsDialog
 from .axes_dialog import SparamviewerAxesDialog
 from .settings import Settings
@@ -1167,7 +1168,7 @@ class SparamviewerMainDialog(PygubuAppUI):
                 return gd
 
             self.show_error(None)              
-            n_log_entries_before = len(LogHandler.instance.entries)
+            n_log_entries_before = len(LogHandler.inst().get_messages(logging.WARNING))
 
             data_expr_based = Settings.plot_mode==self.MODE_EXPR
             qty_db = (Settings.plot_unit == self.UNIT_DB)
@@ -1315,10 +1316,10 @@ class SparamviewerMainDialog(PygubuAppUI):
             for f in touched_files:
                 self.update_file_in_list(f)
             
-            log_entries_after = len(LogHandler.instance.entries)
+            log_entries_after = len(LogHandler.inst().get_messages(logging.WARNING))
             n_new_entries = log_entries_after - n_log_entries_before
             if n_new_entries > 0:
-                self.show_error(LogHandler.instance.latest_message)
+                self.show_error(LogHandler.inst().latest_message)
 
             self.plot.render()
 
