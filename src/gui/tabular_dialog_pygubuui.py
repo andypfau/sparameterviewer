@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None, data_pool=None):
+    def __init__(self, master=None):
         # build ui
         self.tabular_dialog = tk.Tk() if master is None else tk.Toplevel(master)
         self.tabular_dialog.configure(height=500, width=600)
@@ -30,29 +30,17 @@ class PygubuAppUI:
             "<<ComboboxSelected>>",
             self.on_change_format,
             add="")
-        self.checkbutton1 = ttk.Checkbutton(self.frame3)
-        self.enable_filter_x = tk.StringVar()
-        self.checkbutton1.configure(
-            offvalue="ignore",
-            onvalue="filter",
-            text='X:',
-            variable=self.enable_filter_x)
-        self.checkbutton1.pack(padx=5, pady=5, side="left")
-        self.checkbutton1.configure(command=self.on_enable_filter)
+        self.label1 = ttk.Label(self.frame3)
+        self.label1.configure(text='X:')
+        self.label1.pack(padx=5, pady=5, side="left")
         self.entry_x = ttk.Combobox(self.frame3, name="entry_x")
         self.filter_x = tk.StringVar()
         self.entry_x.configure(textvariable=self.filter_x, validate="all")
         self.entry_x.pack(expand=True, fill="x", padx=5, pady=5, side="left")
         self.entry_x.configure(validatecommand=self.on_change_filter_x)
-        self.checkbutton2 = ttk.Checkbutton(self.frame3)
-        self.enable_filter_cols = tk.StringVar()
-        self.checkbutton2.configure(
-            offvalue="ignore",
-            onvalue="filter",
-            text='Cols:',
-            variable=self.enable_filter_cols)
-        self.checkbutton2.pack(padx=5, pady=5, side="left")
-        self.checkbutton2.configure(command=self.on_enable_filter)
+        self.label2 = ttk.Label(self.frame3)
+        self.label2.configure(text='Cols:')
+        self.label2.pack(padx=5, pady=5, side="left")
         self.entry_cols = ttk.Combobox(self.frame3, name="entry_cols")
         self.filter_cols = tk.StringVar()
         self.entry_cols.configure(
@@ -138,9 +126,6 @@ class PygubuAppUI:
         pass
 
     def on_change_format(self, event=None):
-        pass
-
-    def on_enable_filter(self):
         pass
 
     def on_change_filter_x(self):
