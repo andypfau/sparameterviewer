@@ -391,7 +391,8 @@ class SparamviewerMainDialog(PygubuAppUI):
 
     def on_gen_expr(self, event):
 
-        selected_file_names = [file.name for file in self.files if file.tag in self.treeview_files.selection()]
+        def selected_file_names():
+            return [file.name for file in self.files if file.tag in self.treeview_files.selection()]
 
         def set_expression(*expressions):
             current = TkText.get_text(self.text_expr).strip()
@@ -418,7 +419,24 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.combobox_unit.current(idx)
             self.on_select_plotunit(None)
         
+        def ensure_selected_file_count(op, n_required):
+            n = len(selected_file_names())
+            if op == '>=':
+                if n < n_required:
+                    messagebox.showinfo('Invalid operation', f'To use this template, select at least {n_required} file{"s" if n_required!=1 else ""}.')
+                    return False
+            elif op == '==':
+                if n != n_required:
+                    messagebox.showinfo('Invalid operation', f'To use this template, select exactly {n_required} file{"s" if n_required!=1 else ""}.')
+                    return False
+            else:
+                raise ValueError()
+            return True
+        
         def as_currently_selected():
+            if len(self.generated_expressions) < 1:
+                messagebox.showinfo('Invalid operation', 'To use this template, select anything other than Expression-Based.')
+                return
             set_expression(self.generated_expressions)
         
         def all_sparams():
@@ -480,45 +498,57 @@ class SparamviewerMainDialog(PygubuAppUI):
             switch_to_linear_scale()
         
         def cascade():
-            assert len(selected_file_names) == 2, 'This command only works for two or more selected networks'
-            nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names])
+            if not ensure_selected_file_count('>=', 2):
+                return
+            nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names()])
             set_expression(f'({nws}).s(2,1).plot()')
         
         def deembed1from2():
-            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
-            [n1, n2] = selected_file_names
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
             set_expression(f"((nw('{n1}').invert()) ** nw('{n2}')).s(2,1).plot()")
         
         def deembed2from1():
-            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
-            [n1, n2] = selected_file_names
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
             set_expression(f"(nw('{n1}') ** (nw('{n2}').invert())).s(2,1).plot()")
         
         def deembed2from1flipped():
-            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
-            [n1, n2] = selected_file_names
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
             set_expression(f"(nw('{n1}') ** (nw('{n2}').flip().invert())).s(2,1).plot()")
         
         def deembed2xthru():
-            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
-            [n1, n2] = selected_file_names
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
             set_expression(f"((nw('{n1}').half(side=1)) ** nw('{n2}') **(nw('{n1}').half(side=2))).s(2,1).plot()")
         
         def ratio_of_two():
-            assert len(selected_file_names) == 2, 'This command only works for exactly two selected networks'
-            [n1, n2] = selected_file_names
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
             set_expression(f"(nw('{n1}').s(2,1)/nw('{n2}').s(2,1)).plot()")
         
         def mixed_mode():
-            expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names]
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names()]
             set_expression(*expressions)
 
         def z_renorm():
-            expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names]
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names()]
             set_expression(*expressions)
 
         def add_tline():
-            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names]
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names()]
             set_expression(*expressions)
         
         def impedance():
@@ -530,64 +560,63 @@ class SparamviewerMainDialog(PygubuAppUI):
             switch_to_linear_scale()
 
         def all_selected():
-            expressions = [f"nw('{n}').s().plot()" for n in selected_file_names]
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').s().plot()" for n in selected_file_names()]
             set_expression(*expressions)
         
-        def menuenable(expr):
-            return NORMAL if expr else DISABLED
+        self.template_menu = Menu(self.toplevel_main, tearoff=False)
+        self.template_menu.add_command(label='As Currently Selected', command=as_currently_selected)
+        self.template_menu.add_separator()
+        
+        self.template_submenu_plotting = Menu(self.template_menu, tearoff=False)
+        self.template_menu.add(CASCADE, menu=self.template_submenu_plotting, label='S-Parameters')
+        self.template_submenu_plotting.add_command(label='All S-Parameters', command=all_sparams)
+        self.template_submenu_plotting.add_command(label='Insertion Loss', command=insertion_loss)
+        self.template_submenu_plotting.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
+        self.template_submenu_plotting.add_command(label='Return Loss', command=return_loss)
+        self.template_submenu_plotting.add_command(label='VSWR', command=vswr)
+        self.template_submenu_plotting.add_command(label='Mismatch Loss', command=mismatch_loss)
+        self.template_submenu_plotting.add_separator()
+        self.template_submenu_plotting.add_command(label='S11', command=quick11)
+        self.template_submenu_plotting.add_command(label='S11, S21, S22', command=quick112122)
+        self.template_submenu_plotting.add_command(label='S11, S21, S12, S22', command=quick11211222)
+        self.template_submenu_plotting.add_command(label='S11, S21, S22, S31, S32, S33', command=quick112122313233)
+        self.template_submenu_plotting.add_separator()
+        self.template_submenu_plotting.add_command(label='Impedance', command=impedance)
+        self.template_submenu_plotting.add_command(label='Admittance', command=admittance)
 
-        menu = Menu(self.toplevel_main, tearoff=False)
-        menu.add_command(label='As Currently Selected', command=as_currently_selected, state='disabled' if len(self.generated_expressions)<1 else 'normal')
-        menu.add_separator()
+        self.template_submenu_analysis = Menu(self.template_menu, tearoff=False)
         
-        submenu_plotting = Menu(menu, tearoff=False)
-        menu.add(CASCADE, menu=submenu_plotting, label='S-Parameters')
-        submenu_plotting.add_command(label='All S-Parameters', command=all_sparams)
-        submenu_plotting.add_command(label='Insertion Loss', command=insertion_loss)
-        submenu_plotting.add_command(label='Insertion Loss (Reciprocal / 1st Only)', command=insertion_loss_reciprocal)
-        submenu_plotting.add_command(label='Return Loss', command=return_loss)
-        submenu_plotting.add_command(label='VSWR', command=vswr)
-        submenu_plotting.add_command(label='Mismatch Loss', command=mismatch_loss)
-        submenu_plotting.add_separator()
-        submenu_plotting.add_command(label='S11', command=quick11)
-        submenu_plotting.add_command(label='S11, S21, S22', command=quick112122)
-        submenu_plotting.add_command(label='S11, S21, S12, S22', command=quick11211222)
-        submenu_plotting.add_command(label='S11, S21, S22, S31, S32, S33', command=quick112122313233)
-        submenu_plotting.add_separator()
-        submenu_plotting.add_command(label='Impedance', command=impedance)
-        submenu_plotting.add_command(label='Admittance', command=admittance)
+        self.template_menu.add(CASCADE, menu=self.template_submenu_analysis, label='Network Analysis')
+        self.template_submenu_analysis.add_command(label='Stability', command=stability)
+        self.template_submenu_analysis.add_command(label='Reciprocity', command=reciprocity)
+        self.template_submenu_analysis.add_command(label='Passivity', command=passivity)
+        self.template_submenu_analysis.add_command(label='Losslessness', command=losslessness)
 
-        submenu_analysis = Menu(menu, tearoff=False)
+        self.template_submenu_templates = Menu(self.template_menu, tearoff=False)
+        self.template_menu.add(CASCADE, menu=self.template_submenu_templates, label='Operations on Selected Networks')
+        self.template_submenu_templates.add_command(label='Single-Ended to Mixed-Mode', command=mixed_mode)
+        self.template_submenu_templates.add_command(label='Impedance Renormalization', command=z_renorm)
+        self.template_submenu_templates.add_command(label='Add Line To Network', command=add_tline)
+        self.template_submenu_templates.add_separator()
+        self.template_submenu_templates.add_command(label='Just Plot All Selected Files', command=all_selected)
         
-        menu.add(CASCADE, menu=submenu_analysis, label='Network Analysis')
-        submenu_analysis.add_command(label='Stability', command=stability)
-        submenu_analysis.add_command(label='Reciprocity', command=reciprocity)
-        submenu_analysis.add_command(label='Passivity', command=passivity)
-        submenu_analysis.add_command(label='Losslessness', command=losslessness)
-
-        submenu_templates = Menu(menu, tearoff=False)
-        menu.add(CASCADE, menu=submenu_templates, label='Operations on Selected Networks')
-        submenu_templates.add_command(label='Single-Ended to Mixed-Mode', command=mixed_mode, state=menuenable(len(selected_file_names)>=1))
-        submenu_templates.add_command(label='Impedance Renormalization', command=z_renorm, state=menuenable(len(selected_file_names)>=1))
-        submenu_templates.add_command(label='Add Line To Network', command=add_tline, state=menuenable(len(selected_file_names)>=1))
-        submenu_templates.add_separator()
-        submenu_templates.add_command(label='Just Plot All Selected Files', command=all_selected, state=menuenable(len(selected_file_names)>=1))
+        self.template_submenu_2nw = Menu(self.template_menu, tearoff=False)
+        self.template_menu.add(CASCADE, menu=self.template_submenu_2nw, label='Operations on Two Selected Networks')
+        self.template_submenu_2nw.add_command(label='De-Embed First Network from Second', command=deembed1from2)
+        self.template_submenu_2nw.add_command(label='De-Embed Second Network from First', command=deembed2from1)
+        self.template_submenu_2nw.add_command(label='De-Embed Second (Flipped) Network from First', command=deembed2from1flipped)
+        self.template_submenu_2nw.add_command(label='Treat First as 2xTHRU, De-Embed from Second', command=deembed2xthru)
+        self.template_submenu_2nw.add_command(label='Ratio of Two Networks', command=ratio_of_two)
         
-        submenu_2nw = Menu(menu, tearoff=False)
-        menu.add(CASCADE, menu=submenu_2nw, label='Operations on Two Selected Networks')
-        submenu_2nw.add_command(label='De-Embed First Network from Second', command=deembed1from2, state=menuenable(len(selected_file_names)==2))
-        submenu_2nw.add_command(label='De-Embed Second Network from First', command=deembed2from1, state=menuenable(len(selected_file_names)==2))
-        submenu_2nw.add_command(label='De-Embed Second (Flipped) Network from First', command=deembed2from1flipped, state=menuenable(len(selected_file_names)==2))
-        submenu_2nw.add_command(label='Treat First as 2xTHRU, De-Embed from Second', command=deembed2xthru, state=menuenable(len(selected_file_names)==2))
-        submenu_2nw.add_command(label='Ratio of Two Networks', command=ratio_of_two, state=menuenable(len(selected_file_names)==2))
-        
-        submenu_nnw = Menu(menu, tearoff=False)
-        menu.add(CASCADE, menu=submenu_nnw, label='Operations on Two or More Selected Networks')
-        submenu_nnw.add_command(label='Cascade Selected Networks', command=cascade, state=menuenable(len(selected_file_names)>=2))
+        self.template_submenu_nnw = Menu(self.template_menu, tearoff=False)
+        self.template_menu.add(CASCADE, menu=self.template_submenu_nnw, label='Operations on Two or More Selected Networks')
+        self.template_submenu_nnw.add_command(label='Cascade Selected Networks', command=cascade)
         
         # show poupu at cursor
         x, y = event.x_root, event.y_root
-        menu.post(x, y)
+        self.template_menu.post(x, y)
     
 
     def on_menu_help(self):
