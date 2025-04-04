@@ -128,7 +128,7 @@ class PygubuAppUI:
             onvalue="comment",
             text='Comment-Out Existing Expressions',
             variable=self.comment_existing_expr)
-        self.checkbutton1.pack(anchor="w", side="top")
+        self.checkbutton1.pack(anchor="w", padx=4, pady=4, side="top")
         self.checkbutton1.configure(command=self.on_comment_expr_change)
         self.checkbutton2 = ttk.Checkbutton(self.labelframe1)
         self.extract_zip = tk.StringVar()
@@ -138,8 +138,27 @@ class PygubuAppUI:
             onvalue="extract",
             text='Extract .zip-Files',
             variable=self.extract_zip)
-        self.checkbutton2.pack(anchor="w", side="top")
+        self.checkbutton2.pack(anchor="w", padx=4, pady=4, side="top")
         self.checkbutton2.configure(command=self.on_comment_expr_change)
+        self.frame1 = ttk.Frame(self.labelframe1)
+        self.frame1.configure(height=200, width=200)
+        self.label4 = ttk.Label(self.frame1)
+        self.label4.configure(text='Phase:')
+        self.label4.pack(padx=3, side="left")
+        self.radiobutton1 = ttk.Radiobutton(self.frame1)
+        self.phase_unit = tk.StringVar(value='deg')
+        self.radiobutton1.configure(
+            text='Degrees',
+            value="deg",
+            variable=self.phase_unit)
+        self.radiobutton1.pack(padx=3, side="left")
+        self.radiobutton2 = ttk.Radiobutton(self.frame1)
+        self.radiobutton2.configure(
+            text='Radians',
+            value="rad",
+            variable=self.phase_unit)
+        self.radiobutton2.pack(padx=3, side="left")
+        self.frame1.pack(fill="x", pady=3, side="top")
         self.labelframe1.pack(
             anchor="w",
             fill="x",

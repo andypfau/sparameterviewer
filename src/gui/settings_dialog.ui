@@ -268,6 +268,8 @@
                 <property name="variable">string:comment_existing_expr</property>
                 <layout manager="pack">
                   <property name="anchor">w</property>
+                  <property name="padx">4</property>
+                  <property name="pady">4</property>
                   <property name="side">top</property>
                 </layout>
               </object>
@@ -282,8 +284,52 @@
                 <property name="variable">string:extract_zip</property>
                 <layout manager="pack">
                   <property name="anchor">w</property>
+                  <property name="padx">4</property>
+                  <property name="pady">4</property>
                   <property name="side">top</property>
                 </layout>
+              </object>
+            </child>
+            <child>
+              <object class="ttk.Frame" id="frame1">
+                <property name="height">200</property>
+                <property name="width">200</property>
+                <layout manager="pack">
+                  <property name="fill">x</property>
+                  <property name="pady">3</property>
+                  <property name="side">top</property>
+                </layout>
+                <child>
+                  <object class="ttk.Label" id="label4">
+                    <property name="text" translatable="yes">Phase:</property>
+                    <layout manager="pack">
+                      <property name="padx">3</property>
+                      <property name="side">left</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Radiobutton" id="radiobutton1">
+                    <property name="text" translatable="yes">Degrees</property>
+                    <property name="value">deg</property>
+                    <property name="variable">string:phase_unit</property>
+                    <layout manager="pack">
+                      <property name="padx">3</property>
+                      <property name="side">left</property>
+                    </layout>
+                  </object>
+                </child>
+                <child>
+                  <object class="ttk.Radiobutton" id="radiobutton2">
+                    <property name="text" translatable="yes">Radians</property>
+                    <property name="value">rad</property>
+                    <property name="variable">string:phase_unit</property>
+                    <layout manager="pack">
+                      <property name="padx">3</property>
+                      <property name="side">left</property>
+                    </layout>
+                  </object>
+                </child>
               </object>
             </child>
           </object>

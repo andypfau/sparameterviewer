@@ -96,6 +96,12 @@ class SparamviewerSettingsDialog(PygubuAppUI):
             Settings.extract_zip = self.extract_zip.get()=='extract'
         self.extract_zip.set('extract' if Settings.extract_zip else 'ignore')
         self.extract_zip.trace_add('write', on_extract_zip_change)
+
+        self.phase_unit.set(Settings.phase_unit)
+        def on_phase_unit_change(var, index, mode):
+            Settings.phase_unit = self.phase_unit.get()
+            self.callback()
+        self.phase_unit.trace_add('write', on_phase_unit_change)
         
         self.ext_ed.set(Settings.ext_editor_cmd)
         

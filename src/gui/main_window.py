@@ -1238,7 +1238,10 @@ class SparamviewerMainDialog(PygubuAppUI):
                     if qty_group_delay:
                         yq,yf,yl = 'Group Delay',SiFmt(unit='s',force_sign=True),False
                     elif qty_phase:
-                        yq,yf,yl = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True),False
+                        if Settings.phase_unit=='deg':
+                            yq,yf,yl = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True),False
+                        else:
+                            yq,yf,yl = 'Phase',SiFmt(use_si_prefix=False,force_sign=True),False
                     elif qty_re or qty_im:
                         yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
                     elif qty_lin_mag:
@@ -1263,6 +1266,11 @@ class SparamviewerMainDialog(PygubuAppUI):
                 if Settings.plot_mark_points:
                     style += 'o'
                     style2 += 'o'
+                
+                def transform_phase(radians):
+                    if Settings.phase_unit=='deg':
+                        return radians * 180 / math.pi
+                    return radians
 
                 if polar or smith:
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style)
@@ -1289,11 +1297,11 @@ class SparamviewerMainDialog(PygubuAppUI):
                     elif qty_im:
                         self.plot.add(f, np.imag(sp), None, name, style)
                     elif remove_lin_phase:
-                        self.plot.add(f, scipy.signal.detrend(np.unwrap(np.angle(sp))*180/math.pi,type='linear'), None, name, style)
+                        self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style)
                     elif unwrap_phase:
-                        self.plot.add(f, np.unwrap(np.angle(sp))*180/math.pi, None, name, style)
+                        self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style)
                     else:
-                        self.plot.add(f, np.angle(sp)*180/math.pi, None, name, style)
+                        self.plot.add(f, transform_phase(np.angle(sp)), None, name, style)
             
             selected_files = self.get_selected_files()
             touched_files = []
