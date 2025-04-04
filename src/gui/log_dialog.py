@@ -53,7 +53,6 @@ class SparamviewerLogDialog(PygubuAppUI):
 
     def on_check_for_global_keystrokes(self, is_textbox, key, ctrl, alt, **kwargs):
         
-        logging.debug(f'Got key {key}')
         if key=='Escape':
             self.toplevel_log.destroy()
             return 'break'

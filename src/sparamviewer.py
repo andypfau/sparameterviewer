@@ -30,6 +30,7 @@ if __name__ == '__main__':
         # disable log stuff I am not interested in
         logging.getLogger('matplotlib.font_manager').disabled = True
         logging.getLogger('matplotlib.ticker').disabled = True
+        logging.getLogger('PIL.PngImagePlugin').disabled = True
     except Exception as ex:
         pass # ignore
 

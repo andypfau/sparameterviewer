@@ -18,6 +18,7 @@ class ItemToPlot:
     z: "list[float]|None"
     name: str
     style: str
+    seconary_yaxis: bool
 
 
 
@@ -84,7 +85,7 @@ class PlotHelper:
     
 
     def __init__(self, fig: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
-        y_qty: "str", y_fmt: SiFmt, y_log: bool, z_qty: "str" = None, z_fmt: SiFmt = None,
+        y_qty: "str", y_fmt: SiFmt, y_log: bool, y2_qty: "str", y2_fmt: SiFmt, z_qty: "str" = None, z_fmt: SiFmt = None,
         smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False):
         
@@ -106,6 +107,8 @@ class PlotHelper:
         self.x_log = x_log
         self.y_qty = y_qty
         self.y_fmt = y_fmt
+        self.y2_qty = y2_qty
+        self.y2_fmt = y2_fmt
         self.y_log = y_log
         self.z_qty = z_qty
         self.z_fmt = z_fmt
@@ -122,6 +125,7 @@ class PlotHelper:
         self.items_to_plot = []
 
         self.plot = None # type: pyplot.axes.Axes
+        self.plot2 = None # type: pyplot.axes.Axes
     
 
     def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Data]":
@@ -166,7 +170,7 @@ class PlotHelper:
         return best_plot, best_x, best_y, best_z
 
 
-    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str):
+    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, seconary_yaxis: bool = False):
         assert len(x)==len(y)
         if len(x) < 1:
             logging.info(f'Ignoring plot "{name}" (contains zero points)')
@@ -176,8 +180,20 @@ class PlotHelper:
         self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
         if z is not None:
             self.z_range = [min(self.z_range[0],min(z)), max(self.z_range[1],max(z))]
-        self.items_to_plot.append(ItemToPlot(x, y, z, name, style))
+        self.items_to_plot.append(ItemToPlot(x, y, z, name, style, seconary_yaxis))
     
+
+    def anything_on_primary_yaxis(self):
+        return any([not item.seconary_yaxis for item in self.items_to_plot])
+
+    def anything_on_secondary_yaxis(self):
+        return any([item.seconary_yaxis for item in self.items_to_plot])
+
+    def use_twin_yaxis(self):
+        if self.polar or self.smith:
+            return False
+        return self.anything_on_primary_yaxis() and self.anything_on_secondary_yaxis()
+
 
     def render(self):
 
@@ -188,6 +204,9 @@ class PlotHelper:
                 r_max = max(r_max, r_this)
             return r_max
 
+        use_twin_yaxis = self.use_twin_yaxis()
+
+        self.plot2 = None
         if self.polar:
             self.plot = self.fig.add_subplot(111, projection='polar')
             r_max = get_r_max()
@@ -201,6 +220,8 @@ class PlotHelper:
             plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
         else:
             self.plot = self.fig.add_subplot(111)
+            if use_twin_yaxis:
+                self.plot2 = self.plot.twinx()
         
         self.any_legend = False
 
@@ -209,6 +230,11 @@ class PlotHelper:
             labels = remove_common_prefixes_and_suffixes(labels)
 
         for item,label in zip(self.items_to_plot, labels):
+
+            if item.seconary_yaxis and use_twin_yaxis:
+                plot = self.plot2
+            else:
+                plot = self.plot
         
             x, y, z, name, style = item.x, item.y, item.z, item.name, item.style
 
@@ -225,22 +251,22 @@ class PlotHelper:
             
             if self.polar:
                 c = x + 1j*y
-                new_plt = self.plot.plot(np.angle(c), np.abs(c), style, label=label)
+                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=label)
             elif self.smith:
                 c = x + 1j*y
                 from skrf import plotting
-                new_plt = plotting.plot_smith(s=c, ax=self.plot, chart_type='z', show_legend=True, label=label, title=None)
+                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None)
             elif self.x_log and self.y_log:
                 x,y = fix_log(x,y)
-                new_plt = self.plot.loglog(x, y, style, label=label)
+                new_plt = plot.loglog(x, y, style, label=label)
             elif self.x_log:
                 x,y = fix_log(x,y)
-                new_plt = self.plot.semilogx(x, y, style, label=label)
+                new_plt = plot.semilogx(x, y, style, label=label)
             elif self.y_log:
                 x,y = fix_log(x,y)
-                new_plt = self.plot.semilogy(x, y, style, label=label)
+                new_plt = plot.semilogy(x, y, style, label=label)
             else:
-                new_plt = self.plot.plot(x, y, style, label=label)
+                new_plt = plot.plot(x, y, style, label=label)
 
             color = new_plt[0].get_color() if new_plt is not None else None
             self.plots.append(PlotData(
@@ -269,18 +295,38 @@ class PlotHelper:
         if show_legend:
             self.plot.legend()
         
-        if not self.polar:
+        if not (self.polar or self.smith):
+            
+            
+            if self.use_twin_yaxis():
+                y_qty, y_fmt, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y2_qty, self.y2_fmt
+            else:
+                if self.anything_on_secondary_yaxis():
+                    # data for axis 2 was displayed on axis 1, so we nee to use the other unit
+                    y_qty, y_fmt, y2_qty, y2_fmt = self.y2_qty, self.y2_fmt, None, None
+                else:
+                    y_qty, y_fmt, y2_qty, y2_fmt = self.y_qty, self.y_fmt, None, None
+            
             if self.x_qty is not None:
                 self.plot.set_xlabel(self.x_qty)
-            if self.y_qty is not None:
-                self.plot.set_ylabel(self.y_qty)
+            if y_qty is not None:
+                self.plot.set_ylabel(y_qty)
+            if y2_qty is not None:
+                self.plot2.set_ylabel(y2_qty)
             
             @ticker.FuncFormatter
             def x_axis_formatter(value, _):
                 return str(Si(value, si_fmt=self.x_fmt))
             self.plot.xaxis.set_major_formatter(x_axis_formatter)
             
-            @ticker.FuncFormatter
-            def y_axis_formatter(value, _):
-                return str(Si(value, si_fmt=self.y_fmt))
-            self.plot.yaxis.set_major_formatter(y_axis_formatter)
+            if y_fmt is not None:
+                @ticker.FuncFormatter
+                def y_axis_formatter(value, _):
+                    return str(Si(value, si_fmt=y_fmt))
+                self.plot.yaxis.set_major_formatter(y_axis_formatter)
+            
+            if y2_fmt is not None:
+                @ticker.FuncFormatter
+                def y_axis_formatter(value, _):
+                    return str(Si(value, si_fmt=y2_fmt))
+                self.plot2.yaxis.set_major_formatter(y_axis_formatter)

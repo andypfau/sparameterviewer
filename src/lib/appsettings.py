@@ -15,7 +15,6 @@ class AppSettings:
     def __init__(self, appname, author, version):
         self._dir = appdirs.user_config_dir(appname, author, version)
         self._file = os.path.join(self._dir, 'app_settings.json')
-        logging.debug(f'App settings are stored in <{self._file}>')
         self._observers = []
         self._inhbit_listeners = False
         self.load()

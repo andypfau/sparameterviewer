@@ -39,7 +39,6 @@ class SParamFile:
 
         def load(path):
             try:
-                logging.debug(f'Loading network "{path}" from "{self.archive_path}"')
                 ext = os.path.splitext(path)[1].lower()
                 if ext == '.cti':
                     citi = CitiReader(path)

@@ -5,7 +5,7 @@ from pygubu.widgets.scrollbarhelper import ScrollbarHelper
 
 
 class PygubuAppUI:
-    def __init__(self, master=None, data_pool=None):
+    def __init__(self, master=None):
         # build ui
         self.toplevel_main = tk.Tk() if master is None else tk.Toplevel(master)
         self.toplevel_main.configure(height=200, width=200)
@@ -35,10 +35,17 @@ class PygubuAppUI:
             add="")
         self.combobox_unit = ttk.Combobox(self.frame_2)
         self.combobox_unit.configure(state="readonly")
-        self.combobox_unit.pack(padx=5, side="right")
+        self.combobox_unit.pack(padx=5, side="left")
         self.combobox_unit.bind(
             "<<ComboboxSelected>>",
             self.on_select_plotunit,
+            add="")
+        self.combobox_unit2 = ttk.Combobox(self.frame_2, name="combobox_unit2")
+        self.combobox_unit2.configure(state="readonly")
+        self.combobox_unit2.pack(padx=5, side="left")
+        self.combobox_unit2.bind(
+            "<<ComboboxSelected>>",
+            self.on_select_plotunit2,
             add="")
         self.frame_2.pack(expand=False, fill="x", side="top")
         self.frame_6 = ttk.Frame(self.frame_11)
@@ -125,6 +132,11 @@ class PygubuAppUI:
         self.menu_2.configure(cursor="arrow")
         self.topmenu_main_files = tk.Menu(self.menu_2)
         self.menu_2.add(tk.CASCADE, menu=self.topmenu_main_files, label='File')
+        self.menuitem_recent = tk.Menu(self.topmenu_main_files, tearoff=False)
+        self.topmenu_main_files.add(
+            tk.CASCADE,
+            menu=self.menuitem_recent,
+            label='Recent Directories')
         self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+O",
@@ -134,11 +146,6 @@ class PygubuAppUI:
             "command",
             command=self.on_append_dir,
             label='Append Directory...')
-        self.menuitem_recent = tk.Menu(self.topmenu_main_files, tearoff=False)
-        self.topmenu_main_files.add(
-            tk.CASCADE,
-            menu=self.menuitem_recent,
-            label='Recent Directories')
         self.topmenu_main_files.add(
             "command",
             accelerator="Ctrl+F5",
@@ -182,6 +189,12 @@ class PygubuAppUI:
         self.submenu_2 = tk.Menu(self.menu_2)
         self.menu_2.add(tk.CASCADE, menu=self.submenu_2, label='Plot')
         self.show_legend = tk.StringVar()
+        self.hide_single_legend = tk.StringVar()
+        self.short_legend = tk.StringVar()
+        self.logf = tk.StringVar()
+        self.lock_plot_xaxis = tk.StringVar()
+        self.lock_plot_yaxis = tk.StringVar()
+        self.plot_mark_points = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_show_legend,
@@ -189,7 +202,6 @@ class PygubuAppUI:
             offvalue=0,
             onvalue=1,
             variable=self.show_legend)
-        self.hide_single_legend = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_hide_single_legend,
@@ -197,7 +209,6 @@ class PygubuAppUI:
             offvalue=0,
             onvalue=1,
             variable=self.hide_single_legend)
-        self.short_legend = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_short_legend,
@@ -211,7 +222,6 @@ class PygubuAppUI:
             command=self.on_copy_plot_image_to_clipboard,
             label='Copy Image to Clipboard')
         self.submenu_2.add("separator")
-        self.logf = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_change_logf,
@@ -220,7 +230,6 @@ class PygubuAppUI:
             onvalue=1,
             variable=self.logf)
         self.submenu_2.add("separator")
-        self.lock_plot_xaxis = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_lock_xaxis,
@@ -228,7 +237,6 @@ class PygubuAppUI:
             offvalue=0,
             onvalue=1,
             variable=self.lock_plot_xaxis)
-        self.lock_plot_yaxis = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_lock_yaxis,
@@ -253,7 +261,6 @@ class PygubuAppUI:
             command=self.on_manual_axes,
             label='Manual axes...')
         self.submenu_2.add("separator")
-        self.plot_mark_points = tk.StringVar()
         self.submenu_2.add(
             "checkbutton",
             command=self.on_mark_points,
@@ -311,6 +318,9 @@ class PygubuAppUI:
         pass
 
     def on_select_plotunit(self, event=None):
+        pass
+
+    def on_select_plotunit2(self, event=None):
         pass
 
     def on_search_press_key(self, event=None):

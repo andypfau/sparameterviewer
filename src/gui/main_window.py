@@ -95,6 +95,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             self.MODE_EXPR = 10
             self.combobox_mode.current(Settings.plot_mode)
             self.combobox_unit['values']= (
+                ' ',
                 'dB',
                 'Log. Magnitude',
                 'Linear Magnitude',
@@ -104,29 +105,35 @@ class SparamviewerMainDialog(PygubuAppUI):
                 'Re/Im Polar',
                 'Smith (Impedance)',
                 'Smith (Admittance)',
+                'Impulse Response',
+                'Step Response',
+            )
+            self.UNIT_NONE = 0
+            self.UNIT_DB = 1
+            self.UNIT_LOG_MAG = 2
+            self.UNIT_LIN_MAG = 3
+            self.UNIT_RE_IM_VS_F = 4
+            self.UNIT_RE_VS_F = 5
+            self.UNIT_IM_VS_F = 6
+            self.UNIT_RE_IM_POLAR = 7
+            self.UNIT_SMITH_Z = 8
+            self.UNIT_SMITH_Y = 9
+            self.UNIT_IMPULSE = 10
+            self.UNIT_STEP = 11
+            self.combobox_unit.current(Settings.plot_unit)
+            self.combobox_unit2['values']= (
+                ' ',
                 'Phase',
                 'Unwrapped Phase',
                 'Linear Phase Removed',
                 'Group Delay',
-                'Impulse Response',
-                'Step Response',
             )
-            self.UNIT_DB = 0
-            self.UNIT_LOG_MAG = 1
-            self.UNIT_LIN_MAG = 2
-            self.UNIT_RE_IM_VS_F = 3
-            self.UNIT_RE_VS_F = 4
-            self.UNIT_IM_VS_F = 5
-            self.UNIT_RE_IM_POLAR = 6
-            self.UNIT_SMITH_Z = 7
-            self.UNIT_SMITH_Y = 8
-            self.UNIT_DEG = 9
-            self.UNIT_DEG_UNWRAP = 10
-            self.UNIT_DEG_REMLIN = 11
-            self.UNIT_GROUP_DELAY = 12
-            self.UNIT_IMPULSE = 13
-            self.UNIT_STEP = 14
-            self.combobox_unit.current(Settings.plot_unit)
+            self.UNIT2_NONE = 0
+            self.UNIT2_PHASE = 1
+            self.UNIT2_PHASE_UNWRAP = 2
+            self.UNIT2_PHASE_REMLIN = 3
+            self.UNIT2_GROUP_DELAY = 4
+            self.combobox_unit2.current(Settings.plot_unit2)
             TkText.set_text(self.text_expr, Settings.expression.strip())
             def on_click_errors(event):
                 self.open_error_dialog()
@@ -368,8 +375,32 @@ class SparamviewerMainDialog(PygubuAppUI):
         changed = Settings.plot_unit != self.combobox_unit.current()
         Settings.plot_unit = self.combobox_unit.current()
         if changed:
+            Settings.save()
+
             # different kind of chart -> axes scale is probably no longer valid
             self.invalidate_axes_lock(update=False)
+
+            # only allow phase in specific combinations
+            if Settings.plot_unit not in [self.UNIT_NONE, self.UNIT_DB, self.UNIT_LIN_MAG, self.UNIT_LOG_MAG]:
+                self.combobox_unit2.current(self.UNIT2_NONE)
+
+        self.update_plot()
+    
+
+    def on_select_plotunit2(self, event=None):
+        if Settings.plot_unit not in [self.UNIT_NONE, self.UNIT_DB, self.UNIT_LIN_MAG, self.UNIT_LOG_MAG]:
+            self.combobox_unit2.current(self.UNIT2_NONE)
+            return # no phase allowed
+
+        changed = Settings.plot_unit2 != self.combobox_unit2.current()
+        Settings.plot_unit2 = self.combobox_unit2.current()
+
+        if changed:
+            Settings.save()
+
+            # different kind of chart -> axes scale is probably no longer valid
+            self.invalidate_axes_lock(update=False)
+
         self.update_plot()
     
 
@@ -1200,24 +1231,39 @@ class SparamviewerMainDialog(PygubuAppUI):
             n_log_entries_before = len(LogHandler.inst().get_messages(logging.WARNING))
 
             data_expr_based = Settings.plot_mode==self.MODE_EXPR
+
+            enable_1st_y = (Settings.plot_unit != self.UNIT_NONE)
+            enable_2nd_y = (Settings.plot_unit2 != self.UNIT2_NONE)
+            if (Settings.plot_unit not in [self.UNIT_NONE, self.UNIT_DB, self.UNIT_LIN_MAG, self.UNIT_LOG_MAG]):
+                enable_2nd_y = False
+            dual_y_axis = enable_1st_y and enable_2nd_y
+
             qty_db = (Settings.plot_unit == self.UNIT_DB)
             qty_lin_mag = (Settings.plot_unit == self.UNIT_LIN_MAG)
             qty_log_mag = (Settings.plot_unit == self.UNIT_LOG_MAG)
-            qty_group_delay = (Settings.plot_unit == self.UNIT_GROUP_DELAY)
-            qty_re = (Settings.plot_unit == self.UNIT_RE_IM_VS_F) or (Settings.plot_unit == self.UNIT_RE_VS_F)
-            qty_im = (Settings.plot_unit == self.UNIT_RE_IM_VS_F) or (Settings.plot_unit == self.UNIT_IM_VS_F)
-            qty_phase = (Settings.plot_unit == self.UNIT_DEG) or (Settings.plot_unit == self.UNIT_DEG_UNWRAP) or (Settings.plot_unit == self.UNIT_DEG_REMLIN)
-            unwrap_phase = (Settings.plot_unit == self.UNIT_DEG_UNWRAP)
-            remove_lin_phase = (Settings.plot_unit == self.UNIT_DEG_REMLIN)
+            qty_re = (Settings.plot_unit in [self.UNIT_RE_IM_VS_F, self.UNIT_RE_VS_F])
+            qty_im = (Settings.plot_unit in [self.UNIT_RE_IM_VS_F, self.UNIT_IM_VS_F])
+            
             polar = (Settings.plot_unit == self.UNIT_RE_IM_POLAR)
-            smith = (Settings.plot_unit == self.UNIT_SMITH_Z) or (Settings.plot_unit == self.UNIT_SMITH_Y)
-            timedomain = (Settings.plot_unit == self.UNIT_IMPULSE) or (Settings.plot_unit == self.UNIT_STEP)
+            smith = (Settings.plot_unit in [self.UNIT_SMITH_Z, self.UNIT_SMITH_Y])
+            timedomain = (Settings.plot_unit in [self.UNIT_IMPULSE, self.UNIT_STEP])
             stepresponse = (Settings.plot_unit == self.UNIT_STEP)
             tdr_z = (Settings.tdr_impedance)
             if Settings.plot_unit == self.UNIT_SMITH_Z:
                 smith_type = 'z'
             else:
                 smith_type = 'y'
+            
+            if enable_2nd_y:
+                qty_phase = (Settings.plot_unit2 in [self.UNIT2_PHASE, self.UNIT2_PHASE_UNWRAP, self.UNIT2_PHASE_REMLIN])
+                unwrap_phase = (Settings.plot_unit2 == self.UNIT2_PHASE_UNWRAP)
+                remove_lin_phase = (Settings.plot_unit2 == self.UNIT2_PHASE_REMLIN)
+                qty_group_delay = (Settings.plot_unit2 == self.UNIT2_GROUP_DELAY)
+            else:
+                qty_phase = False
+                unwrap_phase = False
+                remove_lin_phase = False
+                qty_group_delay = False
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
@@ -1235,14 +1281,7 @@ class SparamviewerMainDialog(PygubuAppUI):
                         yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
                     xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),Settings.log_freq
-                    if qty_group_delay:
-                        yq,yf,yl = 'Group Delay',SiFmt(unit='s',force_sign=True),False
-                    elif qty_phase:
-                        if Settings.phase_unit=='deg':
-                            yq,yf,yl = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True),False
-                        else:
-                            yq,yf,yl = 'Phase',SiFmt(use_si_prefix=False,force_sign=True),False
-                    elif qty_re or qty_im:
+                    if qty_re or qty_im:
                         yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
                     elif qty_lin_mag:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),False
@@ -1250,7 +1289,16 @@ class SparamviewerMainDialog(PygubuAppUI):
                         yq,yf,yl = 'Magnitude',SiFmt(unit=''),True
                     else:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
-                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, **common_plot_args)
+                    if qty_phase:
+                        if Settings.phase_unit=='deg':
+                            y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
+                        else:
+                            y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
+                    elif qty_group_delay:
+                        y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
+                    else:
+                        y2q,y2f = None, None
+                self.plot = PlotHelper(self.fig, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
 
             def add_to_plot(f, sp, z0, name, style=None):
@@ -1266,6 +1314,10 @@ class SparamviewerMainDialog(PygubuAppUI):
                 if Settings.plot_mark_points:
                     style += 'o'
                     style2 += 'o'
+                if dual_y_axis:
+                    style_y2 = ':'
+                else:
+                    style_y2 = style
                 
                 def transform_phase(radians):
                     if Settings.phase_unit=='deg':
@@ -1287,8 +1339,6 @@ class SparamviewerMainDialog(PygubuAppUI):
                         self.plot.add(f, v2db(sp), None, name, style)
                     elif qty_lin_mag or qty_log_mag:
                         self.plot.add(f, np.abs(sp), None, name, style)
-                    elif qty_group_delay:
-                        self.plot.add(f, group_delay(f,sp), None, name, style)
                     elif qty_re and qty_im:
                         self.plot.add(f, np.real(sp), None, name+' re', style)
                         self.plot.add(f, np.imag(sp), None, name+' im', style2)
@@ -1296,13 +1346,17 @@ class SparamviewerMainDialog(PygubuAppUI):
                         self.plot.add(f, np.real(sp), None, name, style)
                     elif qty_im:
                         self.plot.add(f, np.imag(sp), None, name, style)
-                    elif remove_lin_phase:
-                        self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style)
-                    elif unwrap_phase:
-                        self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style)
-                    else:
-                        self.plot.add(f, transform_phase(np.angle(sp)), None, name, style)
-            
+                    
+                    if qty_phase:
+                        if remove_lin_phase:
+                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, seconary_yaxis=True)
+                        elif unwrap_phase:
+                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, seconary_yaxis=True)
+                        else:
+                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, seconary_yaxis=True)
+                    elif qty_group_delay:
+                        self.plot.add(f, group_delay(f,sp), None, name, style_y2, seconary_yaxis=True)
+                    
             selected_files = self.get_selected_files()
             touched_files = []
 
@@ -1356,7 +1410,7 @@ class SparamviewerMainDialog(PygubuAppUI):
             log_entries_after = len(LogHandler.inst().get_messages(logging.WARNING))
             n_new_entries = log_entries_after - n_log_entries_before
             if n_new_entries > 0:
-                self.show_error(LogHandler.inst().latest_message)
+                self.show_error(LogHandler.inst().get_messages(logging.WARNING)[-1])
 
             self.plot.render()
 

@@ -18,8 +18,6 @@ class TkCommon:
             alt = alt_left or alt_right
             key = event.keysym
             
-            logging.debug(f'Key event on {tk_obj}: key={key}, CTRL={ctrl}, Alt={alt}, Shift={shift}')
-            
             if custom_handler is not None:
                 return custom_handler(key=key, ctrl=ctrl, shift=shift, alt=alt)
         

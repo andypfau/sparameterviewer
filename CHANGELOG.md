@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.29b1 (2025-04-03)
+-------------------
+
+- new: seconary Y-axis for phase or group delay
+- new: setting to change unit of phase
+
+
 0.28b2 (2025-03-18)
 -------------------
 
