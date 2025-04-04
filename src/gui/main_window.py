@@ -1268,10 +1268,10 @@ class SparamviewerMainDialog(PygubuAppUI):
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
             if polar:
-                self.plot = PlotHelper(self.fig, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
+                self.plot = PlotHelper(self.fig, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(fig=self.fig, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(fig=self.fig, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
             else:
                 if timedomain:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
@@ -1349,13 +1349,13 @@ class SparamviewerMainDialog(PygubuAppUI):
                     
                     if qty_phase:
                         if remove_lin_phase:
-                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, seconary_yaxis=True)
+                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True)
                         elif unwrap_phase:
-                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, seconary_yaxis=True)
+                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True)
                         else:
-                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, seconary_yaxis=True)
+                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True)
                     elif qty_group_delay:
-                        self.plot.add(f, group_delay(f,sp), None, name, style_y2, seconary_yaxis=True)
+                        self.plot.add(f, group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True)
                     
             selected_files = self.get_selected_files()
             touched_files = []

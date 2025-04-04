@@ -92,5 +92,3 @@ class PlotData:
     x: PlotDataQuantity
     y: PlotDataQuantity
     z: "PlotDataQuantity|None"
-    style: str
-    color: object

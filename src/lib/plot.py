@@ -13,12 +13,11 @@ import pandas as pd
 
 @dataclass
 class ItemToPlot:
-    x: "list[float]"
-    y: "list[float]"
-    z: "list[float]|None"
-    name: str
+    data: PlotData
+    prefer_seconary_yaxis: bool
+    currently_used_axis: int
     style: str
-    seconary_yaxis: bool
+    color: object
 
 
 
@@ -94,9 +93,6 @@ class PlotHelper:
             PlotHelper.Cursor(self, '-.'),
         ]
 
-        self.plots: list[PlotData]
-        self.plots = []
-
         self.fig = fig
         self.smith = smith
         self.polar = polar
@@ -121,11 +117,15 @@ class PlotHelper:
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
         self.z_range = [+1e99,-1e99]
-        self.items_to_plot: list[ItemToPlot]
-        self.items_to_plot = []
+        self.items: list[ItemToPlot] = []
 
-        self.plot = None # type: pyplot.axes.Axes
-        self.plot2 = None # type: pyplot.axes.Axes
+        self.plot: pyplot.axes.Axes = None
+        self.plot2: pyplot.axes.Axes = None
+    
+
+    @property
+    def plots(self) -> list[PlotData]:
+        return [item.data for item in self.items]
     
 
     def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Data]":
@@ -153,24 +153,26 @@ class PlotHelper:
         best_z = None
         best_plot = None
 
-        for plot in self.plots:
+        for plot in self.items:
             if name is not None:
-                if plot.name != name:
+                if plot.data.name != name:
                     continue
-            for idx,(dx,dy) in enumerate(zip(plot.x.values, plot.y.values)):
+            if plot.currently_used_axis != 1:
+                continue  # tracing cursors on the right axis does not work yet
+            for idx,(dx,dy) in enumerate(zip(plot.data.x.values, plot.data.y.values)):
                 error = math.sqrt(pow(x-dx,2)+pow(y-dy,2))
                 if error < best_error:
                     best_error = error
                     best_x = dx
                     best_y = dy
-                    if plot.z is not None:
-                        best_z = plot.z.values[idx]
-                    best_plot = plot
+                    if plot.data.z is not None:
+                        best_z = plot.data.z.values[idx]
+                    best_plot = plot.data
 
         return best_plot, best_x, best_y, best_z
 
 
-    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, seconary_yaxis: bool = False):
+    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, prefer_2nd_yaxis: bool = False):
         assert len(x)==len(y)
         if len(x) < 1:
             logging.info(f'Ignoring plot "{name}" (contains zero points)')
@@ -180,31 +182,31 @@ class PlotHelper:
         self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
         if z is not None:
             self.z_range = [min(self.z_range[0],min(z)), max(self.z_range[1],max(z))]
-        self.items_to_plot.append(ItemToPlot(x, y, z, name, style, seconary_yaxis))
+
+        self.items.append(
+            ItemToPlot(
+                PlotData(
+                    name, 
+                    PlotDataQuantity(self.x_qty, self.x_fmt, x),
+                    PlotDataQuantity(self.y_qty, self.y_fmt, y),
+                    PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None    
+                ),
+                prefer_2nd_yaxis,
+                -1,  # placeholder
+                style,
+                'black'  # placeholder
+            )
+        )
     
-
-    def anything_on_primary_yaxis(self):
-        return any([not item.seconary_yaxis for item in self.items_to_plot])
-
-    def anything_on_secondary_yaxis(self):
-        return any([item.seconary_yaxis for item in self.items_to_plot])
-
-    def use_twin_yaxis(self):
-        if self.polar or self.smith:
-            return False
-        return self.anything_on_primary_yaxis() and self.anything_on_secondary_yaxis()
-
 
     def render(self):
 
         def get_r_max():
             r_max = 0
-            for item in self.items_to_plot:
-                r_this = max(np.sqrt(np.power(item.x,2) + np.power(item.y,2)))
+            for item in self.items:
+                r_this = max(np.sqrt(np.power(item.data.x.values,2) + np.power(item.data.y.values,2)))
                 r_max = max(r_max, r_this)
             return r_max
-
-        use_twin_yaxis = self.use_twin_yaxis()
 
         self.plot2 = None
         if self.polar:
@@ -212,31 +214,37 @@ class PlotHelper:
             r_max = get_r_max()
             if r_max <= 1:
                 self.plot.set_ylim((0,1))
+            use_twin_yaxis = False
         elif self.smith:
             from skrf import plotting
             self.plot = self.fig.add_subplot(111)
             r_max = get_r_max()
             r_smith = 1 if r_max<=1 else r_max*1.05
             plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
+            use_twin_yaxis = False
         else:
+            anything_on_primary_yaxis = any([not item.prefer_seconary_yaxis for item in self.items])
+            anything_on_secondary_yaxis = any([item.prefer_seconary_yaxis for item in self.items])
+            use_twin_yaxis = anything_on_primary_yaxis and anything_on_secondary_yaxis
             self.plot = self.fig.add_subplot(111)
             if use_twin_yaxis:
                 self.plot2 = self.plot.twinx()
         
         self.any_legend = False
 
-        labels = [item.name for item in self.items_to_plot]
+        labels = [item.data.name for item in self.items]
         if self.shorten_legend:
             labels = remove_common_prefixes_and_suffixes(labels)
 
-        for item,label in zip(self.items_to_plot, labels):
-
-            if item.seconary_yaxis and use_twin_yaxis:
+        for item_index,(item,label) in enumerate(zip(self.items, labels)):
+            if item.prefer_seconary_yaxis and use_twin_yaxis:
                 plot = self.plot2
+                self.items[item_index].currently_used_axis = 2
             else:
                 plot = self.plot
+                self.items[item_index].currently_used_axis = 1
         
-            x, y, z, name, style = item.x, item.y, item.z, item.name, item.style
+            x, y, style = item.data.x.values, item.data.y.values, item.style
 
             # escaping for matplotlib
             if label.startswith('_'):
@@ -256,27 +264,14 @@ class PlotHelper:
                 c = x + 1j*y
                 from skrf import plotting
                 new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None)
-            elif self.x_log and self.y_log:
+            elif self.x_log or self.y_log:
                 x,y = fix_log(x,y)
-                new_plt = plot.loglog(x, y, style, label=label)
-            elif self.x_log:
-                x,y = fix_log(x,y)
-                new_plt = plot.semilogx(x, y, style, label=label)
-            elif self.y_log:
-                x,y = fix_log(x,y)
-                new_plt = plot.semilogy(x, y, style, label=label)
+                new_plt = plot.plot(x, y, style, label=label)
             else:
                 new_plt = plot.plot(x, y, style, label=label)
 
             color = new_plt[0].get_color() if new_plt is not None else None
-            self.plots.append(PlotData(
-                name, 
-                PlotDataQuantity(self.x_qty, self.x_fmt, x),
-                PlotDataQuantity(self.y_qty, self.y_fmt, y),
-                PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None,
-                style,
-                color,
-            ))
+            self.items[item_index].color = color
         
         if self.smith and r_smith!=1:
             # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
@@ -286,26 +281,30 @@ class PlotHelper:
 
     def finish(self):
                 
-        if len(self.plots)<1:
+        if len(self.items)<1:
             return
         
         show_legend = self.show_legend
-        if len(self.items_to_plot) <= 1 and self.hide_single_item_legend:
+        if len(self.items) <= 1 and self.hide_single_item_legend:
             show_legend = False
         if show_legend:
             self.plot.legend()
         
         if not (self.polar or self.smith):
             
-            
-            if self.use_twin_yaxis():
-                y_qty, y_fmt, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y2_qty, self.y2_fmt
+            anything_on_primary_yaxis = any([item.currently_used_axis==1 for item in self.items])
+            anything_on_secondary_yaxis = any([item.currently_used_axis==2 for item in self.items])
+            using_twin_yaxis = anything_on_primary_yaxis and anything_on_secondary_yaxis
+            if using_twin_yaxis:
+                y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y_log, self.y2_qty, self.y2_fmt
+                self.plot2.grid(False)  # two grids in one plot are just confusing
             else:
-                if self.anything_on_secondary_yaxis():
+                swap_axes = any([item.currently_used_axis==1 and item.prefer_seconary_yaxis for item in self.items])
+                if swap_axes:
                     # data for axis 2 was displayed on axis 1, so we nee to use the other unit
-                    y_qty, y_fmt, y2_qty, y2_fmt = self.y2_qty, self.y2_fmt, None, None
+                    y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y2_qty, self.y2_fmt, False, None, None
                 else:
-                    y_qty, y_fmt, y2_qty, y2_fmt = self.y_qty, self.y_fmt, None, None
+                    y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y_log, None, None
             
             if self.x_qty is not None:
                 self.plot.set_xlabel(self.x_qty)
@@ -330,3 +329,8 @@ class PlotHelper:
                 def y_axis_formatter(value, _):
                     return str(Si(value, si_fmt=y2_fmt))
                 self.plot2.yaxis.set_major_formatter(y_axis_formatter)
+            
+            if self.x_log:
+                self.plot.set_xscale('log')
+            if y_log:
+                self.plot.set_yscale('log')

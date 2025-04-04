@@ -12,12 +12,13 @@ You may select:
 - Which file to display, and 
 - How to display the data, e.g. as real/imaginary, db/degrees, etc.
 
-You can also apply filters by checking the corresponding checkboxes:
+You can also apply filters:
 - *X*: filter X-values (typically the frequency):
     - E.g. "1e9-10e9" to filter from 1 GHz to 10 GHz.
     - E.g. "1e9-*" to filter from 1 GHz, and anything above.
     - E.g. "*-1e9" to filter to 1 GHz, and anything below.
-- *Cols*: filter for cols; just use the name you see in the table columns, separated by whitespace:
+    - To disable filtering, use the wildcard "*".
+- *Cols*: filter for columns; just use the name you see in the table columns, separated by whitespace:
     - E.g. "S2,1 S2,2" to filter for these two S-parameters.
     - This filter is ignored for plotted data (which only has one column).
 - Clear the filter text to disable filtering (i.e. show all X-values / columns).
@@ -39,6 +40,8 @@ In the main window go *Tools* → *Trace Cursors*.
 Just click in the plot, and the reading is shown in the dialog. You may select one of two cursors, or let the tool select the closest cursor automatically (*Auto*). You may specify a specific trace, or let the tool snap the cursor to the closest trace (*Auto*).
 
 ⚠️ Pitfall: if you selected a tool the pan or zoom tool in the plot, it will pan/zoom! De-select the tools in the plot before using cursors.
+
+⚠️ You can only apply cursors to traces on the primary Y-axis.
 
 
 Return Loss Integrator

@@ -20,6 +20,8 @@ Getting Started
 - *Expression-Based*: use expressions (see later section).
 
 ### Plot Formats
+
+Primary:
 - *dB*: logarithmic magnitude in decibels (20⋅log10), vs. frequency.
 - *Log. Magnitude*: logarithmic magnitude vs. frequency.
 - *Linear Magnitude*: linear magnitude vs. frequency; useful to plot some metrics like e.g. VSWR, stability, etc.
@@ -29,12 +31,16 @@ Getting Started
 - *Re/Im Polar*: complex number locus in polar chart (essentially the same as a Smith chart, but with a different grid. visualization)
 - *Smith (Impedance)*: Smith chart.
 - *Smith (Admittance)*: same as before, but as admittance instead of impedance.
+- *Impulse Response*: impulse response vs. time (i.e. time-domain transformation). See also notes below.
+- *Step Response*: same as before, but integrated to get step response.
+
+Secondary:
 - *Phase*: phase vs. frequency.
 - *Unwrapped Phase*: same as before, but phase unwrapped.
 - *Linear Phase Removed*: same as before, but with the linear part of the phase removed; useful for physically very long devices.
 - *Group Delay*: group delay vs. frequency.
-- *Impulse Response*: impulse response vs. time (i.e. time-domain transformation). See also notes below.
-- *Step Response*: same as before, but integrated to get step response.
+
+Primary and secondary format can be shown simultaneously (using a secondary Y-axis).
 
 #### Time-Domain Transformation
 
