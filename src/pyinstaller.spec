@@ -35,7 +35,7 @@ hiddenimports.extend(['PIL._tkinter_finder'])
 
 # OS-specific
 if os.name == 'nt':
-    hiddenimports.extend(['win32clipbaord'])
+    hiddenimports.extend(['win32clipboard'])
 
 
 # TODO: fix for Matplotlib, which does not find <share/matplotlib/mpl-data>...
