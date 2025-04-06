@@ -1,8 +1,9 @@
 #!/bin/python
 
 import sys, os, logging
+from PyQt6 import QtWidgets
 
-from gui.main_window import SparamviewerMainDialog
+from gui.main_window import MainWindow
 from gui.log_handler import LogHandler
 from lib import AppGlobal, is_windows
 
@@ -51,9 +52,13 @@ if __name__ == '__main__':
         pass # ignore
 
     try:
+        app = QtWidgets.QApplication(sys.argv)
+        
         filenames = sys.argv[1:]
-        app = SparamviewerMainDialog(filenames)
-        app.run()
+        main_dialog = MainWindow(filenames)
+        main_dialog.show()
+        app.exec()
+    
     except Exception as ex:
         logging.exception('Error in main loop: {ex}')
         sys.exit(1)
