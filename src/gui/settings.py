@@ -5,7 +5,7 @@ import logging
 
 class SParamViewerAppSettings(AppSettings):
     plot_mode: int = 0
-    plot_unit: int = 0
+    plot_unit: int = 1
     plot_unit2: int = 0
     show_legend: bool = True
     hide_single_item_legend: bool = True

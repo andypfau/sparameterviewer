@@ -6,6 +6,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 import pathlib
 import enum
+import logging
+import os
 
 
 
@@ -21,35 +23,62 @@ class MplCanvas(FigureCanvasQTAgg):
         super().__init__(fig)
 
 
-class Mode(enum.StrEnum):
-    All = 'All S-Parameters'
-    AllFwd = 'All S-Parameters (reciprocal)'
-    IlFwd = 'Insertion Loss (reciprocal)'
-    S21 = 'S21'
-    S12 = 'S12'
-    RL = 'Return Loss'
-    S11 = 'S11'
-    S22 = 'S22'
-    S33 = 'S33'
-    S44 = 'S44'
+class Mode(enum.IntEnum):
+    All = 0
+    AllFwd = 1
+    IL = 2
+    IlFwd = 3
+    S21 = 4
+    S12 = 5
+    RL = 6
+    S11 = 7
+    S22 = 8
+    S33 = 9
+    S44 = 10
 
-class Unit(enum.StrEnum):
-    Off = ' '
-    dB = 'dB'
-    LinMag = 'Lin Mag'
-    LogMag = 'Log Mag'
+MODE_NAMES = {
+    Mode.All: 'All S-Parameters',
+    Mode.AllFwd: 'All S-Parameters (reciprocal)',
+    Mode.IL: 'Insertion Loss',
+    Mode.IlFwd: 'Insertion Loss (reciprocal)',
+    Mode.S21: 'S21',
+    Mode.S12: 'S12',
+    Mode.RL: 'Return Loss',
+    Mode.S11: 'S11',
+    Mode.S22: 'S22',
+    Mode.S33: 'S33',
+    Mode.S44: 'S44',
+}
 
-class Unit2(enum.StrEnum):
-    Off = ' '
-    Phase = 'Phase'
+
+class Unit(enum.IntEnum):
+    Off = 0
+    dB = 1
+    LinMag = 2
+    LogMag = 3
+
+UNIT_NAMES = {
+    Unit.Off: ' ',
+    Unit.dB: 'dB',
+    Unit.LinMag: 'Lin Mag',
+    Unit.LogMag: 'Log Mag',
+}
+
+
+class Unit2(enum.IntEnum):
+    Off = 0
+    Phase = 1
+
+UNIT2_NAMES = {
+    Unit2.Off: ' ',
+    Unit2.Phase: 'Phase',
+}
 
 
 class MainWindowUi(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
-        self.setWindowTitle('S-Parameter Viewer')
 
         splitter = QSplitter(Qt.Orientation.Vertical)
         self.setCentralWidget(splitter)
@@ -81,13 +110,13 @@ class MainWindowUi(QMainWindow):
         combo_layout.addWidget(self.unit2_combo)
         bottom_widget_layout.addWidget(combo_layout_widget)
         for mode in Mode:
-            self.mode_combo.addItem(mode.value)
+            self.mode_combo.addItem(MODE_NAMES[mode.value])
         self.mode_combo.currentIndexChanged.connect(self.on_select_mode)
         for unit in Unit:
-            self.unit_combo.addItem(unit.value)
+            self.unit_combo.addItem(UNIT_NAMES[unit.value])
         self.unit_combo.currentIndexChanged.connect(self.on_select_unit)
         for unit2 in Unit2:
-            self.unit2_combo.addItem(unit2.value)
+            self.unit2_combo.addItem(UNIT2_NAMES[unit2.value])
         self.unit2_combo.currentIndexChanged.connect(self.on_select_unit2)
         
         tabs = QTabWidget()
@@ -137,11 +166,24 @@ class MainWindowUi(QMainWindow):
 
     def _build_main_menu(self):
         self.menu_bar = self.menuBar()
-        file_menu = QMenu("&File", self)
-        self.menu_bar.addMenu(file_menu)
-        self.menuaction_exit = QAction('Exit')
-        self.menuaction_exit.triggered.connect(self.on_exit)
-        file_menu.addAction(self.menuaction_exit)
+
+        def add_submenu(menu, text):
+            submenu = QMenu(text, self)
+            menu.addMenu(submenu)
+            return submenu
+
+        def add_item(menu, text, action):
+            item = QAction(text)
+            item.triggered.connect(action)
+            menu.addAction(item)
+            return item
+        
+        self.mainmenu_file = add_submenu(self.menu_bar, '&File')
+        self.menuitem_open_dir = add_item(self.mainmenu_file, 'Open Directory...', self.on_open_directory)
+        self.menuitem_append_dir = add_item(self.mainmenu_file, 'Append Directory...', self.on_append_directory)
+        self.menuitem_reload_all_files = add_item(self.mainmenu_file, 'Reload All Files', self.on_reload_all_files)
+        self.mainmenu_file.addSeparator()
+        self.menuitem_exit = add_item(self.mainmenu_file, 'Exit', self.close)
     
 
     def _build_template_menu(self):
@@ -152,15 +194,39 @@ class MainWindowUi(QMainWindow):
         self.template2 = self.template_submenu1.addAction('Example 2')
 
 
+    def update_window_title(self, title: str):
+        self.setWindowTitle(title)
+
+
     def add_fileview_item(self, path, contents=''):
         self.fileview_root.appendRow([QtGui.QStandardItem(pathlib.Path(path).name), QtGui.QStandardItem(contents)])
+
 
     def get_selected_file_indices(self) -> list[int]:
         sel = self.fileview.selectionModel().selectedIndexes()
         if not sel:
             return []
         return list(set([item.row() for item in sel]))
-        
+
+
+    def update_files_history(self, paths: list[str]):
+
+        def make_loader_closure(dir):
+            def load():
+                if not os.path.exists(dir):
+                    logging.error(f'Cannot load recent directory <{dir}> (does not exist any more)')
+                    return
+                absdir = os.path.abspath(dir)
+                self.directories = [absdir]
+                self.clear_loaded_files()
+                self.load_files_in_directory(absdir)
+                self.update_file_list(only_select_first=True)
+                self.add_to_most_recent_directories(dir)
+            return load
+
+        logging.error('update_files_history not implemented')
+
+
 
     def on_select_mode(self):
         raise NotImplementedError()
@@ -172,4 +238,16 @@ class MainWindowUi(QMainWindow):
         raise NotImplementedError()
     
     def on_select_file(self):
+        raise NotImplementedError()
+    
+    def on_open_directory(self):
+        raise NotImplementedError()
+    
+    def on_append_directory(self):
+        raise NotImplementedError()
+    
+    def on_reload_all_files(self):
+        raise NotImplementedError()
+    
+    def on_load_history_item(self, path: str):
         raise NotImplementedError()
