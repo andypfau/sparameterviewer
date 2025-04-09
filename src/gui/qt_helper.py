@@ -30,10 +30,46 @@ class QtHelper:
 
 
     @staticmethod
-    def make_label(text: str) -> QLabel:
+    def make_label(text: str, *, bold: bool = False) -> QLabel:
         label = QLabel()
         label.setText(text)
+        if bold:
+            label.setFont(QtHelper.make_font(bold=True))
         return label
+
+
+    @staticmethod
+    def make_font(families: list[str] = None, bold: bool = None) -> QFont:
+        font = QFont()
+        if families is not None:
+            font.setFamilies(families)
+        if bold is not None:
+            font.setBold(bold)
+        return font
+
+
+    @staticmethod
+    def make_image(path: str, placeholder: str = 'Image') -> QLabel:
+        image = QLabel()
+        try:
+            pixmap = QPixmap(path)
+            if pixmap.isNull():
+                raise RuntimeError('QPixmap is null')
+            image.setPixmap(pixmap)
+            image.adjustSize()
+        except Exception as ex:
+            logging.error('Unable to create QPixmap from <{path}>')
+            logging.exception(ex)
+            image.setText(placeholder)
+        return image
+
+
+    @staticmethod
+    def make_button(text: str, action: Callable) -> QPushButton:
+        button = QPushButton()
+        button.setText(text)
+        button.clicked.connect(action)
+        return button
 
 
     @staticmethod

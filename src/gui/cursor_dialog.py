@@ -3,9 +3,9 @@ from .cursor_dialog_ui import CursorDialogUi
 
 class CursorDialog(CursorDialogUi):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
     
 
-    def show(self):
+    def show_dialog(self):
         super().show()

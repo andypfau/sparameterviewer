@@ -3,11 +3,11 @@ from .settings_dialog_ui import SettingsDialogUi
 
 class SettingsDialog(SettingsDialogUi):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
     
 
-    def show(self, category: str = None):
+    def show_dialog(self, category: str = None):
         # TODO: select the correct tab
         super().ui_show()
 

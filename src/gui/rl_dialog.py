@@ -3,9 +3,9 @@ from .rl_dialog_ui import RlDialogUi
 
 class RlDialog(RlDialogUi):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
     
 
-    def show(self):
-        super().show()
+    def show_dialog(self):
+        super().ui_show()

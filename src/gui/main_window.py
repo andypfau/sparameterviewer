@@ -7,6 +7,7 @@ from .settings_dialog import SettingsDialog
 from .cursor_dialog import CursorDialog
 from .info_dialog import InfoDialog
 from .log_dialog import LogDialog
+from .about_dialog import AboutDialog
 from .simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from lib.si import SiFmt
 from lib import Clipboard
@@ -107,21 +108,21 @@ class MainWindow(MainWindowUi):
     @property
     def settings_dialog(self) -> SettingsDialog:
         if not self._settings_dialog:
-            self._settings_dialog = SettingsDialog()
+            self._settings_dialog = SettingsDialog(self)
         return self._settings_dialog
 
 
     @property
     def cursor_dialog(self) -> CursorDialog:
         if not self._cursor_dialog:
-            self._cursor_dialog = CursorDialog()
+            self._cursor_dialog = CursorDialog(self)
         return self._cursor_dialog
 
 
     @property
     def log_dialog(self) -> LogDialog:
         if not self._log_dialog:
-            self._log_dialog = LogDialog()
+            self._log_dialog = LogDialog(self)
         return self._log_dialog
 
     
@@ -443,19 +444,19 @@ class MainWindow(MainWindowUi):
     
     
     def on_trace_cursors(self):
-        self.cursor_dialog.show()
+        self.cursor_dialog.show_dialog()
     
     
     def on_rl_calc(self):
-        RlDialog().show()
+        RlDialog(self).show_dialog()
 
 
     def on_log(self):
-        self.log_dialog.show()
+        self.log_dialog.show_dialog()
     
     
     def on_settings(self):
-        self.settings_dialog.show()
+        self.settings_dialog.show_dialog()
     
     
     def on_help(self):
@@ -463,9 +464,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_about(self):
-        # TODO: custom dialog with icon
-        #icon_path = pathlib.Path(AppGlobal.get_resource_dir()) / 'sparameterviewer.png'
-        info_dialog('About', Info.AppName + '\n' + Info.AppVersionStr, Info.AppDateStr)
+        AboutDialog(self).show_dialog()
 
 
     def on_save_plot_image(self):
@@ -489,20 +488,20 @@ class MainWindow(MainWindowUi):
     
 
     def on_file_info(self):
+        if len(self.selected_files)<=0:
+            error_dialog('Error', 'No file selected.')
+            return
+
         info = ''
         for file in self.selected_files:
             if len(info)>0:
                 info+= '\n\n\n'
             info += self.get_info_str(file)
-    
-        if len(info)>0:
-            InfoDialog().show(title='File Info', text=info)
-        else:
-            error_dialog('Error', 'No file selected.')
+        InfoDialog(self).show_dialog(title='File Info', text=info)
     
     
     def on_view_tabular(self):
-        TabularDialog().show()
+        TabularDialog(self).show_dialog()
     
 
     def on_open_externally(self):
@@ -600,16 +599,15 @@ class MainWindow(MainWindowUi):
     
     
     def on_manual_axes(self):
-        # TODO: open settings dialog at the correct page
-        self.settings_dialog.show()
+        self.settings_dialog.show_dialog('axes')
 
 
     def on_plot_options(self):
-        # TODO: open settings dialog at the correct page
-        self.settings_dialog.show()
+        self.settings_dialog.show_dialog('plot')
 
 
-    def on_update_plot(self):
+    def on_update_expressions(self):
+        self.ui_mode = Mode.Expr
         self.update_plot()
 
     
@@ -708,12 +706,14 @@ class MainWindow(MainWindowUi):
         return info
     
 
-    def show_error(self, error: "str|None"):
+    def show_error(self, error: "str|None", exception: Exception = None):
         if error:
             logging.error(error)
             self.ui_update_status_message('\u26A0 ' + error)
         else:
             self.ui_update_status_message('No problems found')
+        if exception:
+            logging.exception(exception)
     
 
     def update_plot(self):
@@ -937,7 +937,6 @@ class MainWindow(MainWindowUi):
             self.plot_axes_are_valid = True
 
         except Exception as ex:
-            logging.exception(f'Plotting failed: {ex}')
             self.ui_figure.clf()
-            self.show_error(f'ERROR: {ex}')
-            raise ex
+            self.show_error(f'Plotting failed', ex)
+

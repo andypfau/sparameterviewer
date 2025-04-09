@@ -15,11 +15,11 @@ from typing import Callable, Union
 
 class CursorDialogUi(QDialog):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setWindowTitle('Trace Cursors')
         QtHelper.set_dialog_icon(self)
     
 
-    def show(self):
-        self.exec()
+    def ui_show(self):
+        self.show()

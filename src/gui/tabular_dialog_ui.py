@@ -15,8 +15,8 @@ from typing import Callable, Union
 
 class TabularDialogUi(QDialog):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setWindowTitle('Tabular Data')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
@@ -54,5 +54,5 @@ class TabularDialogUi(QDialog):
         self.ui_mainmenu_export = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Export', action=None)
     
 
-    def show(self):
+    def ui_show(self):
         self.exec()

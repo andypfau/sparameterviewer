@@ -15,12 +15,12 @@ from typing import Callable, Union
 
 class RlDialogUi(QDialog):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
         self.setWindowTitle('Return Loss Integrator')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
     
 
-    def show(self):
+    def ui_show(self):
         self.exec()

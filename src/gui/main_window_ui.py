@@ -1,4 +1,5 @@
 from .qt_helper import QtHelper
+from lib import AppGlobal
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -148,17 +149,11 @@ class MainWindowUi(QMainWindow):
         self.ui_filter_widget.setLayout(filter_widget_layout)
         self.ui_filter_widget.hide()
         filesview_layout.addWidget(self.ui_filter_widget)
-        filter_label = QLabel()
-        filter_label.setText('Filter:')
-        filter_widget_layout.addWidget(filter_label)
+        filter_widget_layout.addWidget(QtHelper.make_label('Filter:'))
         self.ui_filter_textedit = QLineEdit()
         filter_widget_layout.addWidget(self.ui_filter_textedit)
-        filter_apply_button = QPushButton('Apply')
-        filter_apply_button.clicked.connect(self.on_apply_filter)
-        filter_widget_layout.addWidget(filter_apply_button)
-        filter_discard_button = QPushButton('Discard')
-        filter_discard_button.clicked.connect(self.on_discard_filter)
-        filter_widget_layout.addWidget(filter_discard_button)
+        filter_widget_layout.addWidget(QtHelper.make_button('Apply', self.on_apply_filter))
+        filter_widget_layout.addWidget(QtHelper.make_button('Discard', self.on_discard_filter))
         self.ui_fileview = QTreeView()
         filesview_layout.addWidget(self.ui_fileview)
         files_tab.setLayout(filesview_layout)
@@ -177,9 +172,7 @@ class MainWindowUi(QMainWindow):
         self.template_button = QPushButton('Template...')
         exprbuttons_layout.addWidget(self.template_button)
         exprbuttons_layout.addStretch()
-        editor_font = QFont()
-        editor_font.setFamilies(['Fira Code', 'Consolas', 'Courier New', 'monospace'])
-        self.ui_editor.setFont(editor_font)
+        self.ui_editor.setFont(QtHelper.make_font(families=AppGlobal.get_preferred_monospace_fonts()))
         self.ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         editor_layout = QVBoxLayout()
         editor_layout.addWidget(self.ui_editor)
@@ -237,7 +230,7 @@ class MainWindowUi(QMainWindow):
         self.ui_menuitem_manual_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes)
         self.ui_menuitem_plotoptions = QtHelper.add_menuitem(self.ui_mainmenu_view, 'More Plot Options...', self.on_plot_options)
         self.ui_mainmenu_view.addSeparator()
-        self.ui_menuitem_update_plot = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Update Plot', self.on_update_plot, shortcut='F5')
+        self.ui_menuitem_update_expr = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 
         self.ui_mainmenu_tools = QtHelper.add_submenu(self, self.ui_menu_bar, '&Tools')
         self.ui_menuitem_cursrs = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Trace Cursors...', self.on_trace_cursors, shortcut='F3')
@@ -470,5 +463,5 @@ class MainWindowUi(QMainWindow):
         raise NotImplementedError()
     def on_plot_options(self):
         raise NotImplementedError()
-    def on_update_plot(self):
+    def on_update_expressions(self):
         raise NotImplementedError()
