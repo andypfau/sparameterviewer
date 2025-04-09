@@ -67,25 +67,7 @@ class AppGlobal:
 
 
     @staticmethod
-    def set_toplevel_icon(toplevel: Toplevel):
-        try:
-            
-            if is_windows():
-                toplevel.iconbitmap(os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.ico'))
-            else:
-                try:
-                    img = tkinter.PhotoImage(file=os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.png'))
-                    toplevel.tk.call('wm', 'iconphoto', toplevel._w, img)
-                except:
-                    toplevel.iconbitmap('@' + os.path.join(AppGlobal.get_resource_dir(), 'sparamviewer.xbm'))
-
-        except Exception as ex:
-            logging.exception(f'Unable to set toplevel icon: {ex}')
-
-
-
-    @staticmethod
-    def show_help(doc: str = 'main.md'):
+    def open_help(doc: str = 'main.md'):
         try:
             helpfile_path = os.path.join(AppGlobal.get_doc_dir(), doc)
             if not os.path.exists(helpfile_path):

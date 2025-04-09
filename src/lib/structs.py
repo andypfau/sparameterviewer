@@ -64,7 +64,7 @@ class SParamFile:
             load(self.file_path)
 
     @property
-    def nw(self):
+    def nw(self) -> "skrf.Network":
         self._load()
         return self._nw
     

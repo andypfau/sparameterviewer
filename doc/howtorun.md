@@ -8,11 +8,10 @@ Prerequisites
 - Tested with Python 3.12.
     - Might work with 3.7 or newer, but not tested.
 - Python packet dependencies:
-    - Mandatory: `numpy scipy scikit-rf matplotlib tk pygubu openpyxl appdirs pillow pandas CITIfile`.
+    - Mandatory: `numpy scipy scikit-rf matplotlib PyQt6 openpyxl appdirs pillow pandas CITIfile`.
     - Optional:
         - `copykitten`: to copy images to clipboard.
         - `pyinstaller`: to compile a binary.
-    - Under Feodora Linux, you may have to install `python3-pillow-tk` via `dnf`.
 
 Execution
 ---------

@@ -119,8 +119,8 @@ class PlotHelper:
         self.z_range = [+1e99,-1e99]
         self.items: list[ItemToPlot] = []
 
-        self.plot: pyplot.axes.Axes = None
-        self.plot2: pyplot.axes.Axes = None
+        self.plot: pyplot.Axes = None
+        self.plot2: pyplot.Axes = None
     
 
     @property

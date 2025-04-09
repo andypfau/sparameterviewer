@@ -1,6 +1,7 @@
 import os
 import string
 import subprocess
+import numpy as np
 
 
 def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "str":
@@ -68,3 +69,17 @@ def open_file_in_default_viewer(filename: str):
         os.startfile(filename)
     else:
         subprocess.run(['xdg-open', filename], check=True)
+
+
+def start_process(binary_path: str, *args):
+    subprocess.run([binary_path, *args])
+
+
+def v2db(v):
+    return 20*np.log10(np.maximum(1e-15, np.abs(v)))
+
+
+def group_delay(frequencies, sparams):
+    d_phase = np.diff(np.unwrap(np.angle(sparams)))
+    d_freq = np.diff(frequencies)
+    return frequencies[1:], -d_phase/d_freq
