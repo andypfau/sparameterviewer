@@ -14,7 +14,6 @@ class QtHelper:
 
     @staticmethod
     def set_dialog_icon(dialog: Union[QDialog,QMainWindow]):
-        
         if is_windows():
             images_to_try = ['sparamviewer.ico']
         else:
@@ -30,26 +29,37 @@ class QtHelper:
 
 
     @staticmethod
-    def make_label(text: str, *, bold: bool = False) -> QLabel:
+    def make_label(text: str, *, font: Union[QFont,None] = None, stretch: bool = False) -> QLabel:
         label = QLabel()
         label.setText(text)
-        if bold:
-            label.setFont(QtHelper.make_font(bold=True))
+        if font:
+            label.setFont(font)
+        if not stretch:
+            label.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed, QSizePolicy.ControlType.Label))
         return label
 
 
     @staticmethod
-    def make_font(families: list[str] = None, bold: bool = None) -> QFont:
-        font = QFont()
+    def make_font(*, base: QFont = None, families: list[str] = None, bold: bool = None, underline: bool = None, strikethru: bool = None, rel_size: float = None) -> QFont:
+        if base:
+            font = QFont(base)
+        else:
+            font = QFont()
         if families is not None:
             font.setFamilies(families)
         if bold is not None:
             font.setBold(bold)
+        if rel_size is not None:
+            font.setPointSizeF(font.pointSizeF() * rel_size)
+        if underline is not None:
+            font.setUnderline(bold)
+        if strikethru is not None:
+            font.setStrikeOut(strikethru)
         return font
 
 
     @staticmethod
-    def make_image(path: str, placeholder: str = 'Image') -> QLabel:
+    def make_image(path: str, placeholder: str = 'Placeholder') -> QLabel:
         image = QLabel()
         try:
             pixmap = QPixmap(path)
@@ -65,10 +75,11 @@ class QtHelper:
 
 
     @staticmethod
-    def make_button(text: str, action: Callable) -> QPushButton:
+    def make_button(text: str, action: Callable = None) -> QPushButton:
         button = QPushButton()
         button.setText(text)
-        button.clicked.connect(action)
+        if action:
+            button.clicked.connect(action)
         return button
 
 
@@ -94,3 +105,8 @@ class QtHelper:
             item.setVisible(False)
         menu.addAction(item)
         return item
+
+
+    @staticmethod
+    def get_available_fonts() -> list[str]:
+        return QtGui.QFontDatabase.families()

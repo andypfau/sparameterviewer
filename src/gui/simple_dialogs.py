@@ -88,7 +88,7 @@ def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[
         return filename
 
 
-def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None) -> bool:
+def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None) -> Union[str,None]:
     """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
 
     kwargs = dict(parent=parent, caption=title)

@@ -27,6 +27,8 @@ class SParamViewerAppSettings(AppSettings):
     plot_mark_points: bool = False
     last_directories: list[str] = []
     comment_existing_expr: bool = True
+    editor_font: str = ''
+    csv_separator: str = ';'
 
 
 Settings = SParamViewerAppSettings(

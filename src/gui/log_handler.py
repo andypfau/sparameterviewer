@@ -40,20 +40,14 @@ class LogHandler(logging.StreamHandler):
 
 
     def _notify(self):
-        for callback in self._observers:
+        for i in reversed(range(len(self._observers))):
             try:
-                callback()
-            except: pass
+                self._observers[i]()
+            except Exception as ex:
+                logging.debug(f'Remove log observer {i} ({ex})')
+                del self._observers[i]
 
 
     def attach(self, callback: "callable[None,None]"):
         """ Attach a log listener """
         self._observers.append(callback)
-
-    
-    def detach(self, callback: "callable[None,None]"):
-        """ Detach a log listener """
-        try:
-            self._observers.remove(callback)
-        except:
-            pass

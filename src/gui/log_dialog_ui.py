@@ -19,7 +19,7 @@ class LogDialogUi(QDialog):
         super().__init__(parent)
         self.setWindowTitle('Log')
         QtHelper.set_dialog_icon(self)
-
+        self.finished.connect(self.on_close)
         layout = QVBoxLayout()
         self.setLayout(layout)
         
@@ -36,12 +36,6 @@ class LogDialogUi(QDialog):
         layout.addWidget(self.ui_level_combo)
 
         self.resize(800, 600)
-    
-    
-    def closeEvent(self, event):
-        self.on_close()
-        self.dialogClosed.emit()
-        event.accept()
     
 
     def ui_set_level_strings(self, levels: list[str]):
@@ -68,5 +62,3 @@ class LogDialogUi(QDialog):
     # to be implemented in derived class
     def on_select_level(self):
         raise NotImplementedError
-    def on_close(self):
-        pass

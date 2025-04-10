@@ -17,7 +17,6 @@ class LogDialog(LogDialogUi):
 
     def __init__(self, parent):
         super().__init__(parent)
-        LogHandler.inst().attach(self.update_log_text)
         self.ui_set_level_strings([name for name in LogDialog.Levels.keys()])
         try:
             for name,level in LogDialog.Levels.items():
@@ -29,6 +28,7 @@ class LogDialog(LogDialogUi):
     
 
     def show_dialog(self):
+        LogHandler.inst().attach(self.update_log_text)
         super().ui_show()
     
 
@@ -43,7 +43,3 @@ class LogDialog(LogDialogUi):
                 Settings.log_level = level
                 break
         self.update_log_text()
-
-        
-    def on_close(self):
-        LogHandler.inst().detach(self.update_log_text)

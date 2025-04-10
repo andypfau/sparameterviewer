@@ -5,7 +5,9 @@ from PyQt6 import QtWidgets
 
 from gui.main_window import MainWindow
 from gui.log_handler import LogHandler
-from lib import AppGlobal, is_windows
+from gui.settings import Settings
+from gui.qt_helper import QtHelper
+from lib import AppGlobal
 
 
 if __name__ == '__main__':
@@ -41,19 +43,23 @@ if __name__ == '__main__':
             import pyi_splash
             pyi_splash.close()
         except Exception as ex:
-            pass # not started from pyinstaller, ignore        
-
-    try:
-        if is_windows():
-            # hide terminal window
-            import ctypes
-            ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
-    except Exception as ex:
-        pass # ignore
+            pass # not started from pyinstaller, ignore
 
     try:
         app = QtWidgets.QApplication(sys.argv)
-        
+
+        try:
+            available_fonts = QtHelper.get_available_fonts()
+            if (not Settings.editor_font) or (Settings.editor_font not in available_fonts):
+                preferred_fonts = AppGlobal.get_preferred_monospace_fonts()
+                for preferred_font in preferred_fonts:
+                    if preferred_font in available_fonts:
+                        Settings.editor_font = preferred_font
+                        logging.info(f'Chose monospace font "{Settings.editor_font}"')
+                        break
+        except:
+            pass
+            
         filenames = sys.argv[1:]
         main_dialog = MainWindow(filenames)
         main_dialog.show()

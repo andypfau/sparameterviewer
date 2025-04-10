@@ -3,7 +3,7 @@ from .log_handler import LogHandler
 from .settings import Settings
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
-from .settings_dialog import SettingsDialog
+from .settings_dialog import SettingsDialog, SettingsTab
 from .cursor_dialog import CursorDialog
 from .info_dialog import InfoDialog
 from .log_dialog import LogDialog
@@ -46,6 +46,7 @@ class MainWindow(MainWindowUi):
     def __init__(self, filenames: list[str]):
         super().__init__()
         self.ui_update_window_title(Info.AppName)
+        Settings.attach(self.on_settings_change)
         
         self.directories: list[str] = []
         self.files: list[SParamFile] = []
@@ -158,8 +159,6 @@ class MainWindow(MainWindowUi):
     def on_select_mode(self):
         changed = Settings.plot_mode != self.ui_mode
         Settings.plot_mode = self.ui_mode
-        if changed:
-            Settings.save()
         self.update_plot()
 
 
@@ -167,8 +166,6 @@ class MainWindow(MainWindowUi):
         changed = Settings.plot_unit != self.ui_unit
         Settings.plot_unit = self.ui_unit
         if changed:
-            Settings.save()
-
             # TODO: implement
             ## different kind of chart -> axes scale is probably no longer valid
             #self.invalidate_axes_lock(update=False)
@@ -189,11 +186,10 @@ class MainWindow(MainWindowUi):
         Settings.plot_unit2 = self.ui_unit2
 
         if changed:
-            Settings.save()
-
             # TODO: implement
             ## different kind of chart -> axes scale is probably no longer valid
             #self.invalidate_axes_lock(update=False)
+            pass
 
         self.update_plot()
     
@@ -266,8 +262,6 @@ class MainWindow(MainWindowUi):
         while len(Settings.last_directories) > MAX_DIRECTORY_HISTORY_SIZE:
             del Settings.last_directories[-1]
         
-        Settings.save()
-
         self.update_most_recent_directories_menu()
 
 
@@ -500,15 +494,25 @@ class MainWindow(MainWindowUi):
         InfoDialog(self).show_dialog(title='File Info', text=info)
     
     
-    def on_view_tabular(self):
-        TabularDialog(self).show_dialog()
+    def on_view_tabular(self):       
+        
+        datasets = []
+        initial_selection = None
+        for i,file in enumerate(self.files):
+            if (initial_selection is None) and (file in self.selected_files):
+                initial_selection = i
+            datasets.append(file)
+        for plot in self.plot.plots:
+            datasets.append(file)
+        
+        TabularDialog(self).show_dialog(datasets=datasets, initial_selection=initial_selection)
     
 
     def on_open_externally(self):
 
         if not Settings.ext_editor_cmd:
-            info_dialog(title='Open File Externally', message=f'No external editor specified. Please select one.')
-            if not self.settings_dialog.let_user_select_ext_editor():
+            info_dialog('Open File Externally', f'No external editor specified. Please select one.')
+            if not self.settings_dialog.let_user_select_ext_editor(self):
                 return
 
         files = [file.file_path for file in self.selected_files]
@@ -599,11 +603,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_manual_axes(self):
-        self.settings_dialog.show_dialog('axes')
-
-
-    def on_plot_options(self):
-        self.settings_dialog.show_dialog('plot')
+        raise NotImplementedError()
 
 
     def on_update_expressions(self):
@@ -615,6 +615,10 @@ class MainWindow(MainWindowUi):
         self.plot_axes_are_valid = False
         if update:
             self.update_plot()
+    
+
+    def on_settings_change(self):
+        self.update_plot()
 
     
     def get_info_str(self, sparam_file: SParamFile) -> str:

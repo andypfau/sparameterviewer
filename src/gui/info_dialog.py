@@ -9,7 +9,3 @@ class InfoDialog(InfoDialogUi):
 
     def show_dialog(self, title: str, text: str):
         super().ui_show(title, text)
-
-
-    def on_select_level(self):
-        pass

@@ -140,7 +140,7 @@ def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wil
     return None, None
 
 
-def format_si_range(a, b, allow_total_wildcard=False):
+def format_si_range(a, b, allow_total_wildcard=False) -> str:
     if allow_total_wildcard and a is any and b is any:
         return '*'
     result = ''

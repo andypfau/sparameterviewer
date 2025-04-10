@@ -85,4 +85,4 @@ class AppGlobal:
 
     @staticmethod
     def get_preferred_monospace_fonts() -> list[str]:
-        return ['Fira Code', 'Consolas', 'Courier New', 'monospace']
+        return ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Consolas', 'Courier New', 'Lucida Sans Typewriter']

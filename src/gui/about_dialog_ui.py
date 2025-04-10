@@ -33,7 +33,7 @@ class AboutDialogUi(QDialog):
         hlayout.addLayout(vlayout)
         hlayout.addSpacing(10)
         
-        vlayout.addWidget(QtHelper.make_label(Info.AppName, bold=True))
+        vlayout.addWidget(QtHelper.make_label(Info.AppName, font=QtHelper.make_font(rel_size=1.25)))
         vlayout.addSpacing(8)
         vlayout.addWidget(QtHelper.make_label(Info.AppVersionStr))
         vlayout.addWidget(QtHelper.make_label(Info.AppDateStr))

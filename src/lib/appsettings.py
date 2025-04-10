@@ -27,18 +27,20 @@ class AppSettings:
     def notify(self):
         if self._inhbit_listeners:
             return
-        for callback in self._observers:
+        for i in reversed(range(len(self._observers))):
             try:
-                callback()
-            except: pass
+                self._observers[i]()
+            except Exception as ex:
+                logging.debug(f'Remove setting observer {i} ({ex})')
+                del self._observers[i]
     
 
     def __setattr__(self, __name: str, __value: any) -> None:
+        super().__setattr__(__name, __value)
         if '_defaults' in self.__dict__:
             if __name in self.__dict__['_defaults']:
                 self.save()
                 self.notify()
-        super().__setattr__(__name, __value)
 
     
     def load(self):
