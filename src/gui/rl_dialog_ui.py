@@ -22,5 +22,5 @@ class RlDialogUi(QDialog):
         self.setModal(True)
     
 
-    def ui_show(self):
+    def ui_show_modal(self):
         self.exec()

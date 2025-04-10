@@ -110,3 +110,15 @@ class QtHelper:
     @staticmethod
     def get_available_fonts() -> list[str]:
         return QtGui.QFontDatabase.families()
+
+
+    @staticmethod
+    def apply_warning_color(widget: QWidget, apply_warning: bool = True):
+        if apply_warning:
+            color = widget.palette().color(widget.palette().ColorRole.Base)
+            bg_color = QColor.fromHsvF(0.0, 0.5, 0.8 if color.lightnessF() > 0.5 else 0.2)
+            fg_color = QColor.fromHsvF(0.0, 0.0, 0.95 if color.lightnessF() > 0.5 else 0.95)
+            style = f'background-color:{bg_color.name()};color:{fg_color.name()};'
+        else:
+            style = ''
+        widget.setStyleSheet(style)

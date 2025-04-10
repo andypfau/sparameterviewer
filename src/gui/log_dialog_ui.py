@@ -22,9 +22,10 @@ class LogDialogUi(QDialog):
         self.finished.connect(self.on_close)
         layout = QVBoxLayout()
         self.setLayout(layout)
+        self.setSizeGripEnabled(True)
         
         self.ui_logtext = QPlainTextEdit()
-        self.ui_logtext.setMinimumSize(400, 300)
+        self.ui_logtext.setMinimumSize(200, 100)
         self.ui_logtext.setReadOnly(True)
         self.ui_logtext.setFont(QtHelper.make_font(families=AppGlobal.get_preferred_monospace_fonts()))
         self.ui_logtext.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)

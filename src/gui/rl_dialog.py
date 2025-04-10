@@ -7,5 +7,5 @@ class RlDialog(RlDialogUi):
         super().__init__(parent)
     
 
-    def show_dialog(self):
-        super().ui_show()
+    def show_modal_dialog(self):
+        super().ui_show_modal()

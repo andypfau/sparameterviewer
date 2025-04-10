@@ -43,5 +43,5 @@ class AboutDialogUi(QDialog):
         self.adjustSize()
     
 
-    def ui_show(self):
+    def ui_show_modal(self):
         self.exec()

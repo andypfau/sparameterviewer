@@ -168,8 +168,9 @@ class TabularDialog(TabularDialogUi):
     DISPLAY_PREC = 5
     
 
-    def __init__(self, parent):
+    def __init__(self, parent, settings_dialog: SettingsDialog):
         super().__init__(parent)
+        self.settings_dialog = settings_dialog
         self.datasets: list[TabularDataset] = []
 
         self.ui_set_formats_list(list(TABULAR_FORMAT_NAMES.values()))
@@ -186,7 +187,7 @@ class TabularDialog(TabularDialogUi):
         ])
     
 
-    def show_dialog(self, datasets: list[any], initial_selection: int = None):
+    def show_modal_dialog(self, datasets: list[any], initial_selection: int = None):
         assert len(datasets) > 0
         self.datasets = [TabularDataset.create(dataset) for dataset in datasets]
         if initial_selection:
@@ -195,7 +196,7 @@ class TabularDialog(TabularDialogUi):
             selected_name = None
         self.ui_set_datasets_list([ds.display_name for ds in self.datasets], selection=selected_name)
         Settings.attach(self.on_settings_change)
-        super().ui_show()
+        super().ui_show_modal()
 
 
     @property
@@ -337,8 +338,8 @@ class TabularDialog(TabularDialogUi):
 
         filter_x = parse_si_range(self.ui_selected_freq_filter)
         filter_cols = parse_cols(self.ui_selected_param_filter)
-        if filter_x==(None,None):
-            pass  # TODO: indicate error
+        
+        self.ui_indicate_freq_filter_error(filter_x==(None,None))
 
         return filter_x, filter_cols
 
@@ -538,4 +539,4 @@ class TabularDialog(TabularDialogUi):
 
 
     def on_settings(self):
-        SettingsDialog(self).show_dialog(SettingsTab.Format)
+        self.settings_dialog.show_dialog(SettingsTab.Format)

@@ -100,7 +100,7 @@ class SettingsDialogUi(QDialog):
     
 
     def ui_show(self):
-        self.exec()
+        self.show()
 
     
     @property

@@ -42,7 +42,7 @@ class TabularDialogUi(QDialog):
                 if orientation == Qt.Orientation.Horizontal:
                     return str(self._headers[section])
                 elif orientation == Qt.Orientation.Vertical:
-                    return str(section)
+                    return str(section+1)
                 raise NotImplementedError()
     
 
@@ -51,6 +51,7 @@ class TabularDialogUi(QDialog):
         self.setWindowTitle('Tabular Data')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
+        self.setSizeGripEnabled(True)
 
         main_layout = QVBoxLayout()
         
@@ -81,7 +82,7 @@ class TabularDialogUi(QDialog):
         self._ui_f_filter_note = None
 
         self._ui_table = QTableView()
-        self._ui_table.setMinimumSize(400, 200)
+        self._ui_table.setMinimumSize(400, 100)
         main_layout.addWidget(self._ui_table)
 
         self.setLayout(main_layout)
@@ -103,7 +104,7 @@ class TabularDialogUi(QDialog):
         self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Settings...', self.on_settings, shortcut='F4')
     
 
-    def ui_show(self):
+    def ui_show_modal(self):
         self.exec()
 
     
@@ -143,6 +144,10 @@ class TabularDialogUi(QDialog):
             selection = filters[0]
         self._ui_f_filter_edit.setCurrentText(selection)
     
+
+    def ui_indicate_freq_filter_error(self, inidicate_error: bool = True):
+        QtHelper.apply_warning_color(self._ui_f_filter_edit, inidicate_error)
+    
     
     def ui_set_param_filters_list(self, filters: list[str], selection: str = None):
         self._ui_param_filter_edit.clear()
@@ -153,6 +158,10 @@ class TabularDialogUi(QDialog):
         if not selection:
             selection = filters[0]
         self._ui_param_filter_edit.setCurrentText(selection)
+    
+
+    def ui_apply_param_filter_warning(self, apply_warning: bool = True):
+        QtHelper.apply_warning_color(self._ui_param_filter_edit, apply_warning)
     
 
     def ui_populate_table(self, headers: list[str], columns: list[list[str]]):

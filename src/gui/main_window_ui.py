@@ -144,16 +144,6 @@ class MainWindowUi(QMainWindow):
         tabs.addTab(expressions_tab, 'Expressions')
 
         filesview_layout = QVBoxLayout()
-        filter_widget_layout = QHBoxLayout()
-        self.ui_filter_widget = QWidget()
-        self.ui_filter_widget.setLayout(filter_widget_layout)
-        self.ui_filter_widget.hide()
-        filesview_layout.addWidget(self.ui_filter_widget)
-        filter_widget_layout.addWidget(QtHelper.make_label('Filter:'))
-        self.ui_filter_textedit = QLineEdit()
-        filter_widget_layout.addWidget(self.ui_filter_textedit)
-        filter_widget_layout.addWidget(QtHelper.make_button('Apply', self.on_apply_filter))
-        filter_widget_layout.addWidget(QtHelper.make_button('Discard', self.on_discard_filter))
         self.ui_fileview = QTreeView()
         filesview_layout.addWidget(self.ui_fileview)
         files_tab.setLayout(filesview_layout)
@@ -214,7 +204,7 @@ class MainWindowUi(QMainWindow):
         self.ui_menuitem_exit = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Exit', self.close)
         
         self.ui_mainmenu_view = QtHelper.add_submenu(self, self.ui_menu_bar, '&View')
-        self.ui_menuitem_filter: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F', checkable=True)
+        self.ui_menuitem_filter = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self.ui_mainmenu_view.addSeparator()
         self.ui_menuitem_show_legend: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
         self.ui_menuitem_hide_single_legend: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
@@ -252,35 +242,15 @@ class MainWindowUi(QMainWindow):
         self.ui_template_menuitem_example2 =  QtHelper.add_menuitem(self.ui_template_menu, 'Example 2', None)
 
     
-    def ui_toggle_filter_visibility(self, show: bool):
-        self.ui_menuitem_filter.setChecked(show)
-        self.ui_filter_widget.setVisible(show)
-        if show:
-            self.ui_filter_textedit.setFocus()
-
-
     def ui_update_window_title(self, title: str):
         self.setWindowTitle(title)
-    
-
-    @property
-    def ui_enable_filter(self) -> bool:
-        return self.ui_menuitem_filter.isChecked()
-    @ui_enable_filter.setter
-    def ui_enable_filter(self, value):
-        self.ui_menuitem_filter.setChecked(value)
-
-
-    @property
-    def ui_filter_text(self) -> Union[str,None]:
-        return self.ui_filter_textedit.text()
     
 
     @property
     def ui_show_legend(self) -> bool:
         return self.ui_menuitem_show_legend.isChecked()
     @ui_show_legend.setter
-    def ui_show_legend(self, value) -> bool:
+    def ui_show_legend(self, value):
         self.ui_menuitem_show_legend.setChecked(value)
     
 
@@ -288,7 +258,7 @@ class MainWindowUi(QMainWindow):
     def ui_hide_single_item_legend(self) -> bool:
         return self.ui_menuitem_hide_single_legend.isChecked()
     @ui_hide_single_item_legend.setter
-    def ui_hide_single_item_legend(self, value) -> bool:
+    def ui_hide_single_item_legend(self, value):
         self.ui_menuitem_hide_single_legend.setChecked(value)
     
 
@@ -296,7 +266,7 @@ class MainWindowUi(QMainWindow):
     def ui_shorten_legend(self) -> bool:
         return self.ui_menuitem_shorten_legend.isChecked()
     @ui_shorten_legend.setter
-    def ui_shorten_legend(self, value) -> bool:
+    def ui_shorten_legend(self, value):
         self.ui_menuitem_shorten_legend.setChecked(value)
     
 
@@ -304,7 +274,7 @@ class MainWindowUi(QMainWindow):
     def ui_lock_x(self) -> bool:
         return self.ui_menuitem_lock_x.isChecked()
     @ui_lock_x.setter
-    def ui_lock_x(self, value) -> bool:
+    def ui_lock_x(self, value):
         self.ui_menuitem_lock_x.setChecked(value)
     
 
@@ -312,7 +282,7 @@ class MainWindowUi(QMainWindow):
     def ui_lock_y(self) -> bool:
         return self.ui_menuitem_lock_y.isChecked()
     @ui_lock_y.setter
-    def ui_lock_y(self, value) -> bool:
+    def ui_lock_y(self, value):
         self.ui_menuitem_lock_y.setChecked(value)
 
 
@@ -402,10 +372,6 @@ class MainWindowUi(QMainWindow):
         raise NotImplementedError()
     def on_show_filter(self):
         raise NotImplementedError()
-    def on_apply_filter(self):
-        raise NotImplementedError()
-    def on_discard_filter(self):
-        raise NotImplementedError()
     def on_select_file(self):
         raise NotImplementedError()
     def on_open_directory(self):
@@ -413,8 +379,6 @@ class MainWindowUi(QMainWindow):
     def on_append_directory(self):
         raise NotImplementedError()
     def on_reload_all_files(self):
-        raise NotImplementedError()
-    def on_filter_changed(self):
         raise NotImplementedError()
     def on_trace_cursors(self):
         raise NotImplementedError()

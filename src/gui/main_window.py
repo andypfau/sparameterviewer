@@ -4,9 +4,11 @@ from .settings import Settings
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
+from .filter_dialog import FilterDialog
 from .cursor_dialog import CursorDialog
 from .info_dialog import InfoDialog
 from .log_dialog import LogDialog
+from .axes_dialog import AxesDialog
 from .about_dialog import AboutDialog
 from .simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from lib.si import SiFmt
@@ -194,23 +196,14 @@ class MainWindow(MainWindowUi):
         self.update_plot()
     
 
-    def on_show_filter(self, show: bool):
-        self.ui_toggle_filter_visibility(show)
+    def on_show_filter(self):
+        all_files = [file.name for file in self.files]
+        selected_files = FilterDialog(self).show_modal_dialog(all_files)
+        if not selected_files:
+            return
+        indices = [all_files.index(file) for file in selected_files]
+        self.ui_select_fileview_items(indices)
     
-
-    def on_apply_filter(self, show: bool):
-        # TODO: implement
-        self.ui_toggle_filter_visibility(False)
-    
-
-    def on_discard_filter(self, show: bool):
-        # TODO: implement
-        self.ui_toggle_filter_visibility(False)
-
-    
-    def on_select_file(self):
-        # TODO: implement
-        pass
     
     
     def on_open_directory(self):
@@ -224,11 +217,6 @@ class MainWindow(MainWindowUi):
     
 
     def on_reload_all_files(self):
-        # TODO: implement
-        pass
-    
-
-    def on_filter_changed(self):
         # TODO: implement
         pass
 
@@ -342,24 +330,14 @@ class MainWindow(MainWindowUi):
     def update_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
         
         if len(selected_filenames) == 0 and not only_select_first:
-            if self.ui_filter_text:
-                previously_selected_files = []
-            else:
-                previously_selected_files = self.get_selected_files()
-                self.ui_enable_filter = False
+            previously_selected_files = self.get_selected_files()
         else:
             previously_selected_files = []
-            self.ui_enable_filter = False
 
         selected_archives = set()
         names_and_contents = []
         selected_file_indices = []
         rex = None
-        if self.ui_filter_text:
-            try:
-                rex = re.compile(self.ui_filter_text, re.IGNORECASE)
-            except:
-                logging.error(f'Unable to compile regex <{self.ui_filter_text}>')
         for i,file in enumerate(self.files):
             
             file.tag = i
@@ -379,9 +357,6 @@ class MainWindow(MainWindowUi):
                 if file.archive_path not in selected_archives:
                     # only select the 1st file in any archive, to avoid excessive loading time
                     selected_archives.add(file.archive_path)
-                    do_select = True
-            elif rex:
-                if rex.search(file.filename):
                     do_select = True
             
             if do_select:
@@ -430,11 +405,6 @@ class MainWindow(MainWindowUi):
 
     def on_reload_all_files(self):
         self.reload_all_files()
-
-
-    def on_filter_changed(self):
-        # TODO: implement
-        pass
     
     
     def on_trace_cursors(self):
@@ -442,7 +412,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_rl_calc(self):
-        RlDialog(self).show_dialog()
+        RlDialog(self).show_modal_dialog()
 
 
     def on_log(self):
@@ -458,7 +428,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_about(self):
-        AboutDialog(self).show_dialog()
+        AboutDialog(self).show_modal_dialog()
 
 
     def on_save_plot_image(self):
@@ -491,7 +461,7 @@ class MainWindow(MainWindowUi):
             if len(info)>0:
                 info+= '\n\n\n'
             info += self.get_info_str(file)
-        InfoDialog(self).show_dialog(title='File Info', text=info)
+        InfoDialog(self).show_modal_dialog(title='File Info', text=info)
     
     
     def on_view_tabular(self):       
@@ -505,7 +475,7 @@ class MainWindow(MainWindowUi):
         for plot in self.plot.plots:
             datasets.append(file)
         
-        TabularDialog(self).show_dialog(datasets=datasets, initial_selection=initial_selection)
+        TabularDialog(self, self.settings_dialog).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
     
 
     def on_open_externally(self):
@@ -603,7 +573,21 @@ class MainWindow(MainWindowUi):
     
     
     def on_manual_axes(self):
-        raise NotImplementedError()
+        def scaling_callback(x0, x1, xauto, y0, y1, yauto):
+            try:
+                self.ui_lock_x = not xauto
+                if not xauto:
+                    self.plot.plot.set_xlim((x0,x1))
+                self.ui_lock_y = not yauto
+                if not yauto:
+                    self.plot.plot.set_ylim((y0,y1))
+            except:
+                pass
+            self.update_plot()
+        
+        (x0,x1) = self.plot.plot.get_xlim()
+        (y0,y1) = self.plot.plot.get_ylim()
+        AxesDialog(self).show_modal_dialog(x0, x1, not self.ui_lock_x, y0, y1, not self.ui_lock_y, scaling_callback)
 
 
     def on_update_expressions(self):
@@ -723,8 +707,6 @@ class MainWindow(MainWindowUi):
     def update_plot(self):
 
         try:
-
-            
             prev_xlim, prev_ylim = None, None
             if self.plot is not None:
                 if self.plot.plot is not None:
