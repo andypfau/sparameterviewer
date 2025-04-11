@@ -19,26 +19,49 @@ class AxesDialogUi(QDialog):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle('About')
+        self.setWindowTitle('Manual Axes')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
-
-        layout = QVBoxLayout()
+        
         self._ui_x_text = QComboBox()
+        self._ui_x_text.setMinimumWidth(150)
+        self._ui_x_text.setEditable(True)
         self._ui_x_text.currentTextChanged.connect(self.on_x_change)
-        layout.addWidget(self._ui_x_text)
+        self._ui_x_model = QtGui.QStandardItemModel()
+        self._ui_x_text.setModel( self._ui_x_model)
+        
         self._ui_y_text = QComboBox()
+        self._ui_y_text.setMinimumWidth(150)
+        self._ui_y_text.setEditable(True)
         self._ui_y_text.currentTextChanged.connect(self.on_y_change)
-        layout.addWidget(self._ui_y_text)
-        self.setLayout(layout)
+        self._ui_y_model = QtGui.QStandardItemModel()
+        self._ui_y_text.setModel( self._ui_y_model)
 
-        self.resize(400, 500)
+        self.setLayout(QtHelper.layout_grid([
+            [None, 'Y:'                                   ],
+            ['↑',  self._ui_y_text                        ],
+            [None, None,             'X:', self._ui_x_text],
+            [None, None,             None, '→'            ],
+        ]))
 
         self.adjustSize()
-    
+
 
     def ui_show_modal(self):
+        self._ui_x_text.focusWidget()
         self.exec()
+
+
+    def ui_set_x_presets(self, presets: list[str]):
+        self._ui_x_model.clear()
+        for preset in presets:
+            self._ui_x_model.appendRow(QtGui.QStandardItem(preset))
+
+
+    def ui_set_y_presets(self, presets: list[str]):
+        self._ui_y_model.clear()
+        for preset in presets:
+            self._ui_y_model.appendRow(QtGui.QStandardItem(preset))
 
 
     @property
@@ -58,11 +81,11 @@ class AxesDialogUi(QDialog):
 
     
     def ui_inidicate_x_error(self, indicate_error: bool = True):
-        QtHelper.apply_warning_color(self._ui_x_text, indicate_error)
+        QtHelper.indicate_error(self._ui_x_text, indicate_error)
 
     
     def ui_inidicate_y_error(self, indicate_error: bool = True):
-        QtHelper.apply_warning_color(self._ui_y_text, indicate_error)
+        QtHelper.indicate_error(self._ui_y_text, indicate_error)
 
 
     # to be implemented in derived class

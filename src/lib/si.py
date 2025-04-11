@@ -109,7 +109,7 @@ def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wil
     
     s = s.strip()
     if allow_both_wildcards:
-        if (s=='') or (s=='*') or re.match(r'\*\s*-\s*\*', s):
+        if(s=='*') or re.match(r'\*\s*-\s*\*', s):
             return wildcard_low, wildcard_high
 
     REX_FLOAT = r'[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?'
@@ -124,11 +124,11 @@ def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wil
                 s = s[:-1]
         return factor * float(s)
 
-    if allow_individual_wildcards and (wildcard_low is not None) and (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
+    if allow_individual_wildcards and (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
         b = parse_si_float(m.group(1))
         return wildcard_low, b
     
-    if allow_individual_wildcards and (wildcard_high is not None) and (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
+    if allow_individual_wildcards and (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
         a = parse_si_float(m.group(1))
         return a, wildcard_high
     

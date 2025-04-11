@@ -1,36 +1,50 @@
 from .axes_dialog_ui import AxesDialogUi
 from lib import parse_si_range, format_si_range
+from typing import Callable
 
 
 class AxesDialog(AxesDialogUi):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.callback = None
+        self.callback: Callable = None
         self.x0, self.x1, self.xauto = 0, 0, False
         self.y0, self.y1, self.yauto = 0, 0, False
+        self.ui_set_x_presets([
+            format_si_range(any, any, allow_total_wildcard=True),
+            format_si_range(0, 10e9),
+        ])
+        self.ui_set_y_presets([
+            format_si_range(any, any, allow_total_wildcard=True),
+            format_si_range(-25, +25),
+            format_si_range(-25, +3),
+            format_si_range(-50, +3),
+            format_si_range(-100, +3),
+        ])
     
 
     def show_modal_dialog(self, x0, x1, xauto, y0, y1, yauto, callback):
         self.x0, self.x1, self.xauto = x0, x1, xauto
         self.y0, self.y1, self.yauto = y0, y1, yauto
-        self.callback = callable
+        self.callback = callback
         self.update_ui_from_vars()
         super().ui_show_modal()
 
 
     def update_ui_from_vars(self):
         if self.xauto:
-            self.ui_x = format_si_range(self.x0, self.x1)
-        else:
             self.ui_x = format_si_range(any, any, allow_total_wildcard=True)
-        if self.yauto:
-            self.ui_y = format_si_range(self.y0, self.y1)
         else:
+            self.ui_x = format_si_range(self.x0, self.x1)
+        if self.yauto:
             self.ui_y = format_si_range(any, any, allow_total_wildcard=True)
+        else:
+            self.ui_y = format_si_range(self.y0, self.y1)
         
 
     def trigger_callback(self):
+        if not self.callback:
+            return
         self.callback(self.x0, self.x1, self.xauto, self.y0, self.y1, self.yauto)
 
 
@@ -39,7 +53,10 @@ class AxesDialog(AxesDialogUi):
         if (x0,x1) == (None,None):
             self.ui_inidicate_x_error(True)
             return
-        self.x0, self.x1 = x0, x1
+        elif (x0,x1) == (any,any):
+            self.xauto = True
+        else:
+            self.x0, self.x1, self.xauto = x0, x1, False
         self.trigger_callback()
         self.ui_inidicate_x_error(False)
 
@@ -49,6 +66,9 @@ class AxesDialog(AxesDialogUi):
         if (y0,y1) == (None,None):
             self.ui_inidicate_y_error(True)
             return
-        self.y0, self.y1 = y0, y1
+        elif (y0,y1) == (any,any):
+            self.yauto = True
+        else:
+            self.y0, self.y1, self.yauto = y0, y1, False
         self.trigger_callback()
         self.ui_inidicate_y_error(False)

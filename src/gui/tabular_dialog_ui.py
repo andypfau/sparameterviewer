@@ -146,7 +146,7 @@ class TabularDialogUi(QDialog):
     
 
     def ui_indicate_freq_filter_error(self, inidicate_error: bool = True):
-        QtHelper.apply_warning_color(self._ui_f_filter_edit, inidicate_error)
+        QtHelper.indicate_error(self._ui_f_filter_edit, inidicate_error)
     
     
     def ui_set_param_filters_list(self, filters: list[str], selection: str = None):
@@ -161,7 +161,7 @@ class TabularDialogUi(QDialog):
     
 
     def ui_apply_param_filter_warning(self, apply_warning: bool = True):
-        QtHelper.apply_warning_color(self._ui_param_filter_edit, apply_warning)
+        QtHelper.indicate_error(self._ui_param_filter_edit, apply_warning)
     
 
     def ui_populate_table(self, headers: list[str], columns: list[list[str]]):

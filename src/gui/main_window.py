@@ -57,7 +57,6 @@ class MainWindow(MainWindowUi):
         #self.cursor_dialog: SparamviewerCursorDialog = None
         self.plot_axes_are_valid = False
         self._cursor_dialog: CursorDialog = None
-        self._settings_dialog: SettingsDialog = None
         self._log_dialog: LogDialog = None
             
         # create plot
@@ -106,13 +105,6 @@ class MainWindow(MainWindowUi):
     @property
     def selected_files(self) -> list[SParamFile]:
         return [self.files[i] for i in self.ui_get_selected_fileview_indices()]
-
-
-    @property
-    def settings_dialog(self) -> SettingsDialog:
-        if not self._settings_dialog:
-            self._settings_dialog = SettingsDialog(self)
-        return self._settings_dialog
 
 
     @property
@@ -420,7 +412,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_settings(self):
-        self.settings_dialog.show_dialog()
+        SettingsDialog(self).show_modal_dialog()
     
     
     def on_help(self):
@@ -475,7 +467,7 @@ class MainWindow(MainWindowUi):
         for plot in self.plot.plots:
             datasets.append(file)
         
-        TabularDialog(self, self.settings_dialog).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
+        TabularDialog(self).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
     
 
     def on_open_externally(self):

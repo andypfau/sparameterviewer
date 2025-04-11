@@ -93,7 +93,10 @@ class TabularDatasetSFile(TabularDataset):
         cols = []
         for ep in range(self.file.nw.nports):
             for ip in range(self.file.nw.nports):
-                cols.append(f'S{ep+1},{ip+1}')
+                if ep>=10 or ip>=10:
+                    cols.append(f'S{ep+1},{ip+1}')
+                else:
+                    cols.append(f'S{ep+1}{ip+1}')
         return cols
     @property
     def xcol_data(self) -> np.ndarray:
@@ -168,9 +171,8 @@ class TabularDialog(TabularDialogUi):
     DISPLAY_PREC = 5
     
 
-    def __init__(self, parent, settings_dialog: SettingsDialog):
+    def __init__(self, parent):
         super().__init__(parent)
-        self.settings_dialog = settings_dialog
         self.datasets: list[TabularDataset] = []
 
         self.ui_set_formats_list(list(TABULAR_FORMAT_NAMES.values()))
@@ -180,10 +182,10 @@ class TabularDialog(TabularDialogUi):
         ])
         self.ui_set_param_filters_list([
             '*',
-            'S2,1',
-            'S1,1 S2,1 S2,2',
-            'S1,1 S2,1 S1,2 S2,2',
-            'S1,1 S2,2',
+            'S21',
+            'S11 S21 S22',
+            'S11 S21 S12 S22',
+            'S11 S22',
         ])
     
 
@@ -328,10 +330,7 @@ class TabularDialog(TabularDialogUi):
         
         def parse_cols(s: str):
             s = s.strip()
-            if s=='' or s=='*':
-                return any
-            s = s.strip()
-            if s=='':
+            if s=='*':
                 return any
             parts = [p for p in re.split(r'\s+', s) if p!='']
             return parts
@@ -539,4 +538,4 @@ class TabularDialog(TabularDialogUi):
 
 
     def on_settings(self):
-        self.settings_dialog.show_dialog(SettingsTab.Format)
+       SettingsDialog(self).show_modal_dialog(SettingsTab.Format)

@@ -84,6 +84,21 @@ class QtHelper:
 
 
     @staticmethod
+    def make_spring():
+        return QSpacerItem(0, 0, QSizePolicy.Policy.Expanding)
+
+
+    @staticmethod
+    def make_hspace(width: int):
+        return QSpacerItem(width, 0, QSizePolicy.Policy.Fixed)
+
+
+    @staticmethod
+    def make_vspace(height: int):
+        return QSpacerItem(0, height, QSizePolicy.Policy.Fixed)
+
+
+    @staticmethod
     def add_submenu(parent, menu: QMenu, text: str, visible: bool = True) -> QMenu:
         submenu = QMenu(text, parent)
         if not visible:
@@ -113,12 +128,80 @@ class QtHelper:
 
 
     @staticmethod
-    def apply_warning_color(widget: QWidget, apply_warning: bool = True):
-        if apply_warning:
-            color = widget.palette().color(widget.palette().ColorRole.Base)
-            bg_color = QColor.fromHsvF(0.0, 0.5, 0.8 if color.lightnessF() > 0.5 else 0.2)
-            fg_color = QColor.fromHsvF(0.0, 0.0, 0.95 if color.lightnessF() > 0.5 else 0.95)
+    def indicate_error(widget: QWidget, indicate_error: bool = True):
+        if indicate_error:
+            base_color = widget.palette().color(widget.palette(). ColorRole.Base)
+            is_light = base_color.lightnessF() >= 0.5
+            if is_light:
+                bg_color = QColor.fromHsvF(0.0, 0.3, 0.95)
+                fg_color = QColor.fromHsvF(0.0, 0.0, 0.0)
+            else:
+                bg_color = QColor.fromHsvF(0.0, 0.7, 0.7)
+                fg_color = QColor.fromHsvF(0.0, 0.0, 1.0)
             style = f'background-color:{bg_color.name()};color:{fg_color.name()};'
         else:
             style = ''
         widget.setStyleSheet(style)
+
+
+    @staticmethod
+    def _box_layout(layout: QBoxLayout, *items):
+        for item in items:
+            if item is ...:
+                layout.addStretch()
+            elif isinstance(item, QLayoutItem):
+                layout.addLayout(item)
+            elif isinstance(item, str):
+                layout.addWidget(QtHelper.make_label(item))
+            else:
+                layout.addWidget(item)
+        return layout
+
+
+    @staticmethod
+    def layout_h(*items):
+        return QtHelper._box_layout(QHBoxLayout(), *items)
+
+
+    @staticmethod
+    def layout_v(*items):
+        return QtHelper._box_layout(QVBoxLayout(), *items)
+
+
+    @staticmethod
+    def layout_grid(items_rows_then_columns):
+        layout = QGridLayout()
+        for i_row,columns in enumerate(items_rows_then_columns):
+            for i_col,item in enumerate(columns):
+                if item is None:
+                    continue
+                elif isinstance(item, QLayoutItem):
+                    widget = QWidget()
+                    widget.setLayout(item)
+                    layout.addWidget(widget, i_row, i_col)
+                elif isinstance(item, str):
+                    layout.addWidget(QtHelper.make_label(item), i_row, i_col)
+                else:
+                    layout.addWidget(item, i_row, i_col)
+        return layout
+
+
+    @staticmethod
+    def layout_widget_h(*items):
+        widget = QWidget()
+        widget.setLayout(QtHelper.layout_h(*items))
+        return widget
+
+
+    @staticmethod
+    def layout_widget_v(*items):
+        widget = QWidget()
+        widget.setLayout(QtHelper.layout_v(*items))
+        return widget
+
+
+    @staticmethod
+    def layout_widget_grid(widgets_rows_then_columns):
+        widget = QWidget()
+        widget.setLayout(QtHelper.layout_grid(*widgets_rows_then_columns))
+        return widget

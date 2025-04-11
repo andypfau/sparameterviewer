@@ -217,7 +217,7 @@ class MainWindowUi(QMainWindow):
         self.ui_menuitem_lock_xy = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Lock Both Axis Scales', self.on_lock_both)
         self.ui_menuitem_unlock_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Unlock Both Axis Scales', self.on_unlock_axes)
         self.ui_menuitem_rescale_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Re-Scale Locked Axis Scales', self.on_rescale_locked_axes)
-        self.ui_menuitem_manual_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes)
+        self.ui_menuitem_manual_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes, shortcut='Ctrl+X')
         self.ui_mainmenu_view.addSeparator()
         self.ui_menuitem_update_expr = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 

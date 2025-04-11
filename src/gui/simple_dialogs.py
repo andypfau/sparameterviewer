@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog
 import logging
 from typing import Union
+import pathlib
 
 
 
@@ -53,63 +54,76 @@ def yesno_dialog(title: str, text: str, extra_text: str = None) -> bool:
     return result==QMessageBox.StandardButton.Yes
 
 
-def _get_filter_str(filetypes):
-    result = ''
+def _format_filters(filetypes: list[tuple[str,str]]) -> list[str]:
+    result = []
     for (name,filter) in filetypes:
         if filter=='*':
-            type_str = '*.*'
+            type_str = '*'
         else:
+            assert filter.startswith('.')
             type_str = f'*{filter}'
-        if result != '':
-            result += ';;'
-        result += f'{name} ({type_str})'
+        result.append(f'{name} ({type_str})')
     return result
 
 
-def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, allow_multiple: bool = False, initial_dir: str = None) -> Union[str,list[str],None]:
+def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, allow_multiple: bool = False, initial_dir: str = None, initial_filename = None) -> Union[str,list[str],None]:
     """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
 
-    kwargs = dict(parent=parent, caption=title)
-    if initial_dir:
-        kwargs['directory'] = initial_dir
-    if filetypes:
-        kwargs['filter'] = _get_filter_str(filetypes)
-        kwargs['initialFilter'] = _get_filter_str(filetypes[0:1])
-
+    dialog = QFileDialog(parent)
     if allow_multiple:
-        (filenames, _) = QFileDialog.getOpenFileNames(**kwargs)
-        if len(filenames)==0:
-            return None
-        return filenames
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
     else:
-        (filename, _) = QFileDialog.getOpenFileName(**kwargs)
-        if filename=='':
-            return None
-        return filename
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+    dialog.setWindowTitle(title)
+    dialog.setViewMode(QFileDialog.ViewMode.Detail)
+    if initial_dir and pathlib.Path(initial_dir).exists():
+        dialog.setDirectory(initial_dir)
+    if initial_filename and pathlib.Path(initial_filename).exists():
+        dialog.selectFile(initial_filename)
+        dialog.setDirectory(str(pathlib.Path(initial_filename).parent))
+    if filetypes:
+        dialog.setNameFilters(_format_filters(filetypes))
+    
+    if not dialog.exec():
+        return None
+    
+    if allow_multiple:
+        return dialog.selectedFiles()
+    else:
+        return dialog.selectedFiles()[0]
 
 
-def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None) -> Union[str,None]:
+def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None, initial_filename = None) -> Union[str,None]:
     """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
 
-    kwargs = dict(parent=parent, caption=title)
-    if initial_dir:
-        kwargs['directory'] = initial_dir
+    dialog = QFileDialog(parent)
+    dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+    dialog.setWindowTitle(title)
+    dialog.setViewMode(QFileDialog.ViewMode.Detail)
+    if initial_dir and pathlib.Path(initial_dir).exists():
+        dialog.setDirectory(initial_dir)
+    if initial_filename and pathlib.Path(initial_filename).exists():
+        dialog.selectFile(initial_filename)
+        dialog.setDirectory(str(pathlib.Path(initial_filename).parent))
     if filetypes:
-        kwargs['filter'] = _get_filter_str(filetypes)
-        kwargs['initialFilter'] = _get_filter_str(filetypes[0:1])
-
-    (filename, _) = QFileDialog.getSaveFileName(**kwargs)
-    if filename=='':
+        dialog.setNameFilters(_format_filters(filetypes))
+    
+    if not dialog.exec():
         return None
-    return filename
+    
+    return dialog.selectedFiles()[0]
 
 
 def open_directory_dialog(parent, *, title: str = 'Open Directory', initial_dir: str = None) -> Union[str,None]:
-    kwargs = dict(parent=parent, caption=title)
-    if initial_dir:
-        kwargs['directory'] = initial_dir
 
-    dir = QFileDialog.getExistingDirectory(**kwargs)
-    if dir=='':
+    dialog = QFileDialog(parent)
+    dialog.setFileMode(QFileDialog.FileMode.Directory)
+    dialog.setWindowTitle(title)
+    dialog.setViewMode(QFileDialog.ViewMode.Detail)
+    if initial_dir and pathlib.Path(initial_dir).exists():
+        dialog.setDirectory(initial_dir)
+    
+    if not dialog.exec():
         return None
-    return dir
+    
+    return dialog.selectedFiles()[0]

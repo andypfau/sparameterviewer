@@ -25,12 +25,20 @@ class FilterDialogUi(QDialog):
         self.setSizeGripEnabled(True)
 
         layout = QVBoxLayout()
+        search_layout = QHBoxLayout()
+        layout.addLayout(search_layout)
         self._ui_search_text = QLineEdit()
-        self._ui_search_text.setPlaceholderText('Search regex')
+        self._ui_search_text.setPlaceholderText('Search expression...')
         self._ui_search_text.textChanged.connect(self.on_search_change)
         self._ui_search_text.setAcceptDrops(True)
         self._ui_search_text.returnPressed.connect(self.accept)
-        layout.addWidget(self._ui_search_text)
+        search_layout.addWidget(self._ui_search_text)
+        self._ui_wildcard_radio = QRadioButton('Wildcards')
+        self._ui_wildcard_radio.toggled.connect(self.on_search_mode_change)
+        search_layout.addWidget(self._ui_wildcard_radio)
+        self._ui_regex_radio = QRadioButton('Regex')
+        self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
+        search_layout.addWidget(self._ui_regex_radio)
         self._ui_files_list = QListView()
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
@@ -44,6 +52,20 @@ class FilterDialogUi(QDialog):
     @property
     def ui_search_text(self) -> str:
         return self._ui_search_text.text()
+    @ui_search_text.setter
+    def ui_search_text(self, value: str):
+        self._ui_search_text.setText(value)
+    
+
+    @property
+    def ui_regex_mode(self) -> bool:
+        return self._ui_regex_radio.isChecked()
+    @ui_regex_mode.setter
+    def ui_regex_mode(self, value: bool):
+        if value:
+            self._ui_regex_radio.setChecked(True)
+        else:
+            self._ui_wildcard_radio.setChecked(True)
     
 
     def ui_set_files(self, files: list[str]):
@@ -53,13 +75,17 @@ class FilterDialogUi(QDialog):
     
 
     def ui_indicate_search_error(self, indicate_error: bool = True):
-        QtHelper.apply_warning_color(self._ui_search_text, indicate_error)
+        QtHelper.indicate_error(self._ui_search_text, indicate_error)
     
 
     def ui_show_modal(self) -> bool:
+        self._ui_search_text.selectAll()
+        self._ui_search_text.focusWidget()
         return self.exec() == QDialog.DialogCode.Accepted
 
 
     # to be implemented in derived class
     def on_search_change(self):
+        pass
+    def on_search_mode_change(self):
         pass

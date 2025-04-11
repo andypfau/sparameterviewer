@@ -29,6 +29,7 @@ class SParamViewerAppSettings(AppSettings):
     comment_existing_expr: bool = True
     editor_font: str = ''
     csv_separator: str = ';'
+    search_regex: bool = False
 
 
 Settings = SParamViewerAppSettings(
