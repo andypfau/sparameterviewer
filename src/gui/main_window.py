@@ -160,9 +160,8 @@ class MainWindow(MainWindowUi):
         changed = Settings.plot_unit != self.ui_unit
         Settings.plot_unit = self.ui_unit
         if changed:
-            # TODO: implement
-            ## different kind of chart -> axes scale is probably no longer valid
-            #self.invalidate_axes_lock(update=False)
+            # different kind of chart -> axes scale is probably no longer valid
+            self.invalidate_axes_lock(update=False)
 
             # only allow phase in specific combinations
             if Settings.plot_unit not in [Unit.Off, Unit.dB, Unit.LinMag, Unit.LogMag]:
@@ -180,10 +179,8 @@ class MainWindow(MainWindowUi):
         Settings.plot_unit2 = self.ui_unit2
 
         if changed:
-            # TODO: implement
-            ## different kind of chart -> axes scale is probably no longer valid
-            #self.invalidate_axes_lock(update=False)
-            pass
+            # different kind of chart -> axes scale is probably no longer valid
+            self.invalidate_axes_lock(update=False)
 
         self.update_plot()
     
@@ -196,26 +193,15 @@ class MainWindow(MainWindowUi):
         indices = [all_files.index(file) for file in selected_files]
         self.ui_select_fileview_items(indices)
     
-    
-    
-    def on_open_directory(self):
-        # TODO: implement
-        pass
-    
-
-    def on_append_directory(self):
-        # TODO: implement
-        pass
-    
 
     def on_reload_all_files(self):
-        # TODO: implement
-        pass
+        self.reload_all_files()
 
 
     def update_most_recent_directories_menu(self):
 
         def make_loader_closure(dir):
+            # TODO: the menu does not disappear after clicking
             def load():
                 if not os.path.exists(dir):
                     logging.error(f'Cannot load recent directory <{dir}> (does not exist any more)')
@@ -372,8 +358,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_open_directory(self):
-        initialdir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
-        dir = open_directory_dialog(self, title='Open Directory', initialdir=initialdir)
+        initial_dir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        dir = open_directory_dialog(self, title='Open Directory', initial_dir=initial_dir)
         if not dir:
             return
         absdir = os.path.abspath(dir)
@@ -384,8 +370,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_append_directory(self):
-        initialdir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
-        dir = open_directory_dialog(self, title='Append Directory', initialdir=initialdir)
+        initial_dir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        dir = open_directory_dialog(self, title='Append Directory', initial_dir=initial_dir)
         if not dir:
             return
         absdir = os.path.abspath(dir)
@@ -393,10 +379,6 @@ class MainWindow(MainWindowUi):
             self.directories.append(absdir)
             self.load_files_in_directory(absdir)
         self.update_file_list()
-    
-
-    def on_reload_all_files(self):
-        self.reload_all_files()
     
     
     def on_trace_cursors(self):
@@ -448,12 +430,12 @@ class MainWindow(MainWindowUi):
             error_dialog('Error', 'No file selected.')
             return
 
-        info = ''
+        info_str = ''
         for file in self.selected_files:
-            if len(info)>0:
-                info+= '\n\n\n'
-            info += self.get_info_str(file)
-        InfoDialog(self).show_modal_dialog(title='File Info', text=info)
+            if len(info_str)>0:
+                info_str+= '\n\n\n'
+            info_str += self.get_info_str(file)
+        InfoDialog(self).show_modal_dialog(info_str)
     
     
     def on_view_tabular(self):       

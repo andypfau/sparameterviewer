@@ -66,7 +66,7 @@ def _format_filters(filetypes: list[tuple[str,str]]) -> list[str]:
     return result
 
 
-def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, allow_multiple: bool = False, initial_dir: str = None, initial_filename = None) -> Union[str,list[str],None]:
+def _open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, allow_multiple: bool = False, initial_dir: str = None, initial_filename = None):
     """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
 
     dialog = QFileDialog(parent)
@@ -91,6 +91,15 @@ def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[
         return dialog.selectedFiles()
     else:
         return dialog.selectedFiles()[0]
+
+
+def open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None, initial_filename = None) -> str:
+    """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
+    return _open_file_dialog(parent, title=title, filetypes=filetypes, allow_multiple=False, initial_dir=initial_dir, initial_filename=initial_filename)
+
+
+def open_files_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple[str,str]] = None, allow_multiple: bool = False, initial_dir: str = None, initial_filename = None) -> list[str]:
+    return _open_file_dialog(parent, title=title, filetypes=filetypes, allow_multiple=True, initial_dir=initial_dir, initial_filename=initial_filename)
 
 
 def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None, initial_filename = None) -> Union[str,None]:

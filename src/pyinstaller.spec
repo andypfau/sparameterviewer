@@ -38,9 +38,6 @@ if os.name == 'nt':
     hiddenimports.extend(['win32clipboard'])
 
 
-# TODO: fix for Matplotlib, which does not find <share/matplotlib/mpl-data>...
-
-
 block_cipher = None
 
 

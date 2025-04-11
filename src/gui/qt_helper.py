@@ -1,3 +1,4 @@
+from .settings import Settings
 from lib import is_windows, AppGlobal
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -40,13 +41,13 @@ class QtHelper:
 
 
     @staticmethod
-    def make_font(*, base: QFont = None, families: list[str] = None, bold: bool = None, underline: bool = None, strikethru: bool = None, rel_size: float = None) -> QFont:
+    def make_font(*, base: QFont = None, family: str = None, bold: bool = None, underline: bool = None, strikethru: bool = None, rel_size: float = None) -> QFont:
         if base:
             font = QFont(base)
         else:
             font = QFont()
-        if families is not None:
-            font.setFamilies(families)
+        if family:
+            font.setFamily(family)
         if bold is not None:
             font.setBold(bold)
         if rel_size is not None:
@@ -123,8 +124,21 @@ class QtHelper:
 
 
     @staticmethod
-    def get_available_fonts() -> list[str]:
-        return QtGui.QFontDatabase.families()
+    def get_monospace_font() -> str:
+        try:
+            preferred_fonts = ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Consolas', 'Courier New', 'Lucida Sans Typewriter']
+            if Settings.editor_font in preferred_fonts:
+                return Settings.editor_font
+            
+            available_fonts = QtGui.QFontDatabase.families()
+            for preferred_font in preferred_fonts:
+                if preferred_font in available_fonts:
+                    Settings.editor_font = preferred_font
+                    return preferred_font
+        except:
+            pass
+        
+        return QFont().family()  # fallback
 
 
     @staticmethod

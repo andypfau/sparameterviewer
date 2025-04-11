@@ -162,7 +162,7 @@ class MainWindowUi(QMainWindow):
         self.template_button = QPushButton('Template...')
         exprbuttons_layout.addWidget(self.template_button)
         exprbuttons_layout.addStretch()
-        self.ui_editor.setFont(QtHelper.make_font(families=AppGlobal.get_preferred_monospace_fonts()))
+        self.ui_editor.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
         self.ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         editor_layout = QVBoxLayout()
         editor_layout.addWidget(self.ui_editor)

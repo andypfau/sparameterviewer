@@ -14,8 +14,8 @@ from typing import Callable, Union
 
 
 class SettingsTab(enum.IntEnum):
-    TimeDomain = 0
-    Format = 1
+    Format = 0
+    TimeDomain = 1
     Misc = 2
 
 
@@ -33,37 +33,8 @@ class SettingsDialogUi(QDialog):
         main_layout.addWidget(self._ui_tabs)
         self.setLayout(main_layout)
 
-        tb_widget = QWidget()
-        self._ui_tabs.addTab(tb_widget, 'Time-Domain')
-        self._ui_td_window_combo = QComboBox()
-        self._ui_td_window_model = QStandardItemModel()
-        self._ui_td_window_combo.setModel(self._ui_td_window_model)
-        self._ui_td_window_combo.currentTextChanged.connect(self.on_td_window_changed)
-        self._ui_td_window_param_spinner = QDoubleSpinBox()
-        self._ui_td_window_param_spinner.valueChanged.connect(self.on_td_window_param_changed)
-        self._ui_td_minsize_combo = QComboBox()
-        self._ui_td_minsize_model = QStandardItemModel()
-        self._ui_td_minsize_combo.setModel(self._ui_td_minsize_model)
-        self._ui_td_minsize_combo.currentTextChanged.connect(self.on_td_minsize_changed)
-        self._ui_td_shift_spinner = QDoubleSpinBox()
-        self._ui_td_shift_spinner.valueChanged.connect(self.on_td_shift_changed)
-        self._ui_td_z_checkbox = QCheckBox('Convert to Impedance')
-        tb_widget.setLayout(
-            QtHelper.layout_v(
-                QtHelper.layout_h(
-                    QtHelper.layout_grid([
-                        ['Window:', QtHelper.layout_h(self._ui_td_window_combo, ...)],
-                        ['Parameter:', QtHelper.layout_h(self._ui_td_window_param_spinner, ...)],
-                        ['Min. Size:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
-                        ['Shift:', QtHelper.layout_h(self._ui_td_shift_spinner, 'ps', ...)],
-                        [None, QtHelper.layout_h(self._ui_td_z_checkbox, ...)],
-                    ]), ...
-                ), ...
-            )
-        )
-
         format_widget = QWidget()
-        self._ui_tabs.addTab(format_widget, 'Format')
+        self._ui_tabs.addTab(format_widget, 'Formats')
         self._ui_deg_radio = QRadioButton('Degrees')
         self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_rad_radio = QRadioButton('Radians')
@@ -83,20 +54,54 @@ class SettingsDialogUi(QDialog):
             )
         )
 
+        tb_widget = QWidget()
+        self._ui_tabs.addTab(tb_widget, 'Time-Domain')
+        self._ui_td_window_combo = QComboBox()
+        self._ui_td_window_model = QStandardItemModel()
+        self._ui_td_window_combo.setModel(self._ui_td_window_model)
+        self._ui_td_window_combo.currentTextChanged.connect(self.on_td_window_changed)
+        self._ui_td_window_param_spinner = QDoubleSpinBox()
+        self._ui_td_window_param_spinner.valueChanged.connect(self.on_td_window_param_changed)
+        self._ui_td_window_param_spinner.setMinimum(-1e3)
+        self._ui_td_window_param_spinner.setMaximum(+1e3)
+        self._ui_td_minsize_combo = QComboBox()
+        self._ui_td_minsize_model = QStandardItemModel()
+        self._ui_td_minsize_combo.setModel(self._ui_td_minsize_model)
+        self._ui_td_minsize_combo.currentTextChanged.connect(self.on_td_minsize_changed)
+        self._ui_td_shift_spinner = QDoubleSpinBox()
+        self._ui_td_shift_spinner.setMinimum(-1e9)
+        self._ui_td_shift_spinner.setMaximum(+1e9)
+        self._ui_td_shift_spinner.valueChanged.connect(self.on_td_shift_changed)
+        self._ui_td_z_checkbox = QCheckBox('Convert to Impedance')
+        self._ui_td_z_checkbox.toggled.connect(self.on_td_z_changed)
+        tb_widget.setLayout(
+            QtHelper.layout_v(
+                QtHelper.layout_h(
+                    QtHelper.layout_grid([
+                        ['Window:', QtHelper.layout_h(self._ui_td_window_combo, ...)],
+                        ['Parameter:', QtHelper.layout_h(self._ui_td_window_param_spinner, ...)],
+                        ['Min. Size:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
+                        ['Shift:', QtHelper.layout_h(self._ui_td_shift_spinner, 'ps', ...)],
+                        [None, QtHelper.layout_h(self._ui_td_z_checkbox, ...)],
+                    ]), ...
+                ), ...
+            )
+        )
+
         misc_widget = QWidget()
         self._ui_tabs.addTab(misc_widget, 'Misc')
-        self._oi_extract_zip_combo = QCheckBox('Extract .zip-Files')
-        self._oi_extract_zip_combo.toggled.connect(self.on_zip_change)
-        self._oi_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
-        self._oi_comment_expr_combo.toggled.connect(self.on_comment_change)
+        self._ui_extract_zip_combo = QCheckBox('Extract .zip-Files')
+        self._ui_extract_zip_combo.toggled.connect(self.on_zip_change)
+        self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
+        self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
         self._ui_exted_edit = QLineEdit()
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
         self._ui_exted_btn = QtHelper.make_button('...', self.on_browse_ext_ed)
         misc_widget.setLayout(
             QtHelper.layout_v(
-                self._oi_extract_zip_combo,
-                self._oi_comment_expr_combo,
+                self._ui_extract_zip_combo,
+                self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
                 ]), ...
@@ -143,11 +148,35 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_td_window_param(self) -> float:
+        return self._ui_td_window_param_spinner.value()
+    @ui_td_window_param.setter
+    def ui_td_window_param(self, value: float):
+        self._ui_td_window_param_spinner.setValue(value)
+
+    
+    @property
     def ui_td_minsize(self) -> str:
         return self._ui_td_minsize_combo.currentText()
     @ui_td_minsize.setter
     def ui_td_minsize(self, value: str):
         self._ui_td_minsize_combo.setCurrentText(value)
+
+    
+    @property
+    def ui_td_shift(self) -> float:
+        return self._ui_td_shift_spinner.value() * 1e-12
+    @ui_td_shift.setter
+    def ui_td_shift(self, value: float):
+        self._ui_td_shift_spinner.setValue(value / 1e-12)
+
+    
+    @property
+    def ui_td_z(self) -> bool:
+        return self._ui_td_z_checkbox.isChecked()
+    @ui_td_z.setter
+    def ui_td_z(self, value: bool):
+        self._ui_td_z_checkbox.setChecked(value)
 
 
     def ui_set_td_minsize_options(self, options: list[str]):
@@ -168,6 +197,22 @@ class SettingsDialogUi(QDialog):
         self._ui_csvsep_model.clear()
         for option in options:
             self._ui_csvsep_model.appendRow(QStandardItem(option))
+
+    
+    @property
+    def ui_comment_expr(self) -> bool:
+        return self._ui_comment_expr_combo.isChecked()
+    @ui_comment_expr.setter
+    def ui_comment_expr(self, value: bool):
+        self._ui_comment_expr_combo.setChecked(value)
+
+    
+    @property
+    def ui_extract_zip(self) -> bool:
+        return self._ui_extract_zip_combo.isChecked()
+    @ui_extract_zip.setter
+    def ui_extract_zip(self, value: bool):
+        self._ui_extract_zip_combo.setChecked(value)
 
     
     @property
@@ -194,6 +239,8 @@ class SettingsDialogUi(QDialog):
     def on_td_minsize_changed(self):
         pass
     def on_td_shift_changed(self):
+        pass
+    def on_td_z_changed(self):
         pass
     def on_zip_change(self):
         pass

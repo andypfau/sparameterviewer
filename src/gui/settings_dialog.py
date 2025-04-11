@@ -58,8 +58,14 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_phase_unit = Settings.phase_unit
             self.ui_csvsep = SettingsDialog.CSV_SEPARATORS[Settings.csv_separator]
             self.ui_td_window = SettingsDialog.WINDOWS[Settings.window_type]
+            self.ui_td_window_param = Settings.window_arg
             self.ui_td_minsize = SettingsDialog.TD_MINSIZES[Settings.tdr_minsize]
+            self.ui_td_shift = Settings.tdr_shift
+            self.ui_td_z = Settings.tdr_impedance
+            self.ui_comment_expr = Settings.comment_existing_expr
+            self.ui_extract_zip = Settings.extract_zip
             self.ui_ext_ed = Settings.ext_editor_cmd
+            self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
             logging.exception(ex)
@@ -79,6 +85,17 @@ class SettingsDialog(SettingsDialogUi):
         
         Settings.ext_editor_cmd = binary_path
 
+        return True
+    
+
+    def is_ext_ed_valid(self, ext_ed: str):
+        if not ext_ed:
+            return False
+        path = pathlib.Path(ext_ed)
+        if not path.exists():
+            return False
+        if not path.is_file():
+            return False
         return True
     
 
@@ -105,7 +122,7 @@ class SettingsDialog(SettingsDialogUi):
     
     
     def on_td_window_param_changed(self):
-        pass
+        Settings.window_arg = self.ui_td_window_param
     
     
     def on_td_minsize_changed(self):
@@ -116,20 +133,24 @@ class SettingsDialog(SettingsDialogUi):
     
     
     def on_td_shift_changed(self):
-        pass
+        Settings.tdr_shift = self.ui_td_shift
     
+
+    def on_td_z_changed(self):
+        Settings.tdr_impedance = self.ui_td_z
+
     
     def on_zip_change(self):
-        pass
+        Settings.extract_zip = self.ui_extract_zip
     
     
     def on_comment_change(self):
-        pass
+        Settings.comment_existing_expr = self.ui_comment_expr
     
     
     def on_ext_ed_change(self):
-        if self.ui_ext_ed and pathlib.Path(self.ui_ext_ed).exists():
+        is_valid = self.is_ext_ed_valid(self.ui_ext_ed)
+        was_valid = self.is_ext_ed_valid(Settings.ext_editor_cmd)
+        if is_valid or (not was_valid):
             Settings.ext_editor_cmd = self.ui_ext_ed
-            self.ui_indicate_ext_ed_error(False)
-        else:
-            self.ui_indicate_ext_ed_error(True)
+        self.ui_indicate_ext_ed_error(not is_valid)

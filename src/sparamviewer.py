@@ -47,19 +47,6 @@ if __name__ == '__main__':
 
     try:
         app = QtWidgets.QApplication(sys.argv)
-
-        try:
-            available_fonts = QtHelper.get_available_fonts()
-            if (not Settings.editor_font) or (Settings.editor_font not in available_fonts):
-                preferred_fonts = AppGlobal.get_preferred_monospace_fonts()
-                for preferred_font in preferred_fonts:
-                    if preferred_font in available_fonts:
-                        Settings.editor_font = preferred_font
-                        logging.info(f'Chose monospace font "{Settings.editor_font}"')
-                        break
-        except:
-            pass
-            
         filenames = sys.argv[1:]
         main_dialog = MainWindow(filenames)
         main_dialog.show()

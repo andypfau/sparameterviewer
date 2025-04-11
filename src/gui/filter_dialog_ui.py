@@ -19,7 +19,7 @@ class FilterDialogUi(QDialog):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle('Filter')
+        self.setWindowTitle('Filter Files')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
         self.setSizeGripEnabled(True)

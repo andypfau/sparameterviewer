@@ -81,8 +81,3 @@ class AppGlobal:
         except Exception as ex:
             logging.exception(f'Unable to show documentation ({helpfile_path}): {ex}')
             messagebox.showerror('Unable to show documentation', f'Unable to show documentation; try to open <{helpfile_path}> yourself ({ex}).')
-
-
-    @staticmethod
-    def get_preferred_monospace_fonts() -> list[str]:
-        return ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Consolas', 'Courier New', 'Lucida Sans Typewriter']
