@@ -11,6 +11,7 @@ from .log_dialog import LogDialog
 from .axes_dialog import AxesDialog
 from .about_dialog import AboutDialog
 from .simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
+from .help import show_help
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
@@ -403,7 +404,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_help(self):
-        AppPaths.open_help()
+        show_help()
     
 
     def on_about(self):
