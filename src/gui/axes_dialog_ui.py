@@ -51,13 +51,13 @@ class AxesDialogUi(QDialog):
     def ui_set_x_presets(self, presets: list[str]):
         self._ui_x_combo.clear()
         for preset in presets:
-            self._ui_x_combo.addItem(QtGui.QStandardItem(preset))
+            self._ui_x_combo.addItem(preset)
 
 
     def ui_set_y_presets(self, presets: list[str]):
         self._ui_y_combo.clear()
         for preset in presets:
-            self._ui_y_combo.addItem(QtGui.QStandardItem(preset))
+            self._ui_y_combo.addItem(preset)
 
 
     @property
