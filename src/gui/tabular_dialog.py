@@ -158,37 +158,25 @@ class TabularDatasetPlot(TabularDataset):
     
 
 
-
-class TabularFormat(enum.IntEnum):
-    dB = 0
-    Lin = 1
-    Phase = 2
-    dB_Phase = 3
-    Lin_Phase = 4
-    Real_Imag = 5
-
-TABULAR_FORMAT_NAMES = {
-    TabularFormat.dB: 'dB',
-    TabularFormat.Lin: 'Linear Magnitude',
-    TabularFormat.dB_Phase: 'dB, Phase',
-    TabularFormat.Lin_Phase: 'Linear Magnitude, Phase',
-    TabularFormat.Phase: 'Phase',
-    TabularFormat.Real_Imag: 'Real, Imaginary',
-}
-    
-
-
 class TabularDialog(TabularDialogUi):
 
-    
     DISPLAY_PREC = 5
-    
+
+
+    class Format(enum.StrEnum):
+        dB = 'dB' 
+        Lin = 'Linear Magnitude' 
+        dB_Phase = 'dB  Phase' 
+        Lin_Phase = 'Linear Magnitude  Phase' 
+        Phase = 'Phase' 
+        Real_Imag = 'Real  Imaginary' 
+
 
     def __init__(self, parent):
         super().__init__(parent)
         self.datasets: list[TabularDataset] = []
 
-        self.ui_set_formats_list(list(TABULAR_FORMAT_NAMES.values()))
+        self.ui_set_formats_list([str(fmt) for fmt in TabularDialog.Format])
         self.ui_set_freq_filters_list([
             format_si_range(any, any, allow_total_wildcard=True),
             format_si_range(0, 100e9),
@@ -225,11 +213,8 @@ class TabularDialog(TabularDialogUi):
 
 
     @property
-    def selected_format(self) -> TabularFormat:
-        for format,name in TABULAR_FORMAT_NAMES.items():
-            if self.ui_selected_format == name:
-                return format
-        return TabularFormat.dB  # fallback
+    def selected_format(self) -> Format:
+        return TabularDialog.Format(self.ui_selected_format)
     
 
     def update_data(self):
@@ -415,7 +400,7 @@ class TabularDialog(TabularDialogUi):
 
         if dataset.is_spar:
             selected_format = self.selected_format
-            if selected_format == TabularFormat.dB_Phase:
+            if selected_format == TabularDialog.Format.dB_Phase:
                 if Settings.phase_unit == 'rad':
                     ycols = interleave_lists(
                         [f'|{name}| / dB' for name in ycols],
@@ -431,7 +416,7 @@ class TabularDialog(TabularDialogUi):
                         [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in ycol_datas],
                         [np.angle(col)*180/math.pi for col in ycol_datas])
             
-            elif selected_format == TabularFormat.Lin_Phase:
+            elif selected_format == TabularDialog.Format.Lin_Phase:
                 if Settings.phase_unit == 'rad':
                     ycols = interleave_lists(
                         [f'|{name}|' for name in ycols],
@@ -447,15 +432,15 @@ class TabularDialog(TabularDialogUi):
                         [np.abs(col) for col in ycol_datas],
                         [np.angle(col)*180/math.pi for col in ycol_datas])
 
-            elif selected_format == TabularFormat.dB:
+            elif selected_format == TabularDialog.Format.dB:
                 ycols = [f'|{name}| / dB' for name in ycols]
                 ycol_datas = [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas]
 
-            elif selected_format == TabularFormat.Lin:
+            elif selected_format == TabularDialog.Format.Lin:
                 ycols = [f'|{name}|' for name in ycols]
                 ycol_datas = [np.abs(col) for col in dataset.ycol_datas]
 
-            elif selected_format == TabularFormat.Real_Imag:
+            elif selected_format == TabularDialog.Format.Real_Imag:
                 ycols = interleave_lists(
                     [f'ℜ𝔢 {name}' for name in ycols],
                     [f'ℑ𝔪 {name}' for name in ycols])
@@ -463,7 +448,7 @@ class TabularDialog(TabularDialogUi):
                     [np.real(col) for col in dataset.ycol_datas],
                     [np.imag(col) for col in dataset.ycol_datas])
             
-            elif selected_format == TabularFormat.Phase:
+            elif selected_format == TabularDialog.Format.Phase:
                 if Settings.phase_unit == 'rad':
                     ycols = [f'∠{name} / rad' for name in ycols]
                     ycol_datas = [np.angle(col) for col in dataset.ycol_datas]

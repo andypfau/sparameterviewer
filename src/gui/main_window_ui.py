@@ -35,11 +35,8 @@ class MainWindowUi(QMainWindow):
         self._ui_plot = PlotWidget()
         
         self._ui_mode_combo = QComboBox()
-        self._ui_mode_combo.currentTextChanged.connect(self.on_select_mode)
         self._ui_unit_combo = QComboBox()
-        self._ui_unit_combo.currentTextChanged.connect(self.on_select_unit)
         self._ui_unit2_combo = QComboBox()
-        self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
         
         tabs = QTabWidget()
         
@@ -59,9 +56,9 @@ class MainWindowUi(QMainWindow):
         self._ui_update_button = QPushButton('Update (F5)')
         self._ui_update_button.clicked.connect(self.on_update_button)
         self._ui_template_button = QPushButton('Template...')
-        self._ui_update_button.clicked.connect(self.on_template_button)
+        self._ui_template_button.clicked.connect(self.on_template_button)
         self._ui_help_button = QPushButton('Help')
-        self._ui_update_button.clicked.connect(self.on_help_button)
+        self._ui_help_button.clicked.connect(self.on_help_button)
         self._ui_editor = QPlainTextEdit()
         self._ui_editor.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
         self._ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
@@ -69,7 +66,7 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(
                 self._ui_update_button,
                 self._ui_template_button,
-                #5,
+                5,
                 self._ui_help_button,
                 ...
             ),
@@ -164,18 +161,21 @@ class MainWindowUi(QMainWindow):
         self._ui_mode_combo.clear()
         for item in items:
             self._ui_mode_combo.addItem(item)
+        self._ui_mode_combo.currentTextChanged.connect(self.on_select_mode)
 
     
     def ui_set_units_list(self, items: list[str]):
         self._ui_unit_combo.clear()
         for item in items:
             self._ui_unit_combo.addItem(item)
+        self._ui_unit_combo.currentTextChanged.connect(self.on_select_unit)
 
     
     def ui_set_units2_list(self, items: list[str]):
         self._ui_unit2_combo.clear()
         for item in items:
             self._ui_unit2_combo.addItem(item)
+        self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
     
 
     @property

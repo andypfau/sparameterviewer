@@ -28,8 +28,6 @@ class RlDialogUi(QDialog):
 
         group_file = QGroupBox('File and Port')
         self._ui_file_combo = QComboBox()
-        self._ui_file_model = QStandardItemModel()
-        self._ui_file_combo.setModel(self._ui_file_model)
         self._ui_file_combo.currentTextChanged.connect(self.on_file_changed)
         self._ui_port_spinner = QSpinBox()
         self._ui_port_spinner.setMinimum(1)
@@ -39,13 +37,9 @@ class RlDialogUi(QDialog):
 
         group_freq = QGroupBox('Frequency Ranges')
         self._ui_intrange_combo = QComboBox()
-        self._ui_intrange_model = QStandardItemModel()
-        self._ui_intrange_combo.setModel(self._ui_intrange_model)
         self._ui_intrange_combo.setEditable(True)
         self._ui_intrange_combo.currentTextChanged.connect(self.on_intrange_changed)
         self._ui_tgtrange_combo = QComboBox()
-        self._ui_tgtrange_model = QStandardItemModel()
-        self._ui_tgtrange_combo.setModel(self._ui_tgtrange_model)
         self._ui_tgtrange_combo.setEditable(True)
         self._ui_tgtrange_combo.currentTextChanged.connect(self.on_tgtrange_changed)
         group_freq.setLayout(QtHelper.layout_h('Integration:', self._ui_intrange_combo, 'Target:', self._ui_tgtrange_combo))
@@ -77,25 +71,25 @@ class RlDialogUi(QDialog):
 
     
     def ui_set_files_list(self, files: list[str], selected: str = None):
-        self._ui_file_model.clear()
+        self._ui_file_combo.clear()
         for file in files:
-            self._ui_file_model.appendRow(QStandardItem(file))
+            self._ui_file_combo.addItem(QStandardItem(file))
         if selected:
             self._ui_file_combo.setCurrentText(selected)
 
     
     def ui_intrange_presets(self, presets: list[str], selected: str = None):
-        self._ui_intrange_model.clear()
+        self._ui_intrange_combo.clear()
         for preset in presets:
-            self._ui_intrange_model.appendRow(QStandardItem(preset))
+            self._ui_intrange_combo.addItem(QStandardItem(preset))
         if selected:
             self._ui_intrange_combo.setCurrentText(selected)
 
     
     def ui_tgtrange_presets(self, files: list[str], selected: str = None):
-        self._ui_tgtrange_model.clear()
+        self._ui_tgtrange_combo.clear()
         for file in files:
-            self._ui_tgtrange_model.appendRow(QStandardItem(file))
+            self._ui_tgtrange_combo.addItem(QStandardItem(file))
         if selected:
             self._ui_tgtrange_combo.setCurrentText(selected)
 

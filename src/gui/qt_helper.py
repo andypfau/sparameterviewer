@@ -163,15 +163,17 @@ class QtHelper:
         for item in items:
             if item is ...:
                 layout.addStretch()
+            elif isinstance(item, QSpacerItem):
+                layout.addSpacerItem(item)
             elif isinstance(item, QLayoutItem):
                 layout.addLayout(item)
             elif isinstance(item, str):
                 layout.addWidget(QtHelper.make_label(item))
             elif isinstance(item, int):
                 if direction=='h':
-                    layout.addLayout(QtHelper.make_hspace(item))
+                    layout.addSpacerItem(QtHelper.make_hspace(item))
                 elif direction=='v':
-                    layout.addLayout(QtHelper.make_vspace(item))
+                    layout.addSpacerItem(QtHelper.make_vspace(item))
                 else:
                     raise ValueError()
             else:

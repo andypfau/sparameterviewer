@@ -43,8 +43,6 @@ class SettingsDialogUi(QDialog):
         self._ui_rad_radio = QRadioButton('Radians')
         self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_csvsep_combo = QComboBox()
-        self._ui_csvsep_model = QStandardItemModel()
-        self._ui_csvsep_combo.setModel(self._ui_csvsep_model)
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -59,15 +57,11 @@ class SettingsDialogUi(QDialog):
         tb_widget = QWidget()
         self._ui_tabs.addTab(tb_widget, 'Time-Domain')
         self._ui_td_window_combo = QComboBox()
-        self._ui_td_window_model = QStandardItemModel()
-        self._ui_td_window_combo.setModel(self._ui_td_window_model)
         self._ui_td_window_param_spinner = QDoubleSpinBox()
         self._ui_td_window_param_spinner.valueChanged.connect(self.on_td_window_param_changed)
         self._ui_td_window_param_spinner.setMinimum(-1e3)
         self._ui_td_window_param_spinner.setMaximum(+1e3)
         self._ui_td_minsize_combo = QComboBox()
-        self._ui_td_minsize_model = QStandardItemModel()
-        self._ui_td_minsize_combo.setModel(self._ui_td_minsize_model)
         self._ui_td_shift_spinner = QDoubleSpinBox()
         self._ui_td_shift_spinner.setMinimum(-1e9)
         self._ui_td_shift_spinner.setMaximum(+1e9)
@@ -142,9 +136,9 @@ class SettingsDialogUi(QDialog):
 
 
     def ui_set_td_window_options(self, options: list[str]):
-        self._ui_td_window_model.clear()
+        self._ui_td_window_combo.clear()
         for option in options:
-            self._ui_td_window_model.appendRow(QStandardItem(option))
+            self._ui_td_window_combo.addItem(QStandardItem(option))
         self._ui_td_window_combo.currentIndexChanged.connect(self.on_td_window_changed)
 
     
@@ -181,9 +175,9 @@ class SettingsDialogUi(QDialog):
 
 
     def ui_set_td_minsize_options(self, options: list[str]):
-        self._ui_td_minsize_model.clear()
+        self._ui_td_minsize_combo.clear()
         for option in options:
-            self._ui_td_minsize_model.appendRow(QStandardItem(option))
+            self._ui_td_minsize_combo.addItem(QStandardItem(option))
         self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
 
     
@@ -196,9 +190,9 @@ class SettingsDialogUi(QDialog):
 
 
     def ui_set_csvset_options(self, options: list[str]):
-        self._ui_csvsep_model.clear()
+        self._ui_csvsep_combo.clear()
         for option in options:
-            self._ui_csvsep_model.appendRow(QStandardItem(option))
+            self._ui_csvsep_combo.addItem(QStandardItem(option))
         self._ui_csvsep_combo.currentIndexChanged.connect(self.on_csvsep_change)
 
     

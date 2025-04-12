@@ -30,12 +30,8 @@ class CursorDialogUi(QDialog):
         self._ui_cursor2_radio = QRadioButton('Cursor 2')
         self._ui_cursor2_radio.toggled.connect(self.on_cursor_select)
         self._ui_trace1_combo = QComboBox()
-        self._ui_trace1_model = QStandardItemModel()
-        self._ui_trace1_combo.setModel(self._ui_trace1_model)
         self._ui_trace1_combo.currentIndexChanged.connect(self.on_trace1_change)
         self._ui_trace2_combo = QComboBox()
-        self._ui_trace2_model = QStandardItemModel()
-        self._ui_trace2_combo.setModel(self._ui_trace2_model)
         self._ui_trace2_combo.currentIndexChanged.connect(self.on_trace2_change)
         self._ui_auto_cursor_check = QCheckBox('Auto Cursor')
         self._ui_auto_cursor_check.toggled.connect(self.on_auto_cursor_changed)
@@ -69,10 +65,10 @@ class CursorDialogUi(QDialog):
     
 
     def ui_set_trace_list(self, traces: list[str]):
-        for model in [self._ui_trace1_model, self._ui_trace2_model]:
-            model.clear()
+        for combo in [self._ui_trace1_combo, self._ui_trace2_combo]:
+            combo.clear()
             for trace in traces:
-                model.appendRow(trace)
+                combo.addItem(trace)
     
 
     def ui_set_readout(self, text: str):

@@ -119,9 +119,9 @@ class MainWindow(MainWindowUi):
         # load settings
         def load_settings():
             try:
-                self.ui_mode = MainWindow.Mode(Settings.plot_mode)
-                self.ui_unit = MainWindow.Unit(Settings.plot_unit)
-                self.ui_unit2 = MainWindow.Unit2(Settings.plot_unit2)
+                self.ui_mode = str(MainWindow.Mode(Settings.plot_mode))
+                self.ui_unit = str(MainWindow.Unit(Settings.plot_unit))
+                self.ui_unit2 = str(MainWindow.Unit2(Settings.plot_unit2))
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
@@ -636,7 +636,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_help_button(self):
-        pass  # TODO: implement
+        show_help('expressions.md')
 
     
     def get_info_str(self, sparam_file: SParamFile) -> str:
