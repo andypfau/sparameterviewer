@@ -103,6 +103,8 @@ class TabularDialogUi(QDialog):
         self._ui_mainmenu_edit = QtHelper.add_submenu(self, self._ui_main_menu, '&Edit')
         self._ui_menuitem_copy_csv = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy CSV', self.on_copy_csv)
         self._ui_mainmenu_edit.addSeparator()
+        self._ui_menuitem_copy_json = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy JSON', self.on_copy_json)
+        self._ui_mainmenu_edit.addSeparator()
         self._ui_menuitem_copy_numpy = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy Python (NumPy)', self.on_copy_numpy)
         self._ui_menuitem_copy_pandas = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy Python (Pandas)', self.on_copy_pandas)
         self._ui_mainmenu_edit.addSeparator()
@@ -211,6 +213,8 @@ class TabularDialogUi(QDialog):
     def on_save_all(self):
         pass
     def on_copy_csv(self):
+        pass
+    def on_copy_json(self):
         pass
     def on_copy_numpy(self):
         pass

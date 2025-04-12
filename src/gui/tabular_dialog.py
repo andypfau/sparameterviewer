@@ -11,6 +11,7 @@ import re
 import math
 import itertools
 import enum
+import json
 import pandas as pd
 import numpy as np
 
@@ -260,9 +261,21 @@ class TabularDialog(TabularDialogUi):
         Clipboard.copy_string(sio.getvalue())
 
         
+    def copy_data_json(self, dataset: "TabularDataset"):
+        dataset = self.format_dataset(self.filter_dataset(dataset))
+        def sanitize_name(name: str) -> str:
+            return name.replace('"', "'")
+        j = {}
+        j[sanitize_name(dataset.xcol)] = list(dataset.xcol_data)
+        for col_name,col_data in zip(dataset.ycols,dataset.ycol_datas):
+            j[sanitize_name(col_name)] = list(col_data)
+        jstr = json.dumps(j, indent=4)
+        Clipboard.copy_string(jstr)
+
+        
     def copy_data_numpy(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
-        def split_words(name: str) -> str:
+        def split_words(name: str) -> list[str]:
             return re.split(r'\W|^(?=\d)', name)
         def sanitize_var_name(name: str) -> str:
             return '_'.join([w.lower() for w in split_words(name)])
@@ -535,6 +548,12 @@ class TabularDialog(TabularDialogUi):
         if not self.selected_dataset:
             return
         self.copy_data_csv(self.selected_dataset)
+
+
+    def on_copy_json(self):
+        if not self.selected_dataset:
+            return
+        self.copy_data_json(self.selected_dataset)
 
 
     def on_copy_numpy(self):
