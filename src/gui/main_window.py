@@ -384,7 +384,14 @@ class MainWindow(MainWindowUi):
     
     
     def on_rl_calc(self):
-        RlDialog(self).show_modal_dialog()
+        if len(self.files) < 1:
+            error_dialog('No Files', 'No files to integrate.', 'Open some files first.')
+            return
+        if len(self.selected_files) >= 1:
+            selected = self.selected_files[0]
+        else:
+            selected = None
+        RlDialog(self).show_modal_dialog(self.files, selected)
 
 
     def on_log(self):

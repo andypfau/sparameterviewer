@@ -45,7 +45,6 @@ class CursorDialogUi(QDialog):
         self._ui_result_text = QPlainTextEdit()
         self._ui_result_text.setMinimumSize(400, 100)
         self._ui_result_text.setReadOnly(True)
-        self._ui_result_text.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
         self._ui_result_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
         option_group.setLayout(QtHelper.layout_grid([

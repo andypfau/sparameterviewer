@@ -59,7 +59,7 @@ class Unit(enum.IntEnum):
 
 
 UNIT_NAMES = {
-    Unit.Off: ' ',
+    Unit.Off: '—',
     Unit.dB: 'dB',
     Unit.LinMag: 'Lin Mag',
     Unit.LogMag: 'Log Mag',
@@ -81,7 +81,7 @@ class Unit2(enum.IntEnum):
     GDelay = 4
 
 UNIT2_NAMES = {
-    Unit2.Off: ' ',
+    Unit2.Off: '—',
     Unit2.Phase: 'Phase',
     Unit2.Unwrap: 'Unwrapped',
     Unit2.LinRem: 'Lin. Removed',
