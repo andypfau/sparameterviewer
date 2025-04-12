@@ -1,7 +1,7 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
 from .simple_dialogs import info_dialog
 from .help import show_help
-from .settings import Settings
+from .settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator
 from .simple_dialogs import open_file_dialog
 from lib.utils import is_windows
 import pathlib
@@ -10,13 +10,13 @@ import logging
 
 class SettingsDialog(SettingsDialogUi):
 
-    CSV_SEPARATORS = {
-        '\t': 'Tab',
-        ',': 'Comma',
-        ';': 'Semicolon',
+    CSV_SEPARATOR_NAMES = {
+        CsvSeparator.Tab: 'Tab',
+        CsvSeparator.Comma: 'Comma',
+        CsvSeparator.Semicolon: 'Semicolon',
     }
 
-    TD_MINSIZES = {
+    TD_MINSIZE_NAMES = {
         0: 'No Padding',
         1024: '1k',
         1024*2: '2k',
@@ -29,7 +29,7 @@ class SettingsDialog(SettingsDialogUi):
         1024*256: '256k',
     }
 
-    WINDOWS = {
+    WINDOW_NAMES = {
         'boxcar': 'Rectangular (No Windowing)',
         'hann': 'Hann',
         'hamming': 'Hamming',
@@ -39,12 +39,18 @@ class SettingsDialog(SettingsDialogUi):
         'tukey': 'Tukey',
     }
 
+    PHASE_UNIT_NAMES = {
+        CsvSeparator.Tab: 'Tab',
+        CsvSeparator.Comma: 'Comma',
+        CsvSeparator.Semicolon: 'Semicolon',
+    }
+
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.ui_set_csvset_options(list(SettingsDialog.CSV_SEPARATORS.values()))
-        self.ui_set_td_window_options(list(SettingsDialog.WINDOWS.values()))
-        self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZES.values()))
+        self.ui_set_csvset_options(list(SettingsDialog.CSV_SEPARATOR_NAMES.values()))
+        self.ui_set_td_window_options(list(SettingsDialog.WINDOW_NAMES.values()))
+        self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZE_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -57,11 +63,11 @@ class SettingsDialog(SettingsDialogUi):
 
     def apply_settings_to_controls(self):
         try:
-            self.ui_phase_unit = Settings.phase_unit
-            self.ui_csvsep = SettingsDialog.CSV_SEPARATORS[Settings.csv_separator]
-            self.ui_td_window = SettingsDialog.WINDOWS[Settings.window_type]
+            self.ui_radians = Settings.phase_unit == PhaseUnit.Radians
+            self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
+            self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
             self.ui_td_window_param = Settings.window_arg
-            self.ui_td_minsize = SettingsDialog.TD_MINSIZES[Settings.tdr_minsize]
+            self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
             self.ui_td_shift = Settings.tdr_shift
             self.ui_td_z = Settings.tdr_impedance
             self.ui_comment_expr = Settings.comment_existing_expr
@@ -115,18 +121,18 @@ class SettingsDialog(SettingsDialogUi):
     
 
     def on_phase_unit_change(self):
-        Settings.phase_unit = self.ui_phase_unit
+        Settings.phase_unit = PhaseUnit.Radians if self.ui_radians else PhaseUnit.Degrees
 
 
     def on_csvsep_change(self):
-        for symbol, name in SettingsDialog.CSV_SEPARATORS.items():
+        for symbol, name in SettingsDialog.CSV_SEPARATOR_NAMES.items():
             if name == self.ui_csvsep:
                 Settings.csv_separator = symbol
                 break
     
     
     def on_td_window_changed(self):
-        for window, name in SettingsDialog.WINDOWS.items():
+        for window, name in SettingsDialog.WINDOW_NAMES.items():
             if name == self.ui_td_window:
                 Settings.window_type = window
                 break
@@ -137,7 +143,7 @@ class SettingsDialog(SettingsDialogUi):
     
     
     def on_td_minsize_changed(self):
-        for size, name in SettingsDialog.TD_MINSIZES.items():
+        for size, name in SettingsDialog.TD_MINSIZE_NAMES.items():
             if name == self.ui_td_minsize:
                 Settings.tdr_minsize = size
                 break

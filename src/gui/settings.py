@@ -4,39 +4,48 @@ import enum
 
 
 
-class ParamMode(enum.IntEnum):
-    All = 0
-    AllFwd = 1
-    IL = 2
-    IlFwd = 3
-    S21 = 4
-    RL = 5
-    S11 = 6
-    S22 = 7
-    S33 = 8
-    S44 = 9
-    Expr = 10
+class ParamMode(enum.StrEnum):
+    All = 'all'
+    AllFwd = 'all_fwd'
+    IL = 'il'
+    IlFwd = 'il_fwd'
+    S21 = 's21'
+    RL = 'rl'
+    S11 = 's11'
+    S22 = 's22'
+    S33 = 's33'
+    S44 = 's44'
+    Expr = 'expr'
 
-class PlotUnit(enum.IntEnum):
-    Off = 0
-    dB = 1
-    LogMag = 2
-    LinMag = 3
-    ReIm = 4
-    Real = 5
-    Imag = 6
-    ReImPolar = 7
-    SmithY = 8
-    SmithZ = 9
-    Impulse = 10
-    Step = 11
+class PlotUnit(enum.StrEnum):
+    Off = 'off'
+    dB = 'db'
+    LogMag = 'lin_mag'
+    LinMag = 'log_mag'
+    ReIm = 're_im'
+    Real = 're'
+    Imag = 'im'
+    ReImPolar = 'polar'
+    SmithY = 'smith_z'
+    SmithZ = 'smith_y'
+    Impulse = 'impulse'
+    Step = 'step'
 
-class PlotUnit2(enum.IntEnum):
-    Off = 0
-    Phase = 1
-    Unwrap = 2
-    LinRem = 3
-    GDelay = 4
+class PlotUnit2(enum.StrEnum):
+    Off = 'off'
+    Phase = 'phase'
+    Unwrap = 'unwrap'
+    LinRem = 'remove_linear'
+    GDelay = 'groupdelay'
+
+class PhaseUnit(enum.StrEnum):
+    Degrees = 'deg'
+    Radians = 'rad'
+
+class CsvSeparator(enum.StrEnum):
+    Tab = 'tab'
+    Comma = 'comma'
+    Semicolon = 'semicolon'
 
 
 
@@ -57,13 +66,13 @@ class SParamViewerAppSettings(AppSettings):
     log_level: int = logging.WARNING
     ext_editor_cmd: str = ''
     plot_style: str = 'bmh'
-    phase_unit: str = 'deg'
+    phase_unit: PhaseUnit = PhaseUnit.Degrees
     extract_zip: bool = False
     plot_mark_points: bool = False
     last_directories: list[str] = []
     comment_existing_expr: bool = True
     editor_font: str = ''
-    csv_separator: str = ';'
+    csv_separator: CsvSeparator = CsvSeparator.Semicolon
     search_regex: bool = False
 
 

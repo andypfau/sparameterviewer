@@ -1,6 +1,6 @@
 from .main_window_ui import MainWindowUi
 from .log_handler import LogHandler
-from .settings import Settings, ParamMode, PlotUnit, PlotUnit2
+from .settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
@@ -824,10 +824,10 @@ class MainWindow(MainWindowUi):
                     else:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                     if qty_phase:
-                        if Settings.phase_unit=='deg':
-                            y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
-                        else:
+                        if Settings.phase_unit==PhaseUnit.Radians:
                             y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
+                        else:
+                            y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
                     elif qty_group_delay:
                         y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
@@ -852,7 +852,7 @@ class MainWindow(MainWindowUi):
                     style_y2 = style
                 
                 def transform_phase(radians):
-                    if Settings.phase_unit=='deg':
+                    if Settings.phase_unit==PhaseUnit.Degrees:
                         return radians * 180 / math.pi
                     return radians
 

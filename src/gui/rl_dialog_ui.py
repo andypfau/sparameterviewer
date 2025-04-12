@@ -73,7 +73,7 @@ class RlDialogUi(QDialog):
     def ui_set_files_list(self, files: list[str], selected: str = None):
         self._ui_file_combo.clear()
         for file in files:
-            self._ui_file_combo.addItem(QStandardItem(file))
+            self._ui_file_combo.addItem(file)
         if selected:
             self._ui_file_combo.setCurrentText(selected)
 
@@ -81,7 +81,7 @@ class RlDialogUi(QDialog):
     def ui_intrange_presets(self, presets: list[str], selected: str = None):
         self._ui_intrange_combo.clear()
         for preset in presets:
-            self._ui_intrange_combo.addItem(QStandardItem(preset))
+            self._ui_intrange_combo.addItem(preset)
         if selected:
             self._ui_intrange_combo.setCurrentText(selected)
 
@@ -89,7 +89,7 @@ class RlDialogUi(QDialog):
     def ui_tgtrange_presets(self, files: list[str], selected: str = None):
         self._ui_tgtrange_combo.clear()
         for file in files:
-            self._ui_tgtrange_combo.addItem(QStandardItem(file))
+            self._ui_tgtrange_combo.addItem(file)
         if selected:
             self._ui_tgtrange_combo.setCurrentText(selected)
 

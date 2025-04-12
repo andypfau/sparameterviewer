@@ -114,17 +114,14 @@ class SettingsDialogUi(QDialog):
 
     
     @property
-    def ui_phase_unit(self) -> str:
-        if self._ui_rad_radio.isChecked():
-            return 'rad'
-        else:
-            return 'deg'
-    @ui_phase_unit.setter
-    def ui_phase_unit(self, value: str):
-        if value=='deg':
-            self._ui_deg_radio.setChecked(True)
-        elif value=='rad':
+    def ui_radians(self) -> bool:
+        return self._ui_rad_radio.isChecked()
+    @ui_radians.setter
+    def ui_radians(self, radians: bool):
+        if radians:
             self._ui_rad_radio.setChecked(True)
+        else:
+            self._ui_deg_radio.setChecked(True)
 
     
     @property
@@ -138,7 +135,7 @@ class SettingsDialogUi(QDialog):
     def ui_set_td_window_options(self, options: list[str]):
         self._ui_td_window_combo.clear()
         for option in options:
-            self._ui_td_window_combo.addItem(QStandardItem(option))
+            self._ui_td_window_combo.addItem(option)
         self._ui_td_window_combo.currentIndexChanged.connect(self.on_td_window_changed)
 
     
@@ -177,7 +174,7 @@ class SettingsDialogUi(QDialog):
     def ui_set_td_minsize_options(self, options: list[str]):
         self._ui_td_minsize_combo.clear()
         for option in options:
-            self._ui_td_minsize_combo.addItem(QStandardItem(option))
+            self._ui_td_minsize_combo.addItem(option)
         self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
 
     
@@ -192,7 +189,7 @@ class SettingsDialogUi(QDialog):
     def ui_set_csvset_options(self, options: list[str]):
         self._ui_csvsep_combo.clear()
         for option in options:
-            self._ui_csvsep_combo.addItem(QStandardItem(option))
+            self._ui_csvsep_combo.addItem(option)
         self._ui_csvsep_combo.currentIndexChanged.connect(self.on_csvsep_change)
 
     

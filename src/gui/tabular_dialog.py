@@ -1,7 +1,7 @@
 from .tabular_dialog_ui import TabularDialogUi
 from .simple_dialogs import save_file_dialog, error_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
-from .settings import Settings
+from .settings import Settings, PhaseUnit, CsvSeparator
 from .help import show_help
 from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process
 import dataclasses
@@ -202,6 +202,15 @@ class TabularDialog(TabularDialogUi):
         super().ui_show_modal()
 
 
+    def csv_separator_char(self) -> str:
+        SEPARATORS = {
+            CsvSeparator.Tab: '\t',
+            CsvSeparator.Comma: ',',
+            CsvSeparator.Semicolon: ';',
+        }
+        return SEPARATORS[Settings.csv_separator]
+
+
     @property
     def selected_dataset(self) -> TabularDataset:
         if not self.ui_selected_dataset:
@@ -242,7 +251,7 @@ class TabularDialog(TabularDialogUi):
         ds_fmt = self.format_dataset(self.filter_dataset(dataset))
         df = self.get_dataframe(ds_fmt)
         sio = io.StringIO()
-        df.to_csv(sio, index=None, sep=Settings.csv_separator)
+        df.to_csv(sio, index=None, sep=self.csv_separator_char())
         Clipboard.copy_string(sio.getvalue())
 
         
@@ -318,7 +327,7 @@ class TabularDialog(TabularDialogUi):
 
     def save_csv(self, dataset: "TabularDataset", filename: str):
         df = self.get_dataframe(dataset)
-        df.to_csv(filename, sep=Settings.csv_separator, index=None)
+        df.to_csv(filename, sep=self.csv_separator_char(), index=None)
 
 
     def save_spreadsheet(self, dataset: "TabularDataset", filename: str):
@@ -401,7 +410,7 @@ class TabularDialog(TabularDialogUi):
         if dataset.is_spar:
             selected_format = self.selected_format
             if selected_format == TabularDialog.Format.dB_Phase:
-                if Settings.phase_unit == 'rad':
+                if Settings.phase_unit==PhaseUnit.Radians:
                     ycols = interleave_lists(
                         [f'|{name}| / dB' for name in ycols],
                         [f'∠{name} / rad' for name in ycols])
@@ -417,7 +426,7 @@ class TabularDialog(TabularDialogUi):
                         [np.angle(col)*180/math.pi for col in ycol_datas])
             
             elif selected_format == TabularDialog.Format.Lin_Phase:
-                if Settings.phase_unit == 'rad':
+                if Settings.phase_unit==PhaseUnit.Radians:
                     ycols = interleave_lists(
                         [f'|{name}|' for name in ycols],
                         [f'∠{name} / rad' for name in ycols])
@@ -449,7 +458,7 @@ class TabularDialog(TabularDialogUi):
                     [np.imag(col) for col in dataset.ycol_datas])
             
             elif selected_format == TabularDialog.Format.Phase:
-                if Settings.phase_unit == 'rad':
+                if Settings.phase_unit==PhaseUnit.Radians:
                     ycols = [f'∠{name} / rad' for name in ycols]
                     ycol_datas = [np.angle(col) for col in dataset.ycol_datas]
                 else:
