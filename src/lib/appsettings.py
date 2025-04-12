@@ -72,7 +72,7 @@ class AppSettings:
             os.makedirs(dir, exist_ok=True) 
 
             with open(self._file, 'w') as fp:
-                json.dump(data, fp)
+                json.dump(data, fp, indent=4)
         except Exception as ex:
             logging.warning(f'Unable to save settings ({ex})')
     

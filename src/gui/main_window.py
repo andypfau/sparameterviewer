@@ -1,4 +1,4 @@
-from .main_window_ui import MainWindowUi, Mode, Unit, Unit2
+from .main_window_ui import MainWindowUi
 from .log_handler import LogHandler
 from .settings import Settings
 from .tabular_dialog import TabularDialog
@@ -32,6 +32,7 @@ import numpy as np
 import re
 import os
 import zipfile
+import enum
 import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
 import scipy.signal
@@ -39,16 +40,50 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 
-MAX_DIRECTORY_HISTORY_SIZE = 10
-
-
-
 class MainWindow(MainWindowUi):
+
+    MAX_DIRECTORY_HISTORY_SIZE = 10
+
+
+    class Mode(enum.StrEnum):
+        All = 'All S-Parameters'
+        AllFwd = 'All S-Parameters (reciprocal)'
+        IL = 'Insertion Loss'
+        IlFwd = 'Insertion Loss (reciprocal)'
+        S21 = 'Insertion Loss S21'
+        RL = 'Return Loss / Impedance'
+        S11 = 'Return Loss S11'
+        S22 = 'Return Loss S22'
+        S33 = 'Return Loss S33'
+        S44 = 'Return Loss S44'
+        Expr = 'Expression-Based'
+
+
+    class Unit(enum.StrEnum):
+        Off = '—'
+        dB = 'dB'
+        LinMag = 'Lin Mag'
+        LogMag = 'Log Mag'
+        ReIm = 'Real+Imag'
+        Real = 'Real'
+        Imag = 'Imag'
+        ReImPolar = 'Polar'
+        SmithY = 'Smith (Z)'
+        SmithZ = 'Smith (Y)'
+        Impulse = 'Impulse Resp.'
+        Step = 'Step Resp.'
+
+
+    class Unit2(enum.StrEnum):
+        Off = '—'
+        Phase = 'Phase'
+        Unwrap = 'Unwrapped'
+        LinRem = 'Lin. Removed'
+        GDelay = 'Group Delay'
+
 
     def __init__(self, filenames: list[str]):
         super().__init__()
-        self.ui_update_window_title(Info.AppName)
-        Settings.attach(self.on_settings_change)
         
         self.directories: list[str] = []
         self.files: list[SParamFile] = []
@@ -61,6 +96,11 @@ class MainWindow(MainWindowUi):
             
         # create plot
         self.plot: PlotHelper = None
+
+        self.ui_set_modes_list([str(mode) for mode in MainWindow.Mode])
+        self.ui_set_units_list([str(mode) for mode in MainWindow.Unit])
+        self.ui_set_units2_list([str(mode) for mode in MainWindow.Unit2])
+        self.ui_set_window_title(Info.AppName)
 
         ## TODO: mouse events
         #def callback_click(event):
@@ -79,9 +119,9 @@ class MainWindow(MainWindowUi):
         # load settings
         def load_settings():
             try:
-                self.ui_mode = Mode(Settings.plot_mode)
-                self.ui_unit = Unit(Settings.plot_unit)
-                self.ui_unit2 = Unit2(Settings.plot_unit2)
+                self.ui_mode = MainWindow.Mode(Settings.plot_mode)
+                self.ui_unit = MainWindow.Unit(Settings.plot_unit)
+                self.ui_unit2 = MainWindow.Unit2(Settings.plot_unit2)
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
@@ -95,10 +135,14 @@ class MainWindow(MainWindowUi):
             loading_exception = load_settings()
             load_settings() # load again; this time no re-try
             exception_dialog('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
+        Settings.attach(self.on_settings_change)
 
         # initialize display
         self.initially_load_files_or_directory(filenames)
         self.update_plot()
+
+    def show(self):
+        self.ui_show()
 
 
     @property
@@ -150,7 +194,6 @@ class MainWindow(MainWindowUi):
 
 
     def on_select_mode(self):
-        changed = Settings.plot_mode != self.ui_mode
         Settings.plot_mode = self.ui_mode
         self.update_plot()
 
@@ -163,15 +206,15 @@ class MainWindow(MainWindowUi):
             self.invalidate_axes_lock(update=False)
 
             # only allow phase in specific combinations
-            if Settings.plot_unit not in [Unit.Off, Unit.dB, Unit.LinMag, Unit.LogMag]:
-                self.ui_unit2 = Unit2.Off
+            if Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]:
+                self.ui_unit2 = MainWindow.Unit2.Off
 
         self.update_plot()
     
 
     def on_select_unit2(self):
-        if Settings.plot_unit not in [Unit.Off, Unit.dB, Unit.LinMag, Unit.LogMag]:
-            self.ui_unit2 = Unit2.Off
+        if Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]:
+            self.ui_unit2 = MainWindow.Unit2.Off
             return # no phase allowed
 
         changed = Settings.plot_unit2 != self.ui_unit2
@@ -224,7 +267,7 @@ class MainWindow(MainWindowUi):
         
         Settings.last_directories.insert(0, dir)
         
-        while len(Settings.last_directories) > MAX_DIRECTORY_HISTORY_SIZE:
+        while len(Settings.last_directories) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
             del Settings.last_directories[-1]
         
         self.update_most_recent_directories_menu()
@@ -569,7 +612,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_update_expressions(self):
-        self.ui_mode = Mode.Expr
+        self.ui_mode = MainWindow.Mode.Expr
         self.update_plot()
 
     
@@ -581,6 +624,19 @@ class MainWindow(MainWindowUi):
 
     def on_settings_change(self):
         self.update_plot()
+    
+    
+    def on_update_button(self):
+        self.ui_mode = MainWindow.Mode.Expr
+        self.update_plot()
+    
+    
+    def on_template_button(self):
+        self.ui_show_template_menu()
+    
+    
+    def on_help_button(self):
+        pass  # TODO: implement
 
     
     def get_info_str(self, sparam_file: SParamFile) -> str:
@@ -701,35 +757,35 @@ class MainWindow(MainWindowUi):
             self.show_error(None)              
             n_log_entries_before = len(LogHandler.inst().get_messages(logging.WARNING))
 
-            data_expr_based = Settings.plot_mode==Mode.Expr
+            data_expr_based = Settings.plot_mode==MainWindow.Mode.Expr
 
-            enable_1st_y = (Settings.plot_unit != Unit.Off)
-            enable_2nd_y = (Settings.plot_unit2 != Unit2.Off)
-            if (Settings.plot_unit not in [Unit.Off, Unit.dB, Unit.LinMag, Unit.LogMag]):
+            enable_1st_y = (Settings.plot_unit != MainWindow.Unit.Off)
+            enable_2nd_y = (Settings.plot_unit2 != MainWindow.Unit2.Off)
+            if (Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]):
                 enable_2nd_y = False
             dual_y_axis = enable_1st_y and enable_2nd_y
 
-            qty_db = (Settings.plot_unit == Unit.dB)
-            qty_lin_mag = (Settings.plot_unit == Unit.LinMag)
-            qty_log_mag = (Settings.plot_unit == Unit.LogMag)
-            qty_re = (Settings.plot_unit in [Unit.ReIm, Unit.Real])
-            qty_im = (Settings.plot_unit in [Unit.ReIm, Unit.Imag])
+            qty_db = (Settings.plot_unit == MainWindow.Unit.dB)
+            qty_lin_mag = (Settings.plot_unit == MainWindow.Unit.LinMag)
+            qty_log_mag = (Settings.plot_unit == MainWindow.Unit.LogMag)
+            qty_re = (Settings.plot_unit in [MainWindow.Unit.ReIm, MainWindow.Unit.Real])
+            qty_im = (Settings.plot_unit in [MainWindow.Unit.ReIm, MainWindow.Unit.Imag])
             
-            polar = (Settings.plot_unit == Unit.ReImPolar)
-            smith = (Settings.plot_unit in [Unit.SmithZ, Unit.SmithY])
-            timedomain = (Settings.plot_unit in [Unit.Impulse, Unit.Step])
-            stepresponse = (Settings.plot_unit == Unit.Step)
+            polar = (Settings.plot_unit == MainWindow.Unit.ReImPolar)
+            smith = (Settings.plot_unit in [MainWindow.Unit.SmithZ, MainWindow.Unit.SmithY])
+            timedomain = (Settings.plot_unit in [MainWindow.Unit.Impulse, MainWindow.Unit.Step])
+            stepresponse = (Settings.plot_unit == MainWindow.Unit.Step)
             tdr_z = (Settings.tdr_impedance)
-            if Settings.plot_unit == Unit.SmithZ:
+            if Settings.plot_unit == MainWindow.Unit.SmithZ:
                 smith_type = 'z'
             else:
                 smith_type = 'y'
             
             if enable_2nd_y:
-                qty_phase = (Settings.plot_unit2 in [Unit2.Phase, Unit2.Unwrap, Unit2.LinRem])
-                unwrap_phase = (Settings.plot_unit2 == Unit2.Unwrap)
-                remove_lin_phase = (Settings.plot_unit2 == Unit2.LinRem)
-                qty_group_delay = (Settings.plot_unit2 == Unit2.GDelay)
+                qty_phase = (Settings.plot_unit2 in [MainWindow.Unit2.Phase, MainWindow.Unit2.Unwrap, MainWindow.Unit2.LinRem])
+                unwrap_phase = (Settings.plot_unit2 == MainWindow.Unit2.Unwrap)
+                remove_lin_phase = (Settings.plot_unit2 == MainWindow.Unit2.LinRem)
+                qty_group_delay = (Settings.plot_unit2 == MainWindow.Unit2.GDelay)
             else:
                 qty_phase = False
                 unwrap_phase = False
@@ -841,27 +897,27 @@ class MainWindow(MainWindowUi):
 
             else:
 
-                if Settings.plot_mode == Mode.All:
+                if Settings.plot_mode == MainWindow.Mode.All:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == Mode.AllFwd:
+                elif Settings.plot_mode == MainWindow.Mode.AllFwd:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == Mode.IL:
+                elif Settings.plot_mode == MainWindow.Mode.IL:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
-                elif Settings.plot_mode == Mode.IlFwd:
+                elif Settings.plot_mode == MainWindow.Mode.IlFwd:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()'
-                elif Settings.plot_mode == Mode.RL:
+                elif Settings.plot_mode == MainWindow.Mode.RL:
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
-                elif Settings.plot_mode == Mode.S21:
+                elif Settings.plot_mode == MainWindow.Mode.S21:
                     self.generated_expressions += 'sel_nws().s(2,1).plot()'
-                elif Settings.plot_mode == Mode.S11:
+                elif Settings.plot_mode == MainWindow.Mode.S11:
                     self.generated_expressions += 'sel_nws().s(1,1).plot()'
-                elif Settings.plot_mode == Mode.S22:
+                elif Settings.plot_mode == MainWindow.Mode.S22:
                     self.generated_expressions += 'sel_nws().s(2,2).plot()'
-                elif Settings.plot_mode == Mode.S33:
+                elif Settings.plot_mode == MainWindow.Mode.S33:
                     self.generated_expressions += 'sel_nws().s(3,3).plot()'
-                elif Settings.plot_mode == Mode.S44:
+                elif Settings.plot_mode == MainWindow.Mode.S44:
                     self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
                 try:

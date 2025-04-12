@@ -85,17 +85,17 @@ class QtHelper:
 
 
     @staticmethod
-    def make_spring():
+    def make_spring() -> QSpacerItem:
         return QSpacerItem(0, 0, QSizePolicy.Policy.Expanding)
 
 
     @staticmethod
-    def make_hspace(width: int):
+    def make_hspace(width: int) -> QSpacerItem:
         return QSpacerItem(width, 0, QSizePolicy.Policy.Fixed)
 
 
     @staticmethod
-    def make_vspace(height: int):
+    def make_vspace(height: int) -> QSpacerItem:
         return QSpacerItem(0, height, QSizePolicy.Policy.Fixed)
 
 
@@ -159,7 +159,7 @@ class QtHelper:
 
 
     @staticmethod
-    def _box_layout(layout: QBoxLayout, *items):
+    def _box_layout(layout: QBoxLayout, direction: str, *items):
         for item in items:
             if item is ...:
                 layout.addStretch()
@@ -167,6 +167,13 @@ class QtHelper:
                 layout.addLayout(item)
             elif isinstance(item, str):
                 layout.addWidget(QtHelper.make_label(item))
+            elif isinstance(item, int):
+                if direction=='h':
+                    layout.addLayout(QtHelper.make_hspace(item))
+                elif direction=='v':
+                    layout.addLayout(QtHelper.make_vspace(item))
+                else:
+                    raise ValueError()
             else:
                 layout.addWidget(item)
         return layout
@@ -174,12 +181,12 @@ class QtHelper:
 
     @staticmethod
     def layout_h(*items):
-        return QtHelper._box_layout(QHBoxLayout(), *items)
+        return QtHelper._box_layout(QHBoxLayout(), 'h', *items)
 
 
     @staticmethod
     def layout_v(*items):
-        return QtHelper._box_layout(QVBoxLayout(), *items)
+        return QtHelper._box_layout(QVBoxLayout(), 'v', *items)
 
 
     @staticmethod

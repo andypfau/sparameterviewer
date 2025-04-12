@@ -4,9 +4,9 @@ import logging
 
 
 class SParamViewerAppSettings(AppSettings):
-    plot_mode: int = 0
-    plot_unit: int = 1
-    plot_unit2: int = 0
+    plot_mode: str = 'AllFwd'
+    plot_unit: str = 'dB'
+    plot_unit2: str = 'Off'
     show_legend: bool = True
     hide_single_item_legend: bool = True
     shorten_legend_items: bool = True

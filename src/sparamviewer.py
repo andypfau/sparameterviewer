@@ -48,8 +48,7 @@ if __name__ == '__main__':
     try:
         app = QtWidgets.QApplication(sys.argv)
         filenames = sys.argv[1:]
-        main_dialog = MainWindow(filenames)
-        main_dialog.show()
+        MainWindow(filenames).show()
         app.exec()
     
     except Exception as ex:

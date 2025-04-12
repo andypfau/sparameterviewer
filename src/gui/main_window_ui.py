@@ -15,161 +15,76 @@ from typing import Callable, Union
 
 
 
-
-class Mode(enum.IntEnum):
-    All = 0
-    AllFwd = 1
-    IL = 2
-    IlFwd = 3
-    S21 = 4
-    RL = 5
-    S11 = 6
-    S22 = 7
-    S33 = 8
-    S44 = 9
-    Expr = 10
-
-MODE_NAMES = {
-    Mode.All: 'All S-Parameters',
-    Mode.AllFwd: 'All S-Parameters (reciprocal)',
-    Mode.IL: 'Insertion Loss',
-    Mode.IlFwd: 'Insertion Loss (reciprocal)',
-    Mode.S21: 'Insertion Loss S21',
-    Mode.RL: 'Return Loss / Impedance',
-    Mode.S11: 'Return Loss S11',
-    Mode.S22: 'Return Loss S22',
-    Mode.S33: 'Return Loss S33',
-    Mode.S44: 'Return Loss S44',
-    Mode.Expr: 'Expression-Based',
-}
-
-class Unit(enum.IntEnum):
-    Off = 0
-    dB = 1
-    LinMag = 2
-    LogMag = 3
-    ReIm = 4
-    Real = 5
-    Imag = 6
-    ReImPolar = 7
-    SmithZ = 8
-    SmithY = 9
-    Impulse = 10
-    Step = 11
-
-
-UNIT_NAMES = {
-    Unit.Off: '—',
-    Unit.dB: 'dB',
-    Unit.LinMag: 'Lin Mag',
-    Unit.LogMag: 'Log Mag',
-    Unit.ReIm: 'Real+Imag',
-    Unit.Real: 'Real',
-    Unit.Imag: 'Imag',
-    Unit.ReImPolar: 'Polar',
-    Unit.SmithY: 'Smith (Z)',
-    Unit.SmithZ: 'Smith (Y)',
-    Unit.Impulse: 'Impulse Resp.',
-    Unit.Step: 'Step Resp.',
-}
-
-class Unit2(enum.IntEnum):
-    Off = 0
-    Phase = 1
-    Unwrap = 2
-    LinRem = 3
-    GDelay = 4
-
-UNIT2_NAMES = {
-    Unit2.Off: '—',
-    Unit2.Phase: 'Phase',
-    Unit2.Unwrap: 'Unwrapped',
-    Unit2.LinRem: 'Lin. Removed',
-    Unit2.GDelay: 'Group Delay',
-}
-
-
 class MainWindowUi(QMainWindow):
 
     def __init__(self):
         super().__init__()
         QtHelper.set_dialog_icon(self)
-
-        splitter = QSplitter(Qt.Orientation.Vertical)
-        self.setCentralWidget(splitter)
+        
         self._build_main_menu()
 
-        self._ui_plot = PlotWidget()
-        splitter.addWidget(self._ui_plot)
-        
-        bottom_widget = QWidget()
-        bottom_widget_layout = QVBoxLayout()
-        bottom_widget.setLayout(bottom_widget_layout)
-        splitter.addWidget(bottom_widget)
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter_top = QWidget()
+        splitter.addWidget(splitter_top)
+        splitter.setCollapsible(0, False)
+        splitter_bottom = QWidget()
+        splitter.addWidget(splitter_bottom)
+        splitter.setCollapsible(1, False)
+        self.setCentralWidget(splitter)
 
-        self.ui_mode_combo = QComboBox()
-        self.ui_unit_combo = QComboBox()
-        self.ui_unit2_combo = QComboBox()
-        combo_layout = QHBoxLayout()
-        combo_layout.addWidget(self.ui_mode_combo)
-        combo_layout.addWidget(self.ui_unit_combo)
-        combo_layout.addWidget(self.ui_unit2_combo)
-        bottom_widget_layout.addLayout(combo_layout)
-        for mode in Mode:
-            self.ui_mode_combo.addItem(MODE_NAMES[mode.value])
-        self.ui_mode_combo.currentIndexChanged.connect(self.on_select_mode)
-        for unit in Unit:
-            self.ui_unit_combo.addItem(UNIT_NAMES[unit.value])
-        self.ui_unit_combo.currentIndexChanged.connect(self.on_select_unit)
-        for unit2 in Unit2:
-            self.ui_unit2_combo.addItem(UNIT2_NAMES[unit2.value])
-        self.ui_unit2_combo.currentIndexChanged.connect(self.on_select_unit2)
+        self._ui_plot = PlotWidget()
+        
+        self._ui_mode_combo = QComboBox()
+        self._ui_mode_combo.currentTextChanged.connect(self.on_select_mode)
+        self._ui_unit_combo = QComboBox()
+        self._ui_unit_combo.currentTextChanged.connect(self.on_select_unit)
+        self._ui_unit2_combo = QComboBox()
+        self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
         
         tabs = QTabWidget()
-        bottom_widget_layout.addWidget(tabs)
         
         files_tab = QWidget()
         tabs.addTab(files_tab, 'Files')
+        self._ui_fileview = QTreeView()
+        self._ui_filemodel = QStandardItemModel()
+        self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
+        self._ui_fileview_root = self._ui_filemodel.invisibleRootItem()
+        self._ui_fileview.setModel(self._ui_filemodel)
+        self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
+        self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
+        files_tab.setLayout(QtHelper.layout_v(self._ui_fileview))
+        
         expressions_tab = QWidget()
         tabs.addTab(expressions_tab, 'Expressions')
+        self._ui_update_button = QPushButton('Update (F5)')
+        self._ui_update_button.clicked.connect(self.on_update_button)
+        self._ui_template_button = QPushButton('Template...')
+        self._ui_update_button.clicked.connect(self.on_template_button)
+        self._ui_help_button = QPushButton('Help')
+        self._ui_update_button.clicked.connect(self.on_help_button)
+        self._ui_editor = QPlainTextEdit()
+        self._ui_editor.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
+        self._ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        expressions_tab.setLayout(QtHelper.layout_h(
+            QtHelper.layout_v(
+                self._ui_update_button,
+                self._ui_template_button,
+                #5,
+                self._ui_help_button,
+                ...
+            ),
+            self._ui_editor
+        ))
 
-        filesview_layout = QVBoxLayout()
-        self.ui_fileview = QTreeView()
-        filesview_layout.addWidget(self.ui_fileview)
-        files_tab.setLayout(filesview_layout)
-        
-        self.ui_filemodel = QStandardItemModel()
-        self.ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
-        self.ui_fileview_root = self.ui_filemodel.invisibleRootItem()
-        self.ui_fileview.setModel(self.ui_filemodel)
-        self.ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
-        self.ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
-        
-        expressions_layout = QHBoxLayout()
-        exprbuttons_layout = QVBoxLayout()
-        expressions_layout.addLayout(exprbuttons_layout)
-        self.ui_editor = QPlainTextEdit()
-        self.template_button = QPushButton('Template...')
-        exprbuttons_layout.addWidget(self.template_button)
-        exprbuttons_layout.addStretch()
-        self.ui_editor.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
-        self.ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        editor_layout = QVBoxLayout()
-        editor_layout.addWidget(self.ui_editor)
-        expressions_layout.addLayout(editor_layout)
-        expressions_tab.setLayout(expressions_layout)
+        self._ui_status_bar = QStatusBar()
 
-        self.ui_status_bar = QStatusBar()
-        bottom_widget_layout.addWidget(self.ui_status_bar)
+        splitter_top.setLayout(QtHelper.layout_v(self._ui_plot))
+        splitter_bottom.setLayout(QtHelper.layout_v(
+            QtHelper.layout_h(self._ui_mode_combo, self._ui_unit_combo, self._ui_unit2_combo),
+            tabs,
+            self._ui_status_bar,
+        ))
 
-        def on_template_button():
-            button_pos = self.template_button.mapToGlobal(QPoint(0, self.template_button.height()))
-            self.ui_template_menu.popup(button_pos)
-        self.template_button.clicked.connect(on_template_button)
-        self._build_template_menu()
-
-        splitter.setCollapsible(0, False)
-        splitter.setCollapsible(1, False)
     
 
     def _build_main_menu(self):
@@ -231,9 +146,36 @@ class MainWindowUi(QMainWindow):
         self.template_submenu_more = QtHelper.add_submenu(self, self.ui_template_menu, 'More Examples')
         self.ui_template_menuitem_example2 =  QtHelper.add_menuitem(self.ui_template_menu, 'Example 2', None)
 
+
+    def ui_show(self):
+        super().show()
+
+
+    def ui_show_template_menu(self):
+        button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
+        self.ui_template_menu.popup(button_pos)
+
     
-    def ui_update_window_title(self, title: str):
+    def ui_set_window_title(self, title: str):
         self.setWindowTitle(title)
+
+    
+    def ui_set_modes_list(self, items: list[str]):
+        self._ui_mode_combo.clear()
+        for item in items:
+            self._ui_mode_combo.addItem(item)
+
+    
+    def ui_set_units_list(self, items: list[str]):
+        self._ui_unit_combo.clear()
+        for item in items:
+            self._ui_unit_combo.addItem(item)
+
+    
+    def ui_set_units2_list(self, items: list[str]):
+        self._ui_unit2_combo.clear()
+        for item in items:
+            self._ui_unit2_combo.addItem(item)
     
 
     @property
@@ -283,65 +225,65 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_expression(self) -> str:
-        return self.ui_editor.toPlainText()
+        return self._ui_editor.toPlainText()
     @ui_expression.setter
     def ui_expression(self, expression: str):
-        return self.ui_editor.setPlainText(expression)
+        return self._ui_editor.setPlainText(expression)
 
 
     @property
-    def ui_mode(self) -> Mode:
-        return Mode(self.ui_mode_combo.currentIndex())
+    def ui_mode(self) -> str:
+        return self._ui_mode_combo.currentText()
     @ui_mode.setter
-    def ui_mode(self, mode: Mode):
-        self.ui_mode_combo.setCurrentIndex(int(mode.value))
+    def ui_mode(self, mode: str):
+        self._ui_mode_combo.setCurrentText(mode)
 
 
     @property
-    def ui_unit(self) -> Unit:
-        return Unit(self.ui_unit_combo.currentIndex())
+    def ui_unit(self) -> str:
+        return self._ui_unit_combo.currentText()
     @ui_unit.setter
-    def ui_unit(self, unit: Unit):
-        self.ui_unit_combo.setCurrentIndex(int(unit.value))
+    def ui_unit(self, unit: str):
+        self._ui_unit_combo.setCurrentText(unit)
 
 
     @property
-    def ui_unit2(self) -> Unit2:
-        return Unit2(self.ui_unit2_combo.currentIndex())
+    def ui_unit2(self) -> str:
+        return self._ui_unit2_combo.currentText()
     @ui_unit2.setter
-    def ui_unit2(self, unit2: Unit2):
-        self.ui_unit2_combo.setCurrentIndex(int(unit2.value))
+    def ui_unit2(self, unit2: str):
+        self._ui_unit2_combo.setCurrentText(unit2)
 
 
     def ui_update_status_message(self, status_message: str):
         if status_message:
-            self.ui_status_bar.showMessage(status_message)
+            self._ui_status_bar.showMessage(status_message)
         else:
-            self.ui_status_bar.clearMessage()
+            self._ui_status_bar.clearMessage()
 
 
     def ui_set_fileview_items(self, names_and_contents: list[tuple[str,str]]):
-        self.ui_fileview_root.removeRows(0, self.ui_fileview_root.rowCount())
+        self._ui_fileview_root.removeRows(0, self._ui_fileview_root.rowCount())
         for name,content in names_and_contents:
-            self.ui_fileview_root.appendRow([QStandardItem(name), QStandardItem(content)])
-        for column in range(self.ui_fileview.model().columnCount()):
-            self.ui_fileview.resizeColumnToContents(column)
+            self._ui_fileview_root.appendRow([QStandardItem(name), QStandardItem(content)])
+        for column in range(self._ui_fileview.model().columnCount()):
+            self._ui_fileview.resizeColumnToContents(column)
 
 
     def ui_update_fileview_item(self, index: int, name: str, contents: str):
-        self.ui_fileview.model().itemFromIndex(self.ui_fileview.model().index(index, 0)).setText(name)
-        self.ui_fileview.model().itemFromIndex(self.ui_fileview.model().index(index, 1)).setText(contents)
+        self._ui_fileview.model().itemFromIndex(self._ui_fileview.model().index(index, 0)).setText(name)
+        self._ui_fileview.model().itemFromIndex(self._ui_fileview.model().index(index, 1)).setText(contents)
 
 
     def ui_select_fileview_items(self, indices: list[int]):
-        self.ui_fileview.selectionModel().clearSelection()
+        self._ui_fileview.selectionModel().clearSelection()
         for index_to_select in indices:
-            index = self.ui_fileview.model().index(index_to_select, 0)
-            self.ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            index = self._ui_fileview.model().index(index_to_select, 0)
+            self._ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
 
 
     def ui_get_selected_fileview_indices(self) -> list[int]:
-        sel = self.ui_fileview.selectionModel().selectedIndexes()
+        sel = self._ui_fileview.selectionModel().selectedIndexes()
         if not sel:
             return []
         return list(set([item.row() for item in sel]))
@@ -360,64 +302,70 @@ class MainWindowUi(QMainWindow):
 
 
     def on_select_mode(self):
-        raise NotImplementedError()
+        pass
     def on_select_unit(self):
-        raise NotImplementedError()
+        pass
     def on_select_unit2(self):
-        raise NotImplementedError()
+        pass
     def on_show_filter(self):
-        raise NotImplementedError()
+        pass
     def on_select_file(self):
-        raise NotImplementedError()
+        pass
     def on_open_directory(self):
-        raise NotImplementedError()
+        pass
     def on_append_directory(self):
-        raise NotImplementedError()
+        pass
     def on_reload_all_files(self):
-        raise NotImplementedError()
+        pass
     def on_trace_cursors(self):
-        raise NotImplementedError()
+        pass
     def on_rl_calc(self):
-        raise NotImplementedError()
+        pass
     def on_log(self):
-        raise NotImplementedError()
+        pass
     def on_settings(self):
-        raise NotImplementedError()
+        pass
     def on_help(self):
-        raise NotImplementedError()
+        pass
     def on_about(self):
-        raise NotImplementedError()
+        pass
     def on_save_plot_image(self):
-        raise NotImplementedError()
+        pass
     def on_file_info(self):
-        raise NotImplementedError()
+        pass
     def on_view_tabular(self):
-        raise NotImplementedError()
+        pass
     def on_open_externally(self):
-        raise NotImplementedError()
+        pass
     def on_load_expressions(self):
-        raise NotImplementedError()
+        pass
     def on_save_expressions(self):
-        raise NotImplementedError()
+        pass
     def on_show_legend(self):
-        raise NotImplementedError()
+        pass
     def on_hide_single_legend(self):
-        raise NotImplementedError()
+        pass
     def on_shorten_legend(self):
-        raise NotImplementedError()
+        pass
     def on_copy_image(self):
-        raise NotImplementedError()
+        pass
     def on_lock_xaxis(self):
-        raise NotImplementedError()
+        pass
     def on_lock_yaxis(self):
-        raise NotImplementedError()
+        pass
     def on_lock_both(self):
-        raise NotImplementedError()
+        pass
     def on_unlock_axes(self):
-        raise NotImplementedError()
+        pass
     def on_rescale_locked_axes(self):
-        raise NotImplementedError()
+        pass
     def on_manual_axes(self):
-        raise NotImplementedError()
+        pass
     def on_update_expressions(self):
-        raise NotImplementedError()
+        pass
+    def on_update_button(self):
+        pass
+    def on_template_button(self):
+        pass
+    def on_help_button(self):
+        pass
