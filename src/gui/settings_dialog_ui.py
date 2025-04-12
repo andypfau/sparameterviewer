@@ -89,6 +89,9 @@ class SettingsDialogUi(QDialog):
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
         self._ui_plot_style_combo = QComboBox()
+        self._ui_plot_style_combo.setMinimumWidth(150)
+        self._ui_font_combo = QComboBox()
+        self._ui_font_combo.setMinimumWidth(250)
         self._ui_exted_edit = QLineEdit()
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
@@ -98,7 +101,8 @@ class SettingsDialogUi(QDialog):
                 self._ui_extract_zip_combo,
                 self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
-                        ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)', ...)],
+                        ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
+                        ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
                 ]), ...
             )
@@ -201,6 +205,13 @@ class SettingsDialogUi(QDialog):
             self._ui_plot_style_combo.addItem(option)
         self._ui_plot_style_combo.currentIndexChanged.connect(self.on_plotstyle_change)
 
+
+    def ui_set_font_options(self, options: list[str]):
+        self._ui_font_combo.clear()
+        for option in options:
+            self._ui_font_combo.addItem(option)
+        self._ui_font_combo.currentIndexChanged.connect(self.on_font_change)
+
     
     @property
     def ui_comment_expr(self) -> bool:
@@ -233,6 +244,14 @@ class SettingsDialogUi(QDialog):
     def ui_plotstyle(self, value: bool):
         self._ui_plot_style_combo.setCurrentText(value)
 
+    
+    @property
+    def ui_font(self) -> bool:
+        return self._ui_font_combo.currentText()
+    @ui_font.setter
+    def ui_font(self, value: bool):
+        self._ui_font_combo.setCurrentText(value)
+
 
     def ui_indicate_ext_ed_error(self, indicate_error: bool):
         QtHelper.indicate_error(self._ui_exted_edit, indicate_error)
@@ -264,4 +283,6 @@ class SettingsDialogUi(QDialog):
     def on_help(self):
         pass
     def on_plotstyle_change(self):
+        pass
+    def on_font_change(self):
         pass

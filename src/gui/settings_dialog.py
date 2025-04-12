@@ -4,6 +4,7 @@ from .help import show_help
 from .settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator
 from .simple_dialogs import open_file_dialog
 from .plot_widget import PlotWidget
+from .qt_helper import QtHelper
 from lib.utils import is_windows
 import pathlib
 import logging
@@ -53,6 +54,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_td_window_options(list(SettingsDialog.WINDOW_NAMES.values()))
         self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZE_NAMES.values()))
         self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
+        self.ui_set_font_options(QtHelper.get_all_available_font_families(monospace_only=True))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -76,6 +78,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_extract_zip = Settings.extract_zip
             self.ui_ext_ed = Settings.ext_editor_cmd
             self.ui_plotstyle = Settings.plot_style
+            self.ui_font = Settings.editor_font
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
@@ -182,3 +185,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_plotstyle_change(self):
         Settings.plot_style = self.ui_plotstyle
+
+
+    def on_font_change(self):
+        Settings.editor_font = self.ui_font

@@ -126,11 +126,11 @@ class QtHelper:
     @staticmethod
     def get_monospace_font() -> str:
         try:
-            preferred_fonts = ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Consolas', 'Courier New', 'Lucida Sans Typewriter']
+            preferred_fonts = ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Source Code Pro', 'Consolas', 'Courier New', 'Lucida Sans Typewriter', 'Monospace']
             if Settings.editor_font in preferred_fonts:
                 return Settings.editor_font
             
-            available_fonts = QtGui.QFontDatabase.families()
+            available_fonts = QtHelper.get_all_available_font_families(monospace_only=True)
             for preferred_font in preferred_fonts:
                 if preferred_font in available_fonts:
                     Settings.editor_font = preferred_font
@@ -139,6 +139,14 @@ class QtHelper:
             pass
         
         return QFont().family()  # fallback
+
+
+    @staticmethod
+    def get_all_available_font_families(monospace_only: bool = True) -> list[str]:
+        families = QFontDatabase.families()
+        if monospace_only:
+            families = [family for family in families if QFontDatabase.isFixedPitch(family)]
+        return list(families)
 
 
     @staticmethod
