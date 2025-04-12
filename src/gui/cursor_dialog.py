@@ -10,17 +10,24 @@ class CursorDialog(CursorDialogUi):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.callback: Callable = None
+        self._update_callback: Callable = None
         self.plots: list[PlotData] = []
+        self._currently_shown = False
     
 
     def show_dialog(self, plots: list[PlotData], callback: Callable):
-        self.callback = callback
-        self.plots = plots
-        self.ui_set_trace_list([CursorDialog.OFF, *[plot.name for plot in plots]])
-        self.ui_trace1 = CursorDialog.OFF
-        self.ui_trace2 = CursorDialog.OFF
+        if not self._currently_shown:
+            self._update_callback = callback
+            self.plots = plots
+            self.ui_set_trace_list([CursorDialog.OFF, *[plot.name for plot in plots]])
+            self.ui_trace1 = CursorDialog.OFF
+            self.ui_trace2 = CursorDialog.OFF
+            self._currently_shown = True
         super().show()
+    
+    
+    def is_currently_shown(self):
+        return self._currently_shown
 
 
     def update(self):
@@ -35,7 +42,7 @@ class CursorDialog(CursorDialogUi):
         else:
             trace_name_1 = None
 
-        self.callback(self)
+        self._update_callback(self)
         
     
     def update_readout(self, readout: str):
@@ -118,3 +125,6 @@ class CursorDialog(CursorDialogUi):
 
     def on_help(self):
         show_help('tools.md')
+
+    def on_close(self):
+        self._currently_shown = False

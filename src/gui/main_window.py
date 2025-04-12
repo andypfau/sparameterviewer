@@ -37,6 +37,7 @@ import matplotlib.pyplot as pyplot
 from matplotlib.figure import Figure
 import scipy.signal
 from PyQt6 import QtCore, QtGui, QtWidgets
+from typing import Optional
 
 
 
@@ -102,20 +103,6 @@ class MainWindow(MainWindowUi):
         self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
 
-        ## TODO: mouse events
-        #def callback_click(event):
-        #    if event.button and event.xdata and event.ydata:
-        #        self.on_plot_mouse_down(event.button, event.xdata, event.ydata)
-        #def callback_release(event):
-        #    if event.button:
-        #        self.on_plot_mouse_up(event.button)
-        #def callback_move(event):
-        #    if event.xdata and event.ydata:
-        #        self.on_plot_mouse_move(event.xdata, event.ydata)
-        #self.figure.canvas.callbacks.connect('button_press_event', callback_click)
-        #self.figure.canvas.callbacks.connect('button_release_event', callback_release)
-        #self.figure.canvas.callbacks.connect('motion_notify_event', callback_move)
-
         # load settings
         def load_settings():
             try:
@@ -138,6 +125,7 @@ class MainWindow(MainWindowUi):
         Settings.attach(self.on_settings_change)
 
         # initialize display
+        self.ui_plot.set_cursor_event_handler(self.on_plot_mouse_event)
         self.initially_load_files_or_directory(filenames)
         self.update_plot()
 
@@ -430,7 +418,104 @@ class MainWindow(MainWindowUi):
     
     
     def on_trace_cursors(self):
+        # TODO: hand items to cursor dialog
         self.cursor_dialog.show_dialog()
+
+
+    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+        # TODO: cursors
+        pass
+
+
+    def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: "float|None" = None, y: "float|None" = None):
+
+        if not self.cursor_dialog.is_currently_shown:
+            return
+            self.plot.cursors[0].enable(False)
+            self.plot.cursors[1].enable(False)
+            self.canvas.draw()
+            return
+
+        self.plot.cursors[0].enable(self.cursor_dialog.enable_cursor_1)
+        self.plot.cursors[1].enable(self.cursor_dialog.enable_cursor_2)
+        
+        if left_btn_pressed:
+
+            # find out which cursor to move
+            if self.cursor_dialog.auto_select_cursor and left_btn_event:
+                target_cursor_index, _ = self.plot.get_closest_cursor(x, y)
+                if target_cursor_index is not None:
+                    self.cursor_dialog.set_cursor(target_cursor_index)
+            else:
+                target_cursor_index = self.cursor_dialog.selected_cursor_idx
+            
+            # move the cursor
+            if target_cursor_index is not None:
+
+                if self.cursor_dialog.auto_select_trace:
+                    plot, x, y, z = self.plot.get_closest_plot_point(x, y)
+                    if plot is not None:
+                        self.cursor_dialog.set_trace(target_cursor_index, plot.name)
+                else:
+                    selected_trace_name = self.cursor_dialog.selected_trace_name_1 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_2
+                    if selected_trace_name is not None:
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
+                    else:
+                        plot, x, y, z = None, None, None, None
+
+                if plot is not None:
+                    target_cursor = self.plot.cursors[target_cursor_index]
+                    target_cursor.set(x, y, z, enable=True, color=plot.color)
+                    
+                sync_x = self.cursor_dialog.var_sync_x.get() == 'sync'
+                if sync_x:
+                    other_trace_name = self.cursor_dialog.selected_trace_name_2 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_1
+                    other_plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=other_trace_name)
+                    if other_plot is not None:
+                        other_cursor_index = 1 - target_cursor_index
+                        other_cursor = self.plot.cursors[other_cursor_index]
+                        other_cursor.set(x, y, z, enable=True, color=other_plot.color)
+        
+        readout = ''
+        xf = copy.copy(self.plot.x_fmt)
+        yf = copy.copy(self.plot.y_fmt)
+        zf = copy.copy(self.plot.z_fmt)
+        xf.significant_digits += 3
+        yf.significant_digits += 3
+        if zf is not None:
+            zf.significant_digits += 1
+        if self.cursor_dialog.enable_cursor_1:
+            x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
+            readout += f'Cursor 1: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} | '
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+        if self.cursor_dialog.enable_cursor_2:
+            x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
+            readout += f'Cursor 2: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} |'
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+            if self.cursor_dialog.enable_cursor_1:
+                dx = self.plot.cursors[1].x - self.plot.cursors[0].x
+                dx_str = str(Si(dx,si_fmt=xf))
+                if xf.unit=='s' and dx!=0:
+                    dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
+                if yf.unit=='dB' or yf.unit=='°':
+                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
+                    readout += f'Delta X: {dx_str} | Delta Y:{Si(dy,si_fmt=yf)}\n'
+                else:
+                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
+                    dys = Si.to_significant_digits(dy, 4)
+                    if self.plot.cursors[0].y==0:
+                        rys = 'N/A'
+                    else:
+                        ry = self.plot.cursors[1].y / self.plot.cursors[0].y
+                        rys = Si.to_significant_digits(ry, 4)
+                    readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
+        self.cursor_dialog.update_readout(readout)
+        
+        self.ui_plot.draw()
     
     
     def on_rl_calc(self):

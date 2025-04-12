@@ -20,6 +20,7 @@ class CursorDialogUi(QDialog):
         self.setWindowTitle('Trace Cursors')
         QtHelper.set_dialog_icon(self)
         self.setSizeGripEnabled(True)
+        self.finished.connect(self.on_close)
 
         help = QShortcut(QKeySequence('F1'), self)
         help.activated.connect(self.on_help)
@@ -146,4 +147,6 @@ class CursorDialogUi(QDialog):
     def on_syncx_changed(self):
         pass
     def on_help(self):
+        pass
+    def on_close(self):
         pass
