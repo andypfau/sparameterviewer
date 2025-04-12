@@ -19,29 +19,34 @@ class LogDialogUi(QDialog):
         super().__init__(parent)
         self.setWindowTitle('Log')
         QtHelper.set_dialog_icon(self)
-        self.finished.connect(self.on_close)
-        layout = QVBoxLayout()
-        self.setLayout(layout)
         self.setSizeGripEnabled(True)
+        #self.setWindowModality(QtCore.Qt.WindowModality.NonModal)
+        #self.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint, False)
+        #self.setModal(False)
         
-        self.ui_logtext = QPlainTextEdit()
-        self.ui_logtext.setMinimumSize(200, 100)
-        self.ui_logtext.setReadOnly(True)
-        self.ui_logtext.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
-        self.ui_logtext.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        layout.addWidget(self.ui_logtext)
+        self._ui_logtext = QPlainTextEdit()
+        self._ui_logtext.setMinimumSize(200, 100)
+        self._ui_logtext.setReadOnly(True)
+        self._ui_logtext.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
+        self._ui_logtext.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
-        layout.addWidget(QtHelper.make_label('Level:'))
-        self.ui_level_combo = QComboBox()
-        self.ui_level_combo.currentIndexChanged.connect(self.on_select_level)
-        layout.addWidget(self.ui_level_combo)
+        self._ui_level_combo = QComboBox()
+        self._ui_level_combo.currentIndexChanged.connect(self.on_select_level)
+        
+        self._ui_clear_button = QPushButton('Clear Log')
+        self._ui_clear_button.clicked.connect(self.on_clear)
+
+        self.setLayout(QtHelper.layout_v(
+            self._ui_logtext,
+            QtHelper.layout_h('Level:', self._ui_level_combo, ..., self._ui_clear_button)
+        ))
 
         self.resize(800, 600)
     
 
     def ui_set_level_strings(self, levels: list[str]):
         for level in levels:
-            self.ui_level_combo.addItem(level)
+            self._ui_level_combo.addItem(level)
     
 
     def ui_show(self):
@@ -50,16 +55,18 @@ class LogDialogUi(QDialog):
     
     @property
     def ui_level_str(self) -> str:
-        return self.ui_level_combo.currentText()
+        return self._ui_level_combo.currentText()
     @ui_level_str.setter
     def ui_level_str(self, value: str):
-        self.ui_level_combo.setCurrentText(value)
+        self._ui_level_combo.setCurrentText(value)
 
 
     def ui_set_logtext(self, text: str):
-        self.ui_logtext.setPlainText(text)
+        self._ui_logtext.setPlainText(text)
 
 
     # to be implemented in derived class
     def on_select_level(self):
-        raise NotImplementedError
+        pass
+    def on_clear(self):
+        pass

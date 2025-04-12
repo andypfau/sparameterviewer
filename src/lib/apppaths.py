@@ -2,8 +2,6 @@ from .utils import is_windows, open_file_in_default_viewer, is_running_from_bina
 from info import Info
 
 import os
-import logging
-import pathlib
 from typing import Optional
 from PyQt6.QtCore import QStandardPaths
 
@@ -46,6 +44,10 @@ class AppPaths:
         return AppPaths._get_root_dir()
 
 
+    def get_log_path() -> str:
+        return os.path.join(AppPaths.get_log_dir(), 'sparamviewer.log')
+
+
     @staticmethod
     def get_resource_dir() -> str:
         return os.path.join(AppPaths._get_content_dir(), 'res')
@@ -58,16 +60,17 @@ class AppPaths:
 
     @staticmethod
     def get_settings_dir(settings_format_version_str: str) -> str:
-        return str(
-            pathlib.Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation)) \
-            / f'{Info.Domain} {Info.AppName}' \
-            / settings_format_version_str
+        return os.path.join(
+            QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation),
+            Info.Domain,
+            Info.AppName,
+            settings_format_version_str
         )
 
 
     @staticmethod
     def get_settings_path(settings_format_version_str: str) -> str:
-        return str(pathlib.Path(AppPaths.get_settings_dir(settings_format_version_str)) / 'app_settings.json')
+        return os.path.join(AppPaths.get_settings_dir(settings_format_version_str), 'app_settings.json')
 
 
     @staticmethod

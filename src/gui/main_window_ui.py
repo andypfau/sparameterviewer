@@ -215,7 +215,7 @@ class MainWindowUi(QMainWindow):
         self.ui_menuitem_cursrs = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Trace Cursors...', self.on_trace_cursors, shortcut='F3')
         self.ui_menuitem_rlcalc = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
         self.ui_mainmenu_tools.addSeparator()
-        self.ui_menuitem_log = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Status Log', self.on_log)
+        self.ui_menuitem_log = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
         self.ui_mainmenu_tools.addSeparator()
         self.ui_menuitem_settings = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
 

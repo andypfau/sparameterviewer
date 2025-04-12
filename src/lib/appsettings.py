@@ -1,5 +1,6 @@
 from logging import warning
 import os, json, logging
+from typing import Callable
 
 
 
@@ -14,14 +15,13 @@ class AppSettings:
 
     def __init__(self, format_version_str: str):
         from lib import AppPaths
-        self._dir = AppPaths.get_settings_dir(format_version_str)
         self._file = AppPaths.get_settings_path(format_version_str)
-        self._observers = []
+        self._observers: list[Callable[None,None]] = []
         self._inhbit_listeners = False
         self.load()
 
 
-    def attach(self, callback: "callable[None,None]"):
+    def attach(self, callback: Callable[None,None]):
         self._observers.append(callback)
     
 
@@ -67,7 +67,10 @@ class AppSettings:
             data = {}
             for n in self._defaults.keys():
                 data[n] = self.__dict__[n]
-            os.makedirs(self._dir, exist_ok=True) 
+            
+            dir = os.path.dirname(self._file)
+            os.makedirs(dir, exist_ok=True) 
+
             with open(self._file, 'w') as fp:
                 json.dump(data, fp)
         except Exception as ex:

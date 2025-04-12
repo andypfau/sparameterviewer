@@ -1,6 +1,8 @@
 from .log_dialog_ui import LogDialogUi
 from .log_handler import LogHandler
+from .simple_dialogs import okcancel_dialog
 from .settings import Settings
+from lib import AppPaths
 import logging
 
 
@@ -43,3 +45,9 @@ class LogDialog(LogDialogUi):
                 Settings.log_level = level
                 break
         self.update_log_text()
+
+
+    def on_clear(self):
+        if not okcancel_dialog('Clear Log', 'All log entries will be deleted.', f'You can still find the whole log in <{AppPaths.get_log_path()}>'):
+            return
+        LogHandler.inst().clear()
