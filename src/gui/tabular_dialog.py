@@ -3,7 +3,7 @@ from .simple_dialogs import save_file_dialog, error_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .settings import Settings
 from .help import show_help
-from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range
+from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process
 import dataclasses
 import io
 import pathlib
@@ -22,6 +22,9 @@ class TabularDatasetBase:
         raise NotImplementedError()
     @property
     def display_name(self) -> str:
+        raise NotImplementedError()
+    @property
+    def path(self) -> str:
         raise NotImplementedError()
     @property
     def xcol(self) -> str:
@@ -50,6 +53,9 @@ class TabularDataset(TabularDatasetBase):
     @property
     def display_name(self) -> str:
         return self.name
+    @property
+    def path(self) -> str:
+        return None
     @property
     def xcol(self) -> str:
         return self._xcol
@@ -86,6 +92,11 @@ class TabularDatasetSFile(TabularDataset):
     @property
     def display_name(self) -> str:
         return 'S-Param: ' + self.name
+    @property
+    def path(self) -> str:
+        if self.file.archive_path:
+            return self.file.archive_path
+        return self.file.file_path
     @property
     def xcol(self) -> str:
         return 'Frequency'
@@ -544,3 +555,21 @@ class TabularDialog(TabularDialogUi):
 
     def on_help(self):
         show_help('tools.md')
+    
+
+    def on_open_externally(self):
+
+        if not self.selected_dataset:
+            error_dialog('No File', 'No file selected.')
+            return
+        if not self.selected_dataset.path:
+            error_dialog('No File', 'The selected dataset is not a file.')
+            return
+
+        if not SettingsDialog.ensure_external_editor_is_set(self):
+            return
+
+        try:
+            start_process(Settings.ext_editor_cmd, self.selected_dataset.path)
+        except Exception as ex:
+            error_dialog('Open File Externally', 'Unable to open file with external editor.', str(ex))

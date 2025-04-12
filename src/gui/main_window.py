@@ -460,10 +460,8 @@ class MainWindow(MainWindowUi):
 
     def on_open_externally(self):
 
-        if not Settings.ext_editor_cmd:
-            info_dialog('Open File Externally', f'No external editor specified. Please select one.')
-            if not self.settings_dialog.let_user_select_ext_editor(self):
-                return
+        if not SettingsDialog.ensure_external_editor_is_set(self):
+            return
 
         files = [file.file_path for file in self.selected_files]
         try:

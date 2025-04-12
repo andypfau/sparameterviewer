@@ -1,4 +1,5 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
+from .simple_dialogs import info_dialog
 from .help import show_help
 from .settings import Settings
 from .simple_dialogs import open_file_dialog
@@ -73,7 +74,16 @@ class SettingsDialog(SettingsDialogUi):
 
 
     @staticmethod
-    def let_user_select_ext_editor(parent, binary_path: str = None) -> bool:
+    def ensure_external_editor_is_set(parent) -> bool:
+        if (not Settings.ext_editor_cmd) or (not pathlib.Path(Settings.ext_editor_cmd).exists()):
+            info_dialog('External Editor', f'No external editor specified. Please select one.')
+            if not SettingsDialog._let_user_select_ext_editor(parent):
+                return False
+        return True
+
+
+    @staticmethod
+    def _let_user_select_ext_editor(parent, binary_path: str = None) -> bool:
         if binary_path is None:
             binary_path = Settings.ext_editor_cmd
         if is_windows():
@@ -101,7 +111,7 @@ class SettingsDialog(SettingsDialogUi):
     
 
     def on_browse_ext_ed(self):
-        SettingsDialog.let_user_select_ext_editor(self, self.ui_ext_ed)
+        SettingsDialog._let_user_select_ext_editor(self, self.ui_ext_ed)
     
 
     def on_phase_unit_change(self):
