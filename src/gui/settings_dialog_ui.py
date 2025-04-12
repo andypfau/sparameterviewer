@@ -42,7 +42,6 @@ class SettingsDialogUi(QDialog):
         self._ui_csvsep_combo = QComboBox()
         self._ui_csvsep_model = QStandardItemModel()
         self._ui_csvsep_combo.setModel(self._ui_csvsep_model)
-        self._ui_csvsep_combo.currentIndexChanged.connect(self.on_csvsep_change)
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -59,7 +58,6 @@ class SettingsDialogUi(QDialog):
         self._ui_td_window_combo = QComboBox()
         self._ui_td_window_model = QStandardItemModel()
         self._ui_td_window_combo.setModel(self._ui_td_window_model)
-        self._ui_td_window_combo.currentTextChanged.connect(self.on_td_window_changed)
         self._ui_td_window_param_spinner = QDoubleSpinBox()
         self._ui_td_window_param_spinner.valueChanged.connect(self.on_td_window_param_changed)
         self._ui_td_window_param_spinner.setMinimum(-1e3)
@@ -67,7 +65,6 @@ class SettingsDialogUi(QDialog):
         self._ui_td_minsize_combo = QComboBox()
         self._ui_td_minsize_model = QStandardItemModel()
         self._ui_td_minsize_combo.setModel(self._ui_td_minsize_model)
-        self._ui_td_minsize_combo.currentTextChanged.connect(self.on_td_minsize_changed)
         self._ui_td_shift_spinner = QDoubleSpinBox()
         self._ui_td_shift_spinner.setMinimum(-1e9)
         self._ui_td_shift_spinner.setMaximum(+1e9)
@@ -145,6 +142,7 @@ class SettingsDialogUi(QDialog):
         self._ui_td_window_model.clear()
         for option in options:
             self._ui_td_window_model.appendRow(QStandardItem(option))
+        self._ui_td_window_combo.currentIndexChanged.connect(self.on_td_window_changed)
 
     
     @property
@@ -183,6 +181,7 @@ class SettingsDialogUi(QDialog):
         self._ui_td_minsize_model.clear()
         for option in options:
             self._ui_td_minsize_model.appendRow(QStandardItem(option))
+        self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
 
     
     @property
@@ -197,6 +196,7 @@ class SettingsDialogUi(QDialog):
         self._ui_csvsep_model.clear()
         for option in options:
             self._ui_csvsep_model.appendRow(QStandardItem(option))
+        self._ui_csvsep_combo.currentIndexChanged.connect(self.on_csvsep_change)
 
     
     @property
