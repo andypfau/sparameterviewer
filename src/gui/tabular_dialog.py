@@ -103,8 +103,8 @@ class TabularDatasetSFile(TabularDataset):
     @property
     def ycols(self) -> list[str]:
         cols = []
-        for ep in range(self.file.nw.nports):
-            for ip in range(self.file.nw.nports):
+        for ip in range(self.file.nw.nports):
+            for ep in range(self.file.nw.nports):
                 if ep>=10 or ip>=10:
                     cols.append(f'S{ep+1},{ip+1}')
                 else:
@@ -116,8 +116,8 @@ class TabularDatasetSFile(TabularDataset):
     @property
     def ycol_datas(self) -> list[np.ndarray]:
         result = []
-        for ep in range(self.file.nw.nports):
-            for ip in range(self.file.nw.nports):
+        for ip in range(self.file.nw.nports):
+            for ep in range(self.file.nw.nports):
                 result.append(self.file.nw.s[:,ep,ip])
         return result
     @property
