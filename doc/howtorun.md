@@ -5,16 +5,18 @@ Prerequisites
 -------------
 
 - Tested under Windows and under Fedora Linux.
-- Tested with Python 3.12.
-    - Might work with 3.7 or newer, but not tested.
+- Tested with Python 3.13.
+    - Might work with 3.7 or newer, but was not tested.
 - Python packet dependencies:
-    - Mandatory: `numpy scipy scikit-rf matplotlib PyQt6 openpyxl pillow pandas CITIfile`.
+    - Mandatory: `PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
     - Optional: `pyinstaller`: to compile a binary.
 
 Execution
 ---------
 
-Just run `python sparameterviewer.py`.
+Make sure the dependencies are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
+
+Then just run `python sparameterviewer.py`.
 
 Optionally, compile it, see next section.
 
@@ -23,13 +25,12 @@ Compiling
 
 Compiling is **optional**. You can just as well run the Python script.
 
+Make sure the dependencies, including `pyinstaller`, are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
+
 Compiling was successfully tested under Windows 10 and under Fedora 37 with the following command:
 - `cd src`
 - `pyinstaller pyinstaller.spec`
     - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean pyinstaller.spec`
-
-Under Fedora 37 at least, I had to fix matplitlib by coping the contents of `src/dist/sparamviewer/matplotlib/mpl-data/` to `share/matplotlib/mpl-data/`.
-
 
 File Type Association
 ---------------------
@@ -57,7 +58,5 @@ Uou have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...
 
 Development
 -----------
-
-To modify the UI, you need `pygubu-designer` 0.40.
 
 There are sample .json-files in the `res` folder for VS Code.
