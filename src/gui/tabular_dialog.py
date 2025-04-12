@@ -106,7 +106,7 @@ class TabularDatasetSFile(TabularDataset):
         result = []
         for ep in range(self.file.nw.nports):
             for ip in range(self.file.nw.nports):
-                result.append(self.file.nw.s[:,ep-1,ip-1])
+                result.append(self.file.nw.s[:,ep,ip])
         return result
     @property
     def is_spar(self) -> bool:
