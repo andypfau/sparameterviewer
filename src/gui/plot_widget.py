@@ -7,6 +7,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 import matplotlib.pyplot
 from typing import Optional, Callable
+import logging
 
 
 
@@ -19,11 +20,13 @@ class PlotWidget(QWidget):
     def __init__(self):
         super().__init__()
         self._mouse_event_handler = None
-        
+
+        style = Settings.plot_style or 'bmh'
         try:
-            matplotlib.pyplot.style.use(Settings.plot_style or 'bmh')
-        except:
-            pass
+            # can only be changed during start, otherwise the plot freaks out...
+            matplotlib.pyplot.style.use(style)
+        except Exception as ex:
+            logging.error(f'Unable to set plotstyle to "{style}" ({ex})')
 
         self._figure = Figure()
         self._canvas = FigureCanvasQTAgg(self._figure)
@@ -54,6 +57,11 @@ class PlotWidget(QWidget):
         self._figure.canvas.callbacks.connect('button_release_event', callback_release)
         self._figure.canvas.callbacks.connect('motion_notify_event', callback_move)
     
+
+    @staticmethod
+    def get_plot_styles() -> list[str]:
+        return list(matplotlib.pyplot.style.available)
+
 
     def set_cursor_event_handler(self, handler: Callable):
         pass

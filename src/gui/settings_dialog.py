@@ -3,6 +3,7 @@ from .simple_dialogs import info_dialog
 from .help import show_help
 from .settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator
 from .simple_dialogs import open_file_dialog
+from .plot_widget import PlotWidget
 from lib.utils import is_windows
 import pathlib
 import logging
@@ -51,6 +52,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_csvset_options(list(SettingsDialog.CSV_SEPARATOR_NAMES.values()))
         self.ui_set_td_window_options(list(SettingsDialog.WINDOW_NAMES.values()))
         self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZE_NAMES.values()))
+        self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -73,6 +75,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
             self.ui_ext_ed = Settings.ext_editor_cmd
+            self.ui_plotstyle = Settings.plot_style
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
@@ -175,3 +178,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_help(self):
         show_help('settings.md')
+
+
+    def on_plotstyle_change(self):
+        Settings.plot_style = self.ui_plotstyle

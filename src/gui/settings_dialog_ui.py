@@ -88,6 +88,7 @@ class SettingsDialogUi(QDialog):
         self._ui_extract_zip_combo.toggled.connect(self.on_zip_change)
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
+        self._ui_plot_style_combo = QComboBox()
         self._ui_exted_edit = QLineEdit()
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
@@ -97,6 +98,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_extract_zip_combo,
                 self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
+                        ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)', ...)],
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
                 ]), ...
             )
@@ -192,6 +194,13 @@ class SettingsDialogUi(QDialog):
             self._ui_csvsep_combo.addItem(option)
         self._ui_csvsep_combo.currentIndexChanged.connect(self.on_csvsep_change)
 
+
+    def ui_set_plotstysle_options(self, options: list[str]):
+        self._ui_plot_style_combo.clear()
+        for option in options:
+            self._ui_plot_style_combo.addItem(option)
+        self._ui_plot_style_combo.currentIndexChanged.connect(self.on_plotstyle_change)
+
     
     @property
     def ui_comment_expr(self) -> bool:
@@ -215,6 +224,14 @@ class SettingsDialogUi(QDialog):
     @ui_ext_ed.setter
     def ui_ext_ed(self, value: str):
         self._ui_exted_edit.setText(value)
+
+    
+    @property
+    def ui_plotstyle(self) -> bool:
+        return self._ui_plot_style_combo.currentText()
+    @ui_plotstyle.setter
+    def ui_plotstyle(self, value: bool):
+        self._ui_plot_style_combo.setCurrentText(value)
 
 
     def ui_indicate_ext_ed_error(self, indicate_error: bool):
@@ -245,4 +262,6 @@ class SettingsDialogUi(QDialog):
     def on_browse_ext_ed(self):
         pass
     def on_help(self):
+        pass
+    def on_plotstyle_change(self):
         pass
