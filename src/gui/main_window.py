@@ -1,6 +1,6 @@
 from .main_window_ui import MainWindowUi
 from .log_handler import LogHandler
-from .settings import Settings
+from .settings import Settings, ParamMode, PlotUnit, PlotUnit2
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
@@ -44,42 +44,42 @@ class MainWindow(MainWindowUi):
 
     MAX_DIRECTORY_HISTORY_SIZE = 10
 
+    MODE_NAMES = {
+        ParamMode.All: 'All S-Parameters',
+        ParamMode.AllFwd: 'All S-Parameters (reciprocal)',
+        ParamMode.IL: 'Insertion Loss',
+        ParamMode.IlFwd: 'Insertion Loss (reciprocal)',
+        ParamMode.S21: 'Insertion Loss S21',
+        ParamMode.RL: 'Return Loss / Impedance',
+        ParamMode.S11: 'Return Loss S11',
+        ParamMode.S22: 'Return Loss S22',
+        ParamMode.S33: 'Return Loss S33',
+        ParamMode.S44: 'Return Loss S44',
+        ParamMode.Expr: 'Expression-Based',
+    }
 
-    class Mode(enum.StrEnum):
-        All = 'All S-Parameters'
-        AllFwd = 'All S-Parameters (reciprocal)'
-        IL = 'Insertion Loss'
-        IlFwd = 'Insertion Loss (reciprocal)'
-        S21 = 'Insertion Loss S21'
-        RL = 'Return Loss / Impedance'
-        S11 = 'Return Loss S11'
-        S22 = 'Return Loss S22'
-        S33 = 'Return Loss S33'
-        S44 = 'Return Loss S44'
-        Expr = 'Expression-Based'
+    UNIT_NAMES = {
+        PlotUnit.Off: '—',
+        PlotUnit.dB: 'dB',
+        PlotUnit.LogMag: 'Log Mag',
+        PlotUnit.LinMag: 'Lin Mag',
+        PlotUnit.ReIm: 'Real+Imag',
+        PlotUnit.Real: 'Real',
+        PlotUnit.Imag: 'Imag',
+        PlotUnit.ReImPolar: 'Polar',
+        PlotUnit.SmithY: 'Smith (Z)',
+        PlotUnit.SmithZ: 'Smith (Y)',
+        PlotUnit.Impulse: 'Impulse Resp.',
+        PlotUnit.Step: 'Step Resp.',
+    }
 
-
-    class Unit(enum.StrEnum):
-        Off = '—'
-        dB = 'dB'
-        LinMag = 'Lin Mag'
-        LogMag = 'Log Mag'
-        ReIm = 'Real+Imag'
-        Real = 'Real'
-        Imag = 'Imag'
-        ReImPolar = 'Polar'
-        SmithY = 'Smith (Z)'
-        SmithZ = 'Smith (Y)'
-        Impulse = 'Impulse Resp.'
-        Step = 'Step Resp.'
-
-
-    class Unit2(enum.StrEnum):
-        Off = '—'
-        Phase = 'Phase'
-        Unwrap = 'Unwrapped'
-        LinRem = 'Lin. Removed'
-        GDelay = 'Group Delay'
+    UNIT2_NAMES = {
+        PlotUnit2.Off: '—',
+        PlotUnit2.Phase: 'Phase',
+        PlotUnit2.Unwrap: 'Unwrapped',
+        PlotUnit2.LinRem: 'Lin. Removed',
+        PlotUnit2.GDelay: 'Group Delay',
+    }
 
 
     def __init__(self, filenames: list[str]):
@@ -97,9 +97,9 @@ class MainWindow(MainWindowUi):
         # create plot
         self.plot: PlotHelper = None
 
-        self.ui_set_modes_list([str(mode) for mode in MainWindow.Mode])
-        self.ui_set_units_list([str(mode) for mode in MainWindow.Unit])
-        self.ui_set_units2_list([str(mode) for mode in MainWindow.Unit2])
+        self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
+        self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
+        self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
 
         ## TODO: mouse events
@@ -119,9 +119,9 @@ class MainWindow(MainWindowUi):
         # load settings
         def load_settings():
             try:
-                self.ui_mode = str(MainWindow.Mode(Settings.plot_mode))
-                self.ui_unit = str(MainWindow.Unit(Settings.plot_unit))
-                self.ui_unit2 = str(MainWindow.Unit2(Settings.plot_unit2))
+                self.ui_mode = MainWindow.MODE_NAMES[Settings.plot_mode]
+                self.ui_unit = MainWindow.UNIT_NAMES[Settings.plot_unit]
+                self.ui_unit2 = MainWindow.UNIT2_NAMES[Settings.plot_unit2]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
@@ -194,37 +194,43 @@ class MainWindow(MainWindowUi):
 
 
     def on_select_mode(self):
-        Settings.plot_mode = self.ui_mode
-        self.update_plot()
+        for mode,name in MainWindow.MODE_NAMES.items():
+            if name==self.ui_mode:
+                Settings.plot_mode = mode
+                self.update_plot()
+                return
 
 
     def on_select_unit(self):
-        changed = Settings.plot_unit != self.ui_unit
-        Settings.plot_unit = self.ui_unit
-        if changed:
-            # different kind of chart -> axes scale is probably no longer valid
-            self.invalidate_axes_lock(update=False)
+        for unit,name in MainWindow.UNIT_NAMES.items():
+            if name==self.ui_unit:
+                Settings.plot_unit = unit
+                
+                # different kind of chart -> axes scale is probably no longer valid
+                self.invalidate_axes_lock(update=False)
 
-            # only allow phase in specific combinations
-            if Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]:
-                self.ui_unit2 = MainWindow.Unit2.Off
+                # only allow phase in specific combinations
+                if Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]:
+                    self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
+
+                self.update_plot()
 
         self.update_plot()
     
 
     def on_select_unit2(self):
-        if Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]:
-            self.ui_unit2 = MainWindow.Unit2.Off
-            return # no phase allowed
+        for unit,name in MainWindow.UNIT2_NAMES.items():
+            if name==self.ui_unit2:
+                Settings.plot_unit2 = unit
+                
+                # different kind of chart -> axes scale is probably no longer valid
+                self.invalidate_axes_lock(update=False)
 
-        changed = Settings.plot_unit2 != self.ui_unit2
-        Settings.plot_unit2 = self.ui_unit2
+                if Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]:
+                    self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
+                    return # no phase allowed
 
-        if changed:
-            # different kind of chart -> axes scale is probably no longer valid
-            self.invalidate_axes_lock(update=False)
-
-        self.update_plot()
+                self.update_plot()
     
 
     def on_show_filter(self):
@@ -612,7 +618,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_update_expressions(self):
-        self.ui_mode = MainWindow.Mode.Expr
+        self.ui_mode = ParamMode.Expr
         self.update_plot()
 
     
@@ -627,7 +633,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_update_button(self):
-        self.ui_mode = MainWindow.Mode.Expr
+        self.ui_mode = ParamMode.Expr
         self.update_plot()
     
     
@@ -757,35 +763,35 @@ class MainWindow(MainWindowUi):
             self.show_error(None)              
             n_log_entries_before = len(LogHandler.inst().get_messages(logging.WARNING))
 
-            data_expr_based = Settings.plot_mode==MainWindow.Mode.Expr
+            data_expr_based = Settings.plot_mode==ParamMode.Expr
 
-            enable_1st_y = (Settings.plot_unit != MainWindow.Unit.Off)
-            enable_2nd_y = (Settings.plot_unit2 != MainWindow.Unit2.Off)
-            if (Settings.plot_unit not in [MainWindow.Unit.Off, MainWindow.Unit.dB, MainWindow.Unit.LinMag, MainWindow.Unit.LogMag]):
+            enable_1st_y = (Settings.plot_unit != PlotUnit.Off)
+            enable_2nd_y = (Settings.plot_unit2 != PlotUnit2.Off)
+            if (Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]):
                 enable_2nd_y = False
             dual_y_axis = enable_1st_y and enable_2nd_y
 
-            qty_db = (Settings.plot_unit == MainWindow.Unit.dB)
-            qty_lin_mag = (Settings.plot_unit == MainWindow.Unit.LinMag)
-            qty_log_mag = (Settings.plot_unit == MainWindow.Unit.LogMag)
-            qty_re = (Settings.plot_unit in [MainWindow.Unit.ReIm, MainWindow.Unit.Real])
-            qty_im = (Settings.plot_unit in [MainWindow.Unit.ReIm, MainWindow.Unit.Imag])
+            qty_db = (Settings.plot_unit == PlotUnit.dB)
+            qty_lin_mag = (Settings.plot_unit == PlotUnit.LinMag)
+            qty_log_mag = (Settings.plot_unit == PlotUnit.LogMag)
+            qty_re = (Settings.plot_unit in [PlotUnit.ReIm, PlotUnit.Real])
+            qty_im = (Settings.plot_unit in [PlotUnit.ReIm, PlotUnit.Imag])
             
-            polar = (Settings.plot_unit == MainWindow.Unit.ReImPolar)
-            smith = (Settings.plot_unit in [MainWindow.Unit.SmithZ, MainWindow.Unit.SmithY])
-            timedomain = (Settings.plot_unit in [MainWindow.Unit.Impulse, MainWindow.Unit.Step])
-            stepresponse = (Settings.plot_unit == MainWindow.Unit.Step)
+            polar = (Settings.plot_unit == PlotUnit.ReImPolar)
+            smith = (Settings.plot_unit in [PlotUnit.SmithZ, PlotUnit.SmithY])
+            timedomain = (Settings.plot_unit in [PlotUnit.Impulse, PlotUnit.Step])
+            stepresponse = (Settings.plot_unit == PlotUnit.Step)
             tdr_z = (Settings.tdr_impedance)
-            if Settings.plot_unit == MainWindow.Unit.SmithZ:
+            if Settings.plot_unit == PlotUnit.SmithZ:
                 smith_type = 'z'
             else:
                 smith_type = 'y'
             
             if enable_2nd_y:
-                qty_phase = (Settings.plot_unit2 in [MainWindow.Unit2.Phase, MainWindow.Unit2.Unwrap, MainWindow.Unit2.LinRem])
-                unwrap_phase = (Settings.plot_unit2 == MainWindow.Unit2.Unwrap)
-                remove_lin_phase = (Settings.plot_unit2 == MainWindow.Unit2.LinRem)
-                qty_group_delay = (Settings.plot_unit2 == MainWindow.Unit2.GDelay)
+                qty_phase = (Settings.plot_unit2 in [PlotUnit2.Phase, PlotUnit2.Unwrap, PlotUnit2.LinRem])
+                unwrap_phase = (Settings.plot_unit2 == PlotUnit2.Unwrap)
+                remove_lin_phase = (Settings.plot_unit2 == PlotUnit2.LinRem)
+                qty_group_delay = (Settings.plot_unit2 == PlotUnit2.GDelay)
             else:
                 qty_phase = False
                 unwrap_phase = False
@@ -897,27 +903,27 @@ class MainWindow(MainWindowUi):
 
             else:
 
-                if Settings.plot_mode == MainWindow.Mode.All:
+                if Settings.plot_mode == ParamMode.All:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == MainWindow.Mode.AllFwd:
+                elif Settings.plot_mode == ParamMode.AllFwd:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == MainWindow.Mode.IL:
+                elif Settings.plot_mode == ParamMode.IL:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.IlFwd:
+                elif Settings.plot_mode == ParamMode.IlFwd:
                     self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.RL:
+                elif Settings.plot_mode == ParamMode.RL:
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.S21:
+                elif Settings.plot_mode == ParamMode.S21:
                     self.generated_expressions += 'sel_nws().s(2,1).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.S11:
+                elif Settings.plot_mode == ParamMode.S11:
                     self.generated_expressions += 'sel_nws().s(1,1).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.S22:
+                elif Settings.plot_mode == ParamMode.S22:
                     self.generated_expressions += 'sel_nws().s(2,2).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.S33:
+                elif Settings.plot_mode == ParamMode.S33:
                     self.generated_expressions += 'sel_nws().s(3,3).plot()'
-                elif Settings.plot_mode == MainWindow.Mode.S44:
+                elif Settings.plot_mode == ParamMode.S44:
                     self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
                 try:

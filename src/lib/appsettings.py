@@ -49,12 +49,21 @@ class AppSettings:
         try:
             with open(self._file, 'r') as fp:
                 data = json.load(fp)
-            for n in self._defaults.keys():
+            for setting_name in self._defaults.keys():
+                
+                initial_value = self._defaults[setting_name]
                 try:
-                    self.__dict__[n] = data[n]
+                    loaded_value = data[setting_name]
+                    expected_type = type(self._defaults[setting_name])
+                    try:
+                        initial_value = expected_type(loaded_value)
+                    except (ValueError, TypeError) as ex:
+                        logging.warning(f'Casting <{loaded_value}> to {expected_type} failed, using default <{initial_value}> ({ex})')
                 except Exception as ex:
-                    logging.warning(f'Unable to load setting <{n}>, using default ({ex})')
-                    self.__dict__[n] = self._defaults[n]
+                    logging.warning(f'Unable to load setting <{setting_name}>, using default <{initial_value}> ({ex})')
+                
+                self.__dict__[setting_name] = initial_value
+                
         except Exception as ex:
             logging.warning(f'Unable to load settings ({ex})')
             self.reset()
