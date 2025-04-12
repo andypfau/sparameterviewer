@@ -2,7 +2,7 @@ from .tabular_dialog_ui import TabularDialogUi
 from .simple_dialogs import save_file_dialog, error_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .settings import Settings
-from lib import SParamFile, PlotData, Si, AppGlobal, Clipboard, parse_si_range, format_si_range
+from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range
 import dataclasses
 import io
 import pathlib
@@ -326,7 +326,7 @@ class TabularDialog(TabularDialogUi):
         writer.close()
     
 
-    def get_filters(self):
+    def get_filters(self) -> tuple[tuple[float,float],str]:
         
         def parse_cols(s: str):
             s = s.strip()
@@ -363,7 +363,7 @@ class TabularDialog(TabularDialogUi):
             for col in filter_cols:
                 found = False
                 for colname,coldata in zip(ycols, ycol_datas):
-                    if colname == col:
+                    if colname.casefold() == col.casefold():
                         found = True
                         ycols_filtered.append(colname)
                         ycol_datas_filtered.append(coldata)

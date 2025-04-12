@@ -1,12 +1,12 @@
 from .settings import Settings
-from lib import is_windows, AppGlobal
+from lib import is_windows, AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import logging
 import pathlib
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 
 
@@ -21,7 +21,7 @@ class QtHelper:
             images_to_try = ['sparamviewer.png', 'sparamviewer.xbm']
         for image in images_to_try:
             try:
-                icon_path = pathlib.Path(AppGlobal.get_resource_dir()) / image
+                icon_path = pathlib.Path(AppPaths.get_resource_dir()) / image
                 dialog.setWindowIcon(QtGui.QIcon(str(icon_path)))
                 return
             except Exception as ex:
@@ -30,7 +30,7 @@ class QtHelper:
 
 
     @staticmethod
-    def make_label(text: str, *, font: Union[QFont,None] = None, stretch: bool = False) -> QLabel:
+    def make_label(text: str, *, font: Optional[QFont] = None, stretch: bool = False) -> QLabel:
         label = QLabel()
         label.setText(text)
         if font:

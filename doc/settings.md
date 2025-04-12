@@ -19,7 +19,6 @@ See [Time-Domain Transformation](main.md) to learn more about the impact of thes
 Theme
 -----
 
-- GUI: Select a [Tk](https://tkdocs.com/) theme for the graphical user interface.
 - Plot: Select a [matplotlib](https://matplotlib.org/stable/users) theme for the plots.
 
 Miscellaneous

@@ -1,6 +1,6 @@
 from .qt_helper import QtHelper
 from info import Info
-from lib import AppGlobal
+from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -25,7 +25,7 @@ class AboutDialogUi(QDialog):
         self.setWindowFlags(Qt.WindowType.Dialog)
 
         hlayout = QHBoxLayout()
-        image_path = pathlib.Path(AppGlobal.get_resource_dir()) / 'sparamviewer.png'
+        image_path = pathlib.Path(AppPaths.get_resource_dir()) / 'sparamviewer.png'
         hlayout.addSpacing(10)
         hlayout.addWidget(QtHelper.make_image(str(image_path), 'Logo'))
         hlayout.addSpacing(20)

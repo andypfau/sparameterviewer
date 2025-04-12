@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pyqt6 = "*"
 numpy = "*"
 scipy = "*"
 scikit-rf = "*"
@@ -12,8 +13,6 @@ openpyxl = "*"
 pandas = "*"
 citifile = "*"
 pyinstaller = "*"
-pyqt6 = "*"
-appdirs = "*"
 
 [dev-packages]
 

@@ -8,10 +8,8 @@ Prerequisites
 - Tested with Python 3.12.
     - Might work with 3.7 or newer, but not tested.
 - Python packet dependencies:
-    - Mandatory: `numpy scipy scikit-rf matplotlib PyQt6 openpyxl appdirs pillow pandas CITIfile`.
-    - Optional:
-        - `copykitten`: to copy images to clipboard.
-        - `pyinstaller`: to compile a binary.
+    - Mandatory: `numpy scipy scikit-rf matplotlib PyQt6 openpyxl pillow pandas CITIfile`.
+    - Optional: `pyinstaller`: to compile a binary.
 
 Execution
 ---------

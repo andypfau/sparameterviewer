@@ -18,10 +18,8 @@ class SParamViewerAppSettings(AppSettings):
     tdr_impedance: bool = False
     tdr_minsize: int = 1024*8
     log_level: int = logging.WARNING
-    mainwin_geom: str = None
-    ttk_theme: str = ''
     ext_editor_cmd: str = ''
-    plot_style: str = None
+    plot_style: str = 'bmh'
     phase_unit: str = 'deg'
     extract_zip: bool = False
     plot_mark_points: bool = False
@@ -32,8 +30,4 @@ class SParamViewerAppSettings(AppSettings):
     search_regex: bool = False
 
 
-Settings = SParamViewerAppSettings(
-    appname='apfau.de S-Parameter Viewer',
-    author='apfau.de',
-    version='0.15'
-)
+Settings = SParamViewerAppSettings(format_version_str='0.15')

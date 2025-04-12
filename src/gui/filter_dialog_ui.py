@@ -1,6 +1,6 @@
 from .qt_helper import QtHelper
 from info import Info
-from lib import AppGlobal
+from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *

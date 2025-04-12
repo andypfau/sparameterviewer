@@ -29,10 +29,6 @@ skrf_data_dir = os.path.join(os.path.dirname(rf.__file__), 'data/*')
 datas.extend([(skrf_data_dir, 'skrf/data/')])
 
 
-# Fix for PIL, see <https://stackoverflow.com/a/46720070>
-hiddenimports.extend(['PIL._tkinter_finder'])
-
-
 # OS-specific
 if os.name == 'nt':
     hiddenimports.extend(['win32clipboard'])

@@ -7,7 +7,7 @@ from gui.main_window import MainWindow
 from gui.log_handler import LogHandler
 from gui.settings import Settings
 from gui.qt_helper import QtHelper
-from lib import AppGlobal
+from lib import AppPaths, is_running_from_binary
 
 
 if __name__ == '__main__':
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     try:
         # add a second logger that logs critical errors to file
-        logToFile = logging.FileHandler(os.path.join(AppGlobal.get_log_dir(), 'sparamviewer.log'))
+        logToFile = logging.FileHandler(os.path.join(AppPaths.get_log_dir(), 'sparamviewer.log'))
         logToFile.setFormatter(logging.Formatter(LOG_FORMAT))
         logToFile.setLevel(logging.ERROR)
         logging.getLogger().addHandler(logToFile)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         pass # ignore
 
     # splashscreen (pyinstaller only)
-    if AppGlobal.is_running_from_binary():
+    if is_running_from_binary():
         try:
             import pyi_splash
             pyi_splash.close()

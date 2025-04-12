@@ -1,5 +1,6 @@
 from .qt_helper import QtHelper
-from lib import AppGlobal
+from .plot_widget import PlotWidget
+from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -13,9 +14,6 @@ import os
 from typing import Callable, Union
 
 
-
-class MyNavigationToolbar(NavigationToolbar2QT):
-    toolitems = [toolitem for toolitem in NavigationToolbar2QT.toolitems if toolitem[0] in ('Home', 'Pan', 'Zoom')]
 
 
 class Mode(enum.IntEnum):
@@ -101,16 +99,8 @@ class MainWindowUi(QMainWindow):
         self.setCentralWidget(splitter)
         self._build_main_menu()
 
-        plot_layout = QVBoxLayout()
-        self.ui_figure = Figure()
-        self.ui_canvas = FigureCanvasQTAgg(self.ui_figure)
-        plot_layout.addWidget(self.ui_canvas)
-        plot_toolbar = MyNavigationToolbar(self.ui_canvas, self)
-        plot_layout.addWidget(plot_toolbar)
-        plot_layout_widget = QWidget()
-        plot_layout_widget.setLayout(plot_layout)
-        plot_layout_widget.setMinimumSize(200, 150)
-        splitter.addWidget(plot_layout_widget)
+        self._ui_plot = PlotWidget()
+        splitter.addWidget(self._ui_plot)
         
         bottom_widget = QWidget()
         bottom_widget_layout = QVBoxLayout()
@@ -244,6 +234,11 @@ class MainWindowUi(QMainWindow):
     
     def ui_update_window_title(self, title: str):
         self.setWindowTitle(title)
+    
+
+    @property
+    def ui_plot(self) -> PlotWidget:
+        return self._ui_plot
     
 
     @property

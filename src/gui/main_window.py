@@ -13,7 +13,7 @@ from .about_dialog import AboutDialog
 from .simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from lib.si import SiFmt
 from lib import Clipboard
-from lib import AppGlobal
+from lib import AppPaths
 from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process
 from lib import Si
 from lib import SParamFile
@@ -22,7 +22,6 @@ from lib import ExpressionParser
 from info import Info
 
 import pathlib
-import appdirs
 import math
 import copy
 import logging
@@ -60,7 +59,6 @@ class MainWindow(MainWindowUi):
         self._log_dialog: LogDialog = None
             
         # create plot
-        pyplot.style.use(Settings.plot_style if Settings.plot_style is not None else 'bmh')
         self.plot: PlotHelper = None
 
         ## TODO: mouse events
@@ -123,7 +121,7 @@ class MainWindow(MainWindowUi):
     
     def initially_load_files_or_directory(self, filenames_or_directory: "list[str]"):
         if len(filenames_or_directory)<1:
-            filenames_or_directory = [appdirs.user_data_dir()]
+            filenames_or_directory = [AppPaths.get_default_file_dir()]
 
         is_dir = os.path.isdir(filenames_or_directory[0])
         if is_dir:
@@ -358,7 +356,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_open_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        initial_dir = self.directories[0] if len(self.directories)>0 else AppPaths.get_default_file_dir()
         dir = open_directory_dialog(self, title='Open Directory', initial_dir=initial_dir)
         if not dir:
             return
@@ -370,7 +368,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_append_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else appdirs.user_data_dir()
+        initial_dir = self.directories[0] if len(self.directories)>0 else AppPaths.get_default_file_dir()
         dir = open_directory_dialog(self, title='Append Directory', initial_dir=initial_dir)
         if not dir:
             return
@@ -398,7 +396,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_help(self):
-        AppGlobal.open_help()
+        AppPaths.open_help()
     
 
     def on_about(self):
@@ -690,7 +688,7 @@ class MainWindow(MainWindowUi):
                     except:
                         pass
             
-            self.ui_figure.clf()
+            self.ui_plot.clear()
             self.generated_expressions = ''
             self.plot = None
 
@@ -735,10 +733,10 @@ class MainWindow(MainWindowUi):
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
             if polar:
-                self.plot = PlotHelper(self.ui_figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
+                self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(fig=self.ui_figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(fig=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
             else:
                 y2q, y2f = None, None
                 if timedomain:
@@ -764,7 +762,7 @@ class MainWindow(MainWindowUi):
                             y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
                     elif qty_group_delay:
                         y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
-                self.plot = PlotHelper(self.ui_figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
+                self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
 
             def add_to_plot(f, sp, z0, name, style=None):
@@ -865,7 +863,7 @@ class MainWindow(MainWindowUi):
                     self.show_error(None)              
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
-                    self.ui_figure.clf()
+                    self.ui_plot.clear()
                     self.show_error(f'ERROR: {ex}')
                 
                 touched_files = selected_files
@@ -887,7 +885,7 @@ class MainWindow(MainWindowUi):
                 if self.ui_lock_y and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
 
-            self.ui_canvas.draw()
+            self.ui_plot.draw()
 
             ## TODO: cursor dialog
             #if self.cursor_dialog is not None:
@@ -897,6 +895,6 @@ class MainWindow(MainWindowUi):
             self.plot_axes_are_valid = True
 
         except Exception as ex:
-            self.ui_figure.clf()
+            self.ui_plot.clear()
             self.show_error(f'Plotting failed', ex)
 

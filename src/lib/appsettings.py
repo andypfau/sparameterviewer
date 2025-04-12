@@ -1,5 +1,5 @@
 from logging import warning
-import os, appdirs, json, logging
+import os, json, logging
 
 
 
@@ -12,9 +12,10 @@ class AppSettings:
         return obj
 
 
-    def __init__(self, appname, author, version):
-        self._dir = appdirs.user_config_dir(appname, author, version)
-        self._file = os.path.join(self._dir, 'app_settings.json')
+    def __init__(self, format_version_str: str):
+        from lib import AppPaths
+        self._dir = AppPaths.get_settings_dir(format_version_str)
+        self._file = AppPaths.get_settings_path(format_version_str)
         self._observers = []
         self._inhbit_listeners = False
         self.load()

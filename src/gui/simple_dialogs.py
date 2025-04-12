@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMessageBox, QFileDialog
 import logging
-from typing import Union
+from typing import Optional
 import pathlib
 
 
@@ -102,7 +102,7 @@ def open_files_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple
     return _open_file_dialog(parent, title=title, filetypes=filetypes, allow_multiple=True, initial_dir=initial_dir, initial_filename=initial_filename)
 
 
-def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None, initial_filename = None) -> Union[str,None]:
+def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[str,str]] = None, initial_dir: str = None, initial_filename = None) -> Optional[str]:
     """ filetypes: e.g. [('Text Files','.txt'),('All Files','*')]"""
 
     dialog = QFileDialog(parent)
@@ -123,7 +123,7 @@ def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[
     return dialog.selectedFiles()[0]
 
 
-def open_directory_dialog(parent, *, title: str = 'Open Directory', initial_dir: str = None) -> Union[str,None]:
+def open_directory_dialog(parent, *, title: str = 'Open Directory', initial_dir: str = None) -> Optional[str]:
 
     dialog = QFileDialog(parent)
     dialog.setFileMode(QFileDialog.FileMode.Directory)

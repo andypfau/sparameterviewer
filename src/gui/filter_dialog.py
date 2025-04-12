@@ -1,6 +1,6 @@
 from .filter_dialog_ui import FilterDialogUi
 from .settings import Settings
-from typing import Union
+from typing import Optional
 import re
 
 
@@ -12,7 +12,7 @@ class FilterDialog(FilterDialogUi):
         self._matched_files: list[str] = []
     
 
-    def show_modal_dialog(self, files: list[str]) -> Union[list[str]|None]:
+    def show_modal_dialog(self, files: list[str]) -> Optional[list[str]]:
         self._files = files
         self._matched_files = []
         self.ui_set_files(files)

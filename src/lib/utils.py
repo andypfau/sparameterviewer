@@ -1,4 +1,5 @@
 import os
+import sys
 import string
 import subprocess
 import numpy as np
@@ -58,6 +59,16 @@ def is_windows():
     return True if os.name=='nt' else False
 
 
+def is_running_from_binary() -> bool:
+    try:
+        # see <https://pyinstaller.org/en/stable/runtime-information.html>
+        if getattr(sys, 'frozen', False):
+            return True
+    except:
+        pass # ignore
+    return False
+
+
 def sanitize_filename(filename: str) -> str:
     VALID_CHARS = '+-_' + string.ascii_letters + string.digits
     sanitized = [char for char in filename if char in VALID_CHARS]
@@ -68,11 +79,11 @@ def open_file_in_default_viewer(filename: str):
     if is_windows():
         os.startfile(filename)
     else:
-        subprocess.run(['xdg-open', filename], check=True)
+        start_process('xdg-open', filename)
 
 
 def start_process(binary_path: str, *args):
-    subprocess.run([binary_path, *args])
+    subprocess.Popen([binary_path, *args], start_new_session=True)
 
 
 def v2db(v):
