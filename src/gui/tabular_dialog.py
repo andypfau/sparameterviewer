@@ -2,6 +2,7 @@ from .tabular_dialog_ui import TabularDialogUi
 from .simple_dialogs import save_file_dialog, error_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .settings import Settings
+from .help import show_help
 from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range
 import dataclasses
 import io
@@ -539,3 +540,7 @@ class TabularDialog(TabularDialogUi):
 
     def on_settings(self):
        SettingsDialog(self).show_modal_dialog(SettingsTab.Format)
+
+
+    def on_help(self):
+        show_help('tools.md')

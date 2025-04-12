@@ -1,4 +1,5 @@
 from .rl_dialog_ui import RlDialogUi
+from .help import show_help
 from lib import SParamFile, BodeFano, Si, parse_si_range, format_si_range, v2db
 
 import logging
@@ -115,3 +116,7 @@ class RlDialog(RlDialogUi):
 
     def on_plottype_changed(self):
         self.update()
+
+
+    def on_help(self):
+        show_help('tools.md')

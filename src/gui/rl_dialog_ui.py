@@ -23,6 +23,9 @@ class RlDialogUi(QDialog):
         self.setModal(True)
         self.setSizeGripEnabled(True)
 
+        help = QShortcut(QKeySequence('F1'), self)
+        help.activated.connect(self.on_help)
+
         group_file = QGroupBox('File and Port')
         self._ui_file_combo = QComboBox()
         self._ui_file_model = QStandardItemModel()
@@ -154,4 +157,6 @@ class RlDialogUi(QDialog):
     def on_tgtrange_changed(self):
         pass
     def on_plottype_changed(self):
+        pass
+    def on_help(self):
         pass

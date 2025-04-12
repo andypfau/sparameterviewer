@@ -1,4 +1,5 @@
 from .cursor_dialog_ui import CursorDialogUi
+from .help import show_help
 from typing import Callable
 from lib import PlotData
 
@@ -113,3 +114,7 @@ class CursorDialog(CursorDialogUi):
 
     def on_syncx_changed(self):
         self.update()
+
+
+    def on_help(self):
+        show_help('tools.md')

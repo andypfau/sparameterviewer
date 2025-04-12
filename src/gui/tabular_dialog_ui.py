@@ -53,6 +53,9 @@ class TabularDialogUi(QDialog):
         self.setModal(True)
         self.setSizeGripEnabled(True)
 
+        help = QShortcut(QKeySequence('F1'), self)
+        help.activated.connect(self.on_help)
+
         main_layout = QVBoxLayout()
         
         self._ui_main_menu = QMenuBar()
@@ -212,4 +215,6 @@ class TabularDialogUi(QDialog):
     def on_copy_pandas(self):
         pass
     def on_settings(self):
+        pass
+    def on_help(self):
         pass

@@ -28,6 +28,9 @@ class SettingsDialogUi(QDialog):
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
 
+        help = QShortcut(QKeySequence('F1'), self)
+        help.activated.connect(self.on_help)
+
         main_layout = QHBoxLayout()
         self._ui_tabs = QTabWidget()
         main_layout.addWidget(self._ui_tabs)
@@ -249,4 +252,6 @@ class SettingsDialogUi(QDialog):
     def on_ext_ed_change(self):
         pass
     def on_browse_ext_ed(self):
+        pass
+    def on_help(self):
         pass

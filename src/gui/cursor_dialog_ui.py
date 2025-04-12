@@ -21,6 +21,9 @@ class CursorDialogUi(QDialog):
         QtHelper.set_dialog_icon(self)
         self.setSizeGripEnabled(True)
 
+        help = QShortcut(QKeySequence('F1'), self)
+        help.activated.connect(self.on_help)
+
         option_group = QGroupBox('Selection')
         self._ui_cursor1_radio = QRadioButton('Cursor 1')
         self._ui_cursor1_radio.toggled.connect(self.on_cursor_select)
@@ -145,4 +148,6 @@ class CursorDialogUi(QDialog):
     def on_auto_trace_changed(self):
         pass
     def on_syncx_changed(self):
+        pass
+    def on_help(self):
         pass
