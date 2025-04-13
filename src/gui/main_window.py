@@ -425,6 +425,10 @@ class MainWindow(MainWindowUi):
         self.log_dialog.show_dialog()
     
     
+    def on_statusbar_click(self):
+        self.log_dialog.show_dialog()
+
+    
     def on_settings(self):
         SettingsDialog(self).show_modal_dialog()
     

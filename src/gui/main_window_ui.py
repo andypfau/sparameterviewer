@@ -1,5 +1,6 @@
 from .qt_helper import QtHelper
 from .plot_widget import PlotWidget
+from .statusbar import StatusBar
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -125,7 +126,8 @@ class MainWindowUi(QMainWindow):
         cursor_layout.setColumnStretch(5, 4)
         cursors_tab.setLayout(cursor_layout)
 
-        self._ui_status_bar = QStatusBar()
+        self._ui_status_bar = StatusBar()
+        self._ui_status_bar.clicked.connect(self.on_statusbar_click)
 
         splitter_top.setLayout(QtHelper.layout_v(self._ui_plot))
         splitter_bottom.setLayout(QtHelper.layout_v(
@@ -548,4 +550,6 @@ class MainWindowUi(QMainWindow):
     def on_cursor_timer(self):
         pass
     def on_mark_datapoints_changed(self):
+        pass
+    def on_statusbar_click(self):
         pass
