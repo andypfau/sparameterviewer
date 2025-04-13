@@ -172,6 +172,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_shorten_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
+        # TODO: mark data points
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_lock_x: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
         self._ui_menuitem_lock_y: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
