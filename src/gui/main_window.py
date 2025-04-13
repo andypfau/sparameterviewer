@@ -173,6 +173,7 @@ class MainWindow(MainWindowUi):
         for mode,name in MainWindow.MODE_NAMES.items():
             if name==self.ui_mode:
                 Settings.plot_mode = mode
+                self.prepare_cursors()
                 self.update_plot()
                 return
 
@@ -189,9 +190,8 @@ class MainWindow(MainWindowUi):
                 if Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]:
                     self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
 
+                self.prepare_cursors()
                 self.update_plot()
-
-        self.update_plot()
     
 
     def on_select_unit2(self):
@@ -206,6 +206,7 @@ class MainWindow(MainWindowUi):
                     self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
                     return # no phase allowed
 
+                self.prepare_cursors()
                 self.update_plot()
     
 
@@ -593,7 +594,7 @@ class MainWindow(MainWindowUi):
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        self.ui_mode = ParamMode.Expr
+        MainWindow.MODE_NAMES[ParamMode.Expr]
         self.update_plot()
 
     
@@ -610,7 +611,7 @@ class MainWindow(MainWindowUi):
     def on_update_button(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        self.ui_mode = ParamMode.Expr
+        self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
         self.update_plot()
     
     
@@ -623,17 +624,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_tab_change(self):
-        if self.ui_tab == MainWindowUi.Tab.Cursors:
-            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
-            selected_files = self.selected_files
-            if len(selected_files) > 0:
-                self.ui_cursor1_trace = selected_files[0].name
-        else:
-            if not self.plot:
-                return
-            self.plot.cursors[0].enable(False)
-            self.plot.cursors[1].enable(False)
-            self.ui_plot.draw()
+        self.prepare_cursors()
 
 
     def on_cursor_select(self):
@@ -659,6 +650,21 @@ class MainWindow(MainWindowUi):
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
         self.update_cusors(left_btn_pressed, left_btn_event, x, y)
 
+
+    def prepare_cursors(self):
+        if self.ui_tab == MainWindowUi.Tab.Cursors:
+            if self.plot:
+                self.plot.cursors[0].enable(False)
+                self.plot.cursors[1].enable(False)
+            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
+            selected_files = self.selected_files
+            if len(selected_files) > 0:
+                self.ui_cursor1_trace = selected_files[0].name
+        else:
+            if self.plot:
+                self.plot.cursors[0].enable(False)
+                self.plot.cursors[1].enable(False)
+                self.ui_plot.draw()
 
 
     def update_cusors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None):
@@ -718,7 +724,12 @@ class MainWindow(MainWindowUi):
             self.ui_set_cursor_readout()
             return
 
-        readout = ''
+        readout_x1 = ''
+        readout_y1 = ''
+        readout_x2 = ''
+        readout_y2 = ''
+        readout_dx = ''
+        readout_dy = ''
         xf = copy.copy(self.plot.x_fmt)
         yf = copy.copy(self.plot.y_fmt)
         zf = copy.copy(self.plot.z_fmt)
@@ -728,16 +739,20 @@ class MainWindow(MainWindowUi):
             zf.significant_digits += 1
         if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
-            readout += f'Cursor 1: '
             if z is not None:
-                readout += f'{Si(z,si_fmt=zf)} | '
-            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+                readout_x1 = f'{Si(z,si_fmt=zf)}'
+                readout_y1 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
+            else:
+                readout_x1 = f'{Si(x,si_fmt=xf)}'
+                readout_y1 = f'{Si(y,si_fmt=yf)}'
         if self.ui_cursor2_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
-            readout += f'Cursor 2: '
             if z is not None:
-                readout += f'{Si(z,si_fmt=zf)} |'
-            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+                readout_x2 = f'{Si(z,si_fmt=zf)}'
+                readout_y2 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
+            else:
+                readout_x2 = f'{Si(x,si_fmt=xf)}'
+                readout_y2 = f'{Si(y,si_fmt=yf)}'
             if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
                 dx_str = str(Si(dx,si_fmt=xf))
@@ -745,7 +760,8 @@ class MainWindow(MainWindowUi):
                     dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
                 if yf.unit=='dB' or yf.unit=='°':
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    readout += f'Delta X: {dx_str} | Delta Y:{Si(dy,si_fmt=yf)}\n'
+                    readout_dx = f'{dx_str}'
+                    readout_dy = f'{Si(dy,si_fmt=yf)}'
                 else:
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
                     dys = Si.to_significant_digits(dy, 4)
@@ -754,10 +770,11 @@ class MainWindow(MainWindowUi):
                     else:
                         ry = self.plot.cursors[1].y / self.plot.cursors[0].y
                         rys = Si.to_significant_digits(ry, 4)
-                    readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
+                    readout_dx = f'{dx_str}'
+                    readout_dy = f'{dys} ({rys})'
         
         # TODO: display data as grid instead of plaintext
-        self.ui_set_cursor_readout(readout)
+        self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
 
 

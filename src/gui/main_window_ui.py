@@ -81,7 +81,6 @@ class MainWindowUi(QMainWindow):
         
         cursors_tab = QWidget()
         self._ui_tabs.addTab(cursors_tab, 'Cursors')
-        option_group = QGroupBox('Selection')
         self._ui_cursor1_radio = QRadioButton('Cursor 1')
         self._ui_cursor1_radio.setChecked(True)
         self._ui_cursor1_radio.toggled.connect(self.on_cursor_select)
@@ -98,27 +97,31 @@ class MainWindowUi(QMainWindow):
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
-        readout_group = QGroupBox('Readout')
-        self._ui_cursor_text = QPlainTextEdit()
-        self._ui_cursor_text.setMinimumSize(400, 100)
-        self._ui_cursor_text.setReadOnly(True)
-        self._ui_cursor_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self._ui_cursor_readout_x1 = QLineEdit()
+        self._ui_cursor_readout_x1.setReadOnly(True)
+        self._ui_cursor_readout_y1 = QLineEdit()
+        self._ui_cursor_readout_y1.setReadOnly(True)
+        self._ui_cursor_readout_x2 = QLineEdit()
+        self._ui_cursor_readout_x2.setReadOnly(True)
+        self._ui_cursor_readout_y2 = QLineEdit()
+        self._ui_cursor_readout_y2.setReadOnly(True)
+        self._ui_cursor_readout_dx = QLineEdit()
+        self._ui_cursor_readout_dx.setReadOnly(True)
+        self._ui_cursor_readout_dy = QLineEdit()
+        self._ui_cursor_readout_dy.setReadOnly(True)
         cursor_layout = QtHelper.layout_grid([
-            [self._ui_cursor1_radio, self._ui_cursor1_trace_combo],
-            [self._ui_cursor2_radio, self._ui_cursor2_trace_combo],
-            [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, self._ui_cursor_syncx_check],
+            [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_readout_x1, 'Y1:', self._ui_cursor_readout_y1],
+            [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_readout_x2, 'Y2:', self._ui_cursor_readout_y2],
+            [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
+            [None, None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
         ])
         cursor_layout.setColumnStretch(0, 1)
-        cursor_layout.setColumnStretch(1, 5)
-        cursor_layout.setColumnStretch(2, 1)
-        option_group.setLayout(cursor_layout)
-        readout_group.setLayout(QtHelper.layout_v(
-            self._ui_cursor_text
-        ))
-        cursors_tab.setLayout(QtHelper.layout_v(
-            option_group,
-            readout_group
-        ))
+        cursor_layout.setColumnStretch(1, 4)
+        cursor_layout.setColumnStretch(2, 0)
+        cursor_layout.setColumnStretch(3, 4)
+        cursor_layout.setColumnStretch(4, 0)
+        cursor_layout.setColumnStretch(5, 4)
+        cursors_tab.setLayout(cursor_layout)
 
         self._ui_status_bar = QStatusBar()
 
@@ -325,11 +328,13 @@ class MainWindowUi(QMainWindow):
                 combo.addItem(trace)
     
 
-    def ui_set_cursor_readout(self, text: str = None):
-        if text:
-            self._ui_cursor_text.setPlainText(text)
-        else:
-            self._ui_cursor_text.clear()
+    def ui_set_cursor_readouts(self, x1: str = '', y1: str = '', x2: str = '', y2: str = '', dx: str = '', dy: str = ''):
+        self._ui_cursor_readout_x1.setText(x1)
+        self._ui_cursor_readout_y1.setText(y1)
+        self._ui_cursor_readout_x2.setText(x2)
+        self._ui_cursor_readout_y2.setText(y2)
+        self._ui_cursor_readout_dx.setText(dx)
+        self._ui_cursor_readout_dy.setText(dy)
 
     
     @property

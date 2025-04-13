@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import *
 import logging
 import pathlib
 from typing import Callable, Optional, Union
+import dataclasses
 
 
 
@@ -199,21 +200,31 @@ class QtHelper:
         return QtHelper._box_layout(QVBoxLayout(), 'v', *items)
 
 
+    @dataclasses.dataclass
+    class CellSpan:
+        item: any
+        cols: int = 1
+        rows: int = 1
+
+
     @staticmethod
     def layout_grid(items_rows_then_columns):
         layout = QGridLayout()
         for i_row,columns in enumerate(items_rows_then_columns):
             for i_col,item in enumerate(columns):
+                cols, rows = 1, 1
+                if isinstance(item, QtHelper.CellSpan):
+                    item, cols, rows = item.item, item.cols, item.rows
                 if item is None:
                     continue
                 elif isinstance(item, QLayoutItem):
                     widget = QWidget()
                     widget.setLayout(item)
-                    layout.addWidget(widget, i_row, i_col)
+                    layout.addWidget(widget, i_row, i_col, rows, cols)
                 elif isinstance(item, str):
-                    layout.addWidget(QtHelper.make_label(item), i_row, i_col)
+                    layout.addWidget(QtHelper.make_label(item), i_row, i_col, rows, cols)
                 else:
-                    layout.addWidget(item, i_row, i_col)
+                    layout.addWidget(item, i_row, i_col, rows, cols)
         return layout
 
 
