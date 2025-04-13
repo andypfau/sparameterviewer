@@ -32,7 +32,6 @@ class AppSettings:
             try:
                 self._observers[i]()
             except Exception as ex:
-                logging.debug(f'Remove setting observer {i} ({ex})')
                 del self._observers[i]
     
 

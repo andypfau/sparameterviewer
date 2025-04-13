@@ -44,7 +44,6 @@ class LogHandler(logging.StreamHandler):
             try:
                 self._observers[i]()
             except Exception as ex:
-                logging.debug(f'Remove log observer {i} ({ex})')
                 del self._observers[i]
 
 
