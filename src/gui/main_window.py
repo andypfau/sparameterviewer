@@ -665,6 +665,7 @@ class MainWindow(MainWindowUi):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             return
 
+        # TODO: why are cursors so slow, especially when I have a 2nd trace?
         try:
             self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
             self.plot.cursors[1].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
@@ -755,6 +756,7 @@ class MainWindow(MainWindowUi):
                         rys = Si.to_significant_digits(ry, 4)
                     readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
         
+        # TODO: display data as grid instead of plaintext
         self.ui_set_cursor_readout(readout)
         self.ui_plot.draw()
 

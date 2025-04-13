@@ -195,6 +195,7 @@ class MainWindowUi(QMainWindow):
         self._ui_template_menu.addSeparator()
         self._template_submenu_more = QtHelper.add_submenu(self, self._ui_template_menu, 'More Examples')
         self._ui_template_menuitem_example2 =  QtHelper.add_menuitem(self._ui_template_menu, 'Example 2', None)
+        # TODO: configurable template menu
 
 
     def ui_show(self):
