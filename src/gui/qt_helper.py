@@ -25,8 +25,8 @@ class QtHelper:
                 dialog.setWindowIcon(QtGui.QIcon(str(icon_path)))
                 return
             except Exception as ex:
-                logging.debug(f'Cannot load icon <{image}>, trying next')
-        logging.debug(f'Unable to set window icon')
+                pass
+        logging.error(f'Unable to set window icon')
 
 
     @staticmethod
