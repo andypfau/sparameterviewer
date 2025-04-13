@@ -82,6 +82,7 @@ class MainWindow(MainWindowUi):
 
     def __init__(self, filenames: list[str]):
         super().__init__()
+        self.build_templates_menu()
         
         self.directories: list[str] = []
         self.files: list[SParamFile] = []
@@ -126,6 +127,7 @@ class MainWindow(MainWindowUi):
         self.initially_load_files_or_directory(filenames)
         self.update_plot()
 
+
     def show(self):
         self.ui_show()
 
@@ -140,6 +142,225 @@ class MainWindow(MainWindowUi):
         if not self._log_dialog:
             self._log_dialog = LogDialog(self)
         return self._log_dialog
+    
+
+    def build_templates_menu(self):
+
+        def selected_file_names():
+            return [file.name for file in self.files if file.tag in self.treeview_files.selection()]
+
+        def set_expression(*expressions):
+            current = self.ui_expression
+            new = '\n'.join(expressions)
+            for line in current.splitlines():
+                if Settings.comment_existing_expr:
+                    existing_line = '#' + line.strip() if not line.startswith('#') else line.strip()
+                else:
+                    existing_line = line
+                if len(new)>0:
+                    new += '\n'
+                new += existing_line
+            self.ui_expression = new
+            self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
+            self.update_plot()
+        
+        def switch_to_linear_scale():
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            
+        def switch_to_logarithmic_scale():
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+        
+        def ensure_selected_file_count(op, n_required):
+            n = len(selected_file_names())
+            if op == '>=':
+                if n < n_required:
+                    error_dialog('Invalid operation', f'To use this template, select at least {n_required} file{"s" if n_required!=1 else ""}.')
+                    return False
+            elif op == '==':
+                if n != n_required:
+                    error_dialog('Invalid operation', f'To use this template, select exactly {n_required} file{"s" if n_required!=1 else ""}.')
+                    return False
+            else:
+                raise ValueError()
+            return True
+        
+        def as_currently_selected():
+            if len(self.generated_expressions) < 1:
+                info_dialog('Invalid operation', 'To use this template, select anything other than Expression-Based.')
+                return
+            set_expression(self.generated_expressions)
+        
+        def all_sparams():
+            set_expression('sel_nws().s().plot()')
+            switch_to_logarithmic_scale()
+        
+        def insertion_loss():
+            set_expression('sel_nws().s(il_only=True).plot()')
+            switch_to_logarithmic_scale()
+        
+        def insertion_loss_reciprocal():
+            set_expression('sel_nws().s(fwd_il_only=True).plot()')
+            switch_to_logarithmic_scale()
+        
+        def return_loss():
+            set_expression('sel_nws().s(rl_only=True).plot()')
+            switch_to_logarithmic_scale()
+        
+        def vswr():
+            set_expression('sel_nws().s(rl_only=True).vswr().plot()')
+            switch_to_linear_scale()
+        
+        def mismatch_loss():
+            set_expression('sel_nws().s(rl_only=True).ml().plot()')
+            switch_to_logarithmic_scale()
+
+        def quick11():
+            set_expression('quick(11)')
+            switch_to_logarithmic_scale()
+        
+        def quick112122():
+            set_expression('quick(11)', 'quick(21)', 'quick(22)')
+            switch_to_logarithmic_scale()
+        
+        def quick11211222():
+            set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)')
+            switch_to_logarithmic_scale()
+
+        def quick112122313233():
+            set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
+            switch_to_logarithmic_scale()
+        
+        def stability():
+            set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
+                           'sel_nws().mu(2).plot() # should be > 1 for stable network')
+            switch_to_linear_scale()
+        
+        def reciprocity():
+            set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
+            switch_to_linear_scale()
+        
+        def passivity():
+            set_expression('sel_nws().passivity().plot() # should be <= 1 for passive network')
+            switch_to_linear_scale()
+        
+        def losslessness():
+            set_expression("sel_nws().losslessness('ii').plot() # should be 1 for lossless network",
+                           "sel_nws().losslessness('ij').plot() # should be 0 for lossless network")
+            switch_to_linear_scale()
+        
+        def cascade():
+            if not ensure_selected_file_count('>=', 2):
+                return
+            nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names()])
+            set_expression(f'({nws}).s(2,1).plot()')
+        
+        def deembed1from2():
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
+            set_expression(f"((nw('{n1}').invert()) ** nw('{n2}')).s(2,1).plot()")
+        
+        def deembed2from1():
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
+            set_expression(f"(nw('{n1}') ** (nw('{n2}').invert())).s(2,1).plot()")
+        
+        def deembed2from1flipped():
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
+            set_expression(f"(nw('{n1}') ** (nw('{n2}').flip().invert())).s(2,1).plot()")
+        
+        def deembed2xthru():
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
+            set_expression(f"((nw('{n1}').half(side=1)) ** nw('{n2}') **(nw('{n1}').half(side=2))).s(2,1).plot()")
+        
+        def ratio_of_two():
+            if not ensure_selected_file_count('==', 2):
+                return
+            [n1, n2] = selected_file_names()
+            set_expression(f"(nw('{n1}').s(2,1)/nw('{n2}').s(2,1)).plot()")
+        
+        def mixed_mode():
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names()]
+            set_expression(*expressions)
+
+        def z_renorm():
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names()]
+            set_expression(*expressions)
+
+        def add_tline():
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names()]
+            set_expression(*expressions)
+        
+        def impedance():
+            set_expression('sel_nws().s2z().s(rl_only=True).plot()')
+            switch_to_linear_scale()
+        
+        def admittance():
+            set_expression('sel_nws().s2y().s(rl_only=True).plot()')
+            switch_to_linear_scale()
+
+        def all_selected():
+            if not ensure_selected_file_count('>=', 1):
+                return
+            expressions = [f"nw('{n}').s().plot()" for n in selected_file_names()]
+            set_expression(*expressions)
+        
+        self.ui_build_template_menu({
+            'As Currently Selected': as_currently_selected,
+            '-': None,
+            'S-Parameters': {
+                'All S-Parameters': all_sparams,
+                'Insertion Loss': insertion_loss,
+                'Insertion Loss (Reciprocal / 1st Only)': insertion_loss_reciprocal,
+                'Return Loss': return_loss,
+                'VSWR': vswr,
+                'Mismatch Loss': mismatch_loss,
+                '- 1': None,
+                'S11': quick11,
+                'S11, S21, S22': quick112122,
+                'S11, S21, S12, S22': quick11211222,
+                'S11, S21, S22, S31, S32, S33': quick112122313233,
+                '- 2': None,
+                'Impedance': impedance,
+                'Admittance': admittance,
+            },
+            'Network Analysis': {
+                'Stability': stability,
+                'Reciprocity': reciprocity,
+                'Passivity': passivity,
+                'Losslessness': losslessness,
+            },
+            'Operations on Selected Networks': {
+                'Single-Ended to Mixed-Mode': mixed_mode,
+                'Impedance Renormalization': z_renorm,
+                'Add Line To Network': add_tline,
+                '-': None,
+                'Just Plot All Selected Files': all_selected,
+            },
+            'Operations on Two Selected Networks': {
+                'De-Embed 1st Network from 2nd': deembed1from2,
+                'De-Embed 2nd Network from 1st': deembed2from1,
+                'De-Embed 2nd (Flipped) Network from 1st': deembed2from1flipped,
+                'Treat 1st as 2xTHRU, De-Embed from 2nd': deembed2xthru,
+                'Ratio of Two Networks': ratio_of_two,
+            },
+            'Operations on Two or More Selected Networks': {
+                'Cascade Selected Networks': cascade,
+            },
+        })
+
+        pass
 
     
     def initially_load_files_or_directory(self, filenames_or_directory: "list[str]"):

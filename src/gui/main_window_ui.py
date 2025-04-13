@@ -135,8 +135,6 @@ class MainWindowUi(QMainWindow):
             self._ui_tabs,
             self._ui_status_bar,
         ))
-
-        self._build_template_menu()
         
         self._ui_tabs.currentChanged.connect(self.on_tab_change)
 
@@ -199,13 +197,23 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
 
 
-    def _build_template_menu(self):
+    def ui_build_template_menu(self, items: dict):
+        self._ui_template_menu_items = []
+        def build(menu: QMenu, items: dict):
+            nonlocal self
+            for name,subitem in items.items():
+                if name.startswith('-'):
+                    menu.addSeparator()
+                elif isinstance(subitem,dict):
+                    new_menu = QtHelper.add_submenu(self, menu, name)
+                    self._ui_template_menu_items.append(new_menu)
+                    build(new_menu, subitem)
+                else:
+                    new_item = QtHelper.add_menuitem(menu, name, subitem)
+                    self._ui_template_menu_items.append(new_item)
+            pass
         self._ui_template_menu = QMenu()
-        self._ui_template_menuitem_example1 = QtHelper.add_menuitem(self._ui_template_menu, 'Example 1', None)
-        self._ui_template_menu.addSeparator()
-        self._template_submenu_more = QtHelper.add_submenu(self, self._ui_template_menu, 'More Examples')
-        self._ui_template_menuitem_example2 =  QtHelper.add_menuitem(self._ui_template_menu, 'Example 2', None)
-        # TODO: configurable template menu
+        build(self._ui_template_menu, items)
 
 
     def ui_show(self):
@@ -213,6 +221,8 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_show_template_menu(self):
+        # TODO: fix this error message (on Fedora): qt.qpa.wayland: Creating a popup with a parent, QWidgetWindow(0x56210326e9e0, name="MainWindowClassWindow") which does not match the current topmost grabbing popup, QWidgetWindow(0x56210333de30, name="QMenuClassWindow") With some shell surface protocols, this is not allowed. The wayland QPA plugin is currently handling it by setting the parent to the topmost grabbing popup. Note, however, that this may cause positioning errors and popups closing unxpectedly. Please fix the transient parent of the popup.
+
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
         self._ui_template_menu.popup(button_pos)
 
