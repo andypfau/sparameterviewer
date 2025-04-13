@@ -19,7 +19,7 @@ class PlotWidget(QWidget):
     
     def __init__(self):
         super().__init__()
-        self._mouse_event_handler = None
+        self._observers: list[Callable] = []
 
         style = Settings.plot_style or 'bmh'
         try:
@@ -63,8 +63,8 @@ class PlotWidget(QWidget):
         return list(matplotlib.pyplot.style.available)
 
 
-    def set_cursor_event_handler(self, handler: Callable):
-        pass
+    def attach(self, callback: Callable):
+        self._observers.append(callback)
     
 
     @property
@@ -81,6 +81,8 @@ class PlotWidget(QWidget):
 
 
     def on_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
-        if not self._mouse_event_handler:
-            return
-        self._mouse_event_handler(left_btn_pressed, left_btn_event, x, y)
+        for i in reversed(range(len(self._observers))):
+            try:
+                self._observers[i](left_btn_pressed, left_btn_event, x, y)
+            except:
+                del self._observers[i]

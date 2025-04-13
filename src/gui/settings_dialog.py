@@ -58,7 +58,7 @@ class SettingsDialog(SettingsDialogUi):
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
-        if tab is not None:
+        if tab:
             self.ui_select_tab(tab)
         self.apply_settings_to_controls()
         Settings.attach(self.apply_settings_to_controls)

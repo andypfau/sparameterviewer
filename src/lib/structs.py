@@ -8,6 +8,7 @@ import skrf
 import logging
 import zipfile
 import tempfile
+import datetime
 
 
 
@@ -63,10 +64,100 @@ class SParamFile:
         else:
             load(self.file_path)
 
+    
     @property
     def nw(self) -> "skrf.Network":
         self._load()
         return self._nw
+    
+
+    def get_info_str(self) -> str:
+                
+        f0, f1 = self.nw.f[0], self.nw.f[-1]
+        n_pts = len(self.nw.f)
+        _, fname = os.path.split(self.file_path)
+        comm = '' if self.nw.comments is None else self.nw.comments
+        n_ports = self.nw.s.shape[1]
+
+        fileinfo = ''
+        def fmt_tstamp(ts):
+            return f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
+        if self.archive_path is not None:
+            fileinfo += f'Archive path: {os.path.abspath(self.archive_path)}\n'
+            try:
+                created = fmt_tstamp(os.path.getctime(self.archive_path))
+                fileinfo += f'Archive created: {created}, '
+            except:
+                fileinfo += f'Archive created: unknoown, '
+            try:
+                modified = fmt_tstamp(os.path.getmtime(self.archive_path))
+                fileinfo += f'last modified: {modified}\n'
+            except:
+                fileinfo += f'last modified: unknown\n'
+            try:
+                size = f'{os.path.getsize(self.archive_path):,.0f} B'
+                fileinfo += f'Archive size: {size}\n'
+            except:
+                fileinfo += f'Archive size: unknown\n'
+            fileinfo += f'File path in archive: {self.file_path}\n'
+        else:
+            fileinfo += f'File path: {os.path.abspath(self.file_path)}\n'
+            try:
+                created = fmt_tstamp(os.path.getctime(self.file_path))
+                fileinfo += f'File created: {created}, '
+            except:
+                fileinfo += f'File created: unknoown, '
+            try:
+                modified = fmt_tstamp(os.path.getmtime(self.file_path))
+                fileinfo += f'last modified: {modified}\n'
+            except:
+                fileinfo += f'last modified: unknown\n'
+            try:
+                size = f'{os.path.getsize(self.file_path):,.0f} B'
+                fileinfo += f'File size: {size}\n'
+            except:
+                fileinfo += f'File size: unknown\n'
+        
+        if (self.nw.z0 == self.nw.z0[0,0]).all():
+            z0 = str(Si(self.nw.z0[0,0],'Ohm'))
+        else:
+            z0 = 'different for each port and/or frequency'
+        
+        info = f'{fname}\n'
+        info += '-'*len(fname)+'\n\n'
+        
+        if len(comm)>0:
+            for comm_line in comm.splitlines():
+                info += comm_line.strip() + '\n'
+            info += '\n'
+        info += f'Ports: {n_ports}, reference impedance: {z0}\n'
+
+        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
+        
+        freq_steps = np.diff(self.nw.f)
+        freq_equidistant = np.allclose(freq_steps,freq_steps[0])
+        if freq_equidistant:
+            freq_step = freq_steps[0]
+            spacing_str =  f'{Si(freq_step,"Hz")} equidistant spacing'
+        else:
+            freq_arbitrary = True
+            if np.all(self.nw.f != 0):
+                freq_ratios = np.exp(np.diff(np.log(self.nw.f)))
+                if np.allclose(freq_ratios,freq_ratios[0]):
+                    freq_arbitrary = False
+                    freq_step = np.mean(freq_steps)
+                    freq_ratio = freq_ratios[0]
+                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {Si(freq_step,"Hz")}'
+            if freq_arbitrary:
+                freq_step = np.mean(freq_steps)
+                spacing_str =  f'non-equidistant spacing, average spacing {Si(freq_step,"Hz")}'
+        
+        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_points_str}, {spacing_str}'
+        info += '\n\n'
+
+        info += fileinfo
+
+        return info
     
 
     def loaded(self) -> bool:
@@ -75,6 +166,7 @@ class SParamFile:
 
     def error(self) -> bool:
         return self._error is not None
+
 
 
 
@@ -92,3 +184,4 @@ class PlotData:
     x: PlotDataQuantity
     y: PlotDataQuantity
     z: "PlotDataQuantity|None"
+    color: str

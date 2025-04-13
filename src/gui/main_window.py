@@ -5,7 +5,6 @@ from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .filter_dialog import FilterDialog
-from .cursor_dialog import CursorDialog
 from .info_dialog import InfoDialog
 from .log_dialog import LogDialog
 from .axes_dialog import AxesDialog
@@ -32,11 +31,7 @@ import numpy as np
 import re
 import os
 import zipfile
-import enum
-import matplotlib.pyplot as pyplot
-from matplotlib.figure import Figure
 import scipy.signal
-from PyQt6 import QtCore, QtGui, QtWidgets
 from typing import Optional
 
 
@@ -44,6 +39,8 @@ from typing import Optional
 class MainWindow(MainWindowUi):
 
     MAX_DIRECTORY_HISTORY_SIZE = 10
+
+    CURSOR_OFF_NAME = '[cursor turned off]'
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
@@ -92,7 +89,6 @@ class MainWindow(MainWindowUi):
         self.plot_mouse_down = False
         #self.cursor_dialog: SparamviewerCursorDialog = None
         self.plot_axes_are_valid = False
-        self._cursor_dialog: CursorDialog = None
         self._log_dialog: LogDialog = None
             
         # create plot
@@ -125,7 +121,6 @@ class MainWindow(MainWindowUi):
         Settings.attach(self.on_settings_change)
 
         # initialize display
-        self.ui_plot.set_cursor_event_handler(self.on_plot_mouse_event)
         self.initially_load_files_or_directory(filenames)
         self.update_plot()
 
@@ -136,13 +131,6 @@ class MainWindow(MainWindowUi):
     @property
     def selected_files(self) -> list[SParamFile]:
         return [self.files[i] for i in self.ui_get_selected_fileview_indices()]
-
-
-    @property
-    def cursor_dialog(self) -> CursorDialog:
-        if not self._cursor_dialog:
-            self._cursor_dialog = CursorDialog(self)
-        return self._cursor_dialog
 
 
     @property
@@ -417,106 +405,6 @@ class MainWindow(MainWindowUi):
         self.update_file_list()
     
     
-    def on_trace_cursors(self):
-        # TODO: hand items to cursor dialog
-        self.cursor_dialog.show_dialog()
-
-
-    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
-        # TODO: cursors
-        pass
-
-
-    def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: "float|None" = None, y: "float|None" = None):
-
-        if not self.cursor_dialog.is_currently_shown:
-            return
-            self.plot.cursors[0].enable(False)
-            self.plot.cursors[1].enable(False)
-            self.canvas.draw()
-            return
-
-        self.plot.cursors[0].enable(self.cursor_dialog.enable_cursor_1)
-        self.plot.cursors[1].enable(self.cursor_dialog.enable_cursor_2)
-        
-        if left_btn_pressed:
-
-            # find out which cursor to move
-            if self.cursor_dialog.auto_select_cursor and left_btn_event:
-                target_cursor_index, _ = self.plot.get_closest_cursor(x, y)
-                if target_cursor_index is not None:
-                    self.cursor_dialog.set_cursor(target_cursor_index)
-            else:
-                target_cursor_index = self.cursor_dialog.selected_cursor_idx
-            
-            # move the cursor
-            if target_cursor_index is not None:
-
-                if self.cursor_dialog.auto_select_trace:
-                    plot, x, y, z = self.plot.get_closest_plot_point(x, y)
-                    if plot is not None:
-                        self.cursor_dialog.set_trace(target_cursor_index, plot.name)
-                else:
-                    selected_trace_name = self.cursor_dialog.selected_trace_name_1 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_2
-                    if selected_trace_name is not None:
-                        plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
-                    else:
-                        plot, x, y, z = None, None, None, None
-
-                if plot is not None:
-                    target_cursor = self.plot.cursors[target_cursor_index]
-                    target_cursor.set(x, y, z, enable=True, color=plot.color)
-                    
-                sync_x = self.cursor_dialog.var_sync_x.get() == 'sync'
-                if sync_x:
-                    other_trace_name = self.cursor_dialog.selected_trace_name_2 if target_cursor_index == 0 else self.cursor_dialog.selected_trace_name_1
-                    other_plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=other_trace_name)
-                    if other_plot is not None:
-                        other_cursor_index = 1 - target_cursor_index
-                        other_cursor = self.plot.cursors[other_cursor_index]
-                        other_cursor.set(x, y, z, enable=True, color=other_plot.color)
-        
-        readout = ''
-        xf = copy.copy(self.plot.x_fmt)
-        yf = copy.copy(self.plot.y_fmt)
-        zf = copy.copy(self.plot.z_fmt)
-        xf.significant_digits += 3
-        yf.significant_digits += 3
-        if zf is not None:
-            zf.significant_digits += 1
-        if self.cursor_dialog.enable_cursor_1:
-            x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
-            readout += f'Cursor 1: '
-            if z is not None:
-                readout += f'{Si(z,si_fmt=zf)} | '
-            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
-        if self.cursor_dialog.enable_cursor_2:
-            x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
-            readout += f'Cursor 2: '
-            if z is not None:
-                readout += f'{Si(z,si_fmt=zf)} |'
-            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
-            if self.cursor_dialog.enable_cursor_1:
-                dx = self.plot.cursors[1].x - self.plot.cursors[0].x
-                dx_str = str(Si(dx,si_fmt=xf))
-                if xf.unit=='s' and dx!=0:
-                    dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
-                if yf.unit=='dB' or yf.unit=='°':
-                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    readout += f'Delta X: {dx_str} | Delta Y:{Si(dy,si_fmt=yf)}\n'
-                else:
-                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    dys = Si.to_significant_digits(dy, 4)
-                    if self.plot.cursors[0].y==0:
-                        rys = 'N/A'
-                    else:
-                        ry = self.plot.cursors[1].y / self.plot.cursors[0].y
-                        rys = Si.to_significant_digits(ry, 4)
-                    readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
-        self.cursor_dialog.update_readout(readout)
-        
-        self.ui_plot.draw()
-    
     
     def on_rl_calc(self):
         if len(self.files) < 1:
@@ -574,7 +462,7 @@ class MainWindow(MainWindowUi):
         for file in self.selected_files:
             if len(info_str)>0:
                 info_str+= '\n\n\n'
-            info_str += self.get_info_str(file)
+            info_str += file.get_info_str()
         InfoDialog(self).show_modal_dialog(info_str)
     
     
@@ -703,6 +591,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_update_expressions(self):
+        if self.ui_tab == MainWindowUi.Tab.Cursors:
+            return
         self.ui_mode = ParamMode.Expr
         self.update_plot()
 
@@ -718,6 +608,8 @@ class MainWindow(MainWindowUi):
     
     
     def on_update_button(self):
+        if self.ui_tab == MainWindowUi.Tab.Cursors:
+            return
         self.ui_mode = ParamMode.Expr
         self.update_plot()
     
@@ -729,95 +621,143 @@ class MainWindow(MainWindowUi):
     def on_help_button(self):
         show_help('expressions.md')
 
+
+    def on_tab_change(self):
+        if self.ui_tab == MainWindowUi.Tab.Cursors:
+            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
+            selected_files = self.selected_files
+            if len(selected_files) > 0:
+                self.ui_cursor1_trace = selected_files[0].name
+        else:
+            if not self.plot:
+                return
+            self.plot.cursors[0].enable(False)
+            self.plot.cursors[1].enable(False)
+            self.ui_plot.draw()
+
+
+    def on_cursor_select(self):
+        self.update_cusors()
+
+
+    def on_cursor_trace_change(self):
+        self.update_cusors()
+
+
+    def on_auto_cursor_changed(self):
+        self.update_cusors()
+
+
+    def on_auto_cursor_trace_changed(self):
+        self.update_cusors()
+
+
+    def on_cursor_syncx_changed(self):
+        self.update_cusors()
+
+
+    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+        self.update_cusors(left_btn_pressed, left_btn_event, x, y)
+
+
+
+    def update_cusors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None):
+        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+            return
+
+        try:
+            self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
+            self.plot.cursors[1].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
+            
+            if left_btn_pressed:
+
+                # find out which cursor to move
+                if self.ui_auto_cursor and left_btn_event:
+                    target_cursor_index, _ = self.plot.get_closest_cursor(x, y)
+                    if target_cursor_index is not None:
+                        self.ui_cursor_index = target_cursor_index
+                else:
+                    target_cursor_index = self.ui_cursor_index
+                
+                # move the cursor
+                if target_cursor_index is not None:
+
+                    if self.ui_auto_cursor_trace:
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y)
+                        if plot is not None:
+                            if target_cursor_index==0:
+                                self.ui_cursor1_trace = plot.name
+                    else:
+                        selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
+                        if selected_trace_name is not None:
+                            plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
+                        else:
+                            plot, x, y, z = None, None, None, None
+
+                    if plot is not None:
+                        target_cursor = self.plot.cursors[target_cursor_index]
+                        target_cursor.set(x, y, z, enable=True, color=plot.color)
+                        
+                    sync_x = self.ui_cursor_syncx
+                    if sync_x:
+                        other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
+                        other_plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=other_trace_name)
+                        if other_plot is not None:
+                            other_cursor_index = 1 - target_cursor_index
+                            other_cursor = self.plot.cursors[other_cursor_index]
+                            other_cursor.set(x, y, z, enable=True, color=other_plot.color)
+            
+            self.update_cursor_readout()
+        except Exception as ex:
+            logging.error(f'Cursor error: {ex}')
     
-    def get_info_str(self, sparam_file: SParamFile) -> str:
-        
-        f0, f1 = sparam_file.nw.f[0], sparam_file.nw.f[-1]
-        n_pts = len(sparam_file.nw.f)
-        _, fname = os.path.split(sparam_file.file_path)
-        comm = '' if sparam_file.nw.comments is None else sparam_file.nw.comments
-        n_ports = sparam_file.nw.s.shape[1]
-
-        fileinfo = ''
-        def fmt_tstamp(ts):
-            return f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
-        if sparam_file.archive_path is not None:
-            fileinfo += f'Archive path: {os.path.abspath(sparam_file.archive_path)}\n'
-            try:
-                created = fmt_tstamp(os.path.getctime(sparam_file.archive_path))
-                fileinfo += f'Archive created: {created}, '
-            except:
-                fileinfo += f'Archive created: unknoown, '
-            try:
-                modified = fmt_tstamp(os.path.getmtime(sparam_file.archive_path))
-                fileinfo += f'last modified: {modified}\n'
-            except:
-                fileinfo += f'last modified: unknown\n'
-            try:
-                size = f'{os.path.getsize(sparam_file.archive_path):,.0f} B'
-                fileinfo += f'Archive size: {size}\n'
-            except:
-                fileinfo += f'Archive size: unknown\n'
-            fileinfo += f'File path in archive: {sparam_file.file_path}\n'
-        else:
-            fileinfo += f'File path: {os.path.abspath(sparam_file.file_path)}\n'
-            try:
-                created = fmt_tstamp(os.path.getctime(sparam_file.file_path))
-                fileinfo += f'File created: {created}, '
-            except:
-                fileinfo += f'File created: unknoown, '
-            try:
-                modified = fmt_tstamp(os.path.getmtime(sparam_file.file_path))
-                fileinfo += f'last modified: {modified}\n'
-            except:
-                fileinfo += f'last modified: unknown\n'
-            try:
-                size = f'{os.path.getsize(sparam_file.file_path):,.0f} B'
-                fileinfo += f'File size: {size}\n'
-            except:
-                fileinfo += f'File size: unknown\n'
-        
-        if (sparam_file.nw.z0 == sparam_file.nw.z0[0,0]).all():
-            z0 = str(Si(sparam_file.nw.z0[0,0],'Ohm'))
-        else:
-            z0 = 'different for each port and/or frequency'
-        
-        info = f'{fname}\n'
-        info += '-'*len(fname)+'\n\n'
-        
-        if len(comm)>0:
-            for comm_line in comm.splitlines():
-                info += comm_line.strip() + '\n'
-            info += '\n'
-        info += f'Ports: {n_ports}, reference impedance: {z0}\n'
-
-        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
-        
-        freq_steps = np.diff(sparam_file.nw.f)
-        freq_equidistant = np.allclose(freq_steps,freq_steps[0])
-        if freq_equidistant:
-            freq_step = freq_steps[0]
-            spacing_str =  f'{Si(freq_step,"Hz")} equidistant spacing'
-        else:
-            freq_arbitrary = True
-            if np.all(sparam_file.nw.f != 0):
-                freq_ratios = np.exp(np.diff(np.log(sparam_file.nw.f)))
-                if np.allclose(freq_ratios,freq_ratios[0]):
-                    freq_arbitrary = False
-                    freq_step = np.mean(freq_steps)
-                    freq_ratio = freq_ratios[0]
-                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {Si(freq_step,"Hz")}'
-            if freq_arbitrary:
-                freq_step = np.mean(freq_steps)
-                spacing_str =  f'non-equidistant spacing, average spacing {Si(freq_step,"Hz")}'
-        
-        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_points_str}, {spacing_str}'
-        info += '\n\n'
-
-        info += fileinfo
-
-        return info
     
+    def update_cursor_readout(self):
+        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+            self.ui_set_cursor_readout()
+            return
+
+        readout = ''
+        xf = copy.copy(self.plot.x_fmt)
+        yf = copy.copy(self.plot.y_fmt)
+        zf = copy.copy(self.plot.z_fmt)
+        xf.significant_digits += 3
+        yf.significant_digits += 3
+        if zf is not None:
+            zf.significant_digits += 1
+        if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
+            x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
+            readout += f'Cursor 1: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} | '
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+        if self.ui_cursor2_trace != MainWindow.CURSOR_OFF_NAME:
+            x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
+            readout += f'Cursor 2: '
+            if z is not None:
+                readout += f'{Si(z,si_fmt=zf)} |'
+            readout += f'{Si(x,si_fmt=xf)} | {Si(y,si_fmt=yf)}\n'
+            if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
+                dx = self.plot.cursors[1].x - self.plot.cursors[0].x
+                dx_str = str(Si(dx,si_fmt=xf))
+                if xf.unit=='s' and dx!=0:
+                    dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
+                if yf.unit=='dB' or yf.unit=='°':
+                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
+                    readout += f'Delta X: {dx_str} | Delta Y:{Si(dy,si_fmt=yf)}\n'
+                else:
+                    dy = self.plot.cursors[1].y - self.plot.cursors[0].y
+                    dys = Si.to_significant_digits(dy, 4)
+                    if self.plot.cursors[0].y==0:
+                        rys = 'N/A'
+                    else:
+                        ry = self.plot.cursors[1].y / self.plot.cursors[0].y
+                        rys = Si.to_significant_digits(ry, 4)
+                    readout += f'Delta X: {dx_str} | Delta Y: {dys}, Ratio Y: {rys}\n'
+        
+        self.ui_set_cursor_readout(readout)
+        self.ui_plot.draw()
+
 
     def show_error(self, error: "str|None", exception: Exception = None):
         if error:
@@ -1040,11 +980,6 @@ class MainWindow(MainWindowUi):
 
             self.ui_plot.draw()
 
-            ## TODO: cursor dialog
-            #if self.cursor_dialog is not None:
-            #    self.cursor_dialog.clear()
-            #    self.cursor_dialog.repopulate(self.plot.plots)
-            
             self.plot_axes_are_valid = True
 
         except Exception as ex:

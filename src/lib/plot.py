@@ -17,7 +17,6 @@ class ItemToPlot:
     prefer_seconary_yaxis: bool
     currently_used_axis: int
     style: str
-    color: object
 
 
 
@@ -32,10 +31,10 @@ class PlotHelper:
             self.enabled = False
             self.style = style
             self.color = color
-
-            self.x, self.y, self.z = 0, 0, None
             self.data: PlotHelper.Data
             self.data = None
+
+            self.x, self.y, self.z = 0, 0, None
 
             self._is_set = False
             self._hl, self._vl = None, None
@@ -128,7 +127,7 @@ class PlotHelper:
         return [item.data for item in self.items]
     
 
-    def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Data]":
+    def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Cursor]":
 
         if (not self.cursors[0].enabled) and (not self.cursors[1].enabled):
             return (None, None)
@@ -145,7 +144,7 @@ class PlotHelper:
             return (1, self.cursors[1])
 
 
-    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None) -> "tuple[PlotHelper.Data,float,float,float]":
+    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None) -> "tuple[PlotData,float,float,float]":
 
         best_error = +1e99
         best_x = None
@@ -189,12 +188,12 @@ class PlotHelper:
                     name, 
                     PlotDataQuantity(self.x_qty, self.x_fmt, x),
                     PlotDataQuantity(self.y_qty, self.y_fmt, y),
-                    PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None    
+                    PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None,  
+                    'black'  # placeholder
                 ),
                 prefer_2nd_yaxis,
                 -1,  # placeholder
                 style,
-                'black'  # placeholder
             )
         )
     
@@ -271,7 +270,7 @@ class PlotHelper:
                 new_plt = plot.plot(x, y, style, label=label)
 
             color = new_plt[0].get_color() if new_plt is not None else None
-            self.items[item_index].color = color
+            self.items[item_index].data.color = color
         
         if self.smith and r_smith!=1:
             # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)

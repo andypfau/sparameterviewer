@@ -11,11 +11,17 @@ import pathlib
 import enum
 import logging
 import os
-from typing import Callable, Union
+from typing import Callable, Optional
 
 
 
 class MainWindowUi(QMainWindow):
+
+    class Tab(enum.Enum):
+        Files = enum.auto()
+        Expressions = enum.auto()
+        Cursors = enum.auto()
+
 
     def __init__(self):
         super().__init__()
@@ -38,10 +44,10 @@ class MainWindowUi(QMainWindow):
         self._ui_unit_combo = QComboBox()
         self._ui_unit2_combo = QComboBox()
         
-        tabs = QTabWidget()
+        self._ui_tabs = QTabWidget()
         
         files_tab = QWidget()
-        tabs.addTab(files_tab, 'Files')
+        self._ui_tabs.addTab(files_tab, 'Files')
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
         self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
@@ -52,7 +58,7 @@ class MainWindowUi(QMainWindow):
         files_tab.setLayout(QtHelper.layout_v(self._ui_fileview))
         
         expressions_tab = QWidget()
-        tabs.addTab(expressions_tab, 'Expressions')
+        self._ui_tabs.addTab(expressions_tab, 'Expressions')
         self._ui_update_button = QPushButton('Update (F5)')
         self._ui_update_button.clicked.connect(self.on_update_button)
         self._ui_template_button = QPushButton('Template...')
@@ -72,17 +78,63 @@ class MainWindowUi(QMainWindow):
             ),
             self._ui_editor
         ))
+        
+        cursors_tab = QWidget()
+        self._ui_tabs.addTab(cursors_tab, 'Cursors')
+        option_group = QGroupBox('Selection')
+        self._ui_cursor1_radio = QRadioButton('Cursor 1')
+        self._ui_cursor1_radio.setChecked(True)
+        self._ui_cursor1_radio.toggled.connect(self.on_cursor_select)
+        self._ui_cursor2_radio = QRadioButton('Cursor 2')
+        self._ui_cursor2_radio.toggled.connect(self.on_cursor_select)
+        self._ui_cursor1_trace_combo = QComboBox()
+        self._ui_cursor1_trace_combo.currentIndexChanged.connect(self.on_cursor_trace_change)
+        self._ui_cursor2_trace_combo = QComboBox()
+        self._ui_cursor2_trace_combo.currentIndexChanged.connect(self.on_cursor_trace_change)
+        self._ui_auto_cursor_check = QCheckBox('Auto Cursor')
+        self._ui_auto_cursor_check.toggled.connect(self.on_auto_cursor_changed)
+        self._ui_auto_cursor_trace_check = QCheckBox('Auto Trace')
+        self._ui_auto_cursor_trace_check.setChecked(True)
+        self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
+        self._ui_cursor_syncx_check = QCheckBox('Sync X')
+        self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
+        readout_group = QGroupBox('Readout')
+        self._ui_cursor_text = QPlainTextEdit()
+        self._ui_cursor_text.setMinimumSize(400, 100)
+        self._ui_cursor_text.setReadOnly(True)
+        self._ui_cursor_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        cursor_layout = QtHelper.layout_grid([
+            [self._ui_cursor1_radio, self._ui_cursor1_trace_combo],
+            [self._ui_cursor2_radio, self._ui_cursor2_trace_combo],
+            [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, self._ui_cursor_syncx_check],
+        ])
+        cursor_layout.setColumnStretch(0, 1)
+        cursor_layout.setColumnStretch(1, 5)
+        cursor_layout.setColumnStretch(2, 1)
+        option_group.setLayout(cursor_layout)
+        readout_group.setLayout(QtHelper.layout_v(
+            self._ui_cursor_text
+        ))
+        cursors_tab.setLayout(QtHelper.layout_v(
+            option_group,
+            readout_group
+        ))
 
         self._ui_status_bar = QStatusBar()
 
         splitter_top.setLayout(QtHelper.layout_v(self._ui_plot))
         splitter_bottom.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(self._ui_mode_combo, self._ui_unit_combo, self._ui_unit2_combo),
-            tabs,
+            self._ui_tabs,
             self._ui_status_bar,
         ))
+        
+        self._ui_tabs.currentChanged.connect(self.on_tab_change)
 
-    
+        #def on_plot_mouse_event(left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+        #    self.on_plot_mouse_event(left_btn_pressed, left_btn_event, x, y)
+        self.ui_plot.attach(self.on_plot_mouse_event)
+
 
     def _build_main_menu(self):
         self.ui_menu_bar = self.menuBar()
@@ -124,7 +176,6 @@ class MainWindowUi(QMainWindow):
         self.ui_menuitem_update_expr = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 
         self.ui_mainmenu_tools = QtHelper.add_submenu(self, self.ui_menu_bar, '&Tools')
-        self.ui_menuitem_cursrs = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Trace Cursors...', self.on_trace_cursors, shortcut='F3')
         self.ui_menuitem_rlcalc = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
         self.ui_mainmenu_tools.addSeparator()
         self.ui_menuitem_log = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
@@ -181,6 +232,15 @@ class MainWindowUi(QMainWindow):
     @property
     def ui_plot(self) -> PlotWidget:
         return self._ui_plot
+    
+
+    @property
+    def ui_tab(self) -> Tab:
+        match self._ui_tabs.currentIndex():
+            case 0: return MainWindowUi.Tab.Files
+            case 1: return MainWindowUi.Tab.Expressions
+            case 2: return MainWindowUi.Tab.Cursors
+        raise RuntimeError()
     
 
     @property
@@ -255,6 +315,71 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.setCurrentText(unit2)
 
 
+    def ui_set_cursor_trace_list(self, traces: list[str]):
+        for combo in [self._ui_cursor1_trace_combo, self._ui_cursor2_trace_combo]:
+            combo.clear()
+            for trace in traces:
+                combo.addItem(trace)
+    
+
+    def ui_set_cursor_readout(self, text: str = None):
+        if text:
+            self._ui_cursor_text.setPlainText(text)
+        else:
+            self._ui_cursor_text.clear()
+
+    
+    @property
+    def ui_cursor_index(self) -> int:
+        return 1 if self._ui_cursor2_radio.isChecked() else 0
+    @ui_cursor_index.setter
+    def ui_cursor_index(self, value: int):
+        if value == 0:
+            self._ui_cursor1_radio.setChecked(True)
+        elif value == 1:
+            self._ui_cursor2_radio.setChecked(True)
+
+    
+    @property
+    def ui_cursor1_trace(self) -> str:
+        return self._ui_cursor1_trace_combo.currentText()
+    @ui_cursor1_trace.setter
+    def ui_cursor1_trace(self, value: int):
+        self._ui_cursor1_trace_combo.setCurrentText(value)
+
+    
+    @property
+    def ui_cursor2_trace(self) -> str:
+        return self._ui_cursor2_trace_combo.currentText()
+    @ui_cursor2_trace.setter
+    def ui_cursor2_trace(self, value: int):
+        self._ui_cursor2_trace_combo.setCurrentText(value)
+
+    
+    @property
+    def ui_auto_cursor(self) -> bool:
+        return self._ui_auto_cursor_check.isChecked()
+    @ui_auto_cursor.setter
+    def ui_auto_cursor(self, value: bool):
+        self._ui_auto_cursor_check.setChecked(value)
+
+    
+    @property
+    def ui_auto_cursor_trace(self) -> bool:
+        return self._ui_auto_cursor_trace_check.isChecked()
+    @ui_auto_cursor_trace.setter
+    def ui_auto_cursor_trace(self, value: bool):
+        self._ui_auto_cursor_trace_check.setChecked(value)
+
+    
+    @property
+    def ui_cursor_syncx(self) -> bool:
+        return self._ui_cursor_syncx_check.isChecked()
+    @ui_cursor_syncx.setter
+    def ui_cursor_syncx(self, value: bool):
+        self._ui_cursor_syncx_check.setChecked(value)
+
+
     def ui_update_status_message(self, status_message: str):
         if status_message:
             self._ui_status_bar.showMessage(status_message)
@@ -317,8 +442,6 @@ class MainWindowUi(QMainWindow):
         pass
     def on_reload_all_files(self):
         pass
-    def on_trace_cursors(self):
-        pass
     def on_rl_calc(self):
         pass
     def on_log(self):
@@ -368,4 +491,18 @@ class MainWindowUi(QMainWindow):
     def on_template_button(self):
         pass
     def on_help_button(self):
+        pass
+    def on_tab_change(self):
+        pass
+    def on_cursor_select(self):
+        pass
+    def on_cursor_trace_change(self):
+        pass
+    def on_auto_cursor_changed(self):
+        pass
+    def on_auto_cursor_trace_changed(self):
+        pass
+    def on_cursor_syncx_changed(self):
+        pass
+    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
         pass
