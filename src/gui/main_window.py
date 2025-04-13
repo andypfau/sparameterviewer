@@ -110,6 +110,7 @@ class MainWindow(MainWindowUi):
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
+                self.ui_mark_datapoints = Settings.plot_mark_points
                 return None
             except Exception as ex:
                 return ex
@@ -535,6 +536,11 @@ class MainWindow(MainWindowUi):
 
     def on_shorten_legend(self):
         Settings.shorten_legend_items = self.ui_shorten_legend
+        self.update_plot()
+
+    
+    def on_mark_datapoints_changed(self):
+        Settings.plot_mark_points = self.ui_mark_datapoints
         self.update_plot()
 
 

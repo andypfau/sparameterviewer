@@ -167,19 +167,21 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_view = QtHelper.add_submenu(self, self.ui_menu_bar, '&View')
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
-        self._ui_menuitem_show_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
-        self._ui_menuitem_hide_single_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
-        self._ui_menuitem_shorten_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
+        self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
+        self._ui_menuitem_hide_single_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
+        self._ui_menuitem_shorten_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
-        # TODO: mark data points
         self._ui_mainmenu_view.addSeparator()
-        self._ui_menuitem_lock_x: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
-        self._ui_menuitem_lock_y: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
+        self._ui_menuitem_lock_x = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
+        self._ui_menuitem_lock_y = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
         self._ui_menuitem_lock_xy = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Both Axis Scales', self.on_lock_both)
         self._ui_menuitem_unlock_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Unlock Both Axis Scales', self.on_unlock_axes)
         self._ui_menuitem_rescale_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Re-Scale Locked Axis Scales', self.on_rescale_locked_axes)
         self._ui_menuitem_manual_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes, shortcut='Ctrl+X')
+        self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_mark = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Mark Data Points', self.on_mark_datapoints_changed, checkable=True)
+        self._ui_menuitem_mark.toggled.connect(self.on_mark_datapoints_changed)
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_update_expr = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 
@@ -308,6 +310,14 @@ class MainWindowUi(QMainWindow):
     @ui_lock_y.setter
     def ui_lock_y(self, value):
         self._ui_menuitem_lock_y.setChecked(value)
+    
+
+    @property
+    def ui_mark_datapoints(self) -> bool:
+        return self._ui_menuitem_mark.isChecked()
+    @ui_mark_datapoints.setter
+    def ui_mark_datapoints(self, value):
+        self._ui_menuitem_mark.setChecked(value)
 
 
     @property
@@ -536,4 +546,6 @@ class MainWindowUi(QMainWindow):
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
         pass
     def on_cursor_timer(self):
+        pass
+    def on_mark_datapoints_changed(self):
         pass
