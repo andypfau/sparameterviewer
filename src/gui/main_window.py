@@ -381,6 +381,7 @@ class MainWindow(MainWindowUi):
 
     def on_select_file(self):
         self.update_plot()
+        self.prepare_cursors()
 
 
     def on_open_directory(self):
@@ -657,16 +658,17 @@ class MainWindow(MainWindowUi):
     def on_cursor_timer(self):
         if len(self.cursor_event_queue) < 1:
             return
-        event = self.cursor_event_queue.pop()
+        event = self.cursor_event_queue.pop(0)
         while True:
-            if len(self.cursor_event_queue) >= 1:
-                event2 = self.cursor_event_queue[0]
-                if (event[0]==event2[0]) and (event[1]==event2[1]):
-                    # two conescutive queued elements have the same mouse button state, so it was only a cursor move
-                    # ignore the 1st event, and only handle the 2nd (later) event.
-                    event = self.cursor_event_queue.pop()
-                    continue
-            break
+            if len(self.cursor_event_queue) < 1:
+                break
+            next_event = self.cursor_event_queue[0]
+            if event[0]!=next_event[0] or event[1]!=next_event[1]:
+                break
+            # two consecutive queued elements have the same mouse button state, so it was only a cursor move
+            # ignore the 1st event, and only handle the 2nd (later) event.
+            event = self.cursor_event_queue.pop(0)
+            continue
         self.update_cursors(*event)
 
 
@@ -696,9 +698,17 @@ class MainWindow(MainWindowUi):
             
             if left_btn_pressed:
 
+                plot_width, plot_height = 1.0, 1.0
+                if self.plot:
+                    try:
+                        xlim, ylim = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+                        plot_width, plot_height = xlim[1]-xlim[0], ylim[1]-ylim[0]
+                    except:
+                        pass
+
                 # find out which cursor to move
                 if self.ui_auto_cursor and left_btn_event:
-                    target_cursor_index, _ = self.plot.get_closest_cursor(x, y)
+                    target_cursor_index, _ = self.plot.get_closest_cursor(x, y, plot_width, plot_height)
                     if target_cursor_index is not None:
                         self.ui_cursor_index = target_cursor_index
                 else:
@@ -708,14 +718,14 @@ class MainWindow(MainWindowUi):
                 if target_cursor_index is not None:
 
                     if self.ui_auto_cursor_trace:
-                        plot, x, y, z = self.plot.get_closest_plot_point(x, y)
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y, width=plot_width, height=plot_height)
                         if plot is not None:
                             if target_cursor_index==0:
                                 self.ui_cursor1_trace = plot.name
                     else:
                         selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
                         if selected_trace_name is not None:
-                            plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name)
+                            plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name, width=plot_width, height=plot_height)
                         else:
                             plot, x, y, z = None, None, None, None
 
@@ -723,10 +733,9 @@ class MainWindow(MainWindowUi):
                         target_cursor = self.plot.cursors[target_cursor_index]
                         target_cursor.set(x, y, z, enable=True, color=plot.color)
                         
-                    sync_x = self.ui_cursor_syncx
-                    if sync_x:
+                    if self.ui_cursor_syncx:
                         other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
-                        other_plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=other_trace_name)
+                        other_plot, x, y, z = self.plot.get_closest_plot_point(x, None, name=other_trace_name, width=plot_width, height=plot_height)
                         if other_plot is not None:
                             other_cursor_index = 1 - target_cursor_index
                             other_cursor = self.plot.cursors[other_cursor_index]

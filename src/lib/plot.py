@@ -127,7 +127,7 @@ class PlotHelper:
         return [item.data for item in self.items]
     
 
-    def get_closest_cursor(self, x: float, y: float) -> "tuple[int,PlotHelper.Cursor]":
+    def get_closest_cursor(self, x: float, y: float, width: float = 1, height: float = 1) -> "tuple[int,PlotHelper.Cursor]":
 
         if (not self.cursors[0].enabled) and (not self.cursors[1].enabled):
             return (None, None)
@@ -136,15 +136,15 @@ class PlotHelper:
         if (not self.cursors[0].enabled) and (self.cursors[1].enabled):
             return (1, self.cursors[1])
 
-        error_0 = math.sqrt(pow(x-self.cursors[0].x,2) + pow(y-self.cursors[0].y,2))
-        error_1 = math.sqrt(pow(x-self.cursors[1].x,2) + pow(y-self.cursors[1].y,2))
-        if error_0 < error_1:
+        dist0 = math.sqrt(((x-self.cursors[0].x)/width)**2 + ((y-self.cursors[0].y)/height)**2)
+        dist1 = math.sqrt(((x-self.cursors[1].x)/width)**2 + ((y-self.cursors[1].y)/height)**2)
+        if dist0 < dist1:
             return (0, self.cursors[0])
         else:         
             return (1, self.cursors[1])
 
 
-    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None) -> "tuple[PlotData,float,float,float]":
+    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None, width: float = 1, height: float = 1) -> "tuple[PlotData,float,float,float]":
 
         best_error = +1e99
         best_x = None
@@ -159,9 +159,8 @@ class PlotHelper:
             if plot.currently_used_axis != 1:
                 continue  # tracing cursors on the right axis does not work yet
             
-            # TODO: somehow this feels like it looks for the closest x, do not understand
-            dx = np.array(plot.data.x.values) - x
-            dy = np.array(plot.data.y.values) - y
+            dx = (np.array(plot.data.x.values) - x) /  width if x is not None else 0
+            dy = (np.array(plot.data.y.values) - y) / height if y is not None else 0
             dist = np.sqrt(np.abs(dx**2) + np.abs(dy**2))
             idx = np.argmin(dist)
             error = dist[idx]
