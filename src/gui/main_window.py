@@ -773,7 +773,6 @@ class MainWindow(MainWindowUi):
                     readout_dx = f'{dx_str}'
                     readout_dy = f'{dys} ({rys})'
         
-        # TODO: display data as grid instead of plaintext
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
 
