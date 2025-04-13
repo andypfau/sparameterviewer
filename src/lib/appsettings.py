@@ -36,11 +36,15 @@ class AppSettings:
     
 
     def __setattr__(self, __name: str, __value: any) -> None:
+        is_setting = ('_defaults' in self.__dict__) and (__name in self.__dict__['_defaults'])
+        if is_setting:
+            current_value = self.__getattribute__(__name)
+            if __value == current_value:
+                return
         super().__setattr__(__name, __value)
-        if '_defaults' in self.__dict__:
-            if __name in self.__dict__['_defaults']:
-                self.save()
-                self.notify()
+        if is_setting:
+            self.save()
+            self.notify()
 
     
     def load(self):
