@@ -40,7 +40,7 @@ class MainWindow(MainWindowUi):
 
     MAX_DIRECTORY_HISTORY_SIZE = 10
 
-    CURSOR_OFF_NAME = '[cursor turned off]'
+    CURSOR_OFF_NAME = '—'
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
