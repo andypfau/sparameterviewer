@@ -29,6 +29,8 @@ class MainWindowUi(QMainWindow):
         
         self._build_main_menu()
 
+        self._ui_cursor_timer: QTimer = None
+
         splitter = QSplitter(Qt.Orientation.Vertical)
         splitter_top = QWidget()
         splitter.addWidget(splitter_top)
@@ -233,6 +235,24 @@ class MainWindowUi(QMainWindow):
         for item in items:
             self._ui_unit2_combo.addItem(item)
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
+
+
+    @property
+    def ui_cursor_timer_is_timer_scheduled(self) -> bool:
+        return self._ui_cursor_timer is not None
+    def ui_schedule_cursor_timer(self, seconds: float):
+        if self._ui_cursor_timer is not None:
+            raise RuntimeError('Timer already pending')
+        self._ui_cursor_timer = QTimer()
+        def timeout():
+            nonlocal self
+            self._ui_cursor_timer = None
+            self.on_cursor_timer()
+        self._ui_cursor_timer.timeout.connect(timeout)
+        self._ui_cursor_timer.setSingleShot(True)
+        msec = max(1,int(round(seconds*1e3)))
+        self._ui_cursor_timer.start(msec)
+        
     
 
     @property
@@ -513,4 +533,6 @@ class MainWindowUi(QMainWindow):
     def on_cursor_syncx_changed(self):
         pass
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+        pass
+    def on_cursor_timer(self):
         pass

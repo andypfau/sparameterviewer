@@ -90,6 +90,7 @@ class MainWindow(MainWindowUi):
         #self.cursor_dialog: SparamviewerCursorDialog = None
         self.plot_axes_are_valid = False
         self._log_dialog: LogDialog = None
+        self.cursor_event_queue: list[tuple] = []
             
         # create plot
         self.plot: PlotHelper = None
@@ -628,27 +629,45 @@ class MainWindow(MainWindowUi):
 
 
     def on_cursor_select(self):
-        self.update_cusors()
+        self.update_cursors()
 
 
     def on_cursor_trace_change(self):
-        self.update_cusors()
+        self.update_cursors()
 
 
     def on_auto_cursor_changed(self):
-        self.update_cusors()
+        self.update_cursors()
 
 
     def on_auto_cursor_trace_changed(self):
-        self.update_cusors()
+        self.update_cursors()
 
 
     def on_cursor_syncx_changed(self):
-        self.update_cusors()
+        self.update_cursors()
 
 
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
-        self.update_cusors(left_btn_pressed, left_btn_event, x, y)
+        self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y))
+        if not self.ui_cursor_timer_is_timer_scheduled:
+            self.ui_schedule_cursor_timer(10e-3)
+    
+
+    def on_cursor_timer(self):
+        if len(self.cursor_event_queue) < 1:
+            return
+        event = self.cursor_event_queue.pop()
+        while True:
+            if len(self.cursor_event_queue) >= 1:
+                event2 = self.cursor_event_queue[0]
+                if (event[0]==event2[0]) and (event[1]==event2[1]):
+                    # two conescutive queued elements have the same mouse button state, so it was only a cursor move
+                    # ignore the 1st event, and only handle the 2nd (later) event.
+                    event = self.cursor_event_queue.pop()
+                    continue
+            break
+        self.update_cursors(*event)
 
 
     def prepare_cursors(self):
@@ -667,11 +686,10 @@ class MainWindow(MainWindowUi):
                 self.ui_plot.draw()
 
 
-    def update_cusors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None):
+    def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             return
 
-        # TODO: why are cursors so slow, especially when I have a 2nd trace?
         try:
             self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
             self.plot.cursors[1].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
