@@ -147,7 +147,7 @@ class MainWindow(MainWindowUi):
     def build_templates_menu(self):
 
         def selected_file_names():
-            return [file.name for file in self.files if file.tag in self.treeview_files.selection()]
+            return [file.name for file in self.selected_files]
 
         def set_expression(*expressions):
             current = self.ui_expression
