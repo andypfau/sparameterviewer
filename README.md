@@ -3,7 +3,7 @@ S-Parameter Viewer
 
 A cross-platform S-parameter Viewer written in Python.
 
-<img src="./doc/screenshot_mainwin_s2p.png" width="250" /> <img src="./doc/screenshot_mainwin_markers.png" width="300" /> <img src="./doc/screenshot_mainwin_expr.png" width="250" />
+<img src="./doc/screenshot_mainwin_markers.png" width="250" /> <img src="./doc/screenshot_mainwin_expr.png" width="250" />
 
 Main Features
 -------------
