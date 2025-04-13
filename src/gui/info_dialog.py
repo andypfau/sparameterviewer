@@ -8,4 +8,5 @@ class InfoDialog(InfoDialogUi):
     
 
     def show_modal_dialog(self, text: str):
-        super().ui_show_modal(text)
+        self.ui_set_text(text)
+        super().ui_show_modal()

@@ -24,21 +24,17 @@ class AboutDialogUi(QDialog):
         self.setModal(True)
         self.setWindowFlags(Qt.WindowType.Dialog)
 
-        hlayout = QHBoxLayout()
         image_path = pathlib.Path(AppPaths.get_resource_dir()) / 'sparamviewer.png'
-        hlayout.addSpacing(10)
-        hlayout.addWidget(QtHelper.make_image(str(image_path), 'Logo'))
-        hlayout.addSpacing(20)
-        vlayout = QVBoxLayout()
-        hlayout.addLayout(vlayout)
-        hlayout.addSpacing(10)
-        
-        vlayout.addWidget(QtHelper.make_label(Info.AppName, font=QtHelper.make_font(rel_size=1.25)))
-        vlayout.addSpacing(8)
-        vlayout.addWidget(QtHelper.make_label(Info.AppVersionStr))
-        vlayout.addWidget(QtHelper.make_label(Info.AppDateStr))
-        vlayout.addStretch()
-        self.setLayout(hlayout)
+        self.setLayout(QtHelper.layout_h(
+            10, QtHelper.make_image(str(image_path), 'Logo'), 20,
+            QtHelper.layout_v(
+                QtHelper.make_label(Info.AppName, font=QtHelper.make_font(rel_size=1.25)),
+                8,
+                Info.AppVersionStr,
+                Info.AppDateStr,
+                ...
+            ),
+        ))
         
         self.adjustSize()
     

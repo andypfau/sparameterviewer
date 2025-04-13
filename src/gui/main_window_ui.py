@@ -128,6 +128,8 @@ class MainWindowUi(QMainWindow):
             self._ui_tabs,
             self._ui_status_bar,
         ))
+
+        self._build_template_menu()
         
         self._ui_tabs.currentChanged.connect(self.on_tab_change)
 
@@ -139,60 +141,60 @@ class MainWindowUi(QMainWindow):
     def _build_main_menu(self):
         self.ui_menu_bar = self.menuBar()
         
-        self.ui_mainmenu_file = QtHelper.add_submenu(self, self.ui_menu_bar, '&File')
-        self.ui_menuitem_open_dir = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Open Directory...', self.on_open_directory, shortcut='Ctrl+O')
-        self.ui_menuitem_append_dir = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Append Directory...', self.on_append_directory)
-        self.ui_menuitem_reload_all_files = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files)
-        self.ui_mainmenu_recent = QtHelper.add_submenu(self, self.ui_mainmenu_file, 'Recent Directories', visible=False)
-        self.ui_menuitem_recent_items = []
-        self.ui_mainmenu_file.addSeparator()
-        self.ui_menuitem_save_plot_image = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Save Plot Image...', self.on_save_plot_image)
-        self.ui_mainmenu_file.addSeparator()
-        self.ui_menuitem_file_info = QtHelper.add_menuitem(self.ui_mainmenu_file, 'File Info', self.on_file_info, shortcut='Ctrl+I')
-        self.ui_menuitem_view_tabular = QtHelper.add_menuitem(self.ui_mainmenu_file, 'View/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
-        self.ui_menuitem_open_ext = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Open Externally', self.on_open_externally, shortcut='Ctrl+E')
-        self.ui_mainmenu_file.addSeparator()
-        self.ui_menuitem_load_expr = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Load Expressions...', self.on_load_expressions)
-        self.ui_menuitem_save_expr = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Save Expressions...', self.on_save_expressions)
-        self.ui_mainmenu_file.addSeparator()
-        self.ui_menuitem_exit = QtHelper.add_menuitem(self.ui_mainmenu_file, 'Exit', self.close)
+        self._ui_mainmenu_file = QtHelper.add_submenu(self, self.ui_menu_bar, '&File')
+        self._ui_menuitem_open_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_open_directory, shortcut='Ctrl+O')
+        self._ui_menuitem_append_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Append Directory...', self.on_append_directory)
+        self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files)
+        self._ui_mainmenu_recent = QtHelper.add_submenu(self, self._ui_mainmenu_file, 'Recent Directories', visible=False)
+        self._ui_menuitem_recent_items = []
+        self._ui_mainmenu_file.addSeparator()
+        self._ui_menuitem_save_plot_image = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Plot Image...', self.on_save_plot_image)
+        self._ui_mainmenu_file.addSeparator()
+        self._ui_menuitem_file_info = QtHelper.add_menuitem(self._ui_mainmenu_file, 'File Info', self.on_file_info, shortcut='Ctrl+I')
+        self._ui_menuitem_view_tabular = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
+        self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally, shortcut='Ctrl+E')
+        self._ui_mainmenu_file.addSeparator()
+        self._ui_menuitem_load_expr = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Load Expressions...', self.on_load_expressions)
+        self._ui_menuitem_save_expr = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Expressions...', self.on_save_expressions)
+        self._ui_mainmenu_file.addSeparator()
+        self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
-        self.ui_mainmenu_view = QtHelper.add_submenu(self, self.ui_menu_bar, '&View')
-        self.ui_menuitem_filter = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
-        self.ui_mainmenu_view.addSeparator()
-        self.ui_menuitem_show_legend: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
-        self.ui_menuitem_hide_single_legend: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
-        self.ui_menuitem_shorten_legend: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
-        self.ui_mainmenu_view.addSeparator()
-        self.ui_menuitem_copy_image = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
-        self.ui_mainmenu_view.addSeparator()
-        self.ui_menuitem_lock_x: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
-        self.ui_menuitem_lock_y: QAction = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
-        self.ui_menuitem_lock_xy = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Lock Both Axis Scales', self.on_lock_both)
-        self.ui_menuitem_unlock_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Unlock Both Axis Scales', self.on_unlock_axes)
-        self.ui_menuitem_rescale_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Re-Scale Locked Axis Scales', self.on_rescale_locked_axes)
-        self.ui_menuitem_manual_axes = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes, shortcut='Ctrl+X')
-        self.ui_mainmenu_view.addSeparator()
-        self.ui_menuitem_update_expr = QtHelper.add_menuitem(self.ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
+        self._ui_mainmenu_view = QtHelper.add_submenu(self, self.ui_menu_bar, '&View')
+        self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
+        self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_show_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
+        self._ui_menuitem_hide_single_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
+        self._ui_menuitem_shorten_legend: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
+        self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
+        self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_lock_x: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
+        self._ui_menuitem_lock_y: QAction = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
+        self._ui_menuitem_lock_xy = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Both Axis Scales', self.on_lock_both)
+        self._ui_menuitem_unlock_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Unlock Both Axis Scales', self.on_unlock_axes)
+        self._ui_menuitem_rescale_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Re-Scale Locked Axis Scales', self.on_rescale_locked_axes)
+        self._ui_menuitem_manual_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes, shortcut='Ctrl+X')
+        self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_update_expr = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 
-        self.ui_mainmenu_tools = QtHelper.add_submenu(self, self.ui_menu_bar, '&Tools')
-        self.ui_menuitem_rlcalc = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
-        self.ui_mainmenu_tools.addSeparator()
-        self.ui_menuitem_log = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
-        self.ui_mainmenu_tools.addSeparator()
-        self.ui_menuitem_settings = QtHelper.add_menuitem(self.ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
+        self._ui_mainmenu_tools = QtHelper.add_submenu(self, self.ui_menu_bar, '&Tools')
+        self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
+        self._ui_mainmenu_tools.addSeparator()
+        self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
+        self._ui_mainmenu_tools.addSeparator()
+        self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
 
-        self.ui_mainmenu_help = QtHelper.add_submenu(self, self.ui_menu_bar, '&Help')
-        self.ui_menuitem_help = QtHelper.add_menuitem(self.ui_mainmenu_help, 'Help', self.on_help, shortcut='F1')
-        self.ui_menuitem_about = QtHelper.add_menuitem(self.ui_mainmenu_help, 'About', self.on_about)
+        self._ui_mainmenu_help = QtHelper.add_submenu(self, self.ui_menu_bar, '&Help')
+        self._ui_menuitem_help = QtHelper.add_menuitem(self._ui_mainmenu_help, 'Help', self.on_help, shortcut='F1')
+        self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
 
 
     def _build_template_menu(self):
-        self.ui_template_menu = QMenu()
-        self.ui_template_menuitem_example1 = QtHelper.add_menuitem(self.ui_template_menu, 'Example 1', None)
-        self.ui_template_menu.addSeparator()
-        self.template_submenu_more = QtHelper.add_submenu(self, self.ui_template_menu, 'More Examples')
-        self.ui_template_menuitem_example2 =  QtHelper.add_menuitem(self.ui_template_menu, 'Example 2', None)
+        self._ui_template_menu = QMenu()
+        self._ui_template_menuitem_example1 = QtHelper.add_menuitem(self._ui_template_menu, 'Example 1', None)
+        self._ui_template_menu.addSeparator()
+        self._template_submenu_more = QtHelper.add_submenu(self, self._ui_template_menu, 'More Examples')
+        self._ui_template_menuitem_example2 =  QtHelper.add_menuitem(self._ui_template_menu, 'Example 2', None)
 
 
     def ui_show(self):
@@ -201,7 +203,7 @@ class MainWindowUi(QMainWindow):
 
     def ui_show_template_menu(self):
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
-        self.ui_template_menu.popup(button_pos)
+        self._ui_template_menu.popup(button_pos)
 
     
     def ui_set_window_title(self, title: str):
@@ -245,42 +247,42 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_show_legend(self) -> bool:
-        return self.ui_menuitem_show_legend.isChecked()
+        return self._ui_menuitem_show_legend.isChecked()
     @ui_show_legend.setter
     def ui_show_legend(self, value):
-        self.ui_menuitem_show_legend.setChecked(value)
+        self._ui_menuitem_show_legend.setChecked(value)
     
 
     @property
     def ui_hide_single_item_legend(self) -> bool:
-        return self.ui_menuitem_hide_single_legend.isChecked()
+        return self._ui_menuitem_hide_single_legend.isChecked()
     @ui_hide_single_item_legend.setter
     def ui_hide_single_item_legend(self, value):
-        self.ui_menuitem_hide_single_legend.setChecked(value)
+        self._ui_menuitem_hide_single_legend.setChecked(value)
     
 
     @property
     def ui_shorten_legend(self) -> bool:
-        return self.ui_menuitem_shorten_legend.isChecked()
+        return self._ui_menuitem_shorten_legend.isChecked()
     @ui_shorten_legend.setter
     def ui_shorten_legend(self, value):
-        self.ui_menuitem_shorten_legend.setChecked(value)
+        self._ui_menuitem_shorten_legend.setChecked(value)
     
 
     @property
     def ui_lock_x(self) -> bool:
-        return self.ui_menuitem_lock_x.isChecked()
+        return self._ui_menuitem_lock_x.isChecked()
     @ui_lock_x.setter
     def ui_lock_x(self, value):
-        self.ui_menuitem_lock_x.setChecked(value)
+        self._ui_menuitem_lock_x.setChecked(value)
     
 
     @property
     def ui_lock_y(self) -> bool:
-        return self.ui_menuitem_lock_y.isChecked()
+        return self._ui_menuitem_lock_y.isChecked()
     @ui_lock_y.setter
     def ui_lock_y(self, value):
-        self.ui_menuitem_lock_y.setChecked(value)
+        self._ui_menuitem_lock_y.setChecked(value)
 
 
     @property
@@ -415,15 +417,15 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
-        self.ui_menuitem_recent_items.clear()
-        self.ui_mainmenu_recent.clear()
+        self._ui_menuitem_recent_items.clear()
+        self._ui_mainmenu_recent.clear()
         if len(texts_and_callbacks) <= 0:
-            self.ui_mainmenu_recent.setVisible(False)
+            self._ui_mainmenu_recent.setVisible(False)
             return
         for (text,callback) in texts_and_callbacks:
-            item = QtHelper.add_menuitem(self.ui_mainmenu_recent, text, callback)
-            self.ui_menuitem_recent_items.append(item)
-        self.ui_mainmenu_recent.setVisible(True)
+            item = QtHelper.add_menuitem(self._ui_mainmenu_recent, text, callback)
+            self._ui_menuitem_recent_items.append(item)
+        self._ui_mainmenu_recent.setVisible(True)
 
 
     def on_select_mode(self):

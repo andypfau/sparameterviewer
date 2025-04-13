@@ -24,27 +24,31 @@ class FilterDialogUi(QDialog):
         self.setModal(True)
         self.setSizeGripEnabled(True)
 
-        layout = QVBoxLayout()
-        search_layout = QHBoxLayout()
-        layout.addLayout(search_layout)
         self._ui_search_text = QLineEdit()
         self._ui_search_text.setPlaceholderText('Search expression...')
         self._ui_search_text.textChanged.connect(self.on_search_change)
         self._ui_search_text.setAcceptDrops(True)
         self._ui_search_text.returnPressed.connect(self.accept)
-        search_layout.addWidget(self._ui_search_text)
+
         self._ui_wildcard_radio = QRadioButton('Wildcards')
         self._ui_wildcard_radio.toggled.connect(self.on_search_mode_change)
-        search_layout.addWidget(self._ui_wildcard_radio)
+
         self._ui_regex_radio = QRadioButton('Regex')
         self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
-        search_layout.addWidget(self._ui_regex_radio)
+
         self._ui_files_list = QListView()
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)
-        layout.addWidget(self._ui_files_list)
-        self.setLayout(layout)
+        
+        self.setLayout(QtHelper.layout_v(
+            QtHelper.layout_h(
+                self._ui_search_text,
+                self._ui_wildcard_radio,
+                self._ui_regex_radio,
+            ),
+            self._ui_files_list,
+        ))
 
         self.resize(400, 500)
     

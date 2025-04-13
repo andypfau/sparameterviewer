@@ -23,18 +23,20 @@ class InfoDialogUi(QDialog):
         self.setModal(True)
         self.setSizeGripEnabled(True)
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        self.ui_infostr = QPlainTextEdit()
-        self.ui_infostr.setMinimumSize(200, 100)
-        self.ui_infostr.setReadOnly(True)
-        self.ui_infostr.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
-        self.ui_infostr.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        layout.addWidget(self.ui_infostr)
+        self._ui_infostr = QPlainTextEdit()
+        self._ui_infostr.setMinimumSize(200, 100)
+        self._ui_infostr.setReadOnly(True)
+        self._ui_infostr.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
+        self._ui_infostr.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        
+        self.setLayout(QtHelper.layout_v(self._ui_infostr))
 
         self.resize(800, 600)
     
 
-    def ui_show_modal(self, text: str):
-        self.ui_infostr.setPlainText(text)
+    def ui_show_modal(self):
         self.exec()
+
+
+    def ui_set_text(self, text: str):
+        self._ui_infostr.setPlainText(text)
