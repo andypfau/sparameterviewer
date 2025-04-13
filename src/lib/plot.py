@@ -158,15 +158,19 @@ class PlotHelper:
                     continue
             if plot.currently_used_axis != 1:
                 continue  # tracing cursors on the right axis does not work yet
-            for idx,(dx,dy) in enumerate(zip(plot.data.x.values, plot.data.y.values)):
-                error = math.sqrt(pow(x-dx,2)+pow(y-dy,2))
-                if error < best_error:
-                    best_error = error
-                    best_x = dx
-                    best_y = dy
-                    if plot.data.z is not None:
-                        best_z = plot.data.z.values[idx]
-                    best_plot = plot.data
+            
+            # TODO: somehow this feels like it looks for the closest x, do not understand
+            dx = np.array(plot.data.x.values) - x
+            dy = np.array(plot.data.y.values) - y
+            dist = np.sqrt(np.abs(dx**2) + np.abs(dy**2))
+            idx = np.argmin(dist)
+            error = dist[idx]
+            if error < best_error:
+                best_error = error
+                best_x = plot.data.x.values[idx]
+                best_y = plot.data.y.values[idx]
+                best_z = plot.data.z.values[idx] if plot.data.z is not None else None
+                best_plot = plot.data
 
         return best_plot, best_x, best_y, best_z
 
