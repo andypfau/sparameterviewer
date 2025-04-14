@@ -1,5 +1,5 @@
 from .filter_dialog_ui import FilterDialogUi
-from .settings import Settings
+from .helpers.settings import Settings
 from typing import Optional
 import re
 

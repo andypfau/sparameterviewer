@@ -1,4 +1,4 @@
-from .qt_helper import QtHelper
+from .helpers.qt_helper import QtHelper
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -101,12 +101,12 @@ class TabularDialogUi(QDialog):
         self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally)
 
         self._ui_mainmenu_edit = QtHelper.add_submenu(self, self._ui_main_menu, '&Edit')
-        self._ui_menuitem_copy_csv = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy CSV', self.on_copy_csv)
+        self._ui_menuitem_copy_csv = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create CSV', self.on_create_csv)
         self._ui_mainmenu_edit.addSeparator()
-        self._ui_menuitem_copy_json = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy JSON', self.on_copy_json)
+        self._ui_menuitem_copy_json = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create JSON', self.on_create_json)
         self._ui_mainmenu_edit.addSeparator()
-        self._ui_menuitem_copy_numpy = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy Python (NumPy)', self.on_copy_numpy)
-        self._ui_menuitem_copy_pandas = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Copy Python (Pandas)', self.on_copy_pandas)
+        self._ui_menuitem_copy_numpy = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create Python (NumPy)', self.on_create_numpy)
+        self._ui_menuitem_copy_pandas = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create Python (Pandas)', self.on_create_pandas)
         self._ui_mainmenu_edit.addSeparator()
         self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Settings...', self.on_settings, shortcut='F4')
     
@@ -212,13 +212,13 @@ class TabularDialogUi(QDialog):
         pass
     def on_save_all(self):
         pass
-    def on_copy_csv(self):
+    def on_create_csv(self):
         pass
-    def on_copy_json(self):
+    def on_create_json(self):
         pass
-    def on_copy_numpy(self):
+    def on_create_numpy(self):
         pass
-    def on_copy_pandas(self):
+    def on_create_pandas(self):
         pass
     def on_settings(self):
         pass

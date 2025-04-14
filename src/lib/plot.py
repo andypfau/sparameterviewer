@@ -1,6 +1,7 @@
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
 from .shortstr import remove_common_prefixes_and_suffixes
+from .utils import natural_sort_key
 
 import math
 import numpy as np
@@ -17,6 +18,7 @@ class ItemToPlot:
     prefer_seconary_yaxis: bool
     currently_used_axis: int
     style: str
+    label: str = None
 
 
 
@@ -136,8 +138,13 @@ class PlotHelper:
         if (not self.cursors[0].enabled) and (self.cursors[1].enabled):
             return (1, self.cursors[1])
 
-        dist0 = math.sqrt(((x-self.cursors[0].x)/width)**2 + ((y-self.cursors[0].y)/height)**2)
-        dist1 = math.sqrt(((x-self.cursors[1].x)/width)**2 + ((y-self.cursors[1].y)/height)**2)
+        dx0 = (x-self.cursors[0].x) /  width if x is not None else 0
+        dy0 = (y-self.cursors[0].y) / height if y is not None else 0
+        dx1 = (x-self.cursors[1].x) /  width if x is not None else 0
+        dy1 = (y-self.cursors[1].y) / height if y is not None else 0
+
+        dist0 = math.sqrt(dx0**2 + dy0**2)
+        dist1 = math.sqrt(dx1**2 + dy1**2)
         if dist0 < dist1:
             return (0, self.cursors[0])
         else:         
@@ -234,11 +241,17 @@ class PlotHelper:
         
         self.any_legend = False
 
-        labels = [item.data.name for item in self.items]
+        for item in self.items:
+            item.label = item.data.name
         if self.shorten_legend:
+            labels = [item.label for item in self.items]
             labels = remove_common_prefixes_and_suffixes(labels)
+            for label,item in zip(labels,self.items):
+                item.label = label
+        
+        self.items = sorted(self.items, key=lambda item: natural_sort_key(item.label))
 
-        for item_index,(item,label) in enumerate(zip(self.items, labels)):
+        for item_index,item in enumerate(self.items):
             if item.prefer_seconary_yaxis and use_twin_yaxis:
                 plot = self.plot2
                 self.items[item_index].currently_used_axis = 2
@@ -249,8 +262,8 @@ class PlotHelper:
             x, y, style = item.data.x.values, item.data.y.values, item.style
 
             # escaping for matplotlib
-            if label.startswith('_'):
-                label = ' _' + label[1:]
+            if item.label.startswith('_'):
+                item.label = ' _' + item.label[1:]
 
             def fix_log(x,y):
                 if x[0]<=0 and self.x_log:
@@ -261,16 +274,16 @@ class PlotHelper:
             
             if self.polar:
                 c = x + 1j*y
-                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=label)
+                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label)
             elif self.smith:
                 c = x + 1j*y
                 from skrf import plotting
-                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None)
+                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None)
             elif self.x_log or self.y_log:
                 x,y = fix_log(x,y)
-                new_plt = plot.plot(x, y, style, label=label)
+                new_plt = plot.plot(x, y, style, label=item.label)
             else:
-                new_plt = plot.plot(x, y, style, label=label)
+                new_plt = plot.plot(x, y, style, label=item.label)
 
             color = new_plt[0].get_color() if new_plt is not None else None
             self.items[item_index].data.color = color

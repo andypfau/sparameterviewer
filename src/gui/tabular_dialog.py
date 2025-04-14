@@ -1,8 +1,9 @@
 from .tabular_dialog_ui import TabularDialogUi
-from .simple_dialogs import save_file_dialog, error_dialog
+from .helpers.simple_dialogs import save_file_dialog, error_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
-from .settings import Settings, PhaseUnit, CsvSeparator
-from .help import show_help
+from .helpers.settings import Settings, PhaseUnit, CsvSeparator
+from .helpers.help import show_help
+from .text_dialog import TextDialog
 from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process
 import dataclasses
 import io
@@ -166,10 +167,10 @@ class TabularDialog(TabularDialogUi):
     class Format(enum.StrEnum):
         dB = 'dB' 
         Lin = 'Linear Magnitude' 
-        dB_Phase = 'dB  Phase' 
-        Lin_Phase = 'Linear Magnitude  Phase' 
+        dB_Phase = 'dB, Phase' 
+        Lin_Phase = 'Linear Magnitude, Phase' 
         Phase = 'Phase' 
-        Real_Imag = 'Real  Imaginary' 
+        Real_Imag = 'Real, Imaginary' 
 
 
     def __init__(self, parent):
@@ -238,7 +239,7 @@ class TabularDialog(TabularDialogUi):
 
         
     def populate_table(self, dataset: "TabularDataset"):
-        ds_fmt = self.format_dataset(self.filter_dataset(dataset))
+        ds_fmt = self.format_dataset(self.filter_dataset(dataset), code_safe_names=False)
         headers = [ds_fmt.xcol, *ds_fmt.ycols]
         columns = [
             [str(Si(x,significant_digits=TabularDialog.DISPLAY_PREC)) for x in ds_fmt.xcol_data],
@@ -247,16 +248,16 @@ class TabularDialog(TabularDialogUi):
         self.ui_populate_table(headers, columns)
 
         
-    def copy_data_csv(self, dataset: "TabularDataset"):
-        ds_fmt = self.format_dataset(self.filter_dataset(dataset))
+    def create_csv(self, dataset: "TabularDataset"):
+        ds_fmt = self.format_dataset(self.filter_dataset(dataset), code_safe_names=True)
         df = self.get_dataframe(ds_fmt)
         sio = io.StringIO()
         df.to_csv(sio, index=None, sep=self.csv_separator_char())
-        Clipboard.copy_string(sio.getvalue())
+        return sio.getvalue()
 
         
-    def copy_data_json(self, dataset: "TabularDataset"):
-        dataset = self.format_dataset(self.filter_dataset(dataset))
+    def create_json(self, dataset: "TabularDataset"):
+        dataset = self.format_dataset(self.filter_dataset(dataset), code_safe_names=True)
         def sanitize_name(name: str) -> str:
             return name.replace('"', "'")
         j = {}
@@ -264,10 +265,10 @@ class TabularDialog(TabularDialogUi):
         for col_name,col_data in zip(dataset.ycols,dataset.ycol_datas):
             j[sanitize_name(col_name)] = list(col_data)
         jstr = json.dumps(j, indent=4)
-        Clipboard.copy_string(jstr)
+        return jstr
 
         
-    def copy_data_numpy(self, dataset: "TabularDataset"):
+    def create_numpy(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
         def split_words(name: str) -> list[str]:
             return re.split(r'\W|^(?=\d)', name)
@@ -297,10 +298,10 @@ class TabularDialog(TabularDialogUi):
             if dataset.is_spar:
                 py += 'fig.update_layout(yaxis_title=\'dB\')\n'
             py += f'fig.show()\n'
-        Clipboard.copy_string(py)
+        return py
 
         
-    def copy_data_pandas(self, dataset: "TabularDataset"):
+    def create_pandas(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
         def split_words(name: str) -> str:
             return re.split(r'\W|^(?=\d)', name)
@@ -315,7 +316,7 @@ class TabularDialog(TabularDialogUi):
             py += f'\t\'{n}\': [{", ".join([format_value(x) for x in d])}],\n'
         py += f'}})  # {dataset.name}\n\n'
         py += f'display(df_{sanitize_var_name(dataset.name)})\n'
-        Clipboard.copy_string(py)
+        return py
     
 
     def get_dataframe(self, dataset: "TabularDataset") -> "pd.DataFrame":
@@ -399,7 +400,7 @@ class TabularDialog(TabularDialogUi):
         return TabularDataset(dataset.name, dataset.xcol, ycols, xcol_data, ycol_datas, dataset.is_spar)
 
 
-    def format_dataset(self, dataset: TabularDataset) -> TabularDataset:
+    def format_dataset(self, dataset: TabularDataset, code_safe_names: bool) -> TabularDataset:
         
         def interleave_lists(*lists):
             return list(itertools.chain(*zip(*lists)))
@@ -411,58 +412,95 @@ class TabularDialog(TabularDialogUi):
             selected_format = self.selected_format
             if selected_format == TabularDialog.Format.dB_Phase:
                 if Settings.phase_unit==PhaseUnit.Radians:
-                    ycols = interleave_lists(
-                        [f'|{name}| / dB' for name in ycols],
-                        [f'∠{name} / rad' for name in ycols])
+                    if code_safe_names:
+                        ycols = interleave_lists(
+                            [f'Mag {name} / dB' for name in ycols],
+                            [f'Phase {name} / rad' for name in ycols])
+                    else:
+                        ycols = interleave_lists(
+                            [f'|{name}| / dB' for name in ycols],
+                            [f'∠{name} / rad' for name in ycols])
                     ycol_datas = interleave_lists(
                         [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in ycol_datas],
                         [np.angle(col) for col in ycol_datas])
                 else:
-                    ycols = interleave_lists(
-                        [f'|{name}| / dB' for name in ycols],
-                        [f'∠{name} / °' for name in ycols])
+                    if code_safe_names:
+                        ycols = interleave_lists(
+                            [f'Mag {name} / dB' for name in ycols],
+                            [f'Phase {name} / deg' for name in ycols])
+                    else:
+                        ycols = interleave_lists(
+                            [f'|{name}| / dB' for name in ycols],
+                            [f'∠{name} / °' for name in ycols])
                     ycol_datas = interleave_lists(
                         [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in ycol_datas],
                         [np.angle(col)*180/math.pi for col in ycol_datas])
             
             elif selected_format == TabularDialog.Format.Lin_Phase:
                 if Settings.phase_unit==PhaseUnit.Radians:
-                    ycols = interleave_lists(
-                        [f'|{name}|' for name in ycols],
-                        [f'∠{name} / rad' for name in ycols])
+                    if code_safe_names:
+                        ycols = interleave_lists(
+                            [f'Mag {name}' for name in ycols],
+                            [f'Phase {name} / rad' for name in ycols])
+                    else:
+                        ycols = interleave_lists(
+                            [f'|{name}|' for name in ycols],
+                            [f'∠{name} / rad' for name in ycols])
                     ycol_datas = interleave_lists(
                         [np.abs(col) for col in ycol_datas],
                         [np.angle(col) for col in ycol_datas])
                 else:
-                    ycols = interleave_lists(
-                        [f'|{name}|' for name in ycols],
-                        [f'∠{name} / °' for name in ycols])
+                    if code_safe_names:
+                        ycols = interleave_lists(
+                            [f'Mag {name}' for name in ycols],
+                            [f'Phase {name} / deg' for name in ycols])
+                    else:
+                        ycols = interleave_lists(
+                            [f'|{name}|' for name in ycols],
+                            [f'∠{name} / °' for name in ycols])
                     ycol_datas = interleave_lists(
                         [np.abs(col) for col in ycol_datas],
                         [np.angle(col)*180/math.pi for col in ycol_datas])
 
             elif selected_format == TabularDialog.Format.dB:
-                ycols = [f'|{name}| / dB' for name in ycols]
+                if code_safe_names:
+                    ycols = [f'Mag {name} / dB' for name in ycols]
+                else:
+                    ycols = [f'|{name}| / dB' for name in ycols]
                 ycol_datas = [20*np.log10(np.maximum(1e-15,np.abs(col))) for col in dataset.ycol_datas]
 
             elif selected_format == TabularDialog.Format.Lin:
-                ycols = [f'|{name}|' for name in ycols]
+                if code_safe_names:
+                    ycols = [f'Mag {name}' for name in ycols]
+                else:
+                    ycols = [f'|{name}|' for name in ycols]
                 ycol_datas = [np.abs(col) for col in dataset.ycol_datas]
 
             elif selected_format == TabularDialog.Format.Real_Imag:
-                ycols = interleave_lists(
-                    [f'ℜ𝔢 {name}' for name in ycols],
-                    [f'ℑ𝔪 {name}' for name in ycols])
+                if code_safe_names:
+                    ycols = interleave_lists(
+                        [f'Real {name}' for name in ycols],
+                        [f'Imag {name}' for name in ycols])
+                else:
+                    ycols = interleave_lists(
+                        [f'ℜ𝔢 {name}' for name in ycols],
+                        [f'ℑ𝔪 {name}' for name in ycols])
                 ycol_datas = interleave_lists(
                     [np.real(col) for col in dataset.ycol_datas],
                     [np.imag(col) for col in dataset.ycol_datas])
             
             elif selected_format == TabularDialog.Format.Phase:
                 if Settings.phase_unit==PhaseUnit.Radians:
-                    ycols = [f'∠{name} / rad' for name in ycols]
+                    if code_safe_names:
+                        ycols = [f'Phase {name} / rad' for name in ycols]
+                    else:
+                        ycols = [f'∠{name} / rad' for name in ycols]
                     ycol_datas = [np.angle(col) for col in dataset.ycol_datas]
                 else:
-                    ycols = [f'∠{name} / °' for name in ycols]
+                    if code_safe_names:
+                        ycols = [f'Phase {name} / deg' for name in ycols]
+                    else:
+                        ycols = [f'∠{name} / °' for name in ycols]
                     ycol_datas = [np.angle(col)*180/math.pi for col in dataset.ycol_datas]
             
             else:
@@ -538,28 +576,32 @@ class TabularDialog(TabularDialogUi):
         self.save_spreadsheets_all(filename)
 
 
-    def on_copy_csv(self):
+    def on_create_csv(self):
         if not self.selected_dataset:
             return
-        self.copy_data_csv(self.selected_dataset)
+        csv = self.create_csv(self.selected_dataset)
+        TextDialog(self).show_modal_dialog('CSV', csv)
 
 
-    def on_copy_json(self):
+    def on_create_json(self):
         if not self.selected_dataset:
             return
-        self.copy_data_json(self.selected_dataset)
+        json = self.create_json(self.selected_dataset)
+        TextDialog(self).show_modal_dialog('JSON', json)
 
 
-    def on_copy_numpy(self):
+    def on_create_numpy(self):
         if not self.selected_dataset:
             return
-        self.copy_data_numpy(self.selected_dataset)
+        py = self.create_numpy(self.selected_dataset)
+        TextDialog(self).show_modal_dialog('Python', py)
 
 
-    def on_copy_pandas(self):
+    def on_create_pandas(self):
         if not self.selected_dataset:
             return
-        self.copy_data_pandas(self.selected_dataset)
+        py = self.create_pandas(self.selected_dataset)
+        TextDialog(self).show_modal_dialog('Python', py)
 
 
     def on_settings(self):

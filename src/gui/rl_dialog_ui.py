@@ -1,5 +1,5 @@
-from .qt_helper import QtHelper
-from .plot_widget import PlotWidget
+from .helpers.qt_helper import QtHelper
+from .helpers.plot_widget import PlotWidget
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *

@@ -4,9 +4,9 @@ import sys, os, logging
 from PyQt6 import QtWidgets
 
 from gui.main_window import MainWindow
-from gui.log_handler import LogHandler
-from gui.settings import Settings
-from gui.qt_helper import QtHelper
+from gui.helpers.log_handler import LogHandler
+from gui.helpers.settings import Settings
+from gui.helpers.qt_helper import QtHelper
 from lib import AppPaths, is_running_from_binary
 
 

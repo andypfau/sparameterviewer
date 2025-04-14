@@ -1,10 +1,10 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
-from .simple_dialogs import info_dialog
-from .help import show_help
-from .settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator
-from .simple_dialogs import open_file_dialog
-from .plot_widget import PlotWidget
-from .qt_helper import QtHelper
+from .helpers.simple_dialogs import info_dialog
+from .helpers.help import show_help
+from .helpers.settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator, CursorSnap
+from .helpers.simple_dialogs import open_file_dialog
+from .helpers.plot_widget import PlotWidget
+from .helpers.qt_helper import QtHelper
 from lib.utils import is_windows
 import pathlib
 import logging
@@ -47,6 +47,11 @@ class SettingsDialog(SettingsDialogUi):
         CsvSeparator.Semicolon: 'Semicolon',
     }
 
+    CURSOR_SNAP_NAMES = {
+        CursorSnap.X: 'Closest X-Coordinate',
+        CursorSnap.Point: 'Closest Point',
+    }
+
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -55,6 +60,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZE_NAMES.values()))
         self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
         self.ui_set_font_options(QtHelper.get_all_available_font_families(monospace_only=True))
+        self.ui_set_cursor_snap_options(list(SettingsDialog.CURSOR_SNAP_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -74,6 +80,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
             self.ui_td_shift = Settings.tdr_shift
             self.ui_td_z = Settings.tdr_impedance
+            self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
             self.ui_ext_ed = Settings.ext_editor_cmd
@@ -165,6 +172,13 @@ class SettingsDialog(SettingsDialogUi):
     
     def on_zip_change(self):
         Settings.extract_zip = self.ui_extract_zip
+
+
+    def on_cursor_snap_changed(self):
+        for snap, name in SettingsDialog.CURSOR_SNAP_NAMES.items():
+            if name == self.ui_cursor_snap:
+                Settings.cursor_snap = snap
+                break
     
     
     def on_comment_change(self):

@@ -39,9 +39,7 @@ In the main window go *Tools* → *Trace Cursors*.
 
 Just click in the plot, and the reading is shown in the dialog. You may select one of two cursors, or let the tool select the closest cursor automatically (*Auto*). You may specify a specific trace, or let the tool snap the cursor to the closest trace (*Auto*).
 
-⚠️ Pitfall: if you selected a tool the pan or zoom tool in the plot, it will pan/zoom! De-select the tools in the plot before using cursors.
-
-⚠️ You can only apply cursors to traces on the primary Y-axis.
+Note that you can only apply cursors to traces on the primary (left) Y-axis.
 
 
 Return Loss Integrator

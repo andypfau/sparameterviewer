@@ -2,6 +2,8 @@ import os
 import sys
 import string
 import subprocess
+import pathlib
+import re
 import numpy as np
 
 
@@ -94,3 +96,37 @@ def group_delay(frequencies, sparams):
     d_phase = np.diff(np.unwrap(np.angle(sparams)))
     d_freq = np.diff(frequencies)
     return frequencies[1:], -d_phase/d_freq
+
+
+def shorten_path(path: str, max_len: int) -> str:
+    short_path = path
+    parts_to_drop = 0
+    while True:
+        if len(short_path) <= max_len:
+            break  # already short enough
+        
+        parts = list(pathlib.Path(path).parts)
+        parts_to_drop += 1
+        i0 = len(parts)//2 - parts_to_drop//2
+        i1 = i0+parts_to_drop-1
+        del parts[i0:i1+1]
+        parts.insert(i0, '...')
+        if len(parts) < 2:
+            break  # cannot be shortened any more
+        print(f'Parts are now <{parts}>')
+        
+        short_path_obj = pathlib.Path(parts[0])
+        for part in parts[1:]:
+            short_path_obj = short_path_obj / part
+        short_path = str(short_path_obj)
+        print(f'Path is now <{short_path}>')
+    return short_path
+
+
+def natural_sort_key(s):
+    def prepare_token(s: str):
+        if s.isdigit():
+            return int(s)
+        else:
+            return s.casefold()
+    return [prepare_token(part) for part in re.split('([0-9]+)', s)]

@@ -1,7 +1,7 @@
 from .log_dialog_ui import LogDialogUi
-from .log_handler import LogHandler
-from .simple_dialogs import okcancel_dialog
-from .settings import Settings
+from .helpers.log_handler import LogHandler
+from .helpers.simple_dialogs import okcancel_dialog
+from .helpers.settings import Settings
 from lib import AppPaths
 import logging
 

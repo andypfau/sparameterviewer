@@ -47,6 +47,10 @@ class CsvSeparator(enum.StrEnum):
     Comma = 'comma'
     Semicolon = 'semicolon'
 
+class CursorSnap(enum.StrEnum):
+    X = 'x'
+    Point = 'point'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -74,6 +78,9 @@ class SParamViewerAppSettings(AppSettings):
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon
     search_regex: bool = False
+    last_dir_filedialog: str = ''
+    last_dir_dirdialog: str = ''
+    cursor_snap: CursorSnap = CursorSnap.Point
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

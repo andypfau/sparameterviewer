@@ -1,4 +1,4 @@
-from .qt_helper import QtHelper
+from .helpers.qt_helper import QtHelper
 from info import Info
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets

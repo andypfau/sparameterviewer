@@ -1,20 +1,22 @@
+import matplotlib.backend_bases
+import matplotlib.backend_bases
 from .main_window_ui import MainWindowUi
-from .log_handler import LogHandler
-from .settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit
+from .helpers.log_handler import LogHandler
+from .helpers.settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .filter_dialog import FilterDialog
-from .info_dialog import InfoDialog
+from .text_dialog import TextDialog
 from .log_dialog import LogDialog
 from .axes_dialog import AxesDialog
 from .about_dialog import AboutDialog
-from .simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
-from .help import show_help
+from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
+from .helpers.help import show_help
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process
+from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
@@ -41,6 +43,9 @@ class MainWindow(MainWindowUi):
     MAX_DIRECTORY_HISTORY_SIZE = 10
 
     CURSOR_OFF_NAME = '—'
+
+    TIMER_CURSORS_ID = 1
+    TIMER_CURSORS_TIMEOUT_S = 10e-3
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
@@ -81,27 +86,36 @@ class MainWindow(MainWindowUi):
 
 
     def __init__(self, filenames: list[str]):
-        super().__init__()
-        self.build_templates_menu()
-        
+        self.ready = False
         self.directories: list[str] = []
         self.files: list[SParamFile] = []
-        self.generated_expressioN_s = ''
+        self.generated_expressions = ''
         self.plot_mouse_down = False
-        #self.cursor_dialog: SparamviewerCursorDialog = None
         self.plot_axes_are_valid = False
         self._log_dialog: LogDialog = None
         self.cursor_event_queue: list[tuple] = []
-            
-        # create plot
         self.plot: PlotHelper = None
 
+        super().__init__()
+
+        self.build_templates_menu()
         self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
         self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
 
-        # load settings
+        self.apply_settings_to_ui()
+        Settings.attach(self.on_settings_change)
+        self.initially_load_files_or_directory(filenames)
+        self.ready = True
+        self.update_plot()
+
+
+    def show(self):
+        self.ui_show()
+
+
+    def apply_settings_to_ui(self):
         def load_settings():
             try:
                 self.ui_mode = MainWindow.MODE_NAMES[Settings.plot_mode]
@@ -117,19 +131,10 @@ class MainWindow(MainWindowUi):
                 return ex
         loading_exception = load_settings()
         if loading_exception:
-            exception_dialog('Error', f'Unable to load settings ({loading_exception}), trying again with pristine settings')
+            logging.error('Error', f'Unable to load settings ({loading_exception}), trying again with clean settings')
             loading_exception = load_settings()
-            load_settings() # load again; this time no re-try
-            exception_dialog('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
-        Settings.attach(self.on_settings_change)
-
-        # initialize display
-        self.initially_load_files_or_directory(filenames)
-        self.update_plot()
-
-
-    def show(self):
-        self.ui_show()
+            load_settings()  # load again; this time no re-try
+            logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
 
 
     @property
@@ -322,7 +327,7 @@ class MainWindow(MainWindowUi):
             'S-Parameters': {
                 'All S-Parameters': all_sparams,
                 'Insertion Loss': insertion_loss,
-                'Insertion Loss (Reciprocal / 1st Only)': insertion_loss_reciprocal,
+                'Insertion Loss (reciprocal)': insertion_loss_reciprocal,
                 'Return Loss': return_loss,
                 'VSWR': vswr,
                 'Mismatch Loss': mismatch_loss,
@@ -447,12 +452,11 @@ class MainWindow(MainWindowUi):
 
 
     def update_most_recent_directories_menu(self):
-
-        def make_loader_closure(dir):
-            # TODO: the menu does not disappear after clicking
+        
+        def make_load_function(dir):
             def load():
                 if not os.path.exists(dir):
-                    logging.error(f'Cannot load recent directory <{dir}> (does not exist any more)')
+                    error_dialog('Loaing Failed', 'Cannot load recent directory.', f'<{dir}> does not exist any more')
                     return
                 absdir = os.path.abspath(dir)
                 self.directories = [absdir]
@@ -462,10 +466,17 @@ class MainWindow(MainWindowUi):
                 self.add_to_most_recent_directories(dir)
             return load
         
-        entries = [(pathlib.Path(path).stem, make_loader_closure(path)) for path in Settings.last_directories]
-        self.ui_update_files_history(entries)
+        def path_for_display(path):
+            MAX_LEN = 80
+            filename = pathlib.Path(path).name
+            directory = str(pathlib.Path(path).parent)
+            short_directory = shorten_path(directory, MAX_LEN)
+            return f'{filename} ({short_directory})'
         
-    
+        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.last_directories]
+        self.ui_update_files_history(entries)
+
+
     def add_to_most_recent_directories(self, dir: str):
         if dir in Settings.last_directories:
             idx = Settings.last_directories.index(dir)
@@ -522,6 +533,8 @@ class MainWindow(MainWindowUi):
                                 load_file(internal_name, archive_path=zip_filename)
                     except Exception as ex:
                         logging.warning(f'Unable to open zip file <{zip_filename}>: {ex}')
+
+            self.files = list(sorted(self.files, key=lambda file: natural_sort_key(file.name)))
         
         except Exception as ex:
             logging.exception(f'Unable to load files: {ex}')
@@ -607,7 +620,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_open_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else AppPaths.get_default_file_dir()
+        initial_dir = self.directories[0] if len(self.directories)>0 else None
         dir = open_directory_dialog(self, title='Open Directory', initial_dir=initial_dir)
         if not dir:
             return
@@ -619,7 +632,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_append_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else AppPaths.get_default_file_dir()
+        initial_dir = self.directories[0] if len(self.directories)>0 else None
         dir = open_directory_dialog(self, title='Append Directory', initial_dir=initial_dir)
         if not dir:
             return
@@ -692,7 +705,7 @@ class MainWindow(MainWindowUi):
             if len(info_str)>0:
                 info_str+= '\n\n\n'
             info_str += file.get_info_str()
-        InfoDialog(self).show_modal_dialog(info_str)
+        TextDialog(self).show_modal_dialog('File Info', info_str)
     
     
     def on_view_tabular(self):       
@@ -766,6 +779,11 @@ class MainWindow(MainWindowUi):
     
     def on_mark_datapoints_changed(self):
         Settings.plot_mark_points = self.ui_mark_datapoints
+        self.update_plot()
+
+
+    def on_logx_changed(self):
+        Settings.log_freq = self.ui_logx
         self.update_plot()
 
 
@@ -881,12 +899,18 @@ class MainWindow(MainWindowUi):
 
 
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+        # events are handled slower than they may come in, which leads to lag; queue them, then handle them in bulk
         self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y))
-        if not self.ui_cursor_timer_is_timer_scheduled:
-            self.ui_schedule_cursor_timer(10e-3)
+        if not self.ui_is_timer_scheduled(MainWindow.TIMER_CURSORS_ID):
+            self.ui_schedule_timer(MainWindow.TIMER_CURSORS_ID, MainWindow.TIMER_CURSORS_TIMEOUT_S)
     
 
-    def on_cursor_timer(self):
+    def on_timer_timeout(self, identifier: any):
+        if identifier == MainWindow.TIMER_CURSORS_ID:
+            self.on_cursor_timer_timeout()
+
+    
+    def on_cursor_timer_timeout(self):
         if len(self.cursor_event_queue) < 1:
             return
         event = self.cursor_event_queue.pop(0)
@@ -905,6 +929,7 @@ class MainWindow(MainWindowUi):
 
     def prepare_cursors(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
+            self.ui_plot.stop_user_action()
             if self.plot:
                 self.plot.cursors[0].enable(False)
                 self.plot.cursors[1].enable(False)
@@ -926,6 +951,8 @@ class MainWindow(MainWindowUi):
         try:
             self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
             self.plot.cursors[1].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
+
+            snap_y = Settings.cursor_snap == CursorSnap.Point
             
             if left_btn_pressed:
 
@@ -939,7 +966,7 @@ class MainWindow(MainWindowUi):
 
                 # find out which cursor to move
                 if self.ui_auto_cursor and left_btn_event:
-                    target_cursor_index, _ = self.plot.get_closest_cursor(x, y, plot_width, plot_height)
+                    target_cursor_index, _ = self.plot.get_closest_cursor(x, y if snap_y else None, plot_width, plot_height)
                     if target_cursor_index is not None:
                         self.ui_cursor_index = target_cursor_index
                 else:
@@ -949,14 +976,16 @@ class MainWindow(MainWindowUi):
                 if target_cursor_index is not None:
 
                     if self.ui_auto_cursor_trace:
-                        plot, x, y, z = self.plot.get_closest_plot_point(x, y, width=plot_width, height=plot_height)
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, width=plot_width, height=plot_height)
                         if plot is not None:
                             if target_cursor_index==0:
                                 self.ui_cursor1_trace = plot.name
+                            else:
+                                self.ui_cursor2_trace = plot.name
                     else:
                         selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
                         if selected_trace_name is not None:
-                            plot, x, y, z = self.plot.get_closest_plot_point(x, y, name=selected_trace_name, width=plot_width, height=plot_height)
+                            plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, name=selected_trace_name, width=plot_width, height=plot_height)
                         else:
                             plot, x, y, z = None, None, None, None
 
@@ -1046,6 +1075,9 @@ class MainWindow(MainWindowUi):
     
 
     def update_plot(self):
+
+        if not self.ready:
+            return
 
         try:
             prev_xlim, prev_ylim = None, None

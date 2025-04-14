@@ -1,11 +1,12 @@
+import matplotlib.backend_bases
 from .settings import Settings
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+import matplotlib.backend_bases
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-import matplotlib.pyplot
 from typing import Optional, Callable
 import logging
 
@@ -14,7 +15,13 @@ import logging
 class PlotWidget(QWidget):        
 
     class MyNavigationToolbar(NavigationToolbar2QT):
-        toolitems = [toolitem for toolitem in NavigationToolbar2QT.toolitems if toolitem[0] in ('Home', 'Pan', 'Zoom')]
+        
+        toolitems = [toolitem for toolitem in NavigationToolbar2QT.toolitems if toolitem[0] in ('Home', 'Pan', 'Zoom', 'Back', 'Forward')]
+
+
+        def stop_user_action(self):
+            self.mode = matplotlib.backend_bases._Mode.NONE
+            self._update_buttons_checked()
 
     
     def __init__(self):
@@ -37,19 +44,18 @@ class PlotWidget(QWidget):
         layout.addWidget(self._toolbar)
         self.setLayout(layout)
         
-        BUTTON_LEFT = 1
-        self._plot_mouse_down = True
-        def callback_click(event):
+        self._plot_mouse_down = False
+        def callback_click(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
-            if event.button and event.button==BUTTON_LEFT and event.xdata and event.ydata:
+            if event.button and event.button==matplotlib.backend_bases.MouseButton.LEFT and event.xdata and event.ydata:
                 self._plot_mouse_down = True
                 self.on_mouse_event(left_btn_pressed=True, left_btn_event=True, x=event.xdata, y=event.ydata)
-        def callback_release(event):
+        def callback_release(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
-            if event.button and event.button==BUTTON_LEFT:
+            if event.button and event.button==matplotlib.backend_bases.MouseButton.LEFT:
                 self._plot_mouse_down = False
                 self.on_mouse_event(left_btn_pressed = False, left_btn_event=True, x=None, y=None)
-        def callback_move(event):
+        def callback_move(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
             if self._plot_mouse_down and event.xdata and event.ydata:
                 self.on_mouse_event(left_btn_pressed=True, left_btn_event=False, x=event.xdata, y=event.ydata)
@@ -65,6 +71,10 @@ class PlotWidget(QWidget):
 
     def attach(self, callback: Callable):
         self._observers.append(callback)
+
+
+    def stop_user_action(self):
+        self._toolbar.stop_user_action()
     
 
     @property

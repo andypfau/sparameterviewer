@@ -98,6 +98,14 @@ class QtHelper:
     @staticmethod
     def make_vspace(height: int) -> QSpacerItem:
         return QSpacerItem(0, height, QSizePolicy.Policy.Fixed)
+    
+
+    @staticmethod
+    def make_shortcut(parent, shortcut: str, action: Callable) -> QShortcut:
+        result = QShortcut(parent)
+        result.setKey(QKeySequence(shortcut))
+        result.activated.connect(action)
+        return result
 
 
     @staticmethod

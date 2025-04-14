@@ -1,6 +1,7 @@
-from .qt_helper import QtHelper
-from .plot_widget import PlotWidget
-from .statusbar import StatusBar
+from .helpers.qt_helper import QtHelper
+from .helpers.plot_widget import PlotWidget
+from .helpers.statusbar import StatusBar
+from .helpers.syntax_highlight import PythonSyntaxHighlighter
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -12,7 +13,7 @@ import pathlib
 import enum
 import logging
 import os
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 
 
@@ -25,12 +26,12 @@ class MainWindowUi(QMainWindow):
 
 
     def __init__(self):
+        self._ui_timers: dict[any,QTimer] = {}
+
         super().__init__()
         QtHelper.set_dialog_icon(self)
         
         self._build_main_menu()
-
-        self._ui_cursor_timer: QTimer = None
 
         splitter = QSplitter(Qt.Orientation.Vertical)
         splitter_top = QWidget()
@@ -68,9 +69,11 @@ class MainWindowUi(QMainWindow):
         self._ui_template_button.clicked.connect(self.on_template_button)
         self._ui_help_button = QPushButton('Help')
         self._ui_help_button.clicked.connect(self.on_help_button)
-        self._ui_editor = QPlainTextEdit()
-        self._ui_editor.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
-        self._ui_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self._ui_editor_font = QtHelper.make_font(family=QtHelper.get_monospace_font())
+        self._ui_editor = QTextEdit()
+        self._ui_editor.document().setDefaultFont(self._ui_editor_font)
+        self._ui_editor.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self._ui_editor_highlighter = PythonSyntaxHighlighter(self._ui_editor.document())
         expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_update_button,
@@ -149,7 +152,7 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_file = QtHelper.add_submenu(self, self.ui_menu_bar, '&File')
         self._ui_menuitem_open_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_open_directory, shortcut='Ctrl+O')
         self._ui_menuitem_append_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Append Directory...', self.on_append_directory)
-        self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files)
+        self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
         self._ui_mainmenu_recent = QtHelper.add_submenu(self, self._ui_mainmenu_file, 'Recent Directories', visible=False)
         self._ui_menuitem_recent_items = []
         self._ui_mainmenu_file.addSeparator()
@@ -180,6 +183,8 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_rescale_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Re-Scale Locked Axis Scales', self.on_rescale_locked_axes)
         self._ui_menuitem_manual_axes = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Manual Axis Scale Limits...', self.on_manual_axes, shortcut='Ctrl+X')
         self._ui_mainmenu_view.addSeparator()
+        self._ui_menuitem_logx = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Logarithmic X-Axis', self.on_logx_changed, checkable=True)
+        self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_mark = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Mark Data Points', self.on_mark_datapoints_changed, checkable=True)
         self._ui_menuitem_mark.toggled.connect(self.on_mark_datapoints_changed)
         self._ui_mainmenu_view.addSeparator()
@@ -197,9 +202,9 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
 
 
-    def ui_build_template_menu(self, items: dict):
+    def ui_build_template_menu(self, items: dict[str,Union[QMenu,dict]]):
         self._ui_template_menu_items = []
-        def build(menu: QMenu, items: dict):
+        def build(menu: QMenu, items: dict[str,Union[QMenu,dict]]):
             nonlocal self
             for name,subitem in items.items():
                 if name.startswith('-'):
@@ -212,7 +217,7 @@ class MainWindowUi(QMainWindow):
                     new_item = QtHelper.add_menuitem(menu, name, subitem)
                     self._ui_template_menu_items.append(new_item)
             pass
-        self._ui_template_menu = QMenu()
+        self._ui_template_menu = QMenu(self)
         build(self._ui_template_menu, items)
 
 
@@ -221,7 +226,12 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_show_template_menu(self):
-        # TODO: fix this error message (on Fedora): qt.qpa.wayland: Creating a popup with a parent, QWidgetWindow(0x56210326e9e0, name="MainWindowClassWindow") which does not match the current topmost grabbing popup, QWidgetWindow(0x56210333de30, name="QMenuClassWindow") With some shell surface protocols, this is not allowed. The wayland QPA plugin is currently handling it by setting the parent to the topmost grabbing popup. Note, however, that this may cause positioning errors and popups closing unxpectedly. Please fix the transient parent of the popup.
+        # TODO: fix this error message (on Fedora):
+        #   qt.qpa.wayland: Creating a popup with a parent, QWidgetWindow(0x56210326e9e0, name="MainWindowClassWindow")
+        #   which does not match the current topmost grabbing popup, QWidgetWindow(0x56210333de30, name="QMenuClassWindow")
+        #   With some shell surface protocols, this is not allowed. The wayland QPA plugin is currently handling it by
+        #   setting the parent to the topmost grabbing popup. Note, however, that this may cause positioning errors and
+        #   popups closing unxpectedly. Please fix the transient parent of the popup.
 
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
         self._ui_template_menu.popup(button_pos)
@@ -252,21 +262,25 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
-    @property
-    def ui_cursor_timer_is_timer_scheduled(self) -> bool:
-        return self._ui_cursor_timer is not None
-    def ui_schedule_cursor_timer(self, seconds: float):
-        if self._ui_cursor_timer is not None:
-            raise RuntimeError('Timer already pending')
-        self._ui_cursor_timer = QTimer()
-        def timeout():
-            nonlocal self
-            self._ui_cursor_timer = None
-            self.on_cursor_timer()
-        self._ui_cursor_timer.timeout.connect(timeout)
-        self._ui_cursor_timer.setSingleShot(True)
+    def ui_is_timer_scheduled(self, identifier: any) -> bool:
+        return identifier in self._ui_timers
+    
+    
+    def ui_schedule_timer(self, identifier: any, seconds: float):
+        if identifier in self._ui_timers:
+            raise RuntimeError(f'Timer <{identifier}> already pending')
+        
+        self._ui_timers[identifier] = QTimer()
+        def make_timeout_function(identifier):
+            def timeout_function():
+                del self._ui_timers[identifier]
+                self.on_timer_timeout(identifier)
+            return timeout_function
+        self._ui_timers[identifier].timeout.connect(make_timeout_function(identifier))
+        
         msec = max(1,int(round(seconds*1e3)))
-        self._ui_cursor_timer.start(msec)
+        self._ui_timers[identifier].setSingleShot(True)
+        self._ui_timers[identifier].start(msec)
         
     
 
@@ -330,6 +344,14 @@ class MainWindowUi(QMainWindow):
     @ui_mark_datapoints.setter
     def ui_mark_datapoints(self, value):
         self._ui_menuitem_mark.setChecked(value)
+    
+
+    @property
+    def ui_logx(self) -> bool:
+        return self._ui_menuitem_logx.isChecked()
+    @ui_logx.setter
+    def ui_logx(self, value):
+        self._ui_menuitem_logx.setChecked(value)
 
 
     @property
@@ -337,7 +359,8 @@ class MainWindowUi(QMainWindow):
         return self._ui_editor.toPlainText()
     @ui_expression.setter
     def ui_expression(self, expression: str):
-        return self._ui_editor.setPlainText(expression)
+        self._ui_editor.setText(expression)
+        self._ui_editor.document().setDefaultFont(self._ui_editor_font)
 
 
     @property
@@ -466,17 +489,18 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
+        
         self._ui_menuitem_recent_items.clear()
         self._ui_mainmenu_recent.clear()
-        if len(texts_and_callbacks) <= 0:
-            self._ui_mainmenu_recent.setVisible(False)
-            return
+
         for (text,callback) in texts_and_callbacks:
-            item = QtHelper.add_menuitem(self._ui_mainmenu_recent, text, callback)
-            self._ui_menuitem_recent_items.append(item)
-        self._ui_mainmenu_recent.setVisible(True)
+            new_item = QtHelper.add_menuitem(self._ui_mainmenu_recent, text, callback)
+            self._ui_menuitem_recent_items.append(new_item)
+        
+        self._ui_mainmenu_recent.setEnabled(len(self._ui_menuitem_recent_items) > 0)
 
 
+    # to be implemented in derived class
     def on_select_mode(self):
         pass
     def on_select_unit(self):
@@ -557,9 +581,11 @@ class MainWindowUi(QMainWindow):
         pass
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
         pass
-    def on_cursor_timer(self):
+    def on_timer_timeout(self, identifier: any):
         pass
     def on_mark_datapoints_changed(self):
+        pass
+    def on_logx_changed(self):
         pass
     def on_statusbar_click(self):
         pass

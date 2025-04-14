@@ -1,4 +1,4 @@
-from .qt_helper import QtHelper
+from .helpers.qt_helper import QtHelper
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -88,6 +88,7 @@ class SettingsDialogUi(QDialog):
         self._ui_extract_zip_combo.toggled.connect(self.on_zip_change)
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
+        self._ui_cursor_snap = QComboBox()
         self._ui_plot_style_combo = QComboBox()
         self._ui_plot_style_combo.setMinimumWidth(150)
         self._ui_font_combo = QComboBox()
@@ -101,6 +102,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_extract_zip_combo,
                 self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
+                        ['Cursor Snap:', QtHelper.layout_h(self._ui_cursor_snap, ...)],
                         ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
                         ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
@@ -214,6 +216,21 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_cursor_snap(self) -> str:
+        return self._ui_cursor_snap.currentText()
+    @ui_cursor_snap.setter
+    def ui_cursor_snap(self, value: str):
+        self._ui_cursor_snap.setCurrentText(value)
+
+
+    def ui_set_cursor_snap_options(self, options: list[str]):
+        self._ui_cursor_snap.clear()
+        for option in options:
+            self._ui_cursor_snap.addItem(option)
+        self._ui_cursor_snap.currentIndexChanged.connect(self.on_cursor_snap_changed)
+
+    
+    @property
     def ui_comment_expr(self) -> bool:
         return self._ui_comment_expr_combo.isChecked()
     @ui_comment_expr.setter
@@ -285,4 +302,6 @@ class SettingsDialogUi(QDialog):
     def on_plotstyle_change(self):
         pass
     def on_font_change(self):
+        pass
+    def on_cursor_snap_changed(self):
         pass
