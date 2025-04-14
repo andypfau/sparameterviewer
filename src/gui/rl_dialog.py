@@ -22,7 +22,7 @@ class RlDialog(RlDialogUi):
 
     def show_modal_dialog(self, files: "list[SParamFile]", initial_selection: SParamFile):
         self.files = files
-        self.ui_set_files_list([file.name for file in files], initial_selection.name)
+        self.ui_set_files_list([file.name for file in files], initial_selection.name if initial_selection else None)
         super().ui_show_modal()
 
 
