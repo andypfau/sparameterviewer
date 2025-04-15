@@ -455,8 +455,9 @@ class MainWindow(MainWindowUi):
         
         def make_load_function(dir):
             def load():
-                if not os.path.exists(dir):
+                if not pathlib.Path(dir).exists():
                     error_dialog('Loaing Failed', 'Cannot load recent directory.', f'<{dir}> does not exist any more')
+                    self.update_most_recent_directories_menu()  # this will remove stale paths
                     return
                 absdir = os.path.abspath(dir)
                 self.directories = [absdir]
@@ -473,7 +474,12 @@ class MainWindow(MainWindowUi):
             short_directory = shorten_path(directory, MAX_LEN)
             return f'{filename} ({short_directory})'
         
-        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.last_directories]
+        def history_dir_valid(dir: str):
+            try:
+                return pathlib.Path(dir).exists()
+            except:
+                return True
+        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.last_directories if history_dir_valid(path)]
         self.ui_update_files_history(entries)
 
 
