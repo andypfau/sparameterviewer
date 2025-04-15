@@ -109,20 +109,20 @@ class QtHelper:
 
 
     @staticmethod
-    def add_submenu(parent, menu: QMenu, text: str, visible: bool = True) -> QMenu:
-        submenu = QMenu(text, parent)
+    def add_submenu(parent: QMenu, text: str, visible: bool = True) -> QMenu:
+        submenu = QMenu(text)
         if not visible:
             submenu.setVisible(False)
-        menu.addMenu(submenu)
+        parent.addMenu(submenu)
         return submenu
 
 
     @staticmethod
-    def add_menuitem(menu: QMenu, text: str, action: Callable, *, shortcut: str = '', visible: bool = True, checkable: bool = False) -> QAction:
+    def add_menuitem(menu: QMenu, text: str, action: Callable, *, shortcut: str = None, visible: bool = True, checkable: bool = False) -> QAction:
         item = QAction(text)
-        if action:
+        if action is not None:
             item.triggered.connect(action)
-        if shortcut:
+        if shortcut is not None:
             item.setShortcut(QKeySequence(shortcut))
         if checkable:
             item.setCheckable(True)

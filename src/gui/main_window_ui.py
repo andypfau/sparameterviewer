@@ -149,11 +149,11 @@ class MainWindowUi(QMainWindow):
     def _build_main_menu(self):
         self.ui_menu_bar = self.menuBar()
         
-        self._ui_mainmenu_file = QtHelper.add_submenu(self, self.ui_menu_bar, '&File')
+        self._ui_mainmenu_file = QtHelper.add_submenu(self.ui_menu_bar, '&File')
         self._ui_menuitem_open_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_open_directory, shortcut='Ctrl+O')
         self._ui_menuitem_append_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Append Directory...', self.on_append_directory)
         self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
-        self._ui_mainmenu_recent = QtHelper.add_submenu(self, self._ui_mainmenu_file, 'Recent Directories', visible=False)
+        self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu_file, 'Recent Directories', visible=False)
         self._ui_menuitem_recent_items = []
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_save_plot_image = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Plot Image...', self.on_save_plot_image)
@@ -168,7 +168,7 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
-        self._ui_mainmenu_view = QtHelper.add_submenu(self, self.ui_menu_bar, '&View')
+        self._ui_mainmenu_view = QtHelper.add_submenu(self.ui_menu_bar, '&View')
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
@@ -191,14 +191,14 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_update_expr = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Update Plot from Expressions', self.on_update_expressions, shortcut='F5')
 
-        self._ui_mainmenu_tools = QtHelper.add_submenu(self, self.ui_menu_bar, '&Tools')
+        self._ui_mainmenu_tools = QtHelper.add_submenu(self.ui_menu_bar, '&Tools')
         self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
         self._ui_mainmenu_tools.addSeparator()
         self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
         self._ui_mainmenu_tools.addSeparator()
         self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
 
-        self._ui_mainmenu_help = QtHelper.add_submenu(self, self.ui_menu_bar, '&Help')
+        self._ui_mainmenu_help = QtHelper.add_submenu(self.ui_menu_bar, '&Help')
         self._ui_menuitem_help = QtHelper.add_menuitem(self._ui_mainmenu_help, 'Help', self.on_help, shortcut='F1')
         self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
 
@@ -211,7 +211,7 @@ class MainWindowUi(QMainWindow):
                 if name.startswith('-'):
                     menu.addSeparator()
                 elif isinstance(subitem,dict):
-                    new_menu = QtHelper.add_submenu(self, menu, name)
+                    new_menu = QtHelper.add_submenu(menu, name)
                     self._ui_template_menu_items.append(new_menu)
                     build(new_menu, subitem)
                 else:
@@ -227,13 +227,6 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_show_template_menu(self):
-        # TODO: fix this error message (on Fedora):
-        #   qt.qpa.wayland: Creating a popup with a parent, QWidgetWindow(0x56210326e9e0, name="MainWindowClassWindow")
-        #   which does not match the current topmost grabbing popup, QWidgetWindow(0x56210333de30, name="QMenuClassWindow")
-        #   With some shell surface protocols, this is not allowed. The wayland QPA plugin is currently handling it by
-        #   setting the parent to the topmost grabbing popup. Note, however, that this may cause positioning errors and
-        #   popups closing unxpectedly. Please fix the transient parent of the popup.
-
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
         self._ui_template_menu.popup(button_pos)
 

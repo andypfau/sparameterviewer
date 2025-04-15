@@ -94,13 +94,13 @@ class TabularDialogUi(QDialog):
 
     
     def _build_main_menu(self):
-        self._ui_mainmenu_file = QtHelper.add_submenu(self, self._ui_main_menu, '&File')
+        self._ui_mainmenu_file = QtHelper.add_submenu(self._ui_main_menu, '&File')
         self._ui_menuitem_save = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save...', self.on_save)
         self._ui_menuitem_saveall = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save All...', self.on_save_all)
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally)
 
-        self._ui_mainmenu_edit = QtHelper.add_submenu(self, self._ui_main_menu, '&Edit')
+        self._ui_mainmenu_edit = QtHelper.add_submenu(self._ui_main_menu, '&Edit')
         self._ui_menuitem_copy_csv = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create CSV', self.on_create_csv)
         self._ui_mainmenu_edit.addSeparator()
         self._ui_menuitem_copy_json = QtHelper.add_menuitem(self._ui_mainmenu_edit, 'Create JSON', self.on_create_json)
