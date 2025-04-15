@@ -1,9 +1,9 @@
-import matplotlib.backend_bases
 from .settings import Settings
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+import matplotlib.pyplot
 import matplotlib.backend_bases
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
