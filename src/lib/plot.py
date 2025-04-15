@@ -7,11 +7,12 @@ from .utils import natural_sort_key
 import math
 import numpy as np
 import logging
-from dataclasses import dataclass
 import matplotlib
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 import pandas as pd
+from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -102,7 +103,7 @@ class PlotHelper:
                     self._vl.set_visible(False)
     
 
-    def __init__(self, fig: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
+    def __init__(self, figure: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
         y_qty: "str", y_fmt: SiFmt, y_log: bool, y2_qty: "str", y2_fmt: SiFmt, z_qty: "str" = None, z_fmt: SiFmt = None,
         smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False):
@@ -112,28 +113,29 @@ class PlotHelper:
             PlotHelper.Cursor(self, '-.'),
         ]
 
-        self.fig = fig
-        self.smith = smith
-        self.polar = polar
-        self.smith_type = smith_type
-        self.smith_z = smith_z
-        self.x_qty = x_qty
-        self.x_fmt = x_fmt
-        self.x_log = x_log
-        self.y_qty = y_qty
-        self.y_fmt = y_fmt
-        self.y2_qty = y2_qty
-        self.y2_fmt = y2_fmt
-        self.y_log = y_log
-        self.z_qty = z_qty
-        self.z_fmt = z_fmt
-        self.show_legend = show_legend
-        self.hide_single_item_legend = hide_single_item_legend
-        self.shorten_legend = shorten_legend
+        self._figure = figure
+        self._smith = smith
+        self._polar = polar
+        self._smith_type = smith_type
+        self._smith_z = smith_z
+        self._x_qty = x_qty
+        self._x_fmt = x_fmt
+        self._x_log = x_log
+        self._y_qty = y_qty
+        self._y_fmt = y_fmt
+        self._y2_qty = y2_qty
+        self._y2_fmt = y2_fmt
+        self._y_log = y_log
+        self._z_qty = z_qty
+        self._z_fmt = z_fmt
+        self._show_legend = show_legend
+        self._hide_single_item_legend = hide_single_item_legend
+        self._shorten_legend = shorten_legend
+        self._use_two_yaxes = None
+        self._axes_swapped = None
+        self._r_smith = None
         
-        # TODO: report the correct format when a plots is intended for the 2nd Y-axis
-
-        self.fig.clf()
+        self._figure.clf()
         
         self.x_range = [+1e99,-1e99]
         self.y_range = [+1e99,-1e99]
@@ -142,11 +144,50 @@ class PlotHelper:
 
         self.plot: pyplot.Axes = None
         self.plot2: pyplot.Axes = None
-    
+
 
     @property
     def plots(self) -> list[PlotData]:
         return [item.data for item in self.items]
+
+
+    @property
+    def x_fmt(self) -> SiFmt:
+        return self._x_fmt
+
+
+    @property
+    def y_fmt(self) -> SiFmt:
+        return self._y_fmt
+
+
+    @property
+    def y2_fmt(self) -> SiFmt:
+        return self._y2_fmt
+
+
+    @property
+    def y_left_fmt(self) -> SiFmt:
+        if self._axes_swapped:
+            return self._y2_fmt
+        else:
+            return self._y_fmt
+
+
+    @property
+    def y_right_fmt(self) -> Optional[SiFmt]:
+        if self._use_two_yaxes:
+            if self._axes_swapped:
+                return self._y2_fmt
+            else:
+                return self._y_fmt
+        else:
+            return None
+
+
+    @property
+    def z_fmt(self) -> SiFmt:
+        return self._z_fmt
     
 
     def get_closest_cursor(self, x: float, y: float, width: float = 1, height: float = 1) -> "tuple[int,PlotHelper.Cursor]":
@@ -202,6 +243,8 @@ class PlotHelper:
 
 
     def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, prefer_2nd_yaxis: bool = False):
+        self._use_two_yaxes = None
+        self._axes_swapped = None
         assert len(x)==len(y)
         if len(x) < 1:
             logging.info(f'Ignoring plot "{name}" (contains zero points)')
@@ -216,9 +259,9 @@ class PlotHelper:
             ItemToPlot(
                 PlotData(
                     name, 
-                    PlotDataQuantity(self.x_qty, self.x_fmt, x),
-                    PlotDataQuantity(self.y_qty, self.y_fmt, y),
-                    PlotDataQuantity(self.z_qty, self.z_fmt, z) if z is not None else None,  
+                    PlotDataQuantity(self._x_qty, self._x_fmt, x),
+                    PlotDataQuantity(self._y_qty, self._y_fmt, y),
+                    PlotDataQuantity(self._z_qty, self._z_fmt, z) if z is not None else None,  
                     'black'  # placeholder
                 ),
                 prefer_2nd_yaxis,
@@ -229,7 +272,15 @@ class PlotHelper:
     
 
     def render(self):
+        self._use_two_yaxes = False
+        self._axes_swapped = False
+        self._r_smith = None
+        self._prepare_plots_and_axes()
+        self._add_traces_to_plots()
+        self._fix_axis_labels()
 
+
+    def _prepare_plots_and_axes(self):
         def get_r_max():
             r_max = 0
             for item in self.items:
@@ -238,32 +289,34 @@ class PlotHelper:
             return r_max
 
         self.plot2 = None
-        if self.polar:
-            self.plot = self.fig.add_subplot(111, projection='polar')
+        if self._polar:
+            self.plot = self._figure.add_subplot(111, projection='polar')
             r_max = get_r_max()
             if r_max <= 1:
                 self.plot.set_ylim((0,1))
-            use_twin_yaxis = False
-        elif self.smith:
+            self._use_two_yaxes = False
+        elif self._smith:
             from skrf import plotting
-            self.plot = self.fig.add_subplot(111)
+            self.plot = self._figure.add_subplot(111)
             r_max = get_r_max()
-            r_smith = 1 if r_max<=1 else r_max*1.05
-            plotting.smith(ax=self.plot, chart_type=self.smith_type, ref_imm=self.smith_z, draw_labels=True, smithR=r_smith)
-            use_twin_yaxis = False
+            self._r_smith = 1 if r_max<=1 else r_max*1.05
+            plotting.smith(ax=self.plot, chart_type=self._smith_type, ref_imm=self._smith_z, draw_labels=True, smithR=self.r_smith)
+            self._use_two_yaxes = False
         else:
             anything_on_primary_yaxis = any([not item.prefer_seconary_yaxis for item in self.items])
             anything_on_secondary_yaxis = any([item.prefer_seconary_yaxis for item in self.items])
-            use_twin_yaxis = anything_on_primary_yaxis and anything_on_secondary_yaxis
-            self.plot = self.fig.add_subplot(111)
-            if use_twin_yaxis:
+            self._use_two_yaxes = anything_on_primary_yaxis and anything_on_secondary_yaxis
+            self.plot = self._figure.add_subplot(111)
+            if self._use_two_yaxes:
                 self.plot2 = self.plot.twinx()
         
+    
+    def _add_traces_to_plots(self):
         self.any_legend = False
 
         for item in self.items:
             item.label = item.data.name
-        if self.shorten_legend:
+        if self._shorten_legend:
             labels = [item.label for item in self.items]
             labels = remove_common_prefixes_and_suffixes(labels)
             for label,item in zip(labels,self.items):
@@ -272,7 +325,7 @@ class PlotHelper:
         self.items = sorted(self.items, key=lambda item: natural_sort_key(item.label))
 
         for item_index,item in enumerate(self.items):
-            if item.prefer_seconary_yaxis and use_twin_yaxis:
+            if item.prefer_seconary_yaxis and self._use_two_yaxes:
                 plot = self.plot2
                 self.items[item_index].currently_used_axis = 2
             else:
@@ -286,20 +339,20 @@ class PlotHelper:
                 item.label = ' _' + item.label[1:]
 
             def fix_log(x,y):
-                if x[0]<=0 and self.x_log:
+                if x[0]<=0 and self._x_log:
                     x,y = x[1:], y[1:]
-                if y[0]<=0 and self.y_log:
+                if y[0]<=0 and self._y_log:
                     x,y = x[1:], y[1:]
                 return x,y
             
-            if self.polar:
+            if self._polar:
                 c = x + 1j*y
                 new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label)
-            elif self.smith:
+            elif self._smith:
                 c = x + 1j*y
                 from skrf import plotting
                 new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None)
-            elif self.x_log or self.y_log:
+            elif self._x_log or self._y_log:
                 x,y = fix_log(x,y)
                 new_plt = plot.plot(x, y, style, label=item.label)
             else:
@@ -308,64 +361,60 @@ class PlotHelper:
             color = new_plt[0].get_color() if new_plt is not None else None
             self.items[item_index].data.color = color
         
-        if self.smith and r_smith!=1:
-            # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
-            self.plot.set_xlim((-r_smith,+r_smith))
-            self.plot.set_ylim((-r_smith,+r_smith))
-
-
-    def finish(self):
+        if self._smith:
+            assert self._r_smith is not None
+            if self._r_smith!=1:
+                # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
+                self.plot.set_xlim((-self._r_smith,+self._r_smith))
+                self.plot.set_ylim((-self._r_smith,+self._r_smith))
                 
-        if len(self.items)<1:
-            return
-        
-        show_legend = self.show_legend
-        if len(self.items) <= 1 and self.hide_single_item_legend:
+        show_legend = self._show_legend
+        if len(self.items) <= 1 and self._hide_single_item_legend:
             show_legend = False
         if show_legend:
             self.plot.legend()
         
-        if not (self.polar or self.smith):
-            
-            anything_on_primary_yaxis = any([item.currently_used_axis==1 for item in self.items])
-            anything_on_secondary_yaxis = any([item.currently_used_axis==2 for item in self.items])
-            using_twin_yaxis = anything_on_primary_yaxis and anything_on_secondary_yaxis
-            if using_twin_yaxis:
-                y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y_log, self.y2_qty, self.y2_fmt
-                self.plot2.grid(False)  # two grids in one plot are just confusing
+
+    def _fix_axis_labels(self):
+        if self._polar or self._smith:
+            return
+        
+        if self._use_two_yaxes:
+            y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y_qty, self._y_fmt, self._y_log, self._y2_qty, self._y2_fmt
+            self.plot2.grid(False)  # two grids in one plot are just confusing
+        else:
+            self._axes_swapped = any([item.currently_used_axis==1 and item.prefer_seconary_yaxis for item in self.items])
+            if self._axes_swapped:
+                # data for axis 2 was displayed on axis 1, so we nee to use the other unit
+                y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y2_qty, self._y2_fmt, False, None, None
             else:
-                swap_axes = any([item.currently_used_axis==1 and item.prefer_seconary_yaxis for item in self.items])
-                if swap_axes:
-                    # data for axis 2 was displayed on axis 1, so we nee to use the other unit
-                    y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y2_qty, self.y2_fmt, False, None, None
-                else:
-                    y_qty, y_fmt, y_log, y2_qty, y2_fmt = self.y_qty, self.y_fmt, self.y_log, None, None
-            
-            if self.x_qty is not None:
-                self.plot.set_xlabel(self.x_qty)
-            if y_qty is not None:
-                self.plot.set_ylabel(y_qty)
-            if y2_qty is not None:
-                self.plot2.set_ylabel(y2_qty)
-            
+                y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y_qty, self._y_fmt, self._y_log, None, None
+        
+        if self._x_qty is not None:
+            self.plot.set_xlabel(self._x_qty)
+        if y_qty is not None:
+            self.plot.set_ylabel(y_qty)
+        if y2_qty is not None:
+            self.plot2.set_ylabel(y2_qty)
+        
+        @ticker.FuncFormatter
+        def x_axis_formatter(value, _):
+            return str(Si(value, si_fmt=self._x_fmt))
+        self.plot.xaxis.set_major_formatter(x_axis_formatter)
+        
+        if y_fmt is not None:
             @ticker.FuncFormatter
-            def x_axis_formatter(value, _):
-                return str(Si(value, si_fmt=self.x_fmt))
-            self.plot.xaxis.set_major_formatter(x_axis_formatter)
-            
-            if y_fmt is not None:
-                @ticker.FuncFormatter
-                def y_axis_formatter(value, _):
-                    return str(Si(value, si_fmt=y_fmt))
-                self.plot.yaxis.set_major_formatter(y_axis_formatter)
-            
-            if y2_fmt is not None:
-                @ticker.FuncFormatter
-                def y_axis_formatter(value, _):
-                    return str(Si(value, si_fmt=y2_fmt))
-                self.plot2.yaxis.set_major_formatter(y_axis_formatter)
-            
-            if self.x_log:
-                self.plot.set_xscale('log')
-            if y_log:
-                self.plot.set_yscale('log')
+            def y_axis_formatter(value, _):
+                return str(Si(value, si_fmt=y_fmt))
+            self.plot.yaxis.set_major_formatter(y_axis_formatter)
+        
+        if y2_fmt is not None:
+            @ticker.FuncFormatter
+            def y_axis_formatter(value, _):
+                return str(Si(value, si_fmt=y2_fmt))
+            self.plot2.yaxis.set_major_formatter(y_axis_formatter)
+        
+        if self._x_log:
+            self.plot.set_xscale('log')
+        if y_log:
+            self.plot.set_yscale('log')

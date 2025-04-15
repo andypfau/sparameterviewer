@@ -683,7 +683,7 @@ class MainWindow(MainWindowUi):
 
     def on_save_plot_image(self):
 
-        if not self.plot.fig:
+        if not self.ui_plot.figure:
             info_dialog('Nothing To Save', 'Nothing to save.')
             return
 
@@ -696,7 +696,7 @@ class MainWindow(MainWindowUi):
                 ))
             if not filename:
                 return
-            self.plot.fig.savefig(filename)
+            self.ui_plot.figure.savefig(filename)
         except Exception as ex:
             error_dialog('Error', 'Exporting failed.', str(ex))
     
@@ -815,12 +815,12 @@ class MainWindow(MainWindowUi):
 
     def on_copy_image(self):
 
-        if not self.plot.fig:
+        if not self.ui_plot.figure:
             info_dialog('Nothing To Copy', 'Nothing to copy.')
             return
 
         try:
-            Clipboard.copy_figure(self.plot.fig)
+            Clipboard.copy_figure(self.ui_plot.figure)
         except Exception as ex:
             error_dialog('Error', 'Copying plot to clipboard failed.', str(ex))
     
@@ -974,7 +974,7 @@ class MainWindow(MainWindowUi):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             return
         
-        # TODO: cursors on 2nd axis
+        # TODO: allow cursors on 2nd axis
         # - must hand over 2nd coordinate set, and 2nd axis with/height
         # - must remember cursor axis
 
@@ -1048,7 +1048,7 @@ class MainWindow(MainWindowUi):
         readout_dx = ''
         readout_dy = ''
         xf = copy.copy(self.plot.x_fmt)
-        yf = copy.copy(self.plot.y_fmt)
+        yf = copy.copy(self.plot.y_left_fmt)
         zf = copy.copy(self.plot.z_fmt)
         xf.significant_digits += 3
         yf.significant_digits += 3
@@ -1167,7 +1167,7 @@ class MainWindow(MainWindowUi):
                 self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(fig=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
             else:
                 y2q, y2f = None, None
                 if timedomain:
@@ -1308,7 +1308,6 @@ class MainWindow(MainWindowUi):
                 self.show_error(LogHandler.inst().get_messages(logging.WARNING)[-1])
 
             self.plot.render()
-            self.plot.finish()
 
             if self.plot_axes_are_valid:
                 if self.ui_lock_x and prev_xlim is not None:
