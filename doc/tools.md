@@ -30,18 +30,6 @@ From the menu, you can:
 - *Edit*: copy to clipboard, either as CSV-data (comma- or tab-separated), or as Python code which can be used with [NumPy](https://numpy.org/) or with [Pandas](https://pandas.pydata.org/).
 - Filters are applied to saved/copied data (see above).
 
-Trace Cursors
--------------
-
-Allows you to read values from the plot using cursors.
-
-In the main window go *Tools* → *Trace Cursors*.
-
-Just click in the plot, and the reading is shown in the dialog. You may select one of two cursors, or let the tool select the closest cursor automatically (*Auto*). You may specify a specific trace, or let the tool snap the cursor to the closest trace (*Auto*).
-
-Note that you can only apply cursors to traces on the primary (left) Y-axis.
-
-
 Return Loss Integrator
 ----------------------
 

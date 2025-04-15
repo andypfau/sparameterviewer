@@ -84,6 +84,16 @@ Expressions
 
 [See here](expressions.md).
 
+
+Cursors
+-------
+
+Allows you to read values from the plot using cursors.
+
+Just click in the plot, and the reading is shown in the dialog. You may select one of two cursors, or let the tool select the closest cursor automatically (*Auto*). You may specify a specific trace, or let the tool snap the cursor to the closest trace (*Auto*).
+
+Note that you can only apply cursors to traces on the primary (left) Y-axis. If you want to use cursors on e.g. phase, disable the primary unit.
+
 Additional Tools
 ----------------
 
