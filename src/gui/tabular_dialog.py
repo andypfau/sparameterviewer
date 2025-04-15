@@ -580,28 +580,28 @@ class TabularDialog(TabularDialogUi):
         if not self.selected_dataset:
             return
         csv = self.create_csv(self.selected_dataset)
-        TextDialog(self).show_modal_dialog('CSV', csv)
+        TextDialog(self).show_modal_dialog('CSV', text=csv, save_filetypes=[('CSV-Files', '.csv'), 'All Files', '*'])
 
 
     def on_create_json(self):
         if not self.selected_dataset:
             return
         json = self.create_json(self.selected_dataset)
-        TextDialog(self).show_modal_dialog('JSON', json)
+        TextDialog(self).show_modal_dialog('JSON', text=json, save_filetypes=[('JSON-Files', '.json'), 'All Files', '*'])
 
 
     def on_create_numpy(self):
         if not self.selected_dataset:
             return
         py = self.create_numpy(self.selected_dataset)
-        TextDialog(self).show_modal_dialog('Python', py)
+        TextDialog(self).show_modal_dialog('Python', text=py, save_filetypes=[('Python Files', '.py'), 'All Files', '*'])
 
 
     def on_create_pandas(self):
         if not self.selected_dataset:
             return
         py = self.create_pandas(self.selected_dataset)
-        TextDialog(self).show_modal_dialog('Python', py)
+        TextDialog(self).show_modal_dialog('Python', text=py, save_filetypes=[('Python Files', '.py'), 'All Files', '*'])
 
 
     def on_settings(self):

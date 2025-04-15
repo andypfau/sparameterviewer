@@ -160,6 +160,7 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_file_info = QtHelper.add_menuitem(self._ui_mainmenu_file, 'File Info', self.on_file_info, shortcut='Ctrl+I')
         self._ui_menuitem_view_tabular = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
+        self._ui_menuitem_view_plain = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View Plaintext Data', self.on_view_plaintext, shortcut='Ctrl+P')
         self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally, shortcut='Ctrl+E')
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_load_expr = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Load Expressions...', self.on_load_expressions)
@@ -534,6 +535,8 @@ class MainWindowUi(QMainWindow):
     def on_view_tabular(self):
         pass
     def on_open_externally(self):
+        pass
+    def on_view_plaintext(self):
         pass
     def on_load_expressions(self):
         pass

@@ -1,3 +1,4 @@
+import matplotlib.lines
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
 from .shortstr import remove_common_prefixes_and_suffixes
@@ -7,6 +8,7 @@ import math
 import numpy as np
 import logging
 from dataclasses import dataclass
+import matplotlib
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 import pandas as pd
@@ -27,26 +29,29 @@ class PlotHelper:
 
     class Cursor:
         
-        def __init__(self, plot: "PlotHelper", style: str, color: object = None):
+        def __init__(self, plot: "PlotHelper", style: str, color: object = None, use_2nd_axis: bool = False):
             
             self.plot = plot
             self.enabled = False
             self.style = style
             self.color = color
-            self.data: PlotHelper.Data
-            self.data = None
+            self.use_2nd_axis = use_2nd_axis
+            self.axis_changed = False
 
             self.x, self.y, self.z = 0, 0, None
 
             self._is_set = False
-            self._hl, self._vl = None, None
+            self._hl: matplotlib.lines.Line2D = None
+            self._vl: matplotlib.lines.Line2D = None
         
 
-        def set(self, x: float, y: float, z: float, enable: bool = True, color: object = None):
+        def set(self, x: float, y: float, z: float, enable: bool = True, color: object = None, use_2nd_axis: bool = False):
             self.x, self.y, self.z = x, y, z
             self._is_set = True
             self.enabled = enable
             self.color = color
+            self.axis_changed = self.use_2nd_axis != use_2nd_axis
+            self.use_2nd_axis = use_2nd_axis
             self.update()
 
 
@@ -57,12 +62,24 @@ class PlotHelper:
 
         def update(self):
 
-            LINEWIDTH = 1.33
+            LINEWIDTH = 1.0
+
+            if self.axis_changed:
+                if self._hl:
+                    self._hl.set_visible(False)
+                    self._hl.remove()
+                    self._hl = None
+                if self._vl:
+                    self._vl.set_visible(False)
+                    self._vl.remove()
+                    self._vl = None
             
             if self.enabled and self._is_set:
 
+                plot = self.plot.plot2 if self.use_2nd_axis else self.plot.plot
+
                 if not self._hl:
-                    self._hl = self.plot.plot.axhline(self.y, linewidth=LINEWIDTH)
+                    self._hl = plot.axhline(self.y, linewidth=LINEWIDTH)
                 self._hl.set_linestyle(self.style)
                 if self.color is not None:
                     self._hl.set_color(self.color)
@@ -70,7 +87,7 @@ class PlotHelper:
                 self._hl.set_visible(True)
 
                 if not self._vl:
-                    self._vl = self.plot.plot.axvline(self.x, linewidth=LINEWIDTH)
+                    self._vl = plot.axvline(self.x, linewidth=LINEWIDTH)
                 self._vl.set_linestyle(self.style)
                 if self.color is not None:
                     self._vl.set_color(self.color)
@@ -79,8 +96,9 @@ class PlotHelper:
 
             else:
 
-                if self._vl:
+                if self._hl:
                     self._hl.set_visible(False)
+                if self._vl:
                     self._vl.set_visible(False)
     
 
@@ -112,6 +130,8 @@ class PlotHelper:
         self.show_legend = show_legend
         self.hide_single_item_legend = hide_single_item_legend
         self.shorten_legend = shorten_legend
+        
+        # TODO: report the correct format when a plots is intended for the 2nd Y-axis
 
         self.fig.clf()
         

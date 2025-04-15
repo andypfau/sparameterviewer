@@ -45,20 +45,39 @@ class PlotWidget(QWidget):
         self.setLayout(layout)
         
         self._plot_mouse_down = False
+        def get_coordinates(event: matplotlib.backend_bases.MouseEvent) -> tuple[float,float,float,float]:
+            if not event.xdata or not event.ydata:
+                return None, None, None, None
+            if len(event.canvas.figure.axes) == 2:
+                (ax1, ax2) = event.canvas.figure.axes
+                if event.inaxes is ax2:
+                    x2, y2 = event.x, event.y
+                    x, y = ax1.transData.inverted().transform((event.x, event.y))
+                    return x, y, x2, y2
+                else:
+                    x, y = event.xdata, event.ydata
+                    x2, y2 = ax2.transData.inverted().transform((event.x, event.y))
+                    return x, y, x2, y2
+            else:
+                x, y = event.xdata, event.ydata
+                return x, y, None, None
+
         def callback_click(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
             if event.button and event.button==matplotlib.backend_bases.MouseButton.LEFT and event.xdata and event.ydata:
                 self._plot_mouse_down = True
-                self.on_mouse_event(left_btn_pressed=True, left_btn_event=True, x=event.xdata, y=event.ydata)
+                x, y, x2, y2 = get_coordinates(event)
+                self.on_mouse_event(left_btn_pressed=True, left_btn_event=True, x=x, y=y, x2=x2, y2=y2)
         def callback_release(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
             if event.button and event.button==matplotlib.backend_bases.MouseButton.LEFT:
                 self._plot_mouse_down = False
-                self.on_mouse_event(left_btn_pressed = False, left_btn_event=True, x=None, y=None)
+                self.on_mouse_event(left_btn_pressed = False, left_btn_event=True, x=None, y=None, x2=None, y2=None)
         def callback_move(event: matplotlib.backend_bases.MouseEvent):
             nonlocal self
             if self._plot_mouse_down and event.xdata and event.ydata:
-                self.on_mouse_event(left_btn_pressed=True, left_btn_event=False, x=event.xdata, y=event.ydata)
+                x, y, x2, y2 = get_coordinates(event)
+                self.on_mouse_event(left_btn_pressed=True, left_btn_event=False, x=x, y=y, x2=x2, y2=y2)
         self._figure.canvas.callbacks.connect('button_press_event', callback_click)
         self._figure.canvas.callbacks.connect('button_release_event', callback_release)
         self._figure.canvas.callbacks.connect('motion_notify_event', callback_move)
@@ -90,9 +109,9 @@ class PlotWidget(QWidget):
         self._figure.clf()
 
 
-    def on_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+    def on_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         for i in reversed(range(len(self._observers))):
             try:
-                self._observers[i](left_btn_pressed, left_btn_event, x, y)
+                self._observers[i](left_btn_pressed, left_btn_event, x, y, x2, y2)
             except:
                 del self._observers[i]

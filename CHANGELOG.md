@@ -2,7 +2,7 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.30b1 (2025-04-xx)
+0.30b1 (2025-04-14)
 -------------------
 
 - change: migrated from Tk to Qt

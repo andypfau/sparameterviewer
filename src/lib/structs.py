@@ -41,7 +41,7 @@ class SParamFile:
         def load(path):
             try:
                 ext = os.path.splitext(path)[1].lower()
-                if ext == '.cti':
+                if ext in ['.cti', '.citi']:
                     citi = CitiReader(path)
                     nw = citi.get_network(None, {}, select_default=True)
                 else:
@@ -52,7 +52,7 @@ class SParamFile:
                 self._error = str(ex)
                 self._nw = None
         
-        if self.archive_path is not None:
+        if self.is_from_archive:
             with tempfile.TemporaryDirectory() as tempdir:
                 with zipfile.ZipFile(self.archive_path, 'r') as zf:
                     try:
@@ -66,9 +66,36 @@ class SParamFile:
 
     
     @property
+    def is_from_archive(self) -> bool:
+        return self.archive_path is not None
+
+    
+    @property
     def nw(self) -> "skrf.Network":
         self._load()
         return self._nw
+    
+
+    def get_plaintext(self) -> str:
+        def load(path):
+            try:
+                with open(path, 'r') as fp:
+                    return fp.read()
+            except Exception as ex:
+                logging.exception(f'Unable to read plaintext from "{path}" ({ex})')
+        
+        if self.is_from_archive:
+            with tempfile.TemporaryDirectory() as tempdir:
+                with zipfile.ZipFile(self.archive_path, 'r') as zf:
+                    try:
+                        zipped_filename = zf.extract(self.file_path, tempdir)
+                        plaintext = load(zipped_filename)
+                        os.remove(zipped_filename)
+                        return plaintext
+                    except Exception as ex:
+                        logging.warning(f'Unable to extract "{self.file_path}" from "{self.archive_path}" ({ex})')
+        else:
+            return load(self.file_path)
     
 
     def get_info_str(self) -> str:

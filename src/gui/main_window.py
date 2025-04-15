@@ -705,7 +705,7 @@ class MainWindow(MainWindowUi):
             if len(info_str)>0:
                 info_str+= '\n\n\n'
             info_str += file.get_info_str()
-        TextDialog(self).show_modal_dialog('File Info', info_str)
+        TextDialog(self).show_modal_dialog('File Info', text=info_str)
     
     
     def on_view_tabular(self):       
@@ -722,14 +722,34 @@ class MainWindow(MainWindowUi):
         TabularDialog(self).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
     
 
-    def on_open_externally(self):
-
-        if not SettingsDialog.ensure_external_editor_is_set(self):
+    def on_view_plaintext(self):
+    
+        if len(self.selected_files) < 1:
+            error_dialog('Error', 'Nothing files selected')
             return
 
-        files = [file.file_path for file in self.selected_files]
+        selected_file = self.selected_files[0]
+        title = f'Plaintext Data of <{selected_file.name}>'
+        if selected_file.is_from_archive:
+            TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
+        else:
+            TextDialog(self).show_modal_dialog(title, file_path=selected_file.file_path)
+
+
+    def on_open_externally(self):
+    
+        if len(self.selected_files) < 1:
+            error_dialog('Error', 'Nothing files selected')
+            return
+
+        selected_files_nonarchive = [selected_file for selected_file in self.selected_files if not selected_file.is_from_archive]
+        
+        if len(selected_files_nonarchive) < 1:
+            error_dialog('Error', 'All selected paths are archives')
+            return
+        
         try:
-            start_process(Settings.ext_editor_cmd, *files)
+            start_process(Settings.ext_editor_cmd, *[file.file_path for file in selected_files_nonarchive])
         except Exception as ex:
             error_dialog('Open File Externally', 'Unable to open file with external editor.', str(ex))
     
@@ -898,9 +918,9 @@ class MainWindow(MainWindowUi):
         self.update_cursors()
 
 
-    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         # events are handled slower than they may come in, which leads to lag; queue them, then handle them in bulk
-        self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y))
+        self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y, x2, y2))
         if not self.ui_is_timer_scheduled(MainWindow.TIMER_CURSORS_ID):
             self.ui_schedule_timer(MainWindow.TIMER_CURSORS_ID, MainWindow.TIMER_CURSORS_TIMEOUT_S)
     
@@ -944,9 +964,13 @@ class MainWindow(MainWindowUi):
                 self.ui_plot.draw()
 
 
-    def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None):
+    def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None, x2: float = None, y2: float = None):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             return
+        
+        # TODO: cursors on 2nd axis
+        # - must hand over 2nd coordinate set, and 2nd axis with/height
+        # - must remember cursor axis
 
         try:
             self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
@@ -1008,7 +1032,7 @@ class MainWindow(MainWindowUi):
     
     def update_cursor_readout(self):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
-            self.ui_set_cursor_readout()
+            self.ui_set_cursor_readouts()
             return
 
         readout_x1 = ''
