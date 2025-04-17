@@ -300,7 +300,7 @@ class PlotHelper:
             self.plot = self._figure.add_subplot(111)
             r_max = get_r_max()
             self._r_smith = 1 if r_max<=1 else r_max*1.05
-            plotting.smith(ax=self.plot, chart_type=self._smith_type, ref_imm=self._smith_z, draw_labels=True, smithR=self.r_smith)
+            plotting.smith(ax=self.plot, chart_type=self._smith_type, ref_imm=self._smith_z, draw_labels=True, smithR=self._r_smith)
             self._use_two_yaxes = False
         else:
             anything_on_primary_yaxis = any([not item.prefer_seconary_yaxis for item in self.items])
