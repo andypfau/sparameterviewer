@@ -99,11 +99,13 @@ class CitiReader:
             else:
                 return None, None
 
+        variables_used = []
         for data_name in self.datas:
 
             egress_port, ingress_port = parse_sparam_name(data_name)
             if egress_port is None or ingress_port is None:
                 continue
+            variables_used.append(data_name)
             
             dict_key = (egress_port,ingress_port)
             highest_port = max(highest_port, max(egress_port, ingress_port))
@@ -141,15 +143,17 @@ class CitiReader:
         comments.append('CITI coordinates:')
         for cname in self._citi.coords:
             cdata = self._citi.coords[cname].data
-            csel = ''
+            usage_str = 'used as frequency coordinate' if frequency_coord==cname else 'ignored'
+            coord_sel_str = ''
             if cname in at_coords:
-                csel = f', using coordinate value {at_coords[cname]}'
-            comments.append(f'- {cname}: {len(cname)} ({cdata}, {cdata.dtype}{csel})')
+                coord_sel_str = f', using coordinate value {at_coords[cname]}'
+            comments.append(f'- {cname}: {len(cdata)} × {cdata.dtype}, {usage_str}{coord_sel_str} (data: {cdata})')
         
         comments.append('CITI data variables:')
         for vname in self._citi.data_vars:
             vdata = self._citi.data_vars[vname]
-            comments.append(f'- {vname}: {vdata.dtype}')
+            usage_str = 'used in S-parameters' if vname in variables_used else 'ignored'
+            comments.append(f'- {vname}: {len(vdata)} × {vdata.dtype}, {usage_str}')
         
         comment = '\n'.join([comment for comment in comments if comment])
 
