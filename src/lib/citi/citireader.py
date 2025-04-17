@@ -66,11 +66,25 @@ class CitiReader:
         highest_port = 0
 
         def parse_sparam_name(name):
-            if (m := re.match(r'S[\(\[]([0-9]+),([0-9]+)[\]\)]', data_name, re.IGNORECASE)):
+            if (m := re.match(r'S?([0-9,; ]+)', data_name, re.IGNORECASE)):
+                params = m.group(1)
+            elif (m := re.match(r'S\(([0-9,; ]+)\)', data_name, re.IGNORECASE)):
+                params = m.group(1)
+            elif (m := re.match(r'S\[([0-9,; ]+)\]', data_name, re.IGNORECASE)):
+                params = m.group(1)
+            elif (m := re.match(r'S\{([0-9,; ]+)\}', data_name, re.IGNORECASE)):
+                params = m.group(1)
+            else:
+                return None, None
+
+            if (m := re.match(r'([0-9]+)[,; ]([0-9]+)', params, re.IGNORECASE)):
                 return int(m.group(1)), int(m.group(2))
-            if (m := re.match(r'S[\(\[]([0-9])([0-9])[\]\)]', data_name, re.IGNORECASE)):
+            elif (m := re.match(r'([0-9])([0-9])', params, re.IGNORECASE)):
                 return int(m.group(1)), int(m.group(2))
-            return None, None
+            elif (m := re.match(r'([0-9][0-9][0-9])([0-9][0-9][0-9])', params, re.IGNORECASE)):
+                return int(m.group(1)), int(m.group(2))
+            else:
+                return None, None
 
         for data_name in self.datas:
 
