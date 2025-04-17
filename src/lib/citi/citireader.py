@@ -146,13 +146,13 @@ class CitiReader:
             usage_str = 'used as frequency coordinate' if frequency_coord==cname else 'ignored'
             coord_sel_str = ''
             if cname in at_coords:
-                coord_sel_str = f', using coordinate value {at_coords[cname]}'
-            comments.append(f'- {cname}: {len(cdata)} × {cdata.dtype}, {usage_str}{coord_sel_str} (data: {cdata})')
+                coord_sel_str = f', using coordinate value {at_coords[cname]} (data: {cdata})'
+            comments.append(f'- {cname}: {len(cdata)} × {cdata.dtype}, {usage_str}{coord_sel_str}')
         
         comments.append('CITI data variables:')
         for vname in self._citi.data_vars:
             vdata = self._citi.data_vars[vname]
-            usage_str = 'used in S-parameters' if vname in variables_used else 'ignored'
+            usage_str = 'used as S-parameter' if vname in variables_used else 'ignored'
             comments.append(f'- {vname}: {len(vdata)} × {vdata.dtype}, {usage_str}')
         
         comment = '\n'.join([comment for comment in comments if comment])
