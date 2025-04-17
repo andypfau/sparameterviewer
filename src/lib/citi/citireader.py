@@ -95,7 +95,7 @@ class CitiReader:
         if highest_port < 1:
             raise RuntimeError(f'Highest port number in CITI file is {highest_port}, expected 1 or more')
 
-        s_matrix = np.zeros([len(f),highest_port,highest_port], dtype=complex)
+        s_matrix = np.full([len(f),highest_port,highest_port], np.nan, dtype=complex)
         for (ep,ip),s in s_dict.items():
             s_matrix[:,ep-1,ip-1] = s
         

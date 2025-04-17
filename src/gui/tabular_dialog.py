@@ -107,6 +107,8 @@ class TabularDatasetSFile(TabularDataset):
         cols = []
         for ip in range(self.file.nw.nports):
             for ep in range(self.file.nw.nports):
+                if np.all(np.isnan(self.file.nw.s[:,ep,ip])):
+                    continue
                 if ep>=10 or ip>=10:
                     cols.append(f'S{ep+1},{ip+1}')
                 else:
@@ -120,6 +122,8 @@ class TabularDatasetSFile(TabularDataset):
         result = []
         for ip in range(self.file.nw.nports):
             for ep in range(self.file.nw.nports):
+                if np.all(np.isnan(self.file.nw.s[:,ep,ip])):
+                    continue
                 result.append(self.file.nw.s[:,ep,ip])
         return result
     @property

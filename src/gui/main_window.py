@@ -1198,6 +1198,9 @@ class MainWindow(MainWindowUi):
 
             def add_to_plot(f, sp, z0, name, style=None):
 
+                if np.all(np.isnan(sp)):
+                    return
+
                 if style is None:
                     style = '-'
 
