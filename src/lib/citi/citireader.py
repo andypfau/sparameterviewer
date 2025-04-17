@@ -14,6 +14,7 @@ class CitiReader:
     def __init__(self, filename: str):
         self.filename = filename
         self._citi = read_citifile(self.filename)
+        self.comments = self._get_comments()
 
     @property
     def datas(self) -> list[str]:
@@ -39,6 +40,18 @@ class CitiReader:
                     if match == coord_name.lower():
                         return coord_name
         raise RuntimeError(f'Unable to guess the frequency coordinate of CITI files (names are {self.coord_names})')
+
+    def _get_comments(self) -> list[str]:
+        try:
+            comments = []
+            with open(self.filename, 'r') as fp:
+                for line in fp.readlines():
+                    if line.startswith('!') or line.startswith('#'):
+                        comments.append(line[1:].strip())
+            return comments
+        except Exception as ex:
+            logging.error(f'Unable to read comments form {self.filename} ({ex})')
+            return []
 
     def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "skrf.Network":
 
@@ -117,20 +130,28 @@ class CitiReader:
         for k,v in at_coords.items():
             name += f', {k}={v}'
         
-        comment = self._citi.attrs.get('comments', '')
+        comments = []
         
-        comment += '\nCITI coordinates:'
+        citi_comment = self._citi.attrs.get('comments', '')
+        if citi_comment:
+            comments.extend([comment for comment in str(citi_comment).splitlines() if comment])
+        
+        comments.extend(self.comments)
+        
+        comments.append('CITI coordinates:')
         for cname in self._citi.coords:
             cdata = self._citi.coords[cname].data
             csel = ''
             if cname in at_coords:
                 csel = f', using coordinate value {at_coords[cname]}'
-            comment += f'\n- {cname}: {len(cname)} ({cdata}, {cdata.dtype}{csel})'
+            comments.append(f'- {cname}: {len(cname)} ({cdata}, {cdata.dtype}{csel})')
         
-        comment += '\nCITI data variables:'
+        comments.append('CITI data variables:')
         for vname in self._citi.data_vars:
             vdata = self._citi.data_vars[vname]
-            comment += f'\n- {vname}: {vdata.dtype}'
+            comments.append(f'- {vname}: {vdata.dtype}')
+        
+        comment = '\n'.join([comment for comment in comments if comment])
 
         nw = skrf.Network(f=f, f_unit='Hz', name=name, s=s_matrix, comments=comment)
         return nw
