@@ -70,8 +70,8 @@ class MainWindow(MainWindowUi):
         PlotUnit.Real: 'Real',
         PlotUnit.Imag: 'Imag',
         PlotUnit.ReImPolar: 'Polar',
-        PlotUnit.SmithY: 'Smith (Z)',
-        PlotUnit.SmithZ: 'Smith (Y)',
+        PlotUnit.SmithZ: 'Smith (Z)',
+        PlotUnit.SmithY: 'Smith (Y)',
         PlotUnit.Impulse: 'Impulse Resp.',
         PlotUnit.Step: 'Step Resp.',
     }
@@ -169,12 +169,6 @@ class MainWindow(MainWindowUi):
             self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
             self.update_plot()
         
-        def switch_to_linear_scale():
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
-            
-        def switch_to_logarithmic_scale():
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
-        
         def ensure_selected_file_count(op, n_required):
             n = len(selected_file_names())
             if op == '>=':
@@ -197,61 +191,61 @@ class MainWindow(MainWindowUi):
         
         def all_sparams():
             set_expression('sel_nws().s().plot()')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def insertion_loss():
             set_expression('sel_nws().s(il_only=True).plot()')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def insertion_loss_reciprocal():
             set_expression('sel_nws().s(fwd_il_only=True).plot()')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def return_loss():
             set_expression('sel_nws().s(rl_only=True).plot()')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def vswr():
             set_expression('sel_nws().s(rl_only=True).vswr().plot()')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def mismatch_loss():
             set_expression('sel_nws().s(rl_only=True).ml().plot()')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
 
         def quick11():
             set_expression('quick(11)')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def quick112122():
             set_expression('quick(11)', 'quick(21)', 'quick(22)')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def quick11211222():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
 
         def quick112122313233():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
-            switch_to_logarithmic_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
         
         def stability():
             set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
                            'sel_nws().mu(2).plot() # should be > 1 for stable network')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def reciprocity():
             set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def passivity():
             set_expression('sel_nws().passivity().plot() # should be <= 1 for passive network')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def losslessness():
             set_expression("sel_nws().losslessness('ii').plot() # should be 1 for lossless network",
                            "sel_nws().losslessness('ij').plot() # should be 0 for lossless network")
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def cascade():
             if not ensure_selected_file_count('>=', 2):
@@ -309,11 +303,15 @@ class MainWindow(MainWindowUi):
         
         def impedance():
             set_expression('sel_nws().s2z().s(rl_only=True).plot()')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def admittance():
             set_expression('sel_nws().s2y().s(rl_only=True).plot()')
-            switch_to_linear_scale()
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+        
+        def stability_circles():
+            set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)')
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.SmithZ]
 
         def all_selected():
             if not ensure_selected_file_count('>=', 1):
@@ -342,6 +340,7 @@ class MainWindow(MainWindowUi):
             },
             'Network Analysis': {
                 'Stability': stability,
+                'Stability Circles': stability_circles,
                 'Reciprocity': reciprocity,
                 'Passivity': passivity,
                 'Losslessness': losslessness,

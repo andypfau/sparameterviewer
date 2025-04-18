@@ -18,7 +18,7 @@ from typing import Callable
 class SParam:
 
 
-    plot_fn: "callable[[np.ndarray,np.ndarray,complex,str,str], None]"
+    plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str], None]
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):

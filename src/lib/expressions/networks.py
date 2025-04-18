@@ -383,7 +383,7 @@ class Network:
         freq = np.full([n_points], frequency_hz)
         label = label if label is not None else self.nw.name
         label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
-        SParam.plot_fn(freq, data, label, style)
+        SParam.plot_fn(freq, data, self.nw.z0, label, style)
         
     
     def quick(self, *items):

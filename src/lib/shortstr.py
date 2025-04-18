@@ -9,7 +9,7 @@ def first_index(needles, haystack):
                 result = min(result, idx)
     return result
 
-def last_index(needles, haystack):
+def last_index(needles: str, haystack: str) -> int:
     result = None
     for needle in needles:
         idx = haystack.rfind(needle)
@@ -40,15 +40,15 @@ def remove_common_prefixes(strings):
     return strings
 
 
-def remove_common_suffixes(strings):
+def remove_common_suffixes(strings: list[str]) -> list[str]:
     if len(strings) == 1:
         return strings
-    def split(s):
+    def split(s: str) -> list[str]:
         i = last_index(r'[ _/\\+~*#.,-]', s)
         if i:
-            return s[:i], s[i:]
+            return [s[:i], s[i:]]
         else:
-            return s, ''
+            return [s, '']
     while True:
         split_strs = [split(l) for l in strings]
         if any([True if s[1]=='' else False for s in split_strs]):
