@@ -126,6 +126,7 @@ class MainWindow(MainWindowUi):
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
+                self.ui_show_filesys_browser(Settings.show_filesys)
                 return None
             except Exception as ex:
                 return ex
@@ -470,6 +471,7 @@ class MainWindow(MainWindowUi):
                     self.update_most_recent_directories_menu()  # this will remove stale paths
                     return
                 absdir = os.path.abspath(dir)
+                self.ui_filesys_navigate(absdir)
                 self.directories = [absdir]
                 self.clear_loaded_files()
                 self.load_files_in_directory(absdir)
@@ -641,6 +643,7 @@ class MainWindow(MainWindowUi):
         if not dir:
             return
         absdir = os.path.abspath(dir)
+        self.ui_filesys_navigate(absdir)
         self.directories = [absdir]
         self.clear_loaded_files()
         self.load_files_in_directory(absdir)
@@ -653,6 +656,7 @@ class MainWindow(MainWindowUi):
         if not dir:
             return
         absdir = os.path.abspath(dir)
+        self.ui_filesys_navigate(absdir)
         if absdir not in self.directories:
             self.directories.append(absdir)
             self.load_files_in_directory(absdir)
@@ -905,6 +909,34 @@ class MainWindow(MainWindowUi):
 
     def on_tab_change(self):
         self.prepare_cursors()
+
+
+    def on_filesys_doubleclick(self, path_str: str):
+        path = pathlib.Path(path_str)
+        if (not path.exists()):
+            return
+        if path.is_dir():
+            absdir = str(path.absolute())
+            if Settings.filesys_doubleclick_appends:
+                self.directories = [absdir]
+                self.clear_loaded_files()
+                self.load_files_in_directory(absdir)
+                self.update_file_list(only_select_first=True)
+            else:
+                self.directories.append(absdir)
+                self.load_files_in_directory(absdir)
+                self.update_file_list()
+        elif path.is_file():
+            pass  # TODO: append this file
+
+
+    def on_filesys_contextmenu(self, path: str):
+        pass  # TODO: implement context menu
+
+
+    def on_show_filesys(self):
+        Settings.show_filesys = self.ui_show_filesys_option
+        self.ui_show_filesys_browser(Settings.show_filesys)
 
 
     def on_cursor_select(self):

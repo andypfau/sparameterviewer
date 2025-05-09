@@ -83,6 +83,8 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
+            self.ui_filefiew_append = Settings.filesys_doubleclick_appends
+            self.ui_fileview_showfiles = Settings.filesys_showfiles
             self.ui_ext_ed = Settings.ext_editor_cmd
             self.ui_plotstyle = Settings.plot_style
             self.ui_font = Settings.editor_font
@@ -203,3 +205,11 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_font_change(self):
         Settings.editor_font = self.ui_font
+
+
+    def on_fileappend_changed(self):
+        Settings.filesys_doubleclick_appends = self.ui_filefiew_append
+
+
+    def on_showfiles_changed(self):
+        Settings.filesys_showfiles = self.ui_fileview_showfiles

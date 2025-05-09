@@ -81,6 +81,9 @@ class SParamViewerAppSettings(AppSettings):
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
+    show_filesys: bool = False
+    filesys_doubleclick_appends: bool = False
+    filesys_showfiles: bool = True
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

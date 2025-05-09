@@ -52,6 +52,22 @@ class MainWindowUi(QMainWindow):
         
         files_tab = QWidget()
         self._ui_tabs.addTab(files_tab, 'Files')
+        self._ui_filesysview = QTreeView()
+        self._ui_filesysview.setVisible(False)
+        self._ui_filesysmodel = QFileSystemModel()
+        self._ui_filesysmodel.setRootPath('')
+        self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)
+        self._ui_filesysview.setModel(self._ui_filesysmodel)
+        def _filesys_doubleclick(index):
+            self.on_filesys_doubleclick(self._ui_filesysmodel.filePath(index))
+        self._ui_filesysview.doubleClicked.connect(_filesys_doubleclick)
+        self._ui_filesysview.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        def _filesys_rightclick(location):
+            index = self._ui_filesysview.indexAt(location)
+            if index.isValid():
+                self.on_filesys_contextmenu(self._ui_filesysmodel.filePath(index))
+        self._ui_filesysview.customContextMenuRequested.connect(_filesys_rightclick)
+
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
         self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
@@ -59,7 +75,8 @@ class MainWindowUi(QMainWindow):
         self._ui_fileview.setModel(self._ui_filemodel)
         self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
-        files_tab.setLayout(QtHelper.layout_v(self._ui_fileview))
+        #files_tab.setLayout(QtHelper.layout_v(self._ui_fileview))
+        files_tab.setLayout(QtHelper.layout_h(self._ui_filesysview, self._ui_fileview))
         
         expressions_tab = QWidget()
         self._ui_tabs.addTab(expressions_tab, 'Expressions')
@@ -169,6 +186,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
         self._ui_mainmenu_view = QtHelper.add_submenu(self.ui_menu_bar, '&View')
+        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Filesystem Browser', self.on_show_filesys, checkable=True)
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
@@ -298,6 +316,22 @@ class MainWindowUi(QMainWindow):
     @ui_show_legend.setter
     def ui_show_legend(self, value):
         self._ui_menuitem_show_legend.setChecked(value)
+    
+
+    def ui_show_filesys_browser(self, visible: bool = True):
+        self._ui_filesysview.setVisible(visible)
+
+
+    def ui_filesys_navigate(self, path: str):
+        raise NotImplementedError()  # TODO: implement
+    
+
+    @property
+    def ui_show_filesys_option(self) -> bool:
+        return self._ui_menuitem_filesys.isChecked()
+    @ui_show_filesys_option.setter
+    def ui_show_filesys_option(self, value):
+        self._ui_menuitem_filesys.setChecked(value)
     
 
     @property
@@ -586,4 +620,10 @@ class MainWindowUi(QMainWindow):
     def on_logx_changed(self):
         pass
     def on_statusbar_click(self):
+        pass
+    def on_filesys_doubleclick(self, path: str):
+        pass
+    def on_filesys_contextmenu(self, path: str):
+        pass
+    def on_show_filesys(self):
         pass

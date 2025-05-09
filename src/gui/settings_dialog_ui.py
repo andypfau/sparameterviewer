@@ -82,10 +82,28 @@ class SettingsDialogUi(QDialog):
             )
         )
 
+        files_widget = QWidget()
+        self._ui_tabs.addTab(files_widget, 'Files')
+        self._ui_extract_zip_check = QCheckBox('Extract .zip-Files')
+        self._ui_extract_zip_check.toggled.connect(self.on_zip_change)
+        self._ui_fileview_files_check = QCheckBox('Show Files In Filesystem')
+        self._ui_fileview_files_check.toggled.connect(self.on_showfiles_changed)
+        self._ui_filereplace_radio = QRadioButton('Switch To')
+        self._ui_filereplace_radio.toggled.connect(self.on_fileappend_changed)
+        self._ui_fileappend_radio = QRadioButton('Append')
+        self._ui_fileappend_radio.toggled.connect(self.on_fileappend_changed)
+        files_widget.setLayout(
+            QtHelper.layout_v(
+                self._ui_extract_zip_check,
+                self._ui_fileview_files_check,
+                QtHelper.layout_grid([
+                        ['Doubleclick Filesystem:', QtHelper.layout_h(self._ui_filereplace_radio, self._ui_fileappend_radio)],
+                ]), ...
+            )
+        )
+
         misc_widget = QWidget()
         self._ui_tabs.addTab(misc_widget, 'Misc')
-        self._ui_extract_zip_combo = QCheckBox('Extract .zip-Files')
-        self._ui_extract_zip_combo.toggled.connect(self.on_zip_change)
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
         self._ui_cursor_snap = QComboBox()
@@ -99,7 +117,6 @@ class SettingsDialogUi(QDialog):
         self._ui_exted_btn = QtHelper.make_button('...', self.on_browse_ext_ed)
         misc_widget.setLayout(
             QtHelper.layout_v(
-                self._ui_extract_zip_combo,
                 self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
                         ['Cursor Snap:', QtHelper.layout_h(self._ui_cursor_snap, ...)],
@@ -240,10 +257,29 @@ class SettingsDialogUi(QDialog):
     
     @property
     def ui_extract_zip(self) -> bool:
-        return self._ui_extract_zip_combo.isChecked()
+        return self._ui_extract_zip_check.isChecked()
     @ui_extract_zip.setter
     def ui_extract_zip(self, value: bool):
-        self._ui_extract_zip_combo.setChecked(value)
+        self._ui_extract_zip_check.setChecked(value)
+
+    
+    @property
+    def ui_fileview_showfiles(self) -> bool:
+        return self._ui_fileview_files_check.isChecked()
+    @ui_fileview_showfiles.setter
+    def ui_fileview_showfiles(self, value: bool):
+        self._ui_fileview_files_check.setChecked(value)
+
+    
+    @property
+    def ui_filefiew_append(self) -> bool:
+        return self._ui_fileappend_radio.isChecked()
+    @ui_filefiew_append.setter
+    def ui_filefiew_append(self, value: bool):
+        if value:
+            self._ui_fileappend_radio.setChecked(True)
+        else:
+            self._ui_filereplace_radio.setChecked(True)
 
     
     @property
@@ -304,4 +340,8 @@ class SettingsDialogUi(QDialog):
     def on_font_change(self):
         pass
     def on_cursor_snap_changed(self):
+        pass
+    def on_fileappend_changed(self):
+        pass
+    def on_showfiles_changed(self):
         pass

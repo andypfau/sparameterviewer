@@ -9,6 +9,7 @@ S-Parameter Viewer Changelog
 - change: more flexible arguments for `Networks.s()`
 - new: added `z()`, `y()`, `abcd()` and `t()` to `Networks`
 - change: removed `s2z()`, `s2y()` from `Networks`
+- new: filesystem browser
 
 
 0.30b1 (2025-04-14)
