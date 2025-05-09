@@ -133,7 +133,8 @@ class SParam:
         return SParam(self.name, self.f, s, self.z0)
 
     
-    def plot_xy(self, x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
+    @staticmethod
+    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
         SParam._plot_fn(x, y, z0, label, style, color, width, opacity)
 
     
@@ -142,7 +143,7 @@ class SParam:
             label = self.name
         else:
             label = label.replace('%n', self.name)
-        self.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity)
+        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":

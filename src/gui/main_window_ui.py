@@ -53,11 +53,12 @@ class MainWindowUi(QMainWindow):
         files_tab = QWidget()
         self._ui_tabs.addTab(files_tab, 'Files')
         self._ui_filesysview = QTreeView()
-        self._ui_filesysview.setVisible(False)
+        #self._ui_filesysview.setVisible(False)
         self._ui_filesysmodel = QFileSystemModel()
         self._ui_filesysmodel.setRootPath('')
         self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)
         self._ui_filesysview.setModel(self._ui_filesysmodel)
+        self._ui_filesysview.resizeColumnToContents(0)
         def _filesys_doubleclick(index):
             self.on_filesys_doubleclick(self._ui_filesysmodel.filePath(index))
         self._ui_filesysview.doubleClicked.connect(_filesys_doubleclick)
@@ -67,7 +68,6 @@ class MainWindowUi(QMainWindow):
             if index.isValid():
                 self.on_filesys_contextmenu(self._ui_filesysmodel.filePath(index))
         self._ui_filesysview.customContextMenuRequested.connect(_filesys_rightclick)
-
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
         self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
@@ -75,8 +75,16 @@ class MainWindowUi(QMainWindow):
         self._ui_fileview.setModel(self._ui_filemodel)
         self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
-        #files_tab.setLayout(QtHelper.layout_v(self._ui_fileview))
-        files_tab.setLayout(QtHelper.layout_h(self._ui_filesysview, self._ui_fileview))
+        self._ui_files_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._ui_files_splitter.addWidget(self._ui_filesysview)
+        self._ui_files_splitter.setCollapsible(0, True)
+        self._ui_files_splitter.addWidget(self._ui_fileview)
+        self._ui_files_splitter.setCollapsible(1, False)
+        def _on_move_files_splitter(pos: int, index: int):
+            if index==0:
+                self.on_filesys_visible_changed()
+        self._ui_files_splitter.splitterMoved.connect(_on_move_files_splitter)
+        files_tab.setLayout(QtHelper.layout_h(self._ui_files_splitter))
         
         expressions_tab = QWidget()
         self._ui_tabs.addTab(expressions_tab, 'Expressions')
@@ -186,7 +194,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
         self._ui_mainmenu_view = QtHelper.add_submenu(self.ui_menu_bar, '&View')
-        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Filesystem Browser', self.on_show_filesys, checkable=True)
+        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Toggle Filesystem Browser', self.on_toggle_filesys)
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
@@ -318,12 +326,29 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_show_legend.setChecked(value)
     
 
-    def ui_show_filesys_browser(self, visible: bool = True):
-        self._ui_filesysview.setVisible(visible)
+    @property
+    def ui_filesys_visible(self) -> bool:
+        sizes = self._ui_files_splitter.sizes()
+        visible = sizes[0] > 0
+        return visible
+    @ui_filesys_visible.setter
+    def ui_filesys_visible(self, value: bool):
+        sizes = self._ui_files_splitter.sizes()
+        if value:
+            if sizes[0] == 0:
+                sizes[0] = 200
+        else:
+            sizes[0] = 0
+        self._ui_files_splitter.setSizes(sizes)
 
 
     def ui_filesys_navigate(self, path: str):
-        raise NotImplementedError()  # TODO: implement
+        index = self._ui_filesysmodel.index(path)
+        if not index.isValid():
+            return
+        self._ui_filesysview.setCurrentIndex(index)
+        self._ui_filesysview.scrollTo(index, QAbstractItemView.ScrollHint.EnsureVisible)
+        self._ui_filesysview.resizeColumnToContents(0)
     
 
     @property
@@ -625,5 +650,7 @@ class MainWindowUi(QMainWindow):
         pass
     def on_filesys_contextmenu(self, path: str):
         pass
-    def on_show_filesys(self):
+    def on_toggle_filesys(self):
+        pass
+    def on_filesys_visible_changed(self):
         pass

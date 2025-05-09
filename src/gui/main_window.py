@@ -126,7 +126,7 @@ class MainWindow(MainWindowUi):
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
-                self.ui_show_filesys_browser(Settings.show_filesys)
+                self.ui_filesys_visible = Settings.filesys_showfiles
                 return None
             except Exception as ex:
                 return ex
@@ -387,6 +387,7 @@ class MainWindow(MainWindowUi):
         if is_dir:
             directory = filenames_or_directory
             absdir = os.path.abspath(directory[0])
+            self.ui_filesys_navigate(absdir)
             self.directories = [absdir]
             self.load_files_in_directory(absdir)
             self.update_file_list(only_select_first=True)
@@ -403,6 +404,7 @@ class MainWindow(MainWindowUi):
                     if yesno_dialog('Extract .zip Files', 'A .zip-file was selected, but the option to extract .zip-files is disabled. Do you want to enable it?'):
                         Settings.extract_zip = True
             absdir = os.path.split(filenames[0])[0]
+            self.ui_filesys_navigate(absdir)
             self.directories = [absdir]
             self.load_files_in_directory(absdir)
             self.update_file_list(selected_filenames=filenames)
@@ -934,9 +936,14 @@ class MainWindow(MainWindowUi):
         pass  # TODO: implement context menu
 
 
-    def on_show_filesys(self):
-        Settings.show_filesys = self.ui_show_filesys_option
-        self.ui_show_filesys_browser(Settings.show_filesys)
+    def on_toggle_filesys(self):
+        visible = not self.ui_filesys_visible
+        Settings.filesys_showfiles = visible
+        self.ui_filesys_visible = visible
+    
+
+    def on_filesys_visible_changed(self):
+        Settings.filesys_showfiles = self.ui_filesys_visible
 
 
     def on_cursor_select(self):
