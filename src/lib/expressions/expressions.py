@@ -1,7 +1,7 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
-from ..sparam_helpers import get_quick_params
+from ..sparam_helpers import parse_quick_param
 from .networks import Networks
 from .sparams import SParam, SParams
 
@@ -19,9 +19,9 @@ class ExpressionParser:
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
         selected_networks: "list[SParamFile]", \
-        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str]") -> "list[SParamFile]":
+        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float]") -> "list[SParamFile]":
         
-        SParam.plot_fn = plot_fn
+        SParam._plot_fn = plot_fn
 
         def select_networks(network_list: "list[SParamFile]", pattern: str, single: bool):
             nws = []
@@ -51,7 +51,7 @@ class ExpressionParser:
             return select_networks(available_networks, pattern, single=True)
 
         def quick(*items):
-            for (e,i) in get_quick_params(*items):
+            for (e,i) in [parse_quick_param(item) for item in items]:
                 try:
                     sel_nws().s(e,i).plot()
                 except Exception as ex:

@@ -870,7 +870,7 @@ class MainWindow(MainWindowUi):
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        MainWindow.MODE_NAMES[ParamMode.Expr]
+        self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
         self.update_plot()
 
     
@@ -881,13 +881,6 @@ class MainWindow(MainWindowUi):
     
 
     def on_settings_change(self):
-        self.update_plot()
-    
-    
-    def on_update_button(self):
-        if self.ui_tab == MainWindowUi.Tab.Cursors:
-            return
-        self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
         self.update_plot()
     
     
@@ -1109,6 +1102,8 @@ class MainWindow(MainWindowUi):
             return
 
         try:
+            self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
+
             prev_xlim, prev_ylim = None, None
             if self.plot is not None:
                 if self.plot.plot is not None:
@@ -1195,7 +1190,7 @@ class MainWindow(MainWindowUi):
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
 
-            def add_to_plot(f, sp, z0, name, style=None):
+            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None):
 
                 if np.all(np.isnan(sp)):
                     return
@@ -1215,6 +1210,8 @@ class MainWindow(MainWindowUi):
                     style_y2 = ':'
                 else:
                     style_y2 = style
+
+                kwargs = dict(width=width, color=color, opacity=opacity)
                 
                 def transform_phase(radians):
                     if Settings.phase_unit==PhaseUnit.Degrees:
@@ -1222,37 +1219,37 @@ class MainWindow(MainWindowUi):
                     return radians
 
                 if polar or smith:
-                    self.plot.add(np.real(sp), np.imag(sp), f, name, style)
+                    self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
                 else:
                     if timedomain:
                         t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
                         if tdr_z:
                             lev[lev==0] = 1e-20 # avoid division by zero in the next step
                             imp = z0 * (1+lev) / (1-lev) # convert to impedance
-                            self.plot.add(t, np.real(imp), None, name, style)
+                            self.plot.add(t, np.real(imp), None, name, style, **kwargs)
                         else:
-                            self.plot.add(t, lev, None, name, style)
+                            self.plot.add(t, lev, None, name, style, **kwargs)
                     elif qty_db:
-                        self.plot.add(f, v2db(sp), None, name, style)
+                        self.plot.add(f, v2db(sp), None, name, style, **kwargs)
                     elif qty_lin_mag or qty_log_mag:
-                        self.plot.add(f, np.abs(sp), None, name, style)
+                        self.plot.add(f, np.abs(sp), None, name, style, **kwargs)
                     elif qty_re and qty_im:
-                        self.plot.add(f, np.real(sp), None, name+' re', style)
-                        self.plot.add(f, np.imag(sp), None, name+' im', style2)
+                        self.plot.add(f, np.real(sp), None, name+' re', style, **kwargs)
+                        self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
                     elif qty_re:
-                        self.plot.add(f, np.real(sp), None, name, style)
+                        self.plot.add(f, np.real(sp), None, name, style, **kwargs)
                     elif qty_im:
-                        self.plot.add(f, np.imag(sp), None, name, style)
+                        self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
                     
                     if qty_phase:
                         if remove_lin_phase:
-                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
                         elif unwrap_phase:
-                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
                         else:
-                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
                     elif qty_group_delay:
-                        self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True)
+                        self.plot.add(*group_delay(f,sp), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
                     
             selected_files = self.get_selected_files()
             touched_files = []
@@ -1325,3 +1322,5 @@ class MainWindow(MainWindowUi):
             self.ui_plot.clear()
             self.show_error(f'Plotting failed', ex)
 
+        finally:
+            self.ready = True

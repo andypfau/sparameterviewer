@@ -64,7 +64,7 @@ class MainWindowUi(QMainWindow):
         expressions_tab = QWidget()
         self._ui_tabs.addTab(expressions_tab, 'Expressions')
         self._ui_update_button = QPushButton('Update (F5)')
-        self._ui_update_button.clicked.connect(self.on_update_button)
+        self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
         self._ui_template_button.clicked.connect(self.on_template_button)
         self._ui_help_button = QPushButton('Help')
@@ -456,11 +456,15 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_set_fileview_items(self, names_and_contents: list[tuple[str,str]]):
-        self._ui_fileview_root.removeRows(0, self._ui_fileview_root.rowCount())
-        for name,content in names_and_contents:
-            self._ui_fileview_root.appendRow([QStandardItem(name), QStandardItem(content)])
-        for column in range(self._ui_fileview.model().columnCount()):
-            self._ui_fileview.resizeColumnToContents(column)
+        try:
+            self._ui_fileview.selectionModel().selectionChanged.disconnect(self.on_select_file)
+            self._ui_fileview_root.removeRows(0, self._ui_fileview_root.rowCount())
+            for name,content in names_and_contents:
+                self._ui_fileview_root.appendRow([QStandardItem(name), QStandardItem(content)])
+            for column in range(self._ui_fileview.model().columnCount()):
+                self._ui_fileview.resizeColumnToContents(column)
+        finally:
+            self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
 
 
     def ui_update_fileview_item(self, index: int, name: str, contents: str):
@@ -556,8 +560,6 @@ class MainWindowUi(QMainWindow):
     def on_manual_axes(self):
         pass
     def on_update_expressions(self):
-        pass
-    def on_update_button(self):
         pass
     def on_template_button(self):
         pass

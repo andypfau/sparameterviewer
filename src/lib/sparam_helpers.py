@@ -3,6 +3,7 @@ import numpy as np
 import math
 import cmath
 import scipy
+import re
 
 
 def get_sparam_name(egress: int, ingress: int, prefix: str = 'S') -> str:
@@ -114,17 +115,20 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0,
         return t, ir
 
 
-def get_quick_params(*items) -> list:
-    result = []
-    for item in items:
-        if isinstance(item, int):
-            if item<11 or item >99:
-                raise ValueError(f'Invalid S-parameter: S{item}')
-            result.append((item//10, item % 10))
-        elif isinstance(item, tuple):
-            if len(item)!=2:
-                raise ValueError(f'Invalid S-parameter: S{item}')
-            result.append((item[0], item[1]))
-        else:
-            raise ValueError(f'Expecting an integer or a tuple (e.g. 21 or (2,1) to plot S21)')
-    return result
+def parse_quick_param(param: any) -> tuple[int,int]:
+    match param:
+        case int():
+            if param<11 or param>99:
+                raise ValueError(f'Integer argument must be in range 11...99 (e.g. `21` for S2,1); got `{param}`')
+            return (param//10, param % 10)
+        case str():
+            if m := re.match(r'^([0-9][0-9]+)$', param):
+                return parse_quick_param(int(m.group()))
+            if m := re.match(r'^([0-9]+)[,;]([0-9]+)$', param):
+                return ((int(m.group(1)),int(m.group(2))))
+            raise ValueError(f'String argument must be one or two integers (e.g. `"21"` or `"2,1"` for S2,1); got `{param}`')
+        case tuple() | list():
+            if len(param) != 2:
+                raise ValueError(f'Tuple or list argument must have two elements (e.g. `(2,1)` for S2,1); got `{param}`')
+            return (param[0], param[1])
+    raise ValueError(f'Expecting an integer (e.g. `21` for <S2,1>), a tuple or list (e.g. `(2,1)` for S2,1) or a string (e.g. `"21"` for S2,1); got `{param}`')

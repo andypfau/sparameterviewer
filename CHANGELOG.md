@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.31b1 (2025-05-09)
+-------------------
+
+- new: parameters `color` and `width` for `plot()`
+- change: more flexible arguments for `Networks.s()`
+
+
 0.30b1 (2025-04-14)
 -------------------
 

@@ -39,7 +39,14 @@ Global Functions
 quick(*parameters)
 ```
 
-Quick plotting of some parameters, indicated either as an integer (e.g. 21 to plot S21), or by a tuple (e.g. (2,1) to plot S21.). For example, to plot S21 and S22, call `quick(21, 22)`.
+Quick plotting of some parameters, indicated either as an integer (e.g. `21` for S21), a string (e.g. `"21"` or `"2,1"` for S21), or by a tuple (e.g. `(2,1)` for S21.).
+
+Examples:
+```python
+quick(21)           # plot S21
+quick(21, 22)       # plot S21 and S22
+quick((1,3), "33")  # plot S13 and S33
+```
 
 
 ### nws()
@@ -90,23 +97,40 @@ Note that any operation on the object may, by design, fail silently. For example
 ##### s()
 
 ```python
-s(egress_port=None, ingress_port=None, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
+s(ports = None, *, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
+s(egress_port=None, ingress_port=None, *, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
 ```
 
 Returns S-parameters (an `SParams` object) of a network.
 
-`egress_port` and `ingress_port` can be set to a number, or kept at `None` (wildcard). Further filtering can be applied with `rl_only`, `il_only`, `fwd_il_only`, `rev_il_only`.
+There are two variants with different positional arguments, and the same keyword arguments. The positional arguments can be:
+- `ports` is an integer: e.g. `s(21)` for S21.
+    - Only valid for `11` to `99`.
+- `ports` is a string: e.g. `s("21")` or `s("2,1")` for S21.
+    - You may also use e.g. `'dd21'` or `'cd4,3'` for a mixed-mode network. The mixed-mode network must have port order <diff1, diff2, ..., comm1, comm2, ...>.
+- `egress_port` and `ingress_port` are integers: e.g. `s(2,1)` for S21.
+    - You may use `any` as a wildcard, e.g. `s(2,any)` for S21, S22, S23, ...
+- No positional argument: everything (i.e. `s()`).
 
-For a mixed-mode network, you may also format a string instead of `egress_port` (and omit `ingress_port`), e.g. `'dd21'` od `'cd4,3'`. The mixed-mode network must have port order <diff1, diff2, ..., comm1, comm2, ...>.
+In any case, further filtering is possible with the keyword arguments:
+- `rl_only=True`: only S11, S22, S33, ...
+- `il_only=True`: only S21, S12, S31, ...
+- `fwd_il_only=True`: only S21, S31, S32, ...
+- `rev_il_only=True`: only S12, S13, S23, ...
 
-If no explicit name is provided, a reasonable name is selected, e.g. `'S21'`.
+Additionally, a name (which is shown in the plot legend) can be provided. If no explicit name is provided, a reasonable name is selected, e.g. `'S21'`.
+
 
 Examples:
 ```python
-s(2,1)           # S21
-s('dd21')        # SDD21
-s(rl_only=True)  # S11, S22, ...
-plot(None, 1)    # S11, S21, ...
+s(2,1)                 # S21
+s(21)                  # S21
+s('21')                # S21
+s('2,1')               # S21
+s('dd21')              # SDD21
+s(rl_only=True)        # S11, S22, S33, ...
+s(any, 1)              # S11, S21, S31, ...
+s(3,any,il_only=True)  # S31, S32, ...
 ```
 
 ##### invert()
@@ -416,12 +440,16 @@ To get an `SParams` object, call `s()` on a `Networks` object.
 ##### plot()
 
 ```python
-plot(label=None, style='-')
+plot(label=None, style='-', color=None, width=None, opacity=None)
 ```
 
 Plots the data. `label` is any string. The placeholder `'%n'` is replaced with the name of the parameter.
 
 `style` is a [matplotlib](https://matplotlib.org/stable/users)-compatible format (e.g. `'-'`, `':'`, `'--'`, `'o-'`).
+
+`color` is a [matplotlib](https://matplotlib.org/stable/users)-compatible color (e.g. `'red'`, `'#FF0000'`, `'F00'`).
+
+`width` is the line width, `opacity` is the line opacity (where 0 means fully invisible, and 1 means fully visible).
 
 
 ##### db()
@@ -630,6 +658,14 @@ nws().s(1,1).plot("RL")              # plot S11 of all network
 sel_nws().s(1,2).plot("Reverse IL")  # plot S12 of selected networks
 nws("amp.s2p").s(2,1).plot("IL")     # plot S21 of a specific network
 nw("amp.s2p").s(1,1).plot("RL",":")  # plot S11 of a specific network, dashed line
+```
+
+Formatting
+--------
+
+```python
+sel_nws().s(il_only=True).plot(color='blue')   # plot insertion losses in blue
+sel_nws().s(rl_only=True).plot(color='red')  # plot return losses in red
 ```
 
 Advanced

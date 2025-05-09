@@ -21,6 +21,9 @@ class ItemToPlot:
     prefer_seconary_yaxis: bool
     currently_used_axis: int
     style: str
+    color: str
+    width: float
+    opacity: float
     label: str = None
 
 
@@ -242,7 +245,7 @@ class PlotHelper:
         return best_plot, best_x, best_y, best_z
 
 
-    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, prefer_2nd_yaxis: bool = False):
+    def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, color: str, width: float, opacity: float, prefer_2nd_yaxis: bool = False):
         self._use_two_yaxes = None
         self._axes_swapped = None
         assert len(x)==len(y)
@@ -267,6 +270,9 @@ class PlotHelper:
                 prefer_2nd_yaxis,
                 -1,  # placeholder
                 style,
+                color,
+                width,
+                opacity,
             )
         )
     
@@ -332,7 +338,7 @@ class PlotHelper:
                 plot = self.plot
                 self.items[item_index].currently_used_axis = 1
         
-            x, y, style = item.data.x.values, item.data.y.values, item.style
+            x, y, style, color, width, opacity = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity
 
             # escaping for matplotlib
             if item.label.startswith('_'):
@@ -347,16 +353,16 @@ class PlotHelper:
             
             if self._polar:
                 c = x + 1j*y
-                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label)
+                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label, color=color, lw=width, alpha=opacity)
             elif self._smith:
                 c = x + 1j*y
                 from skrf import plotting
-                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None)
+                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None, color=color, lw=width, alpha=opacity)
             elif self._x_log or self._y_log:
                 x,y = fix_log(x,y)
-                new_plt = plot.plot(x, y, style, label=item.label)
+                new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
             else:
-                new_plt = plot.plot(x, y, style, label=item.label)
+                new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
 
             color = new_plt[0].get_color() if new_plt is not None else None
             self.items[item_index].data.color = color

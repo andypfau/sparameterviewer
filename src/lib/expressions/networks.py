@@ -1,7 +1,7 @@
 from ..structs import SParamFile
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
-from ..sparam_helpers import get_sparam_name, get_quick_params
+from ..sparam_helpers import get_sparam_name, parse_quick_param
 from .sparams import SParam, SParams
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
@@ -14,6 +14,7 @@ import logging
 import re
 import os
 from types import NoneType
+from typing import overload
 
 
 
@@ -68,34 +69,39 @@ class Network:
         return f'<Network({self.nw})>'
 
 
-    def s(self, egress_port: "int|str|NoneType" = None, ingress_port: "int|NoneType" = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
-        
-        mixed_name = None
-        if isinstance(egress_port, str):
-            try:
-                m = re.match(r'^([cd])([cd])(\d+),(\d+)$', egress_port.lower())
-                if m is None:
-                    m = re.match(r'^([cd])([cd])(\d)(\d)$', egress_port.lower())
-                if m is None:
-                    raise ValueError()
-                egress_mode, ingress_mode, egress_diffport, ingress_diffport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
-                def get_port(mode, diffport):
-                    assert mode in ('c','d')
-                    port = diffport
-                    if mode == 'c':
-                        port += self.nw.nports // 2
-                    return port
-                egress_port, ingress_port = get_port(egress_mode,egress_diffport), get_port(ingress_mode,ingress_diffport)
-                mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'S{egress_mode}{ingress_mode}'.upper())
-            except:
-                raise ValueError(f'Expected a port number like <1> or <dd21>')
+    def s(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+
+        ep_filter, ip_filter, mixed_name = None, None, None
+        match (egress_port, ingress_port):
+            case int(), None:
+                (ep_filter, ip_filter) = parse_quick_param(egress_port)
+            case str(), None:
+                if m := re.match(r'^([cd])([cd]).+$', egress_port.lower()):
+                    egress_mode, ingress_mode = m.group(1), m.group(2)
+                    (egress_diffport, ingress_diffport) = parse_quick_param(egress_port[2:])
+                    def _get_port(mode, diffport):
+                        assert mode in ('c','d')
+                        port = diffport
+                        if mode == 'c':
+                            port += self.nw.nports // 2
+                        return port
+                    ep_filter, ip_filter = _get_port(egress_mode,egress_diffport), _get_port(ingress_mode,ingress_diffport)
+                    mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'S{egress_mode}{ingress_mode}'.upper())
+                else:
+                    (ep_filter, ip_filter) = parse_quick_param(egress_port)
+            case int(), int():
+                ep_filter, ip_filter = egress_port, ingress_port
+            case int(), any:
+                ep_filter = egress_port
+            case any, int():
+                ip_filter = ingress_port
 
         result = []
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
-                if egress_port is not None and ep!=egress_port:
+                if ep_filter is not None and ep!=ep_filter:
                     continue
-                if ingress_port is not None and ip!=ingress_port:
+                if ip_filter is not None and ip!=ip_filter:
                     continue
                 if rl_only and ep!=ip:
                     continue
@@ -377,17 +383,17 @@ class Network:
         return self._get_added_2port(s_matrix, port)
 
     
-    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         stab = StabilityCircle(self.nw, frequency_hz, port)
         data = stab.get_plot_data(n_points)
         freq = np.full([n_points], frequency_hz)
         label = label if label is not None else self.nw.name
         label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
-        SParam.plot_fn(freq, data, self.nw.z0, label, style)
+        SParam.plot_xy(freq, data, self.nw.z0, label, style, color, width, opacity)
         
     
     def quick(self, *items):
-        for (e,i) in get_quick_params(*items):
+        for (e,i) in [parse_quick_param(item) for item in items]:
             SParams(self.s(e,i)).plot()
     
 
@@ -598,7 +604,7 @@ class Networks:
         return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
     
 
-    def s(self, egress_port: int = None, ingress_port: int = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+    def s(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
         return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
     
 

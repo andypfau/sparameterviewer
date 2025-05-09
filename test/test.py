@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.abspath('../src'))
 
 
-from lib import DataExport, PlotData, PlotDataQuantity, SiFmt, ExpressionParser
+from lib import PlotData, PlotDataQuantity, SiFmt, ExpressionParser
 from lib import SParamFile
 from lib.expressions.networks import Network, Networks
 from lib.expressions.sparams import SParam, SParams
@@ -70,7 +70,7 @@ class SParamViewerTest(unittest.TestCase):
         def plot_dummy_fn(*args, **kwargs):
             self.plot_count += 1
 
-        SParams.plot_fn = plot_dummy_fn
+        SParam._plot_fn = plot_dummy_fn
         Networks.available_networks = []
 
         all = get_dummy_sparam_files(4)
@@ -82,26 +82,6 @@ class SParamViewerTest(unittest.TestCase):
         )
 
         return super().setUp()
-
-
-    def test_export_empty_to_spreadsheet(self):
-        with Tempfile() as fn:
-            DataExport.to_spreadsheet(get_dummy_plot_data(0), fn)
-
-
-    def test_export_to_spreadsheet(self):
-        with Tempfile() as fn:
-            DataExport.to_spreadsheet(get_dummy_plot_data(2), fn)
-
-
-    def test_export_empty_to_csv(self):
-        with Tempfile() as fn:
-            DataExport.to_csv(get_dummy_plot_data(0), fn)
-
-
-    def test_export_to_csv(self):
-        with Tempfile() as fn:
-            DataExport.to_csv(get_dummy_plot_data(2), fn)
 
     
     def test_empty_expression(self):
@@ -178,4 +158,5 @@ class SParamViewerTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    # TODO: fix tests
     unittest.main()

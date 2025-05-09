@@ -18,7 +18,7 @@ from typing import Callable
 class SParam:
 
 
-    plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str], None]
+    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float], None]
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
@@ -27,7 +27,7 @@ class SParam:
     
 
     @staticmethod
-    def _adapt_f(a: "SParam", b: "SParam") -> "tuple(skrf.Network)":
+    def _adapt_f(a: "SParam", b: "SParam") -> "tuple[skrf.Network,skrf.Network]":
         if len(a.f)==len(b.f):
             if all(af==bf for af,bf in zip(a.f, b.f)):
                 return a,b
@@ -41,7 +41,7 @@ class SParam:
     
 
     @staticmethod
-    def _op(a: "SParam", b: "SParam", op: "callable") -> "SParam":
+    def _op(a: "SParam", b: "SParam", op: "Callable") -> "SParam":
         if isinstance(a, (int,float,complex,np.ndarray)):
             return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0)
         if isinstance(b, (int,float,complex,np.ndarray)):
@@ -133,12 +133,16 @@ class SParam:
         return SParam(self.name, self.f, s, self.z0)
 
     
-    def plot(self, label: "str" = None, style: "str" = None):
+    def plot_xy(self, x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
+        SParam._plot_fn(x, y, z0, label, style, color, width, opacity)
+
+    
+    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
         if label is None:
             label = self.name
         else:
             label = label.replace('%n', self.name)
-        SParam.plot_fn(self.f, self.s, self.z0, label, style)
+        self.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
@@ -176,7 +180,7 @@ class SParam:
     
         
 
-    def map(self, fn: "Callable[np.ndarray,np.ndarray]"):
+    def map(self, fn: "Callable[[np.ndarray],np.ndarray]"):
         s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
@@ -339,8 +343,8 @@ class SParams:
         return self._unary_op(SParam.phase, True, processing=processing)
     
 
-    def plot(self, label: "str|None" = None, style: "str|None" = None):
-        self._unary_op(SParam.plot, False, label=label, style=style)
+    def plot(self, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+        self._unary_op(SParam.plot, False, label=label, style=style, color=color, width=width, opacity=opacity)
     
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParams":
@@ -407,7 +411,7 @@ class SParams:
         return self._unary_op(SParam.rl_avg, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
     
 
-    def map(self, fn: "Callable[np.ndarray,np.ndarray]"):
+    def map(self, fn: "Callable[[np.ndarray],np.ndarray]"):
         return SParams(sps=[s.map(fn) for s in self.sps])
 
     
