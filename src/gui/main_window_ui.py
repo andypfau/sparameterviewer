@@ -208,7 +208,7 @@ class MainWindowUi(QMainWindow):
         def build(menu: QMenu, items: dict[str,Union[QMenu,dict]]):
             nonlocal self
             for name,subitem in items.items():
-                if name.startswith('-'):
+                if name is None:
                     menu.addSeparator()
                 elif isinstance(subitem,dict):
                     new_menu = QtHelper.add_submenu(menu, name)

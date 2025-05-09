@@ -7,6 +7,8 @@ S-Parameter Viewer Changelog
 
 - new: parameters `color` and `width` for `plot()`
 - change: more flexible arguments for `Networks.s()`
+- new: added `z()`, `y()`, `abcd()` and `t()` to `Networks`
+- change: removed `s2z()`, `s2y()` from `Networks`
 
 
 0.30b1 (2025-04-14)

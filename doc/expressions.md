@@ -94,14 +94,22 @@ Note that any operation on the object may, by design, fail silently. For example
 
 #### Methods
 
-##### s()
+##### s(), z(), y(), abcd(), t()
 
 ```python
 s(ports = None, *, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
 s(egress_port=None, ingress_port=None, *, rl_only=False, il_only=False, fwd_il_only=False, rev_il_only=False, name=None) → SParams
+z(...)
+y(...)
+abcd(...)
+t(...)
 ```
 
-Returns S-parameters (an `SParams` object) of a network.
+`s()` returns S-parameters (an `SParams` object) of a network. Analogously,
+- `z()` returns the Z-matrix parameters,
+- `y()` returns the Y-matrix parameters,
+- `abcd()` returns the ABCD-matrix parameters,
+- `t()` returns the T-matrix (scattering transfer) parameters,
 
 There are two variants with different positional arguments, and the same keyword arguments. The positional arguments can be:
 - `ports` is an integer: e.g. `s(21)` for S21.
@@ -347,24 +355,6 @@ The expected port order for the single-ended network is <diff1, diff2, ..., comm
 You may define your own mapping with <inp>; e.g. if your data is <diff1, diff2, comm1, comm2>, you can provide <inp=['d1','d2','c1','c2']>.
 
 The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
-
-
-##### s2z()
-
-```python
-s2z()
-```
-
-Converts to Z-parameter; useful to plot port impedance.
-
-
-##### s2y()
-
-```python
-s2y()
-```
-
-Converts to Y-parameter; useful to plot port admittance.
 
 
 ##### renorm()

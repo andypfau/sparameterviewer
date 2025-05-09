@@ -301,12 +301,20 @@ class MainWindow(MainWindowUi):
             expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names()]
             set_expression(*expressions)
         
-        def impedance():
-            set_expression('sel_nws().s2z().s(rl_only=True).plot()')
+        def z():
+            set_expression('sel_nws().z(any,any).plot()')
             self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
-        def admittance():
-            set_expression('sel_nws().s2y().s(rl_only=True).plot()')
+        def y():
+            set_expression('sel_nws().y(any,any).plot()')
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+        
+        def abcd():
+            set_expression('sel_nws().abcd(any,any).plot()')
+            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+        
+        def t():
+            set_expression('sel_nws().t(any,any).plot()')
             self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
         
         def stability_circles():
@@ -321,7 +329,7 @@ class MainWindow(MainWindowUi):
         
         self.ui_build_template_menu({
             'As Currently Selected': as_currently_selected,
-            '-': None,
+            None: None,
             'S-Parameters': {
                 'All S-Parameters': all_sparams,
                 'Insertion Loss': insertion_loss,
@@ -329,14 +337,17 @@ class MainWindow(MainWindowUi):
                 'Return Loss': return_loss,
                 'VSWR': vswr,
                 'Mismatch Loss': mismatch_loss,
-                '- 1': None,
+                None: None,
                 'S11': quick11,
                 'S11, S21, S22': quick112122,
                 'S11, S21, S12, S22': quick11211222,
                 'S11, S21, S22, S31, S32, S33': quick112122313233,
-                '- 2': None,
-                'Impedance': impedance,
-                'Admittance': admittance,
+            },
+            'Other Parameters': {
+                'Z-Matrix (Impedance)': z,
+                'Y-Matrix (Admittance)': y,
+                'ABCD-Matrix (Cascade)': abcd,
+                'T-Matrix (Scattering Transfer)': t,
             },
             'Network Analysis': {
                 'Stability': stability,
@@ -349,7 +360,7 @@ class MainWindow(MainWindowUi):
                 'Single-Ended to Mixed-Mode': mixed_mode,
                 'Impedance Renormalization': z_renorm,
                 'Add Line To Network': add_tline,
-                '-': None,
+                None: None,
                 'Just Plot All Selected Files': all_selected,
             },
             'Operations on Two Selected Networks': {

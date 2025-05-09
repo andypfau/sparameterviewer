@@ -113,13 +113,11 @@ def shorten_path(path: str, max_len: int) -> str:
         parts.insert(i0, '...')
         if len(parts) < 2:
             break  # cannot be shortened any more
-        print(f'Parts are now <{parts}>')
         
         short_path_obj = pathlib.Path(parts[0])
         for part in parts[1:]:
             short_path_obj = short_path_obj / part
         short_path = str(short_path_obj)
-        print(f'Path is now <{short_path}>')
     return short_path
 
 
