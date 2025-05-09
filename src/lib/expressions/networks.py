@@ -70,6 +70,38 @@ class Network:
 
 
     def s(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        return self._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='S')
+    
+
+    def z(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        nw_transformed = self.nw.copy()
+        nw_transformed.s = self.nw.z
+        obj_transformed = Network(nw_transformed, self.name)
+        return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='Z')
+    
+
+    def y(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        nw_transformed = self.nw.copy()
+        nw_transformed.s = self.nw.y
+        obj_transformed = Network(nw_transformed, self.name)
+        return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='Y')
+    
+
+    def abcd(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        nw_transformed = self.nw.copy()
+        nw_transformed.s = self.nw.a
+        obj_transformed = Network(nw_transformed, self.name)
+        return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='ABCD')
+    
+
+    def t(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
+        nw_transformed = self.nw.copy()
+        nw_transformed.s = self.nw.t
+        obj_transformed = Network(nw_transformed, self.name)
+        return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='T')
+    
+
+    def _get_param(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None, param_prefix: str) -> list[SParam]:
 
         ep_filter, ip_filter, mixed_name = None, None, None
         match (egress_port, ingress_port):
@@ -86,7 +118,7 @@ class Network:
                             port += self.nw.nports // 2
                         return port
                     ep_filter, ip_filter = _get_port(egress_mode,egress_diffport), _get_port(ingress_mode,ingress_diffport)
-                    mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'S{egress_mode}{ingress_mode}'.upper())
+                    mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'{param_prefix}{egress_mode}{ingress_mode}'.upper())
                 else:
                     (ep_filter, ip_filter) = parse_quick_param(egress_port)
             case int(), int():
@@ -118,7 +150,7 @@ class Network:
                     if mixed_name is not None:
                         label = mixed_name
                     else:
-                        label = get_sparam_name(ep,ip)
+                        label = get_sparam_name(ep, ip, prefix=param_prefix)
                 result.append(SParam(f'{self.nw.name} {label}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1]))
         return result
     
@@ -471,20 +503,6 @@ class Network:
 
         new_nw.gmm2se(new_nw.nports // 2)
         return Network(new_nw)
-    
-
-    def s2z(self) -> "Network":
-        nw = self.nw.copy()
-        nw.s = nw.z
-        nw.name += ' Impedance'
-        return Network(nw)
-
-
-    def s2y(self) -> "Network":
-        nw = self.nw.copy()
-        nw.s = nw.y
-        nw.name += ' Admittance'
-        return Network(nw)
 
 
     def renorm(self, z: "complex|list[complex]") -> "Network":
@@ -608,6 +626,22 @@ class Networks:
         return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
     
 
+    def z(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+        return self._unary_op(Network.z, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
+    
+
+    def y(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+        return self._unary_op(Network.y, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
+    
+
+    def t(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+        return self._unary_op(Network.t, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
+    
+
+    def abcd(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
+        return self._unary_op(Network.abcd, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
+    
+
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks":
         return self._unary_op(Network.crop_f, Networks, f_start=f_start, f_end=f_end)
     
@@ -689,14 +723,6 @@ class Networks:
     
     def s2m(self, ports: list = None) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
-    
-
-    def s2z(self) -> "Networks":
-        return self._unary_op(Network.s2z, Networks)
-    
-
-    def s2y(self) -> "Networks":
-        return self._unary_op(Network.s2y, Networks)
     
 
     def renorm(self, z: "complex|list[complex]") -> "Networks":
