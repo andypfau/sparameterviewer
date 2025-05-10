@@ -19,7 +19,6 @@ You can also filter for files by pressing *Ctrl+F* (or in the main menu, go *Vie
 
 To switch to a different directory, or append files from another directory, go *File* → *Open Directory...* or *Append Directory...*. Alternatively, press *Ctrl+B* to show/hide the filesystem browser. Double-clicking a directory in the filesystem browser loads or appends that directory (behavior can be changed in [settings](settings.md)); alternatively, right-click in the filesystem browser to show a popup menu.
 
-
 ### Plottable Parameters
 
 - *All S-Paramseters*: all terms
@@ -71,6 +70,13 @@ The impulse response is calculated as follows:
     - If this setting is chosen too small, the vertical dimension of the time-domain transformation may be incorrect. Increase this setting until the time-domain signal appears to be "stable".
 
 The step response works the same, except that the result is integrated over time.
+
+### Other Visualizations
+
+- *File* → *View/Export Tabular Data*: show data as table, and export data in various formats; see [Tools](tools.md).
+- *File* → *View Plaintext Data*: show file contents as plaintext.
+- *File* → *Open Externally*: load file in external editor.
+- *Tools* → *Return Loss Integrator*: see [Tools](tools.md).
 
 Plot Menu
 ---------
