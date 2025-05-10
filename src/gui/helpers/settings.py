@@ -74,6 +74,7 @@ class SParamViewerAppSettings(AppSettings):
     extract_zip: bool = False
     plot_mark_points: bool = False
     last_directories: list[str] = []
+    history_appends: bool = False
     comment_existing_expr: bool = True
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon

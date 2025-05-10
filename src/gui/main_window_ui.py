@@ -197,7 +197,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
         self._ui_mainmenu_view = QtHelper.add_submenu(self.ui_menu_bar, '&View')
-        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Toggle Filesystem Browser', self.on_toggle_filesys)
+        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Toggle Filesystem Browser', self.on_toggle_filesys, shortcut='Ctrl+B')
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)

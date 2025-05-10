@@ -442,13 +442,7 @@ class MainWindow(MainWindowUi):
                     error_dialog('Loaing Failed', 'Cannot load recent directory.', f'<{dir}> does not exist any more')
                     self.update_most_recent_directories_menu()  # this will remove stale paths
                     return
-                absdir = os.path.abspath(dir)
-                self.ui_filesys_navigate(absdir)
-                self.directories = [absdir]
-                self.clear_loaded_files()
-                self.load_files_in_directory(absdir)
-                self.update_file_list(only_select_first=True)
-                self.add_to_most_recent_directories(dir)
+                self.load_path(dir, append=Settings.history_appends)
             return load
         
         def path_for_display(path):
@@ -481,8 +475,6 @@ class MainWindow(MainWindowUi):
 
 
     def load_files_in_directory(self, dir: str):
-
-        self.add_to_most_recent_directories(dir)  # TODO: move this to self.load_path()?
 
         try:
 
@@ -630,6 +622,7 @@ class MainWindow(MainWindowUi):
             
             def handle_dir(path: pathlib.Path, append: bool):
                 absdir = str(path.absolute())
+                self.add_to_most_recent_directories(absdir)
                 if append:
                     if absdir not in self.directories:
                         self.directories.append(absdir)
@@ -642,11 +635,11 @@ class MainWindow(MainWindowUi):
             def handle_file(path: pathlib.Path, append: bool):
                 abspath = str(path.absolute())
                 absdir = str(path.parent)
+                self.add_to_most_recent_directories(absdir)
                 new_files.append(abspath)
                 if append:
                     if absdir not in self.directories:
                         self.directories.append(absdir)
-                        raise NotImplementedError()
                         self.load_files_in_directory(absdir)
                 else:
                     self.clear_loaded_files()
