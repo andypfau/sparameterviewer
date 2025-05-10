@@ -350,13 +350,13 @@ class MainWindow(MainWindowUi):
             'Other Parameters': {
                 'Z-Matrix (Impedance)': z,
                 'Y-Matrix (Admittance)': y,
-                'ABCD-Matrix (Cascade)': abcd,
-                'T-Matrix (Scattering Transfer)': t,
+                'ABCD-Matrix (Cascade; 2-Port Only)': abcd,
+                'T-Matrix (Scattering Transfer; Even Port Numbers Only)': t,
             },
             'Network Analysis': {
-                'Stability': stability,
-                'Stability Circles': stability_circles,
-                'Reciprocity': reciprocity,
+                'Stability (2-Port Only)': stability,
+                'Stability Circles (2-Port Only)': stability_circles,
+                'Reciprocity (2-Port or Higher Only)': reciprocity,
                 'Passivity': passivity,
                 'Losslessness': losslessness,
             },
@@ -473,61 +473,66 @@ class MainWindow(MainWindowUi):
         
         self.update_most_recent_directories_menu()
 
+    
+    def read_single_file(self, path: str):
+        abspath = str(pathlib.Path(path).absolute())
 
-    def load_files_in_directory(self, dir: str):
-
-        try:
-
-            absdir = os.path.abspath(dir)
-            
-            def filetype_matches(path):
-                ext = os.path.splitext(path)[1]
-                return re.match(r'(\.ci?ti)|(\.s[0-9]+p)', ext, re.IGNORECASE)
+        def filetype_is_supported(path):
+            ext = pathlib.Path(path).suffix
+            return re.match(r'(\.ci?ti)|(\.s[0-9]+p)', ext, re.IGNORECASE)
+    
+        def archivetype_is_supported(path):
+            ext = pathlib.Path(path).suffix
+            return re.match(r'\.zip', ext, re.IGNORECASE)
+    
+        def load_file(filename, archive_path=None):
+            try:
+                file = SParamFile(filename, archive_path=archive_path)
+                self.files.append(file)
+            except Exception as ex:
+                logging.info(f'Ignoring file <{filename}>: {ex}')
         
-            def load_file(filename, archive_path=None):
+        try:
+            if abspath in self.files:
+                logging.debug(f'File <{abspath}> is already loaded, ignoring')
+            elif filetype_is_supported(abspath):
+                load_file(abspath)
+            elif Settings.extract_zip and archivetype_is_supported(abspath):
                 try:
-                    file = SParamFile(filename, archive_path=archive_path)
-                    self.files.append(file)
+                    with zipfile.ZipFile(abspath, 'r') as zf:
+                        for internal_name in zf.namelist():
+                            if not filetype_is_supported(internal_name):
+                                continue
+                            load_file(internal_name, archive_path=abspath)
                 except Exception as ex:
-                    logging.info(f'Ignoring file <{filename}>: {ex}')
-            
-            def find_all_files(path):
-                all_items = [os.path.join(path,f) for f in os.listdir(path)]
-                return sorted(list([f for f in all_items if os.path.isfile(f)]))
-
-            all_files = find_all_files(absdir)
-
-            for filename in all_files:
-                if not filetype_matches(filename):
-                    continue
-                load_file(filename)
-
-            if Settings.extract_zip:
-                for zip_filename in all_files:
-                    ext = os.path.splitext(zip_filename)[1].lower()
-                    if ext != '.zip':
-                        continue
-                    try:
-                        with zipfile.ZipFile(zip_filename, 'r') as zf:
-                            for internal_name in zf.namelist():
-                                if not filetype_matches(internal_name):
-                                    continue
-                                load_file(internal_name, archive_path=zip_filename)
-                    except Exception as ex:
-                        logging.warning(f'Unable to open zip file <{zip_filename}>: {ex}')
+                    logging.warning(f'Unable to open zip file <{abspath}>: {ex}')
+            else:
+                logging.info(f'Unknown file type <{abspath}>, ignoring')
 
             self.files = list(sorted(self.files, key=lambda file: natural_sort_key(file.name)))
         
         except Exception as ex:
-            logging.exception(f'Unable to load files: {ex}')
+            logging.exception(f'Unable to load file <{abspath}>: {ex}')
+            raise ex
+
+
+    def read_all_files_in_directory(self, dir: str):
+        try:
+            all_files = [str(path.absolute()) for path in pathlib.Path(dir).iterdir() if path.is_file()]
+            all_files_sorted = sorted(all_files)
+            for path in all_files_sorted:
+                self.read_single_file(path)
+        
+        except Exception as ex:
+            logging.exception(f'Unable to load directory: {ex}')
             raise ex
 
 
     def reload_all_files(self):
         self.clear_loaded_files()
         for dir in self.directories:
-            self.load_files_in_directory(dir)
-        self.update_file_list()
+            self.read_all_files_in_directory(dir)
+        self.update_displayed_file_list()
 
 
     def clear_loaded_files(self):
@@ -548,7 +553,7 @@ class MainWindow(MainWindowUi):
         self.ui_update_fileview_item(file.tag, file.name, self.get_file_prop_str(file))
     
 
-    def update_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
+    def update_displayed_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
         
         if len(selected_filenames) == 0 and not only_select_first:
             previously_selected_files = self.get_selected_files()
@@ -613,10 +618,7 @@ class MainWindow(MainWindowUi):
                 return
             
             if not navigated:
-                if path.is_file():
-                    abspath = str(path.parent)
-                else:
-                    abspath = str(path.absolute())
+                abspath = str(path.absolute())
                 self.ui_filesys_navigate(abspath)
                 navigated = True
             
@@ -626,11 +628,10 @@ class MainWindow(MainWindowUi):
                 if append:
                     if absdir not in self.directories:
                         self.directories.append(absdir)
-                        self.load_files_in_directory(absdir)
                 else:
                     self.clear_loaded_files()
                     self.directories = [absdir]
-                    self.load_files_in_directory(absdir)
+                self.read_all_files_in_directory(absdir)
             
             def handle_file(path: pathlib.Path, append: bool):
                 abspath = str(path.absolute())
@@ -640,12 +641,10 @@ class MainWindow(MainWindowUi):
                 if append:
                     if absdir not in self.directories:
                         self.directories.append(absdir)
-                        self.load_files_in_directory(absdir)
                 else:
                     self.clear_loaded_files()
                     self.directories = [absdir]
-                    raise NotImplementedError()
-                    self.load_files_in_directory(absdir)
+                self.read_single_file(abspath)
             
             if path.is_dir():
                 handle_dir(path, append_next)
@@ -667,15 +666,15 @@ class MainWindow(MainWindowUi):
                 
             
             else:
-                logging.error(f'Path <{path_str}> is niether file nor directory, ignoring')
+                logging.debug(f'Path <{path_str}> is niether file nor directory, ignoring')
             append_next = True
         
         if len(new_files) > 0:
-            self.update_file_list(selected_filenames=new_files)
+            self.update_displayed_file_list(selected_filenames=new_files)
         elif not append:
-            self.update_file_list(only_select_first=True)
+            self.update_displayed_file_list(only_select_first=True)
         else:
-            self.update_file_list()
+            self.update_displayed_file_list()
 
 
     def on_open_directory(self):
