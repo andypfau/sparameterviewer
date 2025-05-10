@@ -2,7 +2,7 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.31b1 (2025-05-09)
+0.31b1 (2025-05-10)
 -------------------
 
 - new: parameters `color` and `width` for `plot()`

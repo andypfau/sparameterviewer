@@ -8,8 +8,17 @@ Getting Started
 1. Start the app (see [readme](howtorun.md)).
 2. Go *File* → *Open Directory*, and open a directory that contains S-parameter files.
     - Supported format: Touchstone (`.s1p`, `.s2p`...), CITI (`.cti`/`.citi`).
-3. At the bottom of the main window, select one or multiple files (hold CTRL to select multiple).
+3. At the bottom of the main window, in the *Files* tab, select one or multiple files (hold *Ctrl* to select multiple).
 4. Select the parameters you want to see, e.g. *Insertion Loss*, and a format, e.g. *dB*.
+
+### Files Tab
+
+A list of all available files is shown in the *Files* tab at the bottom of the main window. Select a file to plot it, or hold *Ctrl* and click multiple files.
+
+You can also filter for files by pressing *Ctrl+F* (or in the main menu, go *View* → *Filter Files...*). Enter your search string, press enter, and all files that match the search string will be selected.
+
+To switch to a different directory, or append files from another directory, go *File* → *Open Directory...* or *Append Directory...*. Alternatively, press *Ctrl+B* to show/hide the filesystem browser. Double-clicking a directory in the filesystem browser loads or appends that directory (behavior can be changed in [settings](settings.md)); alternatively, right-click in the filesystem browser to show a popup menu.
+
 
 ### Plottable Parameters
 
