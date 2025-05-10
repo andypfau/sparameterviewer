@@ -34,7 +34,7 @@ import re
 import os
 import zipfile
 import scipy.signal
-from typing import Optional
+from typing import Optional, Callable
 
 
 
@@ -92,13 +92,12 @@ class MainWindow(MainWindowUi):
         self.generated_expressions = ''
         self.plot_mouse_down = False
         self.plot_axes_are_valid = False
-        self._log_dialog: LogDialog = None
+        self._log_dialog: LogDialog|None = None
         self.cursor_event_queue: list[tuple] = []
-        self.plot: PlotHelper = None
+        self.plot: PlotHelper|None = None
 
         super().__init__()
 
-        self.build_templates_menu()
         self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
         self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
@@ -106,7 +105,10 @@ class MainWindow(MainWindowUi):
 
         self.apply_settings_to_ui()
         Settings.attach(self.on_settings_change)
-        self.initially_load_files_or_directory(filenames)
+        initial_paths = filenames
+        if len(initial_paths) < 1:
+            initial_paths = [AppPaths.get_default_file_dir()]
+        self.load_path(*initial_paths, load_file_dirs=True)
         self.ready = True
         self.update_plot()
 
@@ -127,6 +129,7 @@ class MainWindow(MainWindowUi):
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_filesys_visible = Settings.filesys_showfiles
+                self.ui_filesys_showfiles = Settings.filesys_showfiles
                 return None
             except Exception as ex:
                 return ex
@@ -150,7 +153,7 @@ class MainWindow(MainWindowUi):
         return self._log_dialog
     
 
-    def build_templates_menu(self):
+    def on_template_button(self):
 
         def selected_file_names():
             return [file.name for file in self.selected_files]
@@ -328,7 +331,7 @@ class MainWindow(MainWindowUi):
             expressions = [f"nw('{n}').s().plot()" for n in selected_file_names()]
             set_expression(*expressions)
         
-        self.ui_build_template_menu({
+        self.ui_show_template_menu({
             'As Currently Selected': as_currently_selected,
             None: None,
             'S-Parameters': {
@@ -375,39 +378,6 @@ class MainWindow(MainWindowUi):
                 'Cascade Selected Networks': cascade,
             },
         })
-
-        pass
-
-    
-    def initially_load_files_or_directory(self, filenames_or_directory: "list[str]"):
-        if len(filenames_or_directory)<1:
-            filenames_or_directory = [AppPaths.get_default_file_dir()]
-
-        is_dir = os.path.isdir(filenames_or_directory[0])
-        if is_dir:
-            directory = filenames_or_directory
-            absdir = os.path.abspath(directory[0])
-            self.ui_filesys_navigate(absdir)
-            self.directories = [absdir]
-            self.load_files_in_directory(absdir)
-            self.update_file_list(only_select_first=True)
-        else:
-            filenames = filenames_or_directory
-            if not Settings.extract_zip:
-                contains_archives = False
-                for filename in filenames:
-                    ext = os.path.splitext(filename)[1].lower()
-                    if ext in ['.zip']:
-                        contains_archives = True
-                        break
-                if contains_archives:
-                    if yesno_dialog('Extract .zip Files', 'A .zip-file was selected, but the option to extract .zip-files is disabled. Do you want to enable it?'):
-                        Settings.extract_zip = True
-            absdir = os.path.split(filenames[0])[0]
-            self.ui_filesys_navigate(absdir)
-            self.directories = [absdir]
-            self.load_files_in_directory(absdir)
-            self.update_file_list(selected_filenames=filenames)
 
 
     def on_select_mode(self):
@@ -512,7 +482,7 @@ class MainWindow(MainWindowUi):
 
     def load_files_in_directory(self, dir: str):
 
-        self.add_to_most_recent_directories(dir)
+        self.add_to_most_recent_directories(dir)  # TODO: move this to self.load_path()?
 
         try:
 
@@ -637,6 +607,82 @@ class MainWindow(MainWindowUi):
     def on_select_file(self):
         self.update_plot()
         self.prepare_cursors()
+    
+
+    def load_path(self, *paths: str, append: bool = False, load_file_dirs: bool = False):
+        append_next = append
+        navigated = False
+        new_files = []
+        asked_for_archives = False
+        for path_str in paths:
+            path = pathlib.Path(path_str)
+            if not path.exists():
+                logging.error(f'Path <{path_str}> does not exist, ignoring')
+                return
+            
+            if not navigated:
+                if path.is_file():
+                    abspath = str(path.parent)
+                else:
+                    abspath = str(path.absolute())
+                self.ui_filesys_navigate(abspath)
+                navigated = True
+            
+            def handle_dir(path: pathlib.Path, append: bool):
+                absdir = str(path.absolute())
+                if append:
+                    if absdir not in self.directories:
+                        self.directories.append(absdir)
+                        self.load_files_in_directory(absdir)
+                else:
+                    self.clear_loaded_files()
+                    self.directories = [absdir]
+                    self.load_files_in_directory(absdir)
+            
+            def handle_file(path: pathlib.Path, append: bool):
+                abspath = str(path.absolute())
+                absdir = str(path.parent)
+                new_files.append(abspath)
+                if append:
+                    if absdir not in self.directories:
+                        self.directories.append(absdir)
+                        raise NotImplementedError()
+                        self.load_files_in_directory(absdir)
+                else:
+                    self.clear_loaded_files()
+                    self.directories = [absdir]
+                    raise NotImplementedError()
+                    self.load_files_in_directory(absdir)
+            
+            if path.is_dir():
+                handle_dir(path, append_next)
+
+            elif path.is_file():
+
+                if (path.suffix.lower() == '.zip') and (not Settings.extract_zip):
+                    if not asked_for_archives:
+                        if yesno_dialog('Extract .zip Files', 'A .zip-file was selected, but the option to extract .zip-files is disabled. Do you want to enable it?'):
+                            Settings.extract_zip = True
+                        asked_for_archives = True
+                    if not Settings.extract_zip:
+                        continue # ignore this archive
+                
+                if load_file_dirs:
+                    handle_dir(path.parent, append_next)
+                else:
+                    handle_file(path, append_next)
+                
+            
+            else:
+                logging.error(f'Path <{path_str}> is niether file nor directory, ignoring')
+            append_next = True
+        
+        if len(new_files) > 0:
+            self.update_file_list(selected_filenames=new_files)
+        elif not append:
+            self.update_file_list(only_select_first=True)
+        else:
+            self.update_file_list()
 
 
     def on_open_directory(self):
@@ -644,12 +690,7 @@ class MainWindow(MainWindowUi):
         dir = open_directory_dialog(self, title='Open Directory', initial_dir=initial_dir)
         if not dir:
             return
-        absdir = os.path.abspath(dir)
-        self.ui_filesys_navigate(absdir)
-        self.directories = [absdir]
-        self.clear_loaded_files()
-        self.load_files_in_directory(absdir)
-        self.update_file_list(only_select_first=True)
+        self.load_path(dir)
 
 
     def on_append_directory(self):
@@ -657,12 +698,7 @@ class MainWindow(MainWindowUi):
         dir = open_directory_dialog(self, title='Append Directory', initial_dir=initial_dir)
         if not dir:
             return
-        absdir = os.path.abspath(dir)
-        self.ui_filesys_navigate(absdir)
-        if absdir not in self.directories:
-            self.directories.append(absdir)
-            self.load_files_in_directory(absdir)
-        self.update_file_list()
+        self.load_path(dir, append=True)
     
     
     
@@ -898,11 +934,8 @@ class MainWindow(MainWindowUi):
     
 
     def on_settings_change(self):
+        self.ui_filesys_showfiles = Settings.filesys_showfiles
         self.update_plot()
-    
-    
-    def on_template_button(self):
-        self.ui_show_template_menu()
     
     
     def on_help_button(self):
@@ -915,31 +948,38 @@ class MainWindow(MainWindowUi):
 
     def on_filesys_doubleclick(self, path_str: str):
         path = pathlib.Path(path_str)
-        if (not path.exists()):
+        if not path.exists():
             return
+        abspath = str(path.absolute())
         if path.is_dir():
-            absdir = str(path.absolute())
-            if Settings.filesys_doubleclick_appends:
-                self.directories = [absdir]
-                self.clear_loaded_files()
-                self.load_files_in_directory(absdir)
-                self.update_file_list(only_select_first=True)
-            else:
-                self.directories.append(absdir)
-                self.load_files_in_directory(absdir)
-                self.update_file_list()
+            self.load_path(abspath, append=Settings.filesys_doubleclick_appends)
         elif path.is_file():
-            pass  # TODO: append this file
+            self.load_path(abspath)
 
 
-    def on_filesys_contextmenu(self, path: str):
-        pass  # TODO: implement context menu
+    def on_filesys_contextmenu(self, path_str: str) -> dict[str,Callable|dict]|None:
+        path = pathlib.Path(path_str)
+        if not path.exists():
+            return None
+        def switch_to_dir():
+            self.load_path(path)
+        def append_dir():
+            self.load_path(path, append=True)
+        def append_file():
+            self.load_path(path, append=True)
+        if path.is_dir():
+            return { 'Switch to this Directory': switch_to_dir, 'Append this Directory': append_dir }
+        elif path.is_fifo():
+            return { 'Append this File': append_file }
+        return None
 
 
     def on_toggle_filesys(self):
         visible = not self.ui_filesys_visible
         Settings.filesys_showfiles = visible
         self.ui_filesys_visible = visible
+        if visible:
+            self.ui_tab = MainWindowUi.Tab.Files
     
 
     def on_filesys_visible_changed(self):
@@ -1293,13 +1333,13 @@ class MainWindow(MainWindowUi):
                     
                     if qty_phase:
                         if remove_lin_phase:
-                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                         elif unwrap_phase:
-                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                         else:
-                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
+                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                     elif qty_group_delay:
-                        self.plot.add(*group_delay(f,sp), None, name, style_y2, **kwargs, prefer_2nd_yaxis=True)
+                        self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                     
             selected_files = self.get_selected_files()
             touched_files = []

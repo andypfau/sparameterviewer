@@ -53,20 +53,23 @@ class MainWindowUi(QMainWindow):
         files_tab = QWidget()
         self._ui_tabs.addTab(files_tab, 'Files')
         self._ui_filesysview = QTreeView()
-        #self._ui_filesysview.setVisible(False)
         self._ui_filesysmodel = QFileSystemModel()
         self._ui_filesysmodel.setRootPath('')
         self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)
         self._ui_filesysview.setModel(self._ui_filesysmodel)
         self._ui_filesysview.resizeColumnToContents(0)
-        def _filesys_doubleclick(index):
+        def _filesys_doubleclick(index: QModelIndex):
             self.on_filesys_doubleclick(self._ui_filesysmodel.filePath(index))
         self._ui_filesysview.doubleClicked.connect(_filesys_doubleclick)
         self._ui_filesysview.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        def _filesys_rightclick(location):
+        def _filesys_rightclick(location: QPoint):
             index = self._ui_filesysview.indexAt(location)
             if index.isValid():
-                self.on_filesys_contextmenu(self._ui_filesysmodel.filePath(index))
+                items = self.on_filesys_contextmenu(self._ui_filesysmodel.filePath(index))
+                if not items:
+                    return
+                screen_location = self._ui_filesysview.mapToGlobal(location)
+                QtHelper.show_popup_menu(self, items, screen_location)
         self._ui_filesysview.customContextMenuRequested.connect(_filesys_rightclick)
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
@@ -229,32 +232,13 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
 
 
-    def ui_build_template_menu(self, items: dict[str,Union[QMenu,dict]]):
-        self._ui_template_menu_items = []
-        def build(menu: QMenu, items: dict[str,Union[QMenu,dict]]):
-            nonlocal self
-            for name,subitem in items.items():
-                if name is None:
-                    menu.addSeparator()
-                elif isinstance(subitem,dict):
-                    new_menu = QtHelper.add_submenu(menu, name)
-                    self._ui_template_menu_items.append(new_menu)
-                    build(new_menu, subitem)
-                else:
-                    new_item = QtHelper.add_menuitem(menu, name, subitem)
-                    self._ui_template_menu_items.append(new_item)
-            pass
-        self._ui_template_menu = QMenu(self)
-        build(self._ui_template_menu, items)
-
-
     def ui_show(self):
         super().show()
 
 
-    def ui_show_template_menu(self):
+    def ui_show_template_menu(self, items: dict[str,Callable|dict]):
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
-        self._ui_template_menu.popup(button_pos)
+        QtHelper.show_popup_menu(self, items, button_pos)
 
     
     def ui_set_window_title(self, title: str):
@@ -282,11 +266,11 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
-    def ui_is_timer_scheduled(self, identifier: any) -> bool:
+    def ui_is_timer_scheduled(self, identifier) -> bool:
         return identifier in self._ui_timers
     
     
-    def ui_schedule_timer(self, identifier: any, seconds: float):
+    def ui_schedule_timer(self, identifier, seconds: float):
         if identifier in self._ui_timers:
             raise RuntimeError(f'Timer <{identifier}> already pending')
         
@@ -316,13 +300,19 @@ class MainWindowUi(QMainWindow):
             case 1: return MainWindowUi.Tab.Expressions
             case 2: return MainWindowUi.Tab.Cursors
         raise RuntimeError()
+    @ui_tab.setter
+    def ui_tab(self, value: Tab):
+        match value:
+            case MainWindowUi.Tab.Files: self._ui_tabs.setCurrentIndex(0)
+            case MainWindowUi.Tab.Expressions: self._ui_tabs.setCurrentIndex(1)
+            case MainWindowUi.Tab.Cursors: self._ui_tabs.setCurrentIndex(2)
     
 
     @property
     def ui_show_legend(self) -> bool:
         return self._ui_menuitem_show_legend.isChecked()
     @ui_show_legend.setter
-    def ui_show_legend(self, value):
+    def ui_show_legend(self, value: bool):
         self._ui_menuitem_show_legend.setChecked(value)
     
 
@@ -340,6 +330,17 @@ class MainWindowUi(QMainWindow):
         else:
             sizes[0] = 0
         self._ui_files_splitter.setSizes(sizes)
+    
+
+    @property
+    def ui_filesys_showfiles(self) -> bool:
+        return QDir.Filter.Files in self._ui_filesysmodel.filter()
+    @ui_filesys_showfiles.setter
+    def ui_filesys_showfiles(self, value: bool):
+        flags = QDir.Filter.AllDirs | QDir.Filter.NoDotAndDotDot
+        if value:
+            flags |= QDir.Filter.Files
+        self._ui_filesysmodel.setFilter(flags)
 
 
     def ui_filesys_navigate(self, path: str):
@@ -636,9 +637,9 @@ class MainWindowUi(QMainWindow):
         pass
     def on_cursor_syncx_changed(self):
         pass
-    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float]):
+    def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         pass
-    def on_timer_timeout(self, identifier: any):
+    def on_timer_timeout(self, identifier):
         pass
     def on_mark_datapoints_changed(self):
         pass
@@ -648,7 +649,7 @@ class MainWindowUi(QMainWindow):
         pass
     def on_filesys_doubleclick(self, path: str):
         pass
-    def on_filesys_contextmenu(self, path: str):
+    def on_filesys_contextmenu(self, path: str) -> dict[str,Callable|dict]|None:
         pass
     def on_toggle_filesys(self):
         pass

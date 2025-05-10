@@ -109,8 +109,30 @@ class QtHelper:
 
 
     @staticmethod
+    def show_popup_menu(parent: QWidget, items: dict[str,Callable|dict], position: QPoint):
+        """
+        Builds a menu
+        Each key in `items` is the text on a menu item, or `None` to insert a separator.
+        Each value in `items` is either a callable (which is called on clicking that item),
+          or another dict for a submenu.
+        """
+        def populate_menu(menu: QMenu, items: dict):
+            for name,action_or_submenu in items.items():
+                if name is None:
+                    menu.addSeparator()
+                elif isinstance(action_or_submenu, dict):
+                    submenu = QtHelper.add_submenu(menu, text=name)
+                    populate_menu(submenu, items=action_or_submenu)
+                else:
+                    QtHelper.add_menuitem(menu, text=name, action=action_or_submenu)
+        menu = QMenu(parent)
+        populate_menu(menu, items)
+        menu.popup(position)
+
+
+    @staticmethod
     def add_submenu(parent: QMenu, text: str, visible: bool = True) -> QMenu:
-        submenu = QMenu(text)
+        submenu = QMenu(text, parent)
         if not visible:
             submenu.setVisible(False)
         parent.addMenu(submenu)
@@ -119,7 +141,7 @@ class QtHelper:
 
     @staticmethod
     def add_menuitem(menu: QMenu, text: str, action: Callable, *, shortcut: str = None, visible: bool = True, checkable: bool = False) -> QAction:
-        item = QAction(text)
+        item = QAction(text, menu)
         if action is not None:
             item.triggered.connect(action)
         if shortcut is not None:
