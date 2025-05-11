@@ -26,7 +26,6 @@ Roadmap
 
 ### Missing Features
 
-- GUI: file system browser
 - GUI: a toolbar
 - Display: more presets, to quickly scroll through all S-parameters
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
