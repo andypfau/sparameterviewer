@@ -5,6 +5,7 @@ import subprocess
 import pathlib
 import re
 import numpy as np
+import math
 
 
 def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "str":
@@ -128,3 +129,15 @@ def natural_sort_key(s):
         else:
             return s.casefold()
     return [prepare_token(part) for part in re.split('([0-9]+)', s)]
+
+
+
+def get_next_power_of_3(x: int) -> int:
+    """ Returns the next in the set (1, 3, 10, 30, 100, ...)"""
+    if x < 1:
+        return 1
+    f, i = math.modf(math.log10(x))
+    if f >= 0.99*math.log10(3):
+        return int(round(10**(i+1)))
+    else:
+        return 3*int(round(10**i))

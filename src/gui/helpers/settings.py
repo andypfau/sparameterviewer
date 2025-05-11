@@ -85,6 +85,8 @@ class SParamViewerAppSettings(AppSettings):
     show_filesys: bool = True
     filesys_doubleclick_appends: bool = False
     filesys_showfiles: bool = False
+    search_count_first_warning: int = 1_000
+    load_count_first_warning: int = 30
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')
