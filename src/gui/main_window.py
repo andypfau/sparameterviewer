@@ -97,6 +97,7 @@ class MainWindow(MainWindowUi):
         self.plot: PlotHelper|None = None
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = 0
+        self.sparamfile_load_aborted = False
 
         super().__init__()
 
@@ -151,15 +152,20 @@ class MainWindow(MainWindowUi):
     def clear_load_counter(self):
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = Settings.load_count_first_warning
+        self.sparamfile_load_aborted = False
 
 
     def before_load_sparamfile(self) -> bool:
+        if self.sparamfile_load_aborted:
+            return False
         if self.sparamfile_load_counter >= self.sparamfile_load_next_warning:
             self.sparamfile_load_next_warning = get_next_power_of_3(self.sparamfile_load_next_warning)
             if not yesno_dialog(
                 'Too Many Files',
                 f'Already loaded {self.sparamfile_load_counter} files, with more to come. Continue?',
                 f'Will ask again after {self.sparamfile_load_next_warning} files.'):
+                self.sparamfile_load_aborted = True
+                self.ui_select_fileview_items([])
                 return False
         self.sparamfile_load_counter += 1
         return True
@@ -1239,6 +1245,7 @@ class MainWindow(MainWindowUi):
 
         if not self.ready:
             return
+        self.clear_load_counter()
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls

@@ -517,12 +517,15 @@ class MainWindowUi(QMainWindow):
 
     def ui_select_fileview_items(self, indices: list[int]):
         self._ui_fileview.selectionModel().blockSignals(True)
-        self._ui_fileview.selectionModel().clearSelection()
-        for i,index_to_select in enumerate(indices):
-            index = self._ui_fileview.model().index(index_to_select, 0)
-            if i == len(indices)-1:
-                self._ui_fileview.selectionModel().blockSignals(False)
-            self._ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        try:
+            self._ui_fileview.selectionModel().clearSelection()
+            for i,index_to_select in enumerate(indices):
+                index = self._ui_fileview.model().index(index_to_select, 0)
+                if i == len(indices)-1:
+                    self._ui_fileview.selectionModel().blockSignals(False)  # make the last selection change trigger
+                self._ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        finally:
+            self._ui_fileview.selectionModel().blockSignals(False)
 
 
     def ui_get_selected_fileview_indices(self) -> list[int]:
