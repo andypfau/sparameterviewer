@@ -47,6 +47,10 @@ class MainWindow(MainWindowUi):
     TIMER_CURSORS_ID = 1
     TIMER_CURSORS_TIMEOUT_S = 10e-3
 
+    LOAD_FIRST_WARNING = 100
+    LOAD_MULTIPLIER = 10
+    LOAD_MAX_WARNINGS = 1_000_000
+
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
         ParamMode.AllFwd: 'All S-Parameters (reciprocal)',
@@ -95,8 +99,15 @@ class MainWindow(MainWindowUi):
         self._log_dialog: LogDialog|None = None
         self.cursor_event_queue: list[tuple] = []
         self.plot: PlotHelper|None = None
+        self.sparamfile_load_counter = 0
+        self.sparamfile_load_next_warning = 0
 
         super().__init__()
+
+        self.clear_load_counter()
+        def before_load_sparamfile() -> bool:
+            return self.before_load_sparamfile()
+        SParamFile.before_load = before_load_sparamfile
 
         self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
@@ -139,6 +150,28 @@ class MainWindow(MainWindowUi):
             loading_exception = load_settings()
             load_settings()  # load again; this time no re-try
             logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
+
+
+    def clear_load_counter(self):
+        logging.debug('Clearing load counter')
+        self.sparamfile_load_counter = 0
+        self.sparamfile_load_next_warning = MainWindow.LOAD_FIRST_WARNING
+
+
+    def before_load_sparamfile(self) -> bool:
+        logging.debug(f'Loading {self.sparamfile_load_counter}. file')
+        if self.sparamfile_load_counter >= self.sparamfile_load_next_warning:
+            if self.sparamfile_load_next_warning < MainWindow.LOAD_MAX_WARNINGS:
+                self.sparamfile_load_next_warning *= MainWindow.LOAD_MULTIPLIER
+            else:
+                self.sparamfile_load_next_warning += MainWindow.LOAD_MAX_WARNINGS
+            if not yesno_dialog(
+                'Too Many Files',
+                f'Already loaded {self.sparamfile_load_counter} files, with more to come. Continue?',
+                f'Will ask again after {self.sparamfile_load_next_warning} files'):
+                return False
+        self.sparamfile_load_counter += 1
+        return True
 
 
     @property
@@ -519,22 +552,20 @@ class MainWindow(MainWindowUi):
 
     def read_all_files_in_directory(self, dir: str, recursive: bool = False):
         try:
-            INITIAL_WARNING, WARNING_INCREMENT, MAX_WARNING = 100, 10, 1_000_000
-
-            next_warning = INITIAL_WARNING
+            next_warning = MainWindow.LOAD_FIRST_WARNING
             n_files_loaded = 0
             def iter_files(dir: str) -> bool:
                 nonlocal next_warning, n_files_loaded
                 for path in pathlib.Path(dir).iterdir():
                     if path.is_file():
                         if n_files_loaded >= next_warning:
-                            if next_warning < MAX_WARNING:
-                                next_warning *= WARNING_INCREMENT
+                            if next_warning < MainWindow.LOAD_MAX_WARNINGS:
+                                next_warning *= MainWindow.LOAD_MULTIPLIER
                             else:
-                                next_warning += MAX_WARNING
+                                next_warning += MainWindow.LOAD_MAX_WARNINGS
                             if not yesno_dialog(
                                 'Too Many Files',
-                                f'Already loaded {n_files_loaded} files, with more to come. Continue?',
+                                f'Already found {n_files_loaded} files, with more to come. Continue?',
                                 f'Will ask again after {next_warning} files'):
                                 return False
                         self.read_single_file(str(path))
@@ -624,6 +655,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_select_file(self):
+        self.clear_load_counter()
         self.update_plot()
         self.prepare_cursors()
     

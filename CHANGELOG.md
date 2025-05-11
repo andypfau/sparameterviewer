@@ -6,6 +6,8 @@ S-Parameter Viewer Changelog
 -------------------
 
 - new: breadcrumb bar for filesystem browser
+- new: warn when too many files are loaded
+- bugfix: prevent files from being added multiple times
 
 
 0.31b1 (2025-05-10)

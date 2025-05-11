@@ -10,11 +10,15 @@ import zipfile
 import tempfile
 import datetime
 import os
+from typing import Callable
 
 
 
 class SParamFile:
     """Wrapper for a skrf.Network"""
+
+
+    before_load: Callable[None,bool] = None
 
 
     def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
@@ -49,6 +53,13 @@ class SParamFile:
     def _load(self):
         if self._nw is not None:
             return
+
+        try:
+            if SParamFile.before_load:
+                if not SParamFile.before_load():
+                    return
+        except:
+            pass
 
         def load(path):
             try:
@@ -106,6 +117,7 @@ class SParamFile:
                         return plaintext
                     except Exception as ex:
                         logging.warning(f'Unable to extract "{self.file_path}" from "{self.archive_path}" ({ex})')
+                        return f'[Error: unable to extract "{self.file_path}" from "{self.archive_path}"]'
         else:
             return load(self.file_path)
     
