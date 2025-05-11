@@ -64,6 +64,7 @@ class MainWindowUi(QMainWindow):
         self._ui_fileview.setModel(self._ui_filemodel)
         self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
+        self._ui_fileview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._ui_files_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._ui_files_splitter.addWidget(self._ui_filesys_browser)
         self._ui_files_splitter.setCollapsible(0, True)
@@ -517,10 +518,11 @@ class MainWindowUi(QMainWindow):
     def ui_select_fileview_items(self, indices: list[int]):
         self._ui_fileview.selectionModel().blockSignals(True)
         self._ui_fileview.selectionModel().clearSelection()
-        for index_to_select in indices:
+        for i,index_to_select in enumerate(indices):
             index = self._ui_fileview.model().index(index_to_select, 0)
+            if i == len(indices)-1:
+                self._ui_fileview.selectionModel().blockSignals(False)
             self._ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-        self._ui_fileview.selectionModel().blockSignals(False)
 
 
     def ui_get_selected_fileview_indices(self) -> list[int]:
