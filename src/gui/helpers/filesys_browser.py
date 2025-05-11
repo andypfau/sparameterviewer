@@ -112,9 +112,18 @@ class FilesysBrowser(QWidget):
         self._ui_filesysview.resizeColumnToContents(0)
 
     
-    def _append_history(self, path: str):
+    def _append_history(self, path_str: str):
+        path = pathlib.Path(path_str)
+        if not path.exists():
+            return
+        if path.is_file():
+            path = path.parent
+        abspath = str(path.absolute())
+        if len(self._history) >= 1:
+            if self._history[-1] == abspath:
+                return
         MAX_LEN = 100
-        self._history.append(path)
+        self._history.append(abspath)
         while len(self._history) > MAX_LEN:
             del self._history[0]
 
