@@ -61,7 +61,7 @@ class SParamViewerAppSettings(AppSettings):
     hide_single_item_legend: bool = True
     shorten_legend_items: bool = True
     log_freq: bool = False
-    expression: str = ''
+    expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
     window_arg: float = 35.0
     tdr_shift: float = 100e-12
@@ -71,7 +71,7 @@ class SParamViewerAppSettings(AppSettings):
     ext_editor_cmd: str = ''
     plot_style: str = 'bmh'
     phase_unit: PhaseUnit = PhaseUnit.Degrees
-    extract_zip: bool = False
+    extract_zip: bool = True
     plot_mark_points: bool = False
     last_directories: list[str] = []
     history_appends: bool = False
@@ -82,9 +82,9 @@ class SParamViewerAppSettings(AppSettings):
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
-    show_filesys: bool = False
+    show_filesys: bool = True
     filesys_doubleclick_appends: bool = False
-    filesys_showfiles: bool = True
+    filesys_showfiles: bool = False
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')
