@@ -2,6 +2,8 @@ from .helpers.qt_helper import QtHelper
 from .helpers.plot_widget import PlotWidget
 from .helpers.statusbar import StatusBar
 from .helpers.syntax_highlight import PythonSyntaxHighlighter
+from .helpers.path_bar import PathBar
+from .helpers.filesys_browser import FilesysBrowser
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -52,25 +54,9 @@ class MainWindowUi(QMainWindow):
         
         files_tab = QWidget()
         self._ui_tabs.addTab(files_tab, 'Files')
-        self._ui_filesysview = QTreeView()
-        self._ui_filesysmodel = QFileSystemModel()
-        self._ui_filesysmodel.setRootPath('')
-        self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)
-        self._ui_filesysview.setModel(self._ui_filesysmodel)
-        self._ui_filesysview.resizeColumnToContents(0)
-        def _filesys_doubleclick(index: QModelIndex):
-            self.on_filesys_doubleclick(self._ui_filesysmodel.filePath(index))
-        self._ui_filesysview.doubleClicked.connect(_filesys_doubleclick)
-        self._ui_filesysview.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
-        def _filesys_rightclick(location: QPoint):
-            index = self._ui_filesysview.indexAt(location)
-            if index.isValid():
-                items = self.on_filesys_contextmenu(self._ui_filesysmodel.filePath(index))
-                if not items:
-                    return
-                screen_location = self._ui_filesysview.mapToGlobal(location)
-                QtHelper.show_popup_menu(self, items, screen_location)
-        self._ui_filesysview.customContextMenuRequested.connect(_filesys_rightclick)
+        self._ui_filesys_browser = FilesysBrowser()
+        self._ui_filesys_browser.doubleClick.connect(self.on_filesys_doubleclick)
+        self._ui_filesys_browser.contextMenuRequest.connect(self.on_filesys_contextmenu)
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
         self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
@@ -79,7 +65,7 @@ class MainWindowUi(QMainWindow):
         self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
         self._ui_files_splitter = QSplitter(Qt.Orientation.Horizontal)
-        self._ui_files_splitter.addWidget(self._ui_filesysview)
+        self._ui_files_splitter.addWidget(self._ui_filesys_browser)
         self._ui_files_splitter.setCollapsible(0, True)
         self._ui_files_splitter.addWidget(self._ui_fileview)
         self._ui_files_splitter.setCollapsible(1, False)
@@ -334,22 +320,18 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_filesys_showfiles(self) -> bool:
-        return QDir.Filter.Files in self._ui_filesysmodel.filter()
+        return self._ui_filesys_browser.show_files
     @ui_filesys_showfiles.setter
     def ui_filesys_showfiles(self, value: bool):
-        flags = QDir.Filter.AllDirs | QDir.Filter.NoDotAndDotDot
-        if value:
-            flags |= QDir.Filter.Files
-        self._ui_filesysmodel.setFilter(flags)
+        self._ui_filesys_browser.show_files = value
 
 
     def ui_filesys_navigate(self, path: str):
-        index = self._ui_filesysmodel.index(path)
-        if not index.isValid():
-            return
-        self._ui_filesysview.setCurrentIndex(index)
-        self._ui_filesysview.scrollTo(index, QAbstractItemView.ScrollHint.EnsureVisible)
-        self._ui_filesysview.resizeColumnToContents(0)
+        self._ui_filesys_browser.navigate(path)
+    
+
+    def ui_filesys_show_contextmenu(self, items: dict[str,Callable|dict]):
+        self._ui_filesys_browser.show_context_menu(items)
     
 
     @property
@@ -649,9 +631,13 @@ class MainWindowUi(QMainWindow):
         pass
     def on_filesys_doubleclick(self, path: str):
         pass
-    def on_filesys_contextmenu(self, path: str) -> dict[str,Callable|dict]|None:
+    def on_filesys_contextmenu(self, path: str):
         pass
     def on_toggle_filesys(self):
         pass
     def on_filesys_visible_changed(self):
+        pass
+    def on_filesys_select(self, path: str):
+        pass
+    def on_pathbar_change(self, path: str):
         pass

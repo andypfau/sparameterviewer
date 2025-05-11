@@ -949,21 +949,30 @@ class MainWindow(MainWindowUi):
             self.load_path(abspath)
 
 
-    def on_filesys_contextmenu(self, path_str: str) -> dict[str,Callable|dict]|None:
+    def on_filesys_contextmenu(self, path_str: str):
         path = pathlib.Path(path_str)
         if not path.exists():
             return None
+        
         def switch_to_dir():
             self.load_path(path)
         def append_dir():
             self.load_path(path, append=True)
         def append_file():
             self.load_path(path, append=True)
+        
         if path.is_dir():
-            return { 'Switch to this Directory': switch_to_dir, 'Append this Directory': append_dir }
+            self.ui_filesys_show_contextmenu({ 'Switch to this Directory': switch_to_dir, 'Append this Directory': append_dir })
         elif path.is_fifo():
-            return { 'Append this File': append_file }
-        return None
+            self.ui_filesys_show_contextmenu({ 'Append this File': append_file })
+    
+
+    def on_filesys_select(self, path: str):
+        self.ui_filesys_navigate(path)
+    
+        
+    def on_pathbar_change(self, path: str):
+        self.ui_filesys_navigate(path)
 
 
     def on_toggle_filesys(self):
