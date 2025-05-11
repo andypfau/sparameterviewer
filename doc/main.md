@@ -17,7 +17,7 @@ A list of all available files is shown in the *Files* tab at the bottom of the m
 
 You can also filter for files by pressing *Ctrl+F* (or in the main menu, go *View* → *Filter Files...*). Enter your search string, press enter, and all files that match the search string will be selected.
 
-To switch to a different directory, or append files from another directory, go *File* → *Open Directory...* or *Append Directory...*. Alternatively, press *Ctrl+B* to show/hide the filesystem browser. Double-clicking a directory in the filesystem browser loads or appends that directory (behavior can be changed in [settings](settings.md)); alternatively, right-click in the filesystem browser to show a popup menu.
+To switch to a different directory, or append files from another directory, go *File* → *Open Directory...* or *Append Directory...*. Alternatively, press *Ctrl+B* to show/hide the filesystem browser. Double-clicking a directory in the filesystem browser loads or appends that directory (behavior can be changed in [settings](settings.md)); alternatively, right-click in the filesystem browser to show a popup menu. You can navigate quickly using the breadcrumb bar above the filesystem browser; click a label to navigate, click into the blank area to reveal a textbox; press enter in the textbox to naivgate.
 
 ### Plottable Parameters
 

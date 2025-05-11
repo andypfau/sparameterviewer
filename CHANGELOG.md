@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.31b2 (2025-05-11)
+-------------------
+
+- new: breadcrumb bar for filesystem browser
+
+
 0.31b1 (2025-05-10)
 -------------------
 
