@@ -39,7 +39,6 @@ def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int
             break
     if excess_end > 3:
         excess_end = min(excess_end-3, len(result)-8)
-        #print(f'{name}: cropping off {excess_end} at end')
         result = result[:-excess_end]
 
     # crop off as much as possible at the beginning
@@ -52,7 +51,6 @@ def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int
             break
     if excess_start > 3:
         excess_start = min(excess_start-3, len(result)-8)
-        #print(f'{name}: cropping off {excess_start} at start')
         result = result[excess_start:]
     
     return result

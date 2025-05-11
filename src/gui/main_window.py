@@ -149,9 +149,8 @@ class MainWindow(MainWindowUi):
 
 
     def clear_load_counter(self):
-        logging.debug('Clearing load counter')
         self.sparamfile_load_counter = 0
-        self.sparamfile_load_next_warning = 3#Settings.load_count_first_warning
+        self.sparamfile_load_next_warning = Settings.load_count_first_warning
 
 
     def before_load_sparamfile(self) -> bool:
@@ -163,7 +162,6 @@ class MainWindow(MainWindowUi):
                 f'Will ask again after {self.sparamfile_load_next_warning} files.'):
                 return False
         self.sparamfile_load_counter += 1
-        logging.debug(f'Loading {self.sparamfile_load_counter}. file')
         return True
 
 
@@ -710,7 +708,7 @@ class MainWindow(MainWindowUi):
                 
             
             else:
-                logging.debug(f'Path <{path_str}> is niether file nor directory, ignoring')
+                logging.debug(f'Path <{path_str}> is neither file nor directory, ignoring')
             append_next = True
         
         if len(new_files) > 0:
