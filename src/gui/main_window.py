@@ -654,7 +654,7 @@ class MainWindow(MainWindowUi):
         self.prepare_cursors()
     
 
-    def load_path(self, *paths: str, append: bool = False, load_file_dirs: bool = False):
+    def load_path(self, *paths: str, append: bool = False, load_file_dirs: bool = False, recursive: bool = False):
         append_next = append
         navigated = False
         new_files = []
@@ -679,7 +679,7 @@ class MainWindow(MainWindowUi):
                 else:
                     self.clear_loaded_files()
                     self.directories = [absdir]
-                self.read_all_files_in_directory(absdir)
+                self.read_all_files_in_directory(absdir, recursive=recursive)
             
             def handle_file(path: pathlib.Path, append: bool):
                 abspath = str(path.absolute())
@@ -1004,8 +1004,12 @@ class MainWindow(MainWindowUi):
         
         def switch_to_dir():
             self.load_path(path)
+        def switch_to_dir_recursive():
+            self.load_path(path, recursive=True)
         def append_dir():
             self.load_path(path, append=True)
+        def append_dir_recursive():
+            self.load_path(path, append=True, recursive=True)
         def switch_to_file():
             self.load_path(path)
         def append_file():
@@ -1016,9 +1020,17 @@ class MainWindow(MainWindowUi):
                 ps, pa = '', '*'
             else:
                 ps, pa = '*', ''
-            self.ui_filesys_show_contextmenu({ f'{ps}Switch to this Directory': switch_to_dir, f'{pa}Append this Directory': append_dir })
+            self.ui_filesys_show_contextmenu({
+                f'{ps}Switch to this Directory': switch_to_dir,
+                f'Switch to this Directory (Recursive)': switch_to_dir_recursive,
+                f'{pa}Append this Directory': append_dir,
+                f'Append this Directory (Recursive)': append_dir_recursive,
+            })
         elif path.is_file():
-            self.ui_filesys_show_contextmenu({ 'Show Only This File': switch_to_file, '*Append this File': append_file })
+            self.ui_filesys_show_contextmenu({
+                'Show Only This File': switch_to_file,
+                '*Append this File': append_file,
+            })
     
 
     def on_filesys_select(self, path: str):
