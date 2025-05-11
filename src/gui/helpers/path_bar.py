@@ -12,28 +12,40 @@ import os
 class PathBar(QWidget):
 
 
-    class WidgetClick(QWidget):
+    class MyWidget(QWidget):
 
-        blankClicked = pyqtSignal(QPoint)
+        blankClicked = pyqtSignal()
+        backClicked = pyqtSignal()
 
         def mouseReleaseEvent(self, event: QMouseEvent):
-            if event.button() == Qt.MouseButton.LeftButton:
+            if event.button() == Qt.MouseButton.BackButton:
+                self.backClicked.emit()
+            elif event.button() == Qt.MouseButton.LeftButton:
                 child = self.childAt(event.pos())
                 if child is None:
-                    self.blankClicked.emit(event.pos())
+                    self.blankClicked.emit()
             super().mouseReleaseEvent(event)
         
         
-    class LineEditEsc(QLineEdit):
+    class MyLineEdit(QLineEdit):
+        
         escapePressed = pyqtSignal()
+        backClicked = pyqtSignal()
+
         def keyPressEvent(self, event):
             if event.key() == Qt.Key.Key_Escape:
                 self.escapePressed.emit()
             else:
                 super().keyPressEvent(event)
 
+        def mouseReleaseEvent(self, event: QMouseEvent):
+            if event.button() == Qt.MouseButton.BackButton:
+                self.backClicked.emit()
+            super().mouseReleaseEvent(event)
+
 
     pathChanged = pyqtSignal(str)
+    backClicked = pyqtSignal()
 
 
     def __init__(self, path: str|None = None):
@@ -44,17 +56,19 @@ class PathBar(QWidget):
         self._breadcrumb_paths: list[pathlib.Path] = []
         self._breadcrumb_widgets: list[QWidget] = []
 
-        self._breadcrumb = PathBar.WidgetClick()
+        self._breadcrumb = PathBar.MyWidget()
         self._breadcrumb.setVisible(False)
         self._breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
+        self._breadcrumb.backClicked.connect(self._on_back_click)
         self._breadcrumb_layout = QHBoxLayout()
         self._breadcrumb_layout.setContentsMargins(0, 0, 0, 0)
         self._breadcrumb_layout.setSpacing(0)
         self._breadcrumb.setLayout(self._breadcrumb_layout)
-        self._text = PathBar.LineEditEsc(self)
+        self._text = PathBar.MyLineEdit(self)
         self._text.setText(str(self._path.absolute()))
         self._text.returnPressed.connect(self._text_press_enter)
         self._text.escapePressed.connect(self._text_press_escape)
+        self._text.backClicked.connect(self._on_back_click)
         layout = QtHelper.layout_v(self._breadcrumb, self._text)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -172,6 +186,8 @@ class PathBar(QWidget):
         
     
     def _on_outside_breadcrumb_click(self):
-        self._breadcrumb.setVisible(False)
-        self._text.setVisible(True)
-        self._text.setFocus()
+        self._update_and_show_text()
+
+
+    def _on_back_click(self):
+        self.backClicked.emit()

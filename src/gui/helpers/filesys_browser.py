@@ -15,22 +15,37 @@ from typing import Callable
 
 class FilesysBrowser(QWidget):
 
+
+    class MyTreeView(QTreeView):
+        
+        backClicked = pyqtSignal()
+
+        def mouseReleaseEvent(self, event: QMouseEvent):
+            if event.button() == Qt.MouseButton.BackButton:
+                self.backClicked.emit()
+            super().mouseReleaseEvent(event)
+    
+    
     doubleClick = pyqtSignal(str)
     contextMenuRequest = pyqtSignal(str)
+
 
     def __init__(self, path: str|None = None):
         super().__init__()
         self._context_menu_location = None
+        self._history: list[str] = []
 
         if not path:
             path = AppPaths.get_default_file_dir()
+        self._append_history(path)
 
         self._ui_path_bar = PathBar(path)
         def _pathbar_change(path: str):
             self._update_tree(path)
         self._ui_path_bar.pathChanged.connect(_pathbar_change)
+        self._ui_path_bar.backClicked.connect(self._on_back_click)
         
-        self._ui_filesysview = QTreeView()
+        self._ui_filesysview = FilesysBrowser.MyTreeView()
         self._ui_filesysmodel = QFileSystemModel()
         self._ui_filesysmodel.setRootPath('')
         self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)
@@ -40,6 +55,7 @@ class FilesysBrowser(QWidget):
             path = self._ui_filesysmodel.filePath(index)
             self.doubleClick.emit(os.path.abspath(path))
         self._ui_filesysview.doubleClicked.connect(_filesys_doubleclick)
+        self._ui_filesysview.backClicked.connect(self._on_back_click)
         self._ui_filesysview.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         def _filesys_rightclick(point: QPoint):
             self._context_menu_location = self._ui_filesysview.mapToGlobal(point)
@@ -75,6 +91,7 @@ class FilesysBrowser(QWidget):
     def navigate(self, path: str):
         self._update_text(path)
         self._update_tree(path)
+        self._append_history(path)
 
 
     def show_context_menu(self, items: dict[str,Callable|dict]):
@@ -93,3 +110,17 @@ class FilesysBrowser(QWidget):
         self._ui_filesysview.setCurrentIndex(index)
         self._ui_filesysview.scrollTo(index, QAbstractItemView.ScrollHint.EnsureVisible)
         self._ui_filesysview.resizeColumnToContents(0)
+
+    
+    def _append_history(self, path: str):
+        MAX_LEN = 100
+        self._history.append(path)
+        while len(self._history) > MAX_LEN:
+            del self._history[0]
+
+
+    def _on_back_click(self):
+        if len(self._history) < 1:
+            return
+        path = self._history.pop()
+        self.navigate(path)
