@@ -19,7 +19,7 @@ class ExpressionParser:
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
         selected_networks: "list[SParamFile]", \
-        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float]") -> "list[SParamFile]":
+        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float]"):
         
         SParam._plot_fn = plot_fn
 
@@ -33,7 +33,6 @@ class ExpressionParser:
                         nws.append(nw)
             if single:
                 if len(nws) != 1:
-                    #raise RuntimeError(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
                     logging.warning(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
                     nws = []
             for nw in nws:

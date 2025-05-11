@@ -488,14 +488,15 @@ class MainWindow(MainWindowUi):
         def load_file(filename, archive_path=None):
             try:
                 file = SParamFile(filename, archive_path=archive_path)
+                if file in self.files:
+                    logging.debug(f'File <{filename}> is already loaded, ignoring')
+                    return
                 self.files.append(file)
             except Exception as ex:
-                logging.info(f'Ignoring file <{filename}>: {ex}')
+                logging.warning(f'Unable to load file <{filename}>, ignoring: {ex}')
         
         try:
-            if abspath in self.files:
-                logging.debug(f'File <{abspath}> is already loaded, ignoring')
-            elif filetype_is_supported(abspath):
+            if filetype_is_supported(abspath):
                 load_file(abspath)
             elif Settings.extract_zip and archivetype_is_supported(abspath):
                 try:
@@ -516,12 +517,33 @@ class MainWindow(MainWindowUi):
             raise ex
 
 
-    def read_all_files_in_directory(self, dir: str):
+    def read_all_files_in_directory(self, dir: str, recursive: bool = False):
         try:
-            all_files = [str(path.absolute()) for path in pathlib.Path(dir).iterdir() if path.is_file()]
-            all_files_sorted = sorted(all_files)
-            for path in all_files_sorted:
-                self.read_single_file(path)
+            INITIAL_WARNING, WARNING_INCREMENT, MAX_WARNING = 100, 10, 1_000_000
+
+            next_warning = INITIAL_WARNING
+            n_files_loaded = 0
+            def iter_files(dir: str) -> bool:
+                nonlocal next_warning, n_files_loaded
+                for path in pathlib.Path(dir).iterdir():
+                    if path.is_file():
+                        if n_files_loaded >= next_warning:
+                            if next_warning < MAX_WARNING:
+                                next_warning *= WARNING_INCREMENT
+                            else:
+                                next_warning += MAX_WARNING
+                            if not yesno_dialog(
+                                'Too Many Files',
+                                f'Already loaded {n_files_loaded} files, with more to come. Continue?',
+                                f'Will ask again after {next_warning} files'):
+                                return False
+                        self.read_single_file(str(path))
+                        n_files_loaded += 1
+                    elif path.is_dir() and recursive:
+                        if not iter_files(str(path)):
+                            return False
+                return True
+            iter_files(dir)
         
         except Exception as ex:
             logging.exception(f'Unable to load directory: {ex}')
@@ -946,7 +968,7 @@ class MainWindow(MainWindowUi):
         if path.is_dir():
             self.load_path(abspath, append=Settings.filesys_doubleclick_appends)
         elif path.is_file():
-            self.load_path(abspath)
+            self.load_path(abspath, append=True)
 
 
     def on_filesys_contextmenu(self, path_str: str):
@@ -958,13 +980,19 @@ class MainWindow(MainWindowUi):
             self.load_path(path)
         def append_dir():
             self.load_path(path, append=True)
+        def switch_to_file():
+            self.load_path(path)
         def append_file():
             self.load_path(path, append=True)
         
         if path.is_dir():
-            self.ui_filesys_show_contextmenu({ 'Switch to this Directory': switch_to_dir, 'Append this Directory': append_dir })
-        elif path.is_fifo():
-            self.ui_filesys_show_contextmenu({ 'Append this File': append_file })
+            if Settings.filesys_doubleclick_appends:
+                ps, pa = '', '*'
+            else:
+                ps, pa = '*', ''
+            self.ui_filesys_show_contextmenu({ f'{ps}Switch to this Directory': switch_to_dir, f'{pa}Append this Directory': append_dir })
+        elif path.is_file():
+            self.ui_filesys_show_contextmenu({ 'Show Only This File': switch_to_file, '*Append this File': append_file })
     
 
     def on_filesys_select(self, path: str):

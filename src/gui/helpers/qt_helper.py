@@ -116,7 +116,7 @@ class QtHelper:
         Each value in `items` is either a callable (which is called on clicking that item),
           or another dict for a submenu.
         """
-        def populate_menu(menu: QMenu, items: dict):
+        def populate_menu(menu: QMenu, items: dict[str,Callable|dict]):
             for name,action_or_submenu in items.items():
                 if name is None:
                     menu.addSeparator()
@@ -124,7 +124,11 @@ class QtHelper:
                     submenu = QtHelper.add_submenu(menu, text=name)
                     populate_menu(submenu, items=action_or_submenu)
                 else:
-                    QtHelper.add_menuitem(menu, text=name, action=action_or_submenu)
+                    bold = False
+                    if name.startswith('*'):
+                        name = name[1:]
+                        bold = True
+                    QtHelper.add_menuitem(menu, text=name, action=action_or_submenu, bold=bold)
         menu = QMenu(parent)
         populate_menu(menu, items)
         menu.popup(position)
@@ -140,7 +144,7 @@ class QtHelper:
 
 
     @staticmethod
-    def add_menuitem(menu: QMenu, text: str, action: Callable, *, shortcut: str = None, visible: bool = True, checkable: bool = False) -> QAction:
+    def add_menuitem(menu: QMenu, text: str, action: Callable, *, shortcut: str = None, visible: bool = True, checkable: bool = False, bold: bool = False) -> QAction:
         item = QAction(text, menu)
         if action is not None:
             item.triggered.connect(action)
@@ -150,6 +154,8 @@ class QtHelper:
             item.setCheckable(True)
         if not visible:
             item.setVisible(False)
+        if bold:
+            item.setFont(QtHelper.make_font(base=item.font(), bold=True))
         menu.addAction(item)
         return item
 

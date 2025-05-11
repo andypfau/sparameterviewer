@@ -9,6 +9,7 @@ import logging
 import zipfile
 import tempfile
 import datetime
+import os
 
 
 
@@ -18,7 +19,7 @@ class SParamFile:
 
     def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
 
-        self.file_path = file_path
+        self.file_path = os.path.abspath(file_path)
         self.archive_path = archive_path
         self.filename = os.path.split(self.file_path)[1]
         self.tag = tag
@@ -32,6 +33,17 @@ class SParamFile:
             name_prefix = ''
         self.name = name if name is not None else name_prefix+self.filename
         self.short_name = short_name if short_name is not None else name_prefix+os.path.splitext(self.filename)[0]
+    
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, SParamFile):
+            if self.file_path != other.file_path:
+                return False
+            if self.archive_path:
+                if self.archive_path != other.archive_path:
+                    return False
+            return True
+        return super.__eq__(self, other)
     
 
     def _load(self):
