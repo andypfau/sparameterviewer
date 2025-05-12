@@ -95,12 +95,16 @@ class MainWindow(MainWindowUi):
         self._log_dialog: LogDialog|None = None
         self.cursor_event_queue: list[tuple] = []
         self.plot: PlotHelper|None = None
+        self.sparamfile_list_counter = 0
+        self.sparamfile_list_next_warning = 0
+        self.sparamfile_list_aborted = False
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = 0
         self.sparamfile_load_aborted = False
 
         super().__init__()
 
+        self.clear_list_counter()
         self.clear_load_counter()
         def before_load_sparamfile() -> bool:
             return self.before_load_sparamfile()
@@ -147,6 +151,12 @@ class MainWindow(MainWindowUi):
             loading_exception = load_settings()
             load_settings()  # load again; this time no re-try
             logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
+
+
+    def clear_list_counter(self):
+        self.sparamfile_list_counter = 0
+        self.sparamfile_list_next_warning = Settings.warncount_file_list
+        self.sparamfile_list_aborted = False
 
 
     def clear_load_counter(self):
@@ -505,6 +515,19 @@ class MainWindow(MainWindowUi):
 
     
     def read_single_file(self, path: str):
+
+        if self.sparamfile_list_aborted:
+            return
+        if self.sparamfile_list_counter >= self.sparamfile_list_next_warning:
+            self.sparamfile_list_next_warning = get_next_1_10_100(self.sparamfile_list_next_warning)
+            if not yesno_dialog(
+                'Too Many Files',
+                f'Already discovered {self.sparamfile_list_counter} files, with more to come. Continue?',
+                f'Will ask again after {self.sparamfile_list_next_warning} files.'):
+                self.sparamfile_list_aborted = True
+                return
+        self.sparamfile_list_counter += 1
+
         abspath = str(pathlib.Path(path).absolute())
 
         def filetype_is_supported(path):
@@ -549,21 +572,10 @@ class MainWindow(MainWindowUi):
 
     def read_all_files_in_directory(self, dir: str, recursive: bool = False):
         try:
-            next_warning = Settings.warncount_file_list
-            n_files_loaded = 0
             def iter_files(dir: str) -> bool:
-                nonlocal next_warning, n_files_loaded
                 for path in pathlib.Path(dir).iterdir():
                     if path.is_file():
-                        if n_files_loaded >= next_warning:
-                            next_warning = get_next_1_10_100(next_warning)
-                            if not yesno_dialog(
-                                'Too Many Files',
-                                f'Already found {n_files_loaded} files, with more to come. Continue?',
-                                f'Will ask again after {next_warning} files.'):
-                                return False
                         self.read_single_file(str(path))
-                        n_files_loaded += 1
                     elif path.is_dir() and recursive:
                         if not iter_files(str(path)):
                             return False
@@ -577,6 +589,7 @@ class MainWindow(MainWindowUi):
 
     def reload_all_files(self):
         self.clear_loaded_files()
+        self.clear_list_counter()
         for dir in self.directories:
             self.read_all_files_in_directory(dir)
         self.update_displayed_file_list()
@@ -655,6 +668,8 @@ class MainWindow(MainWindowUi):
     
 
     def load_path(self, *paths: str, append: bool = False, load_file_dirs: bool = False, recursive: bool = False):
+        self.clear_list_counter()
+
         append_next = append
         navigated = False
         new_files = []
