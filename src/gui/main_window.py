@@ -601,9 +601,9 @@ class MainWindow(MainWindowUi):
 
 
     def get_file_prop_str(self, file: "SParamFile") -> str:
-        if file.loaded():
+        if file.loaded:
             return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
-        elif file.error():
+        elif file.error:
             return '[loading failed]'
         else:
             return '[not loaded]'

@@ -23,9 +23,8 @@ class SParamFile:
 
     def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
 
-        self.file_path = os.path.abspath(file_path)
-        self.archive_path = archive_path
-        self.filename = os.path.split(self.file_path)[1]
+        self._file_path = os.path.abspath(file_path)
+        self._archive_path = os.path.abspath(archive_path) if archive_path else None
         self.tag = tag
 
         self._nw = None
@@ -97,8 +96,33 @@ class SParamFile:
     def nw(self) -> "skrf.Network":
         self._load()
         return self._nw
+
+
+    @property
+    def file_path(self) -> str:
+        return self._file_path
+
+
+    @property
+    def filename(self) -> str:
+        return os.path.split(self._file_path)[1]
+
+
+    @property
+    def archive_path(self) -> str:
+        return self._archive_path
     
 
+    @property
+    def loaded(self) -> bool:
+        return self._nw is not None
+    
+
+    @property
+    def error(self) -> bool:
+        return self._error is not None
+
+    
     def get_plaintext(self) -> str:
         def load(path):
             try:
@@ -209,14 +233,6 @@ class SParamFile:
         info += fileinfo
 
         return info
-    
-
-    def loaded(self) -> bool:
-        return self._nw is not None
-    
-
-    def error(self) -> bool:
-        return self._error is not None
 
 
 

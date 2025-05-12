@@ -104,8 +104,14 @@ class FilesysBrowser(QWidget):
         self._ui_path_bar.path = os.path.abspath(path)
 
 
-    def _update_tree(self, path: str):
-        index = self._ui_filesysmodel.index(os.path.abspath(path))
+    def _update_tree(self, path_str: str):
+        path = pathlib.Path(path_str)
+        if not path.exists():
+            return
+        if path.is_file():
+            # if I navigate to a file, there is a risk that cloud-based virtual file systems attempt to load that file, taking ages to finish...
+            path = path.parent
+        index = self._ui_filesysmodel.index(str(path.absolute()))
         if not index.isValid():
             return
         self._ui_filesysview.setCurrentIndex(index)
