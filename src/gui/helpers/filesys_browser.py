@@ -1,4 +1,4 @@
-import pathlib._abc
+import pathlib
 from .qt_helper import QtHelper
 from .path_bar import PathBar
 from lib import AppPaths
@@ -46,6 +46,7 @@ class FilesysBrowser(QWidget):
         self._ui_path_bar.backClicked.connect(self._on_back_click)
         
         self._ui_filesysview = FilesysBrowser.MyTreeView()
+        self._ui_filesysview.setToolTip('Double-click or right-click an file or directory to add it to the file list')
         self._ui_filesysmodel = QFileSystemModel()
         self._ui_filesysmodel.setRootPath('')
         self._ui_filesysmodel.setFilter(QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot)

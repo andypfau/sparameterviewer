@@ -47,8 +47,11 @@ class MainWindowUi(QMainWindow):
         self._ui_plot = PlotWidget()
         
         self._ui_mode_combo = QComboBox()
+        self._ui_mode_combo.setToolTip('Select which parameter to plot')
         self._ui_unit_combo = QComboBox()
+        self._ui_unit_combo.setToolTip('Select how to plot the selected parameter (primary Y-axis)')
         self._ui_unit2_combo = QComboBox()
+        self._ui_unit2_combo.setToolTip('Select how to plot the selected parameter (secondary Y-axis)')
         
         self._ui_tabs = QTabWidget()
         
@@ -65,6 +68,7 @@ class MainWindowUi(QMainWindow):
         self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
         self._ui_fileview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._ui_fileview.setToolTip('Click a file to plot it; hold Ctrl to select multiple files')
         self._ui_files_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._ui_files_splitter.addWidget(self._ui_filesys_browser)
         self._ui_files_splitter.setCollapsible(0, True)
