@@ -1,4 +1,5 @@
 from .helpers.qt_helper import QtHelper
+from lib.utils import get_next_1_10_100, get_next_1_2_5_10
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -10,6 +11,7 @@ import enum
 import logging
 import os
 from typing import Callable, Union
+import numpy as np
 
 
 
@@ -27,6 +29,13 @@ class SettingsDialogUi(QDialog):
         self.setWindowTitle('Settings')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
+
+        self._warncount_list_values = [10]
+        while self._warncount_list_values[-1] < 1_000_000:
+            self._warncount_list_values.append(get_next_1_10_100(self._warncount_list_values[-1]))
+        self._warncount_load_values = [5]
+        while self._warncount_load_values[-1] < 1_000_000:
+            self._warncount_load_values.append(get_next_1_2_5_10(self._warncount_load_values[-1]))
 
         help = QShortcut(QKeySequence('F1'), self)
         help.activated.connect(self.on_help)
@@ -96,14 +105,28 @@ class SettingsDialogUi(QDialog):
         self._ui_filereplace_radio.toggled.connect(self.on_fileappend_changed)
         self._ui_fileappend_radio = QRadioButton('Append')
         self._ui_fileappend_radio.toggled.connect(self.on_fileappend_changed)
+        self._ui_warncount_list_combo = QComboBox()
+        for i in self._warncount_list_values:
+            self._ui_warncount_list_combo.addItem(f'{i:,.0f}')
+        self._ui_warncount_list_combo.currentIndexChanged.connect(self._on_warncount_list_changed)
+        self._ui_warncount_list_combo.setCurrentIndex(0)
+        self._ui_warncount_load_combo = QComboBox()
+        for i in self._warncount_load_values:
+            self._ui_warncount_load_combo.addItem(f'{i:,.0f}')
+        self._ui_warncount_load_combo.setCurrentIndex(0)
+        self._ui_warncount_load_combo.currentIndexChanged.connect(self._on_warncount_load_changed)
+        self._ui_fileappend_radio.toggled.connect(self.on_fileappend_changed)
         files_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_extract_zip_check,
                 self._ui_fileview_files_check,
                 QtHelper.layout_grid([
                         ['Doubleclick Filesystem:', QtHelper.layout_h(self._ui_filereplace_radio, self._ui_fileappend_radio)],
-                        ['Recent Directory:', QtHelper.layout_h(self._ui_histreplace_radio, self._ui_histappend_radio)],
-                ]), ...
+                        ['Recent Directory:', QtHelper.layout_h(self._ui_histreplace_radio, self._ui_histappend_radio)]
+                ]),
+                QtHelper.layout_h('Warn When Discovering More Than', self._ui_warncount_list_combo, 'Files'),
+                QtHelper.layout_h('Warn When Loading More Than', self._ui_warncount_load_combo, 'Files'),
+                ...
             )
         )
 
@@ -321,6 +344,34 @@ class SettingsDialogUi(QDialog):
     def ui_font(self, value: bool):
         self._ui_font_combo.setCurrentText(value)
 
+    
+    @property
+    def ui_warncount_list(self) -> int:
+        try:
+            return self._warncount_list_values[self._ui_warncount_list_combo.currentIndex()]
+        except:
+            return self._warncount_list_values[0]
+    @ui_warncount_list.setter
+    def ui_warncount_list(self, value: int):
+        try:
+            idx = np.argmin(np.abs(np.array(self._warncount_list_values) - value))
+            self._ui_warncount_list_combo.setCurrentIndex(idx)
+        except: pass
+
+    
+    @property
+    def ui_warncount_load(self) -> int:
+        try:
+            return self._warncount_load_values[self._ui_warncount_load_combo.currentIndex()]
+        except:
+            return self._warncount_load_values[0]
+    @ui_warncount_load.setter
+    def ui_warncount_load(self, value: int):
+        try:
+            idx = np.argmin(np.abs(np.array(self._warncount_load_values) - value))
+            self._ui_warncount_load_combo.setCurrentIndex(idx)
+        except: pass
+
 
     def ui_indicate_ext_ed_error(self, indicate_error: bool):
         QtHelper.indicate_error(self._ui_exted_edit, indicate_error)
@@ -362,4 +413,8 @@ class SettingsDialogUi(QDialog):
     def on_histappend_changed(self):
         pass
     def on_showfiles_changed(self):
+        pass
+    def _on_warncount_list_changed(self):
+        pass
+    def _on_warncount_load_changed(self):
         pass

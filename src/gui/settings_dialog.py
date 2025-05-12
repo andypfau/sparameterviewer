@@ -86,6 +86,8 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_histfile_append = Settings.history_appends
             self.ui_filesys_append = Settings.filesys_doubleclick_appends
             self.ui_filesys_showfiles = Settings.filesys_showfiles
+            self.ui_warncount_list = Settings.warncount_file_list
+            self.ui_warncount_load = Settings.warncount_file_load
             self.ui_ext_ed = Settings.ext_editor_cmd
             self.ui_plotstyle = Settings.plot_style
             self.ui_font = Settings.editor_font
@@ -218,3 +220,11 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_showfiles_changed(self):
         Settings.filesys_showfiles = self.ui_filesys_showfiles
+
+
+    def _on_warncount_list_changed(self):
+        Settings.warncount_file_list = self.ui_warncount_list
+
+
+    def _on_warncount_load_changed(self):
+        Settings.warncount_file_load = self.ui_warncount_load

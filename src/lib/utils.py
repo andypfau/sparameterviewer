@@ -130,12 +130,36 @@ def natural_sort_key(s):
 
 
 
-def get_next_power_of_3(x: int) -> int:
-    """ Returns the next in the set (1, 3, 10, 30, 100, ...)"""
+def get_next_1_2_5_10(x: int) -> int:
+    """ Returns the next in the series (1, 2, 5, 10, 20, 50, 100, ...)"""
+    EPSILON = 0.99
     if x < 1:
         return 1
     f, i = math.modf(math.log10(x))
-    if f >= 0.99*math.log10(3):
-        return int(round(10**(i+1)))
+    if f < math.log10(2) * EPSILON:
+        return 2*int(round(10**i))
+    elif f < math.log10(5) * EPSILON:
+        return 5*int(round(10**i))
     else:
+        return int(round(10**(i+1)))
+
+
+
+def get_next_1_3_10(x: int) -> int:
+    """ Returns the next in the series (1, 3, 10, 30, 100, ...)"""
+    EPSILON = 0.99
+    if x < 1:
+        return 1
+    f, i = math.modf(math.log10(x))
+    if f < math.log10(3) * EPSILON:
         return 3*int(round(10**i))
+    else:
+        return int(round(10**(i+1)))
+
+
+
+def get_next_1_10_100(x: int) -> int:
+    """ Returns the next in the series (1, 10, 100, 1000, ...)"""
+    if x < 1:
+        return 1
+    return int(round(10**(math.floor(math.log10(x))+1)))
