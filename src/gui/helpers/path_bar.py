@@ -54,24 +54,28 @@ class PathBar(QWidget):
             path = AppPaths.get_default_file_dir()
         self._path = pathlib.Path(path)
         self._breadcrumb_paths: list[pathlib.Path] = []
-        self._breadcrumb_widgets: list[QWidget] = []
 
+        self._toggle_button = QPushButton('...')
+        self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
+        self._toggle_button.setContentsMargins(0, 0, 0, 0)
         self._breadcrumb = PathBar.MyWidget()
         self._breadcrumb.setVisible(False)
         self._breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
         self._breadcrumb.backClicked.connect(self._on_back_click)
         self._breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
-        self._breadcrumb_layout = QHBoxLayout()
-        self._breadcrumb_layout.setContentsMargins(0, 0, 0, 0)
-        self._breadcrumb_layout.setSpacing(0)
-        self._breadcrumb.setLayout(self._breadcrumb_layout)
+        self._breadcrumb_label = QLabel()
+        self._breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._breadcrumb_label.setWordWrap(True)
+
+        self._breadcrumb_label.linkActivated.connect(self._on_link_click)
+        self._breadcrumb.setLayout(QtHelper.layout_h(self._breadcrumb_label, ...))
         self._text = PathBar.MyLineEdit(self)
         self._text.setText(str(self._path.absolute()))
         self._text.setToolTip('Press Enter to accept path / Escape to discard, and show breadcrumb bar')
         self._text.returnPressed.connect(self._text_press_enter)
         self._text.escapePressed.connect(self._text_press_escape)
         self._text.backClicked.connect(self._on_back_click)
-        layout = QtHelper.layout_v(self._breadcrumb, self._text)
+        layout = QtHelper.layout_h(self._breadcrumb, self._text, self._toggle_button)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
@@ -126,42 +130,25 @@ class PathBar(QWidget):
         if not self._path.exists():
             return
         
-        # empty layout
-        for i in reversed(range(len(self._breadcrumb_widgets))):
-            item = self._breadcrumb_widgets[i]
-            if isinstance(item, QWidget):
-                self._breadcrumb_layout.removeWidget(item)
-            elif isinstance(item, QSpacerItem):
-                self._breadcrumb_layout.removeItem(item)
-            del self._breadcrumb_widgets[i]
-        
         self._breadcrumb_paths = []
         parts = list(self._path.parts)
-        prev_part = None
+        prev_part = ''
         parts_so_far = []
-        self._breadcrumb_widgets = []
+        html = ''
         for i, part in enumerate(parts):
             
             parts_so_far.append(part)
             self._breadcrumb_paths.append(pathlib.Path(os.path.join(*parts_so_far)))
 
-            if (i > 0) and (prev_part != os.sep):
-                separator = QLabel(os.sep)
-                separator.setContentsMargins(0, 0, 0, 0)
-                self._breadcrumb_layout.addWidget(separator)
-                self._breadcrumb_widgets.append(separator)
-
-            link = QLabel(f'<a href="{i}">{part}</a>')
-            link.setContentsMargins(0, 0, 0, 0)
-            link.setOpenExternalLinks(False)
-            link.linkActivated.connect(self._on_link_click)
-            self._breadcrumb_widgets.append(link)
-            self._breadcrumb_layout.addWidget(link)
+            if (i > 0) and (os.sep not in prev_part):
+                html += os.sep
+            html += f'<a href="{i}">{part}</a>'
+            if os.sep in part:
+                html += ' '
 
             prev_part = part
-        stretch = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding)
-        self._breadcrumb_widgets.append(stretch)
-        self._breadcrumb_layout.addSpacerItem(stretch)
+        
+        self._breadcrumb_label.setText(html)
 
         self._text.setVisible(False)
         self._breadcrumb.setVisible(True)
@@ -189,6 +176,14 @@ class PathBar(QWidget):
     
     def _on_outside_breadcrumb_click(self):
         self._update_and_show_text()
+    
+
+    def _on_toggle_breadcrumb(self):
+        if self._breadcrumb.isVisible():
+            self._update_and_show_text()
+        elif self._text.isVisible():
+            self._update_and_show_breadcrumbs()
+
 
 
     def _on_back_click(self):
