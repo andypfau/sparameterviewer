@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from .si import Si, SiFmt
 from .citi import CitiReader
-from .utils import AchiveFileLoader
+from .utils import AchiveFileLoader, natural_sort_key
 
 import dataclasses
 import numpy as np
@@ -13,15 +13,36 @@ import pathlib
 import datetime
 import os
 from typing import Callable
+from functools import total_ordering
 
 
 
+@total_ordering
 class PathExt(pathlib.Path):
     """ An extension of Path with has the additional property arch_path, to represent a file inside an archive """
 
     def __init__(self, path, *, arch_path: str|None = None):
         super().__init__(path)
         self._arch_path = arch_path
+    
+    def __hash__(self) -> int:
+        if self._arch_path:
+            return hash(str(super()) + os.sep + self._arch_path)
+        return super().__hash__()
+    
+    def __eq__(self, other) -> bool:
+        if isinstance(other, PathExt):
+            if self._arch_path != other._arch_path:
+                return False
+        return super().__eq__(other)
+
+    def __lt__(self, other) -> bool:
+        self_path = self.full_path
+        if isinstance(other, PathExt):
+            other_path = other.full_path
+        else:
+            other_path = str(super())
+        return natural_sort_key(self_path) <= natural_sort_key(other_path)
     
     @property
     def arch_path(self) -> str|None:
@@ -33,15 +54,26 @@ class PathExt(pathlib.Path):
             return pathlib.Path(self._arch_path).name
         return None
     
-    # @property
-    # def absolute(self) -> PathExt:
-    #     return PathExt(super().absolute, arch_path=self._arch_path)
+    @property
+    def full_name(self) -> str:
+        if self._arch_path:
+            return super().name + os.sep + pathlib.Path(self._arch_path).name
+        return super().name
     
-    # def __eq__(self, other) -> bool:
-    #     if isinstance(other, PathExt):
-    #         if self._arch_path!=other._arch_path:
-    #             return False
-    #     return super().__eq__(other)
+    @property
+    def full_path(self) -> str:
+        if self._arch_path:
+            return str(super().absolute()) + os.sep + self._arch_path
+        return str(super().absolute())
+    
+    @property
+    def final_name(self) -> str:
+        if self._arch_path:
+            return pathlib.Path(self._arch_path).name
+        return super().name
+    
+    def absolute(self) -> PathExt:
+        return PathExt(super().absolute(), arch_path=self._arch_path)
 
 
 
@@ -49,7 +81,8 @@ class SParamFile:
     """Wrapper for a skrf.Network"""
 
 
-    before_load: Callable[None,bool] = None
+    before_load: Callable[PathExt,bool] = None
+    after_load: Callable[PathExt,None] = None
 
 
     def __init__(self, path: str|PathExt, tag: int = None, name: str = None, short_name: str = None):
@@ -64,17 +97,14 @@ class SParamFile:
             name_prefix = path.arch_name + '/'
         else:
             name_prefix = ''
-        self.name = name if name is not None else name_prefix+self.filename
-        self.short_name = short_name if short_name is not None else name_prefix+os.path.splitext(self.filename)[0]
+        self.name = name if name is not None else name_prefix+self.path.name
+        self.short_name = short_name if short_name is not None else name_prefix+os.path.splitext(self.path.name)[0]
     
 
     def __eq__(self, other) -> bool:
         if isinstance(other, SParamFile):
-            if self.file_path != other.file_path:
+            if self.path != other.path:
                 return False
-            if self.archive_path:
-                if self.archive_path != other.archive_path:
-                    return False
             return True
         return super.__eq__(self, other)
     
@@ -85,12 +115,13 @@ class SParamFile:
 
         try:
             if SParamFile.before_load:
-                if not SParamFile.before_load():
+                if not SParamFile.before_load(self.path):
+                    self._error = 'aborted by user'
                     return
         except:
             pass
 
-        def load(path):
+        def load(path: str):
             try:
                 ext = os.path.splitext(path)[1].lower()
                 if ext in ['.cti', '.citi']:
@@ -106,12 +137,15 @@ class SParamFile:
         
         if self.is_from_archive:
             try:
-                with AchiveFileLoader(self.path, self.path.arch_path) as extracted_path:
+                with AchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
                     load(extracted_path)
             except Exception as ex:
-                logging.warning(f'Unable to extract and load "{self.file_path}" from "{self.archive_path}" ({ex})')
+                logging.warning(f'Unable to extract and load <{self.path.arch_path}> from archive <{str(self.path)}> ({ex})')
         else:
-            load(self.file_path)
+            load(str(self.path))
+        
+        if SParamFile.after_load:
+            SParamFile.after_load(self.path)
 
     
     @property
@@ -123,21 +157,6 @@ class SParamFile:
     def nw(self) -> "skrf.Network":
         self._load()
         return self._nw
-
-
-    @property
-    def file_path(self) -> str:
-        return str(self.path)
-
-
-    @property
-    def filename(self) -> str:
-        return self.path.name
-
-
-    @property
-    def archive_path(self) -> str:
-        return self.path.arch_path
     
 
     @property
@@ -160,57 +179,57 @@ class SParamFile:
         
         if self.is_from_archive:
             try:
-                with AchiveFileLoader(self.archive_path, self.file_path) as extracted_path:
+                with AchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
                     return load(extracted_path)
             except Exception as ex:
-                logging.warning(f'Unable to extract and load "{self.file_path}" from "{self.archive_path}" ({ex})')
+                logging.warning(f'Unable to extract and load <{self.path.arch_path}> from archive <{str(self.path)}> ({ex})')
         else:
-            return load(self.file_path)
+            return load(str(self.path))
     
 
     def get_info_str(self) -> str:
                 
         f0, f1 = self.nw.f[0], self.nw.f[-1]
         n_pts = len(self.nw.f)
-        _, fname = os.path.split(self.file_path)
+        _, fname = os.path.split(str(self.path))
         comm = '' if self.nw.comments is None else self.nw.comments
         n_ports = self.nw.s.shape[1]
 
         fileinfo = ''
         def fmt_tstamp(ts):
             return f'{datetime.datetime.fromtimestamp(ts):%Y-%m-%d %H:%M:%S}'
-        if self.archive_path is not None:
-            fileinfo += f'Archive path: {os.path.abspath(self.archive_path)}\n'
+        if self.path.arch_path:
+            fileinfo += f'Archive path: {os.path.abspath(str(self.path))}\n'
+            fileinfo += f'File path in archive: {self.path.arch_path}\n'
             try:
-                created = fmt_tstamp(os.path.getctime(self.archive_path))
+                created = fmt_tstamp(os.path.getctime(str(self.path)))
                 fileinfo += f'Archive created: {created}, '
             except:
                 fileinfo += f'Archive created: unknoown, '
             try:
-                modified = fmt_tstamp(os.path.getmtime(self.archive_path))
+                modified = fmt_tstamp(os.path.getmtime(str(self.path)))
                 fileinfo += f'last modified: {modified}\n'
             except:
                 fileinfo += f'last modified: unknown\n'
             try:
-                size = f'{os.path.getsize(self.archive_path):,.0f} B'
+                size = f'{os.path.getsize(str(self.path)):,.0f} B'
                 fileinfo += f'Archive size: {size}\n'
             except:
                 fileinfo += f'Archive size: unknown\n'
-            fileinfo += f'File path in archive: {self.file_path}\n'
         else:
-            fileinfo += f'File path: {os.path.abspath(self.file_path)}\n'
+            fileinfo += f'File path: {os.path.abspath(str(self.path))}\n'
             try:
-                created = fmt_tstamp(os.path.getctime(self.file_path))
+                created = fmt_tstamp(os.path.getctime(str(self.path)))
                 fileinfo += f'File created: {created}, '
             except:
                 fileinfo += f'File created: unknoown, '
             try:
-                modified = fmt_tstamp(os.path.getmtime(self.file_path))
+                modified = fmt_tstamp(os.path.getmtime(str(self.path)))
                 fileinfo += f'last modified: {modified}\n'
             except:
                 fileinfo += f'last modified: unknown\n'
             try:
-                size = f'{os.path.getsize(self.file_path):,.0f} B'
+                size = f'{os.path.getsize(str(self.path)):,.0f} B'
                 fileinfo += f'File size: {size}\n'
             except:
                 fileinfo += f'File size: unknown\n'

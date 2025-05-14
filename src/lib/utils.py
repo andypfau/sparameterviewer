@@ -57,7 +57,7 @@ class AchiveFileLoader:
             ...
     """
 
-    def __inif__(self, archive_path: str, path_in_archive: str):
+    def __init__(self, archive_path: str, path_in_archive: str):
         self._archive_path, self._path_in_archive = archive_path, path_in_archive
         self._tempdir: tempfile.TemporaryDirectory = None
         self._tempdir_path: str = None

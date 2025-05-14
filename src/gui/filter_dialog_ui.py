@@ -25,15 +25,18 @@ class FilterDialogUi(QDialog):
         self.setSizeGripEnabled(True)
 
         self._ui_search_text = QLineEdit()
-        self._ui_search_text.setPlaceholderText('Search expression...')
+        self._ui_search_text.setPlaceholderText('Enter expression, then press Enter')
+        self._ui_search_text.setToolTip('Enter your search expression here, then press Enter (or press Escape to abort)')
         self._ui_search_text.textChanged.connect(self.on_search_change)
         self._ui_search_text.setAcceptDrops(True)
         self._ui_search_text.returnPressed.connect(self.accept)
 
         self._ui_wildcard_radio = QRadioButton('Wildcards')
+        self._ui_wildcard_radio.setToolTip('You can use the wildcards "*" (anything) and "?" (any single character)')
         self._ui_wildcard_radio.toggled.connect(self.on_search_mode_change)
 
         self._ui_regex_radio = QRadioButton('Regex')
+        self._ui_regex_radio.setToolTip('You can use regular expressions')
         self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
 
         self._ui_files_list = QListView()
@@ -72,10 +75,15 @@ class FilterDialogUi(QDialog):
             self._ui_wildcard_radio.setChecked(True)
     
 
-    def ui_set_files(self, files: list[str]):
+    def ui_set_files(self, files: list[str], other_files: list[str]):
         self._ui_files_model.clear()
         for file in files:
-            self._ui_files_model.appendRow(QtGui.QStandardItem(file))
+            item = QtGui.QStandardItem(file)
+            self._ui_files_model.appendRow(item)
+        for other_file in other_files:
+            item = QtGui.QStandardItem(other_file)
+            item.setForeground(QPalette().color(QPalette.ColorRole.PlaceholderText))
+            self._ui_files_model.appendRow(item)
     
 
     def ui_indicate_search_error(self, indicate_error: bool = True):

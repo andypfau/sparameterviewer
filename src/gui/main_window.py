@@ -89,7 +89,7 @@ class MainWindow(MainWindowUi):
     def __init__(self, filenames: list[str]):
         self.ready = False
         self.directories: list[str] = []
-        self.files: list[SParamFile] = []
+        self.files: dict[PathExt,SParamFile] = {}
         self.generated_expressions = ''
         self.plot_mouse_down = False
         self.plot_axes_are_valid = False
@@ -107,9 +107,12 @@ class MainWindow(MainWindowUi):
 
         self.clear_list_counter()
         self.clear_load_counter()
-        def before_load_sparamfile() -> bool:
-            return self.before_load_sparamfile()
+        def before_load_sparamfile(path: PathExt) -> bool:
+            return self.before_load_sparamfile(path)
+        def after_load_sparamfile(path: PathExt) -> bool:
+            return self.after_load_sparamfile(path)
         SParamFile.before_load = before_load_sparamfile
+        SParamFile.after_load = after_load_sparamfile
 
         self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
@@ -117,11 +120,27 @@ class MainWindow(MainWindowUi):
         self.ui_set_window_title(Info.AppName)
 
         self.apply_settings_to_ui()
-        Settings.attach(self.on_settings_change)
+
         initial_paths = filenames
         if len(initial_paths) < 1:
+            if len(Settings.path_history) > 0:
+                dir = Settings.path_history
+                if os.path.exists(dir):
+                    initial_paths = [dir]
+        if len(initial_paths) < 1:
             initial_paths = [AppPaths.get_default_file_dir()]
-        self.load_path(*initial_paths, load_file_dirs=True)
+        initial_selection = []
+        for path_str in initial_paths:
+            path = PathExt(path_str)
+            if path.is_file():
+                path = path.parent
+            self.add_to_most_recent_paths(str(path))
+            self._ui_filesys_browser.add_toplevel(path)  # TODO: add redirection through MainWindowUI class
+            initial_selection.append(path)
+        self._ui_filesys_browser.selected_files = initial_selection
+
+        self.update_most_recent_paths_menu()
+        Settings.attach(self.on_settings_change)
         self.ready = True
         self.update_plot()
 
@@ -141,8 +160,7 @@ class MainWindow(MainWindowUi):
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
-                self.ui_filesys_visible = Settings.filesys_showfiles
-                self.ui_filesys_showfiles = Settings.filesys_showfiles
+                self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
                 return None
             except Exception as ex:
                 return ex
@@ -166,7 +184,7 @@ class MainWindow(MainWindowUi):
         self.sparamfile_load_aborted = False
 
 
-    def before_load_sparamfile(self) -> bool:
+    def before_load_sparamfile(self, path: PathExt) -> bool:
         if self.sparamfile_load_aborted:
             return False
         if self.sparamfile_load_counter >= self.sparamfile_load_next_warning:
@@ -180,12 +198,14 @@ class MainWindow(MainWindowUi):
                 return False
         self.sparamfile_load_counter += 1
         return True
+    
+    
+    def after_load_sparamfile(self, path: PathExt):
+        if path not in self.files:
+            return
+        self._ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
 
-
-    @property
-    def selected_files(self) -> list[SParamFile]:
-        return [self.files[i] for i in self.ui_get_selected_fileview_indices()]
-
+    
 
     @property
     def log_dialog(self) -> LogDialog:
@@ -197,7 +217,7 @@ class MainWindow(MainWindowUi):
     def on_template_button(self):
 
         def selected_file_names():
-            return [file.name for file in self.selected_files]
+            return [file.name for file in self.get_selected_files()]
 
         def set_expression(*expressions):
             current = self.ui_expression
@@ -372,53 +392,53 @@ class MainWindow(MainWindowUi):
             expressions = [f"nw('{n}').s().plot()" for n in selected_file_names()]
             set_expression(*expressions)
         
-        self.ui_show_template_menu({
-            'As Currently Selected': as_currently_selected,
-            None: None,
-            'S-Parameters': {
-                'All S-Parameters': all_sparams,
-                'Insertion Loss': insertion_loss,
-                'Insertion Loss (reciprocal)': insertion_loss_reciprocal,
-                'Return Loss': return_loss,
-                'VSWR': vswr,
-                'Mismatch Loss': mismatch_loss,
-                None: None,
-                'S11': quick11,
-                'S11, S21, S22': quick112122,
-                'S11, S21, S12, S22': quick11211222,
-                'S11, S21, S22, S31, S32, S33': quick112122313233,
-            },
-            'Other Parameters': {
-                'Z-Matrix (Impedance)': z,
-                'Y-Matrix (Admittance)': y,
-                'ABCD-Matrix (Cascade; 2-Port Only)': abcd,
-                'T-Matrix (Scattering Transfer; Even Port Numbers Only)': t,
-            },
-            'Network Analysis': {
-                'Stability (2-Port Only)': stability,
-                'Stability Circles (2-Port Only)': stability_circles,
-                'Reciprocity (2-Port or Higher Only)': reciprocity,
-                'Passivity': passivity,
-                'Losslessness': losslessness,
-            },
-            'Operations on Selected Networks': {
-                'Single-Ended to Mixed-Mode': mixed_mode,
-                'Impedance Renormalization': z_renorm,
-                'Add Line To Network': add_tline,
-                None: None,
-                'Just Plot All Selected Files': all_selected,
-            },
-            'Operations on Two Selected Networks': {
-                'De-Embed 1st Network from 2nd': deembed1from2,
-                'De-Embed 2nd Network from 1st': deembed2from1,
-                'De-Embed 2nd (Flipped) Network from 1st': deembed2from1flipped,
-                'Treat 1st as 2xTHRU, De-Embed from 2nd': deembed2xthru,
-                'Ratio of Two Networks': ratio_of_two,
-            },
-            'Operations on Two or More Selected Networks': {
-                'Cascade Selected Networks': cascade,
-            },
-        })
+        self.ui_show_template_menu([
+            ('As Currently Selected', as_currently_selected),
+            (None, None),
+            ('S-Parameters', [
+                ('All S-Parameters', all_sparams),
+                ('Insertion Loss', insertion_loss),
+                ('Insertion Loss (reciprocal)', insertion_loss_reciprocal),
+                ('Return Loss', return_loss),
+                ('VSWR', vswr),
+                ('Mismatch Loss', mismatch_loss),
+                (None, None),
+                ('S11', quick11),
+                ('S11, S21, S22', quick112122),
+                ('S11, S21, S12, S22', quick11211222),
+                ('S11, S21, S22, S31, S32, S33', quick112122313233),
+            ]),
+            ('Other Parameters', [
+                ('Z-Matrix (Impedance)', z),
+                ('Y-Matrix (Admittance)', y),
+                ('ABCD-Matrix (Cascade; 2-Port Only)', abcd),
+                ('T-Matrix (Scattering Transfer; Even Port Numbers Only)', t),
+            ]),
+            ('Network Analysis', [
+                ('Stability (2-Port Only)', stability),
+                ('Stability Circles (2-Port Only)', stability_circles),
+                ('Reciprocity (2-Port or Higher Only)', reciprocity),
+                ('Passivity', passivity),
+                ('Losslessness', losslessness),
+            ]),
+            ('Operations on Selected Networks', [
+                ('Single-Ended to Mixed-Mode', mixed_mode),
+                ('Impedance Renormalization', z_renorm),
+                ('Add Line To Network', add_tline),
+                (None, None),
+                ('Just Plot All Selected Files', all_selected),
+            ]),
+            ('Operations on Two Selected Networks', [
+                ('De-Embed 1st Network from 2nd', deembed1from2),
+                ('De-Embed 2nd Network from 1st', deembed2from1),
+                ('De-Embed 2nd (Flipped) Network from 1st', deembed2from1flipped),
+                ('Treat 1st as 2xTHRU, De-Embed from 2nd', deembed2xthru),
+                ('Ratio of Two Networks', ratio_of_two),
+            ]),
+            ('Operations on Two or More Selected Networks', [
+                ('Cascade Selected Networks', cascade),
+            ]),
+        ])
 
 
     def on_select_mode(self):
@@ -463,56 +483,56 @@ class MainWindow(MainWindowUi):
     
 
     def on_show_filter(self):
-        all_files = [file.name for file in self.files]
-        selected_files = FilterDialog(self).show_modal_dialog(all_files)
-        if not selected_files:
+        selected_paths = FilterDialog(self).show_modal_dialog(list(sorted(self.files.keys())))
+        if not selected_paths:
             return
-        indices = [all_files.index(file) for file in selected_files]
-        self.ui_select_fileview_items(indices)
+        self._ui_filesys_browser.selected_files = selected_paths  # TODO: redirect through MainWiwndowUI
     
 
     def on_reload_all_files(self):
         self.reload_all_files()
 
 
-    def update_most_recent_directories_menu(self):
+    def update_most_recent_paths_menu(self):
         
-        def make_load_function(dir):
+        def make_load_function(path: str):
             def load():
-                if not pathlib.Path(dir).exists():
-                    error_dialog('Loaing Failed', 'Cannot load recent directory.', f'<{dir}> does not exist any more')
-                    self.update_most_recent_directories_menu()  # this will remove stale paths
+                if not pathlib.Path(path).exists():
+                    error_dialog('Loaing Failed', 'Cannot load recent path.', f'<{path}> does not exist any more')
+                    self.update_most_recent_paths_menu()  # this will remove stale paths
                     return
-                self.load_path(dir, append=Settings.history_appends)
+                self.add_to_most_recent_paths(path)
+                self._ui_filesys_browser.add_toplevel(PathExt(path))  # TODO: redirect through MainWiwndowUI
             return load
         
-        def path_for_display(path):
+        def path_for_display(path: str):
             MAX_LEN = 80
             filename = pathlib.Path(path).name
             directory = str(pathlib.Path(path).parent)
             short_directory = shorten_path(directory, MAX_LEN)
             return f'{filename} ({short_directory})'
         
-        def history_dir_valid(dir: str):
+        def history_dir_valid(path: str):
             try:
-                return pathlib.Path(dir).exists()
+                return pathlib.Path(path).exists()
             except:
                 return True
-        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.last_directories if history_dir_valid(path)]
+        
+        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.path_history if history_dir_valid(path)]
         self.ui_update_files_history(entries)
 
 
-    def add_to_most_recent_directories(self, dir: str):
-        if dir in Settings.last_directories:
-            idx = Settings.last_directories.index(dir)
-            del Settings.last_directories[idx]
+    def add_to_most_recent_paths(self, path: str):
+        if path in Settings.path_history:
+            idx = Settings.path_history.index(path)
+            del Settings.path_history[idx]
         
-        Settings.last_directories.insert(0, dir)
+        Settings.path_history.insert(0, path)
         
-        while len(Settings.last_directories) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
-            del Settings.last_directories[-1]
+        while len(Settings.path_history) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
+            del Settings.path_history[-1]
         
-        self.update_most_recent_directories_menu()
+        self.update_most_recent_paths_menu()
 
     
     def read_single_file(self, path: str):
@@ -559,208 +579,37 @@ class MainWindow(MainWindowUi):
             raise ex
 
 
-    def read_all_files_in_directory(self, dir: str, recursive: bool = False):
-        try:
-            def iter_files(dir: str) -> bool:
-                for path in pathlib.Path(dir).iterdir():
-                    if path.is_file():
-                        self.read_single_file(str(path))
-                    elif path.is_dir() and recursive:
-                        if not iter_files(str(path)):
-                            return False
-                return True
-            iter_files(dir)
-        
-        except Exception as ex:
-            logging.exception(f'Unable to load directory: {ex}')
-            raise ex
-
-
     def reload_all_files(self):
-        self.clear_loaded_files()
         self.clear_list_counter()
-        for dir in self.directories:
-            self.read_all_files_in_directory(dir)
-        self.update_displayed_file_list()
+        self.files.clear()
+        self._ui_filesys_browser.refresh()  # TODO: add redirection though MainWindowUI
 
 
-    def clear_loaded_files(self):
-        self.files = []
-        self.trace_data = []
-
-
-    def get_file_prop_str(self, file: "SParamFile") -> str:
-        if file.loaded:
-            return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
-        elif file.error:
-            return '[loading failed]'
-        else:
-            return '[not loaded]'
-
-
-    def update_file_in_list(self, file: "SParamFile"):
-        self.ui_update_fileview_item(file.tag, file.name, self.get_file_prop_str(file))
+    def get_file_prop_str(self, file: "SParamFile|None") -> str:
+        if file:
+            if file.loaded:
+                return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+            elif file.error:
+                return '[loading failed]'
+        return '[not loaded]'
     
-
-    def update_displayed_file_list(self, selected_filenames: "list[str]" = [], only_select_first: bool = False):
-        
-        if len(selected_filenames) == 0 and not only_select_first:
-            previously_selected_files = self.get_selected_files()
-        else:
-            previously_selected_files = []
-
-        selected_archives = set()
-        names_and_contents = []
-        selected_file_indices = []
-        rex = None
-        for i,file in enumerate(self.files):
-            
-            file.tag = i
-            name_str = file.name
-            prop_str = self.get_file_prop_str(file)
-            
-            names_and_contents.append((name_str,prop_str))
-            
-            do_select = False
-            if only_select_first and i==0:
-                do_select = True
-            elif file.tag in [s.tag for s in previously_selected_files]:
-                do_select = True
-            elif os.path.abspath(file.file_path) in [os.path.abspath(f) for f in selected_filenames]:
-                do_select = True
-            elif (file.archive_path is not None) and (os.path.abspath(file.archive_path) in [os.path.abspath(f) for f in selected_filenames]):
-                if file.archive_path not in selected_archives:
-                    # only select the 1st file in any archive, to avoid excessive loading time
-                    selected_archives.add(file.archive_path)
-                    do_select = True
-            
-            if do_select:
-                selected_file_indices.append(file.tag)
-        self.ui_set_fileview_items(names_and_contents)
-        self.ui_select_fileview_items(selected_file_indices)
-
 
     def get_selected_files(self) -> "list[SParamFile]":
-        all_files = self.files
-        selected_paths = self._ui_filesys_browser.selected_files
-        selected_files = [file for file in all_files if file.path in selected_paths]
-        return selected_files
-
-        # TODO: change this?
-        # selected_files = []
-        # for index in self.ui_get_selected_fileview_indices():
-        #     for file in self.files:
-        #         if file.tag == index:
-        #             selected_files.append(file)
-        #             break
-        # return selected_files
-    
-
-    def on_select_file(self):
-        self.clear_load_counter()
-        self.update_plot()
-        self.prepare_cursors()
-    
-
-    def load_path(self, *paths: str, append: bool = False, load_file_dirs: bool = False, recursive: bool = False):
-        self.clear_list_counter()
-
-        append_next = append
-        navigated = False
-        new_files = []
-        asked_for_archives = False
-        for path_str in paths:
-            path = pathlib.Path(path_str)
-            if not path.exists():
-                logging.error(f'Path <{path_str}> does not exist, ignoring')
-                return
-            
-            if not navigated:
-                abspath = str(path.absolute())
-                self.ui_filesys_navigate(abspath)
-                navigated = True
-            
-            def handle_dir(path: pathlib.Path, append: bool):
-                absdir = str(path.absolute())
-                self.add_to_most_recent_directories(absdir)
-                if append:
-                    if absdir not in self.directories:
-                        self.directories.append(absdir)
-                else:
-                    self.clear_loaded_files()
-                    self.directories = [absdir]
-                self.read_all_files_in_directory(absdir, recursive=recursive)
-            
-            def handle_file(path: pathlib.Path, append: bool):
-                abspath = str(path.absolute())
-                absdir = str(path.parent)
-                self.add_to_most_recent_directories(absdir)
-                new_files.append(abspath)
-                if append:
-                    if absdir not in self.directories:
-                        self.directories.append(absdir)
-                else:
-                    self.clear_loaded_files()
-                    self.directories = [absdir]
-                self.read_single_file(abspath)
-            
-            if path.is_dir():
-                handle_dir(path, append_next)
-
-            elif path.is_file():
-
-                if (path.suffix.lower() == '.zip') and (not Settings.extract_zip):
-                    if not asked_for_archives:
-                        if yesno_dialog('Extract .zip Files', 'A .zip-file was selected, but the option to extract .zip-files is disabled. Do you want to enable it?'):
-                            Settings.extract_zip = True
-                        asked_for_archives = True
-                    if not Settings.extract_zip:
-                        continue # ignore this archive
-                
-                if load_file_dirs:
-                    handle_dir(path.parent, append_next)
-                else:
-                    handle_file(path, append_next)
-                
-            
-            else:
-                logging.debug(f'Path <{path_str}> is neither file nor directory, ignoring')
-            append_next = True
-        
-        if len(new_files) > 0:
-            self.update_displayed_file_list(selected_filenames=new_files)
-        elif not append:
-            self.update_displayed_file_list(only_select_first=True)
-        else:
-            self.update_displayed_file_list()
-
-
-    def on_open_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else None
-        dir = open_directory_dialog(self, title='Open Directory', initial_dir=initial_dir)
-        if not dir:
-            return
-        self.load_path(dir)
-
-
-    def on_append_directory(self):
-        initial_dir = self.directories[0] if len(self.directories)>0 else None
-        dir = open_directory_dialog(self, title='Append Directory', initial_dir=initial_dir)
-        if not dir:
-            return
-        self.load_path(dir, append=True)
-    
+        result = []
+        for path in self._ui_filesys_browser.selected_files:  # TODO: add redirection though MainWindowUI
+            if path not in self.files:
+                self.files[path] = SParamFile(path)
+            result.append(self.files[path])
+        return result
     
     
     def on_rl_calc(self):
         if len(self.files) < 1:
             error_dialog('No Files', 'No files to integrate.', 'Open some files first.')
             return
-        if len(self.selected_files) >= 1:
-            selected = self.selected_files[0]
-        else:
-            selected = None
-        RlDialog(self).show_modal_dialog(self.files, selected)
+        all_selected_files = self.get_selected_files()
+        selected_file = all_selected_files[0] if len(all_selected_files) >= 1 else None
+        RlDialog(self).show_modal_dialog(self.files.values(), selected_file)
 
 
     def on_log(self):
@@ -804,12 +653,12 @@ class MainWindow(MainWindowUi):
     
 
     def on_file_info(self):
-        if len(self.selected_files)<=0:
+        if len(self.get_selected_files())<=0:
             error_dialog('Error', 'No file selected.')
             return
 
         info_str = ''
-        for file in self.selected_files:
+        for file in self.get_selected_files():
             if len(info_str)>0:
                 info_str+= '\n\n\n'
             info_str += file.get_info_str()
@@ -820,8 +669,9 @@ class MainWindow(MainWindowUi):
         
         datasets = []
         initial_selection = None
-        for i,file in enumerate(self.files):
-            if (initial_selection is None) and (file in self.selected_files):
+        all_selected_files = self.get_selected_files()
+        for i,file in enumerate(self.files.values()):
+            if (initial_selection is None) and (file in all_selected_files):
                 initial_selection = i
             datasets.append(file)
         for plot in self.plot.plots:
@@ -832,11 +682,11 @@ class MainWindow(MainWindowUi):
 
     def on_view_plaintext(self):
     
-        if len(self.selected_files) < 1:
+        if len(self.get_selected_files()) < 1:
             error_dialog('Error', 'Nothing files selected')
             return
 
-        selected_file = self.selected_files[0]
+        selected_file = self.get_selected_files()[0]
         title = f'Plaintext Data of <{selected_file.name}>'
         if selected_file.is_from_archive:
             TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
@@ -846,11 +696,11 @@ class MainWindow(MainWindowUi):
 
     def on_open_externally(self):
     
-        if len(self.selected_files) < 1:
+        if len(self.get_selected_files()) < 1:
             error_dialog('Error', 'Nothing files selected')
             return
 
-        selected_files_nonarchive = [selected_file for selected_file in self.selected_files if not selected_file.is_from_archive]
+        selected_files_nonarchive = [selected_file for selected_file in self.get_selected_files() if not selected_file.is_from_archive]
         
         if len(selected_files_nonarchive) < 1:
             error_dialog('Error', 'All selected paths are archives')
@@ -984,7 +834,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_settings_change(self):
-        self.ui_filesys_showfiles = Settings.filesys_showfiles
+        self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWindowUI
         self.update_plot()
     
     
@@ -996,78 +846,79 @@ class MainWindow(MainWindowUi):
         self.prepare_cursors()
 
 
-    def on_filesys_doubleclick(self, path: PathExt, item_type: FilesysBrowserItemType):
-        return  # TODO: implement
-        path = pathlib.Path(path_str)
-        if not path.exists():
-            return
-        abspath = str(path.absolute())
-        if path.is_dir():
-            self.load_path(abspath, append=Settings.filesys_doubleclick_appends)
-        elif path.is_file():
-            self.load_path(abspath, append=True)
+    def on_filesys_doubleclick(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
+        pass  # TODO: implement?
 
 
-    def on_filesys_contextmenu(self, path: PathExt, item_type: FilesysBrowserItemType):
-        return  # TODO: implement
-        path = pathlib.Path(path_str)
-        if not path.exists():
-            return None
+    def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         
-        def switch_to_dir():
-            self.load_path(path)
-        def switch_to_dir_recursive():
-            self.load_path(path, recursive=True)
-        def append_dir():
-            self.load_path(path, append=True)
-        def append_dir_recursive():
-            self.load_path(path, append=True, recursive=True)
-        def switch_to_file():
-            self.load_path(path)
-        def append_file():
-            self.load_path(path, append=True)
-        
-        if path.is_dir():
-            if Settings.filesys_doubleclick_appends:
-                ps, pa = '', '*'
+        def make_pin(new_path: PathExt):
+            def pin():
+                self.add_to_most_recent_paths(str(new_path))
+                self._ui_filesys_browser.add_toplevel(new_path)  # TODO: redirect through MainWindowUI
+            return pin
+        def make_unpin():
+            def unpin():
+                self._ui_filesys_browser.remove_toplevel(toplevel_path)  # TODO: redirect through MainWindowUI
+            return unpin
+        def make_chroot(new_path: PathExt):
+            def chroot():
+                self.add_to_most_recent_paths(str(new_path))
+                self._ui_filesys_browser.change_root(toplevel_path, new_path)  # TODO: redirect through MainWindowUI
+            return chroot
+        def get_parent_dirs_and_names(path: PathExt, n_max: int = 10) -> list[tuple[PathExt,str]]:
+            result = []
+            path_parent = path.parent
+            for _ in range(n_max):
+                if path_parent == path:
+                    break
+                name = path_parent.name if path_parent.name else str(path_parent)
+                result.append((path_parent, name))
+                if path_parent.parent == path_parent:
+                    break
+                path_parent = path_parent.parent
+            return result
+
+        menu = []
+        is_toplevel = path == toplevel_path
+        if item_type == FilesysBrowserItemType.File:
+            menu.append(('Pin Directory of This File', make_pin(path.parent)))
+            menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
+        elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
+            if is_toplevel:
+                for (ppath, pname) in get_parent_dirs_and_names(path):
+                    menu.append((f'Navigate Up To <{pname}>', make_chroot(ppath)))
+                menu.append((None, None))
+                menu.append(('Unpin This Directory', make_unpin()))
             else:
-                ps, pa = '*', ''
-            self.ui_filesys_show_contextmenu({
-                f'{ps}Switch to this Directory': switch_to_dir,
-                f'Switch to this Directory (Recursive)': switch_to_dir_recursive,
-                f'{pa}Append this Directory': append_dir,
-                f'Append this Directory (Recursive)': append_dir_recursive,
-            })
-        elif path.is_file():
-            self.ui_filesys_show_contextmenu({
-                'Show Only This File': switch_to_file,
-                '*Append this File': append_file,
-            })
+                menu.append(('Navigate Down To This Directory', make_chroot(path)))
+                menu.append((None, None))
+                menu.append(('Pin This Directory', make_pin(path)))
+        
+        if len(menu) > 0:
+            self.ui_filesys_show_contextmenu(menu)
     
 
-    def on_filesys_select(self):
-        self.clear_load_counter()
+    def on_filesys_files_changed(self):
+        browser_paths = self._ui_filesys_browser.all_files  # TODO: add rediction though MainWindowUI
+
+        # discard the files that are no longer displayed in the filebrowser
+        for available_path in list(self.files.keys()):
+            if available_path not in browser_paths:
+                del self.files[available_path]
+        
+        # pre-load files that are newly displayed in the filebrowser
+        for browser_path in browser_paths:
+            if browser_path not in self.files:
+                # pre-load, so that expressions can find them
+                self.files[browser_path] = SParamFile(browser_path)
+                # show preliminary status
+                self._ui_filesys_browser.update_status(browser_path, self.get_file_prop_str(self.files[browser_path]))  # TODO: add rediction though MainWindowUI
+
+
+    def on_filesys_selection_changed(self):
         self.update_plot()
         self.prepare_cursors()
-        
-        # TODO: remove?
-        # self.ui_filesys_navigate(path)
-    
-        
-    def on_pathbar_change(self, path: str):
-        self.ui_filesys_navigate(path)
-
-
-    def on_toggle_filesys(self):
-        visible = not self.ui_filesys_visible
-        Settings.filesys_showfiles = visible
-        self.ui_filesys_visible = visible
-        if visible:
-            self.ui_tab = MainWindowUi.Tab.Files
-    
-
-    def on_filesys_visible_changed(self):
-        Settings.filesys_showfiles = self.ui_filesys_visible
 
 
     def on_cursor_select(self):
@@ -1126,7 +977,7 @@ class MainWindow(MainWindowUi):
                 self.plot.cursors[0].enable(False)
                 self.plot.cursors[1].enable(False)
             self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
-            selected_files = self.selected_files
+            selected_files = self.get_selected_files()
             if len(selected_files) > 0:
                 self.ui_cursor1_trace = selected_files[0].name
         else:
@@ -1271,7 +1122,7 @@ class MainWindow(MainWindowUi):
     
 
     def update_plot(self):
-
+        
         if not self.ready:
             return
         self.clear_load_counter()
@@ -1435,7 +1286,7 @@ class MainWindow(MainWindowUi):
                 Settings.expression = raw_exprs
 
                 ExpressionParser.touched_files = []
-                ExpressionParser.eval(raw_exprs, self.files, selected_files, add_to_plot)  
+                ExpressionParser.eval(raw_exprs, self.files.values(), selected_files, add_to_plot)  
                 touched_files.extend(ExpressionParser.touched_files)
 
             else:
@@ -1464,7 +1315,7 @@ class MainWindow(MainWindowUi):
                     self.generated_expressions += 'sel_nws().s(4,4).plot()'
 
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files, selected_files, add_to_plot)  
+                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
                     self.show_error(None)              
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
@@ -1474,7 +1325,8 @@ class MainWindow(MainWindowUi):
                 touched_files = selected_files
             
             for f in touched_files:
-                self.update_file_in_list(f)
+                # TODO: implement
+                pass#self.update_file_in_list(f)
             
             log_entries_after = len(LogHandler.inst().get_messages(logging.WARNING))
             n_new_entries = log_entries_after - n_log_entries_before

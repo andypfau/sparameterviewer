@@ -95,16 +95,6 @@ class SettingsDialogUi(QDialog):
         self._ui_tabs.addTab(files_widget, 'Files')
         self._ui_extract_zip_check = QCheckBox('Extract .zip-Files')
         self._ui_extract_zip_check.toggled.connect(self.on_zip_change)
-        self._ui_fileview_files_check = QCheckBox('Show Files In Filesystem')
-        self._ui_fileview_files_check.toggled.connect(self.on_showfiles_changed)
-        self._ui_histreplace_radio = QRadioButton('Switch To')
-        self._ui_histreplace_radio.toggled.connect(self.on_histappend_changed)
-        self._ui_histappend_radio = QRadioButton('Append')
-        self._ui_histappend_radio.toggled.connect(self.on_histappend_changed)
-        self._ui_filereplace_radio = QRadioButton('Switch To')
-        self._ui_filereplace_radio.toggled.connect(self.on_fileappend_changed)
-        self._ui_fileappend_radio = QRadioButton('Append')
-        self._ui_fileappend_radio.toggled.connect(self.on_fileappend_changed)
         self._ui_warncount_list_combo = QComboBox()
         for i in self._warncount_list_values:
             self._ui_warncount_list_combo.addItem(f'{i:,.0f}')
@@ -115,15 +105,9 @@ class SettingsDialogUi(QDialog):
             self._ui_warncount_load_combo.addItem(f'{i:,.0f}')
         self._ui_warncount_load_combo.setCurrentIndex(0)
         self._ui_warncount_load_combo.currentIndexChanged.connect(self._on_warncount_load_changed)
-        self._ui_fileappend_radio.toggled.connect(self.on_fileappend_changed)
         files_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_extract_zip_check,
-                self._ui_fileview_files_check,
-                QtHelper.layout_grid([
-                        ['Doubleclick Filesystem:', QtHelper.layout_h(self._ui_filereplace_radio, self._ui_fileappend_radio)],
-                        ['Recent Directory:', QtHelper.layout_h(self._ui_histreplace_radio, self._ui_histappend_radio)]
-                ]),
                 QtHelper.layout_h('Warn When Discovering More Than', self._ui_warncount_list_combo, 'Files'),
                 QtHelper.layout_h('Warn When Loading More Than', self._ui_warncount_load_combo, 'Files'),
                 ...
@@ -292,36 +276,6 @@ class SettingsDialogUi(QDialog):
 
     
     @property
-    def ui_filesys_showfiles(self) -> bool:
-        return self._ui_fileview_files_check.isChecked()
-    @ui_filesys_showfiles.setter
-    def ui_filesys_showfiles(self, value: bool):
-        self._ui_fileview_files_check.setChecked(value)
-
-    
-    @property
-    def ui_filesys_append(self) -> bool:
-        return self._ui_fileappend_radio.isChecked()
-    @ui_filesys_append.setter
-    def ui_filesys_append(self, value: bool):
-        if value:
-            self._ui_fileappend_radio.setChecked(True)
-        else:
-            self._ui_filereplace_radio.setChecked(True)
-
-    
-    @property
-    def ui_histfile_append(self) -> bool:
-        return self._ui_histappend_radio.isChecked()
-    @ui_histfile_append.setter
-    def ui_histfile_append(self, value: bool):
-        if value:
-            self._ui_histappend_radio.setChecked(True)
-        else:
-            self._ui_histreplace_radio.setChecked(True)
-
-    
-    @property
     def ui_ext_ed(self) -> str:
         return self._ui_exted_edit.text()
     @ui_ext_ed.setter
@@ -407,12 +361,6 @@ class SettingsDialogUi(QDialog):
     def on_font_change(self):
         pass
     def on_cursor_snap_changed(self):
-        pass
-    def on_fileappend_changed(self):
-        pass
-    def on_histappend_changed(self):
-        pass
-    def on_showfiles_changed(self):
         pass
     def _on_warncount_list_changed(self):
         pass

@@ -73,8 +73,7 @@ class SParamViewerAppSettings(AppSettings):
     phase_unit: PhaseUnit = PhaseUnit.Degrees
     extract_zip: bool = True
     plot_mark_points: bool = False
-    last_directories: list[str] = []
-    history_appends: bool = False
+    path_history: list[str] = []
     comment_existing_expr: bool = True
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon
@@ -82,9 +81,6 @@ class SParamViewerAppSettings(AppSettings):
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
-    show_filesys: bool = False
-    filesys_doubleclick_appends: bool = False
-    filesys_showfiles: bool = False
     warncount_file_list: int = 1_000
     warncount_file_load: int = 30
 

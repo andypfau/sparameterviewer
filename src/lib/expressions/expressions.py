@@ -29,7 +29,7 @@ class ExpressionParser:
                 nws = [nw for nw in network_list]
             else:
                 for nw in network_list:
-                    if pattern is None or fnmatch.fnmatch(nw.filename, pattern):
+                    if pattern is None or fnmatch.fnmatch(nw.path.final_name, pattern):
                         nws.append(nw)
             if single:
                 if len(nws) != 1:

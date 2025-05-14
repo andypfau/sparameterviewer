@@ -109,18 +109,18 @@ class QtHelper:
 
 
     @staticmethod
-    def show_popup_menu(parent: QWidget, items: dict[str,Callable|dict], position: QPoint):
+    def show_popup_menu(parent: QWidget, items: list[tuple[str,Callable|list]], position: QPoint):
         """
         Builds a menu
         Each key in `items` is the text on a menu item, or `None` to insert a separator.
         Each value in `items` is either a callable (which is called on clicking that item),
           or another dict for a submenu.
         """
-        def populate_menu(menu: QMenu, items: dict[str,Callable|dict]):
-            for name,action_or_submenu in items.items():
+        def populate_menu(menu: QMenu, items: list[tuple[str,Callable|list]]):
+            for name,action_or_submenu in items:
                 if name is None:
                     menu.addSeparator()
-                elif isinstance(action_or_submenu, dict):
+                elif isinstance(action_or_submenu, list):
                     submenu = QtHelper.add_submenu(menu, text=name)
                     populate_menu(submenu, items=action_or_submenu)
                 else:

@@ -59,28 +59,10 @@ class MainWindowUi(QMainWindow):
         self._ui_tabs.addTab(files_tab, 'Files')
         self._ui_filesys_browser = FilesysBrowser()
         self._ui_filesys_browser.doubleClicked.connect(self.on_filesys_doubleclick)
+        self._ui_filesys_browser.selectionChanged.connect(self.on_filesys_selection_changed)
+        self._ui_filesys_browser.filesChanged.connect(self.on_filesys_files_changed)
         self._ui_filesys_browser.contextMenuRequested.connect(self.on_filesys_contextmenu)
-        self._ui_filesys_browser.selectionChanged.connect(self.on_filesys_select)
-
-        self._ui_fileview = QTreeView()
-        self._ui_filemodel = QStandardItemModel()
-        self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
-        self._ui_fileview_root = self._ui_filemodel.invisibleRootItem()
-        self._ui_fileview.setModel(self._ui_filemodel)
-        self._ui_fileview.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
-        self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
-        self._ui_fileview.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self._ui_fileview.setToolTip('Click a file to plot it; hold Ctrl to select multiple files')
-        self._ui_files_splitter = QSplitter(Qt.Orientation.Horizontal)
-        self._ui_files_splitter.addWidget(self._ui_filesys_browser)
-        self._ui_files_splitter.setCollapsible(0, True)
-        self._ui_files_splitter.addWidget(self._ui_fileview)
-        self._ui_files_splitter.setCollapsible(1, False)
-        def _on_move_files_splitter(pos: int, index: int):
-            if index==0:
-                self.on_filesys_visible_changed()
-        self._ui_files_splitter.splitterMoved.connect(_on_move_files_splitter)
-        files_tab.setLayout(QtHelper.layout_h(self._ui_files_splitter))
+        files_tab.setLayout(QtHelper.layout_h(self._ui_filesys_browser))
         
         expressions_tab = QWidget()
         self._ui_tabs.addTab(expressions_tab, 'Expressions')
@@ -226,7 +208,7 @@ class MainWindowUi(QMainWindow):
         super().show()
 
 
-    def ui_show_template_menu(self, items: dict[str,Callable|dict]):
+    def ui_show_template_menu(self, items: list[tuple[str,Callable|list]]):
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
         QtHelper.show_popup_menu(self, items, button_pos)
 
@@ -304,46 +286,14 @@ class MainWindowUi(QMainWindow):
     @ui_show_legend.setter
     def ui_show_legend(self, value: bool):
         self._ui_menuitem_show_legend.setChecked(value)
-    
-
-    @property
-    def ui_filesys_visible(self) -> bool:
-        sizes = self._ui_files_splitter.sizes()
-        visible = sizes[0] > 0
-        return visible
-    @ui_filesys_visible.setter
-    def ui_filesys_visible(self, value: bool):
-        sizes = self._ui_files_splitter.sizes()
-        if value:
-            if sizes[0] == 0:
-                sizes[0] = 200
-        else:
-            sizes[0] = 0
-        self._ui_files_splitter.setSizes(sizes)
-    
-
-    @property
-    def ui_filesys_showfiles(self) -> bool:
-        return self._ui_filesys_browser.show_files
-    @ui_filesys_showfiles.setter
-    def ui_filesys_showfiles(self, value: bool):
-        self._ui_filesys_browser.show_files = value
 
 
     def ui_filesys_navigate(self, path: str):
         self._ui_filesys_browser.navigate(path)
     
 
-    def ui_filesys_show_contextmenu(self, items: dict[str,Callable|dict]):
+    def ui_filesys_show_contextmenu(self, items: list[tuple[str,Callable|list]]):
         self._ui_filesys_browser.show_context_menu(items)
-    
-
-    @property
-    def ui_show_filesys_option(self) -> bool:
-        return self._ui_menuitem_filesys.isChecked()
-    @ui_show_filesys_option.setter
-    def ui_show_filesys_option(self, value):
-        self._ui_menuitem_filesys.setChecked(value)
     
 
     @property
@@ -501,43 +451,6 @@ class MainWindowUi(QMainWindow):
             self._ui_status_bar.clearMessage()
 
 
-    def ui_set_fileview_items(self, names_and_contents: list[tuple[str,str]]):
-        try:
-            self._ui_fileview.selectionModel().selectionChanged.disconnect(self.on_select_file)
-            self._ui_fileview_root.removeRows(0, self._ui_fileview_root.rowCount())
-            for name,content in names_and_contents:
-                self._ui_fileview_root.appendRow([QStandardItem(name), QStandardItem(content)])
-            for column in range(self._ui_fileview.model().columnCount()):
-                self._ui_fileview.resizeColumnToContents(column)
-        finally:
-            self._ui_fileview.selectionModel().selectionChanged.connect(self.on_select_file)
-
-
-    def ui_update_fileview_item(self, index: int, name: str, contents: str):
-        self._ui_fileview.model().itemFromIndex(self._ui_fileview.model().index(index, 0)).setText(name)
-        self._ui_fileview.model().itemFromIndex(self._ui_fileview.model().index(index, 1)).setText(contents)
-
-
-    def ui_select_fileview_items(self, indices: list[int]):
-        self._ui_fileview.selectionModel().blockSignals(True)
-        try:
-            self._ui_fileview.selectionModel().clearSelection()
-            for i,index_to_select in enumerate(indices):
-                index = self._ui_fileview.model().index(index_to_select, 0)
-                if i == len(indices)-1:
-                    self._ui_fileview.selectionModel().blockSignals(False)  # make the last selection change trigger
-                self._ui_fileview.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-        finally:
-            self._ui_fileview.selectionModel().blockSignals(False)
-
-
-    def ui_get_selected_fileview_indices(self) -> list[int]:
-        sel = self._ui_fileview.selectionModel().selectedIndexes()
-        if not sel:
-            return []
-        return list(set([item.row() for item in sel]))
-
-
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
         
         self._ui_menuitem_recent_items.clear()
@@ -558,12 +471,6 @@ class MainWindowUi(QMainWindow):
     def on_select_unit2(self):
         pass
     def on_show_filter(self):
-        pass
-    def on_select_file(self):
-        pass
-    def on_open_directory(self):
-        pass
-    def on_append_directory(self):
         pass
     def on_reload_all_files(self):
         pass
@@ -639,15 +546,11 @@ class MainWindowUi(QMainWindow):
         pass
     def on_statusbar_click(self):
         pass
+    def on_filesys_files_changed(self):
+        pass
+    def on_filesys_selection_changed(self):
+        pass
     def on_filesys_doubleclick(self, path: PathExt, item_type: FilesysBrowserItemType):
         pass
     def on_filesys_contextmenu(self, path: PathExt, item_type: FilesysBrowserItemType):
-        pass
-    def on_toggle_filesys(self):
-        pass
-    def on_filesys_visible_changed(self):
-        pass
-    def on_filesys_select(self):
-        pass
-    def on_pathbar_change(self, path: str):
         pass
