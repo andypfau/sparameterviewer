@@ -6,6 +6,11 @@ In the main window, go *Tools* → *Settings*.
 Formats
 -------
 
+- *Trace Color*:
+    - *Automatic*: each trace gets a color assinged by the plotting library.
+    - *By Parameter*: distinguish parameter types (e.g. S11, S21, ...) by color.
+    - *By File*: distinguish files by color.
+    - *By File Location*: distinguish files from different directories/archives by color.
 - *Phase*: unit (degrees or radians) of the phase of a parameter.
 - *CSV Separator*: the separator for CSV-files (see [Tabular Data](tools.md))
 

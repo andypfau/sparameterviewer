@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.32b1 (2025-05-14)
+-------------------
+
+- new: revised filesystem browser
+- new: option to assing trace colors by parameter, file path, or file location
+
+
 0.31b2 (2025-05-11)
 -------------------
 
