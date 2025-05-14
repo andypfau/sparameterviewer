@@ -434,5 +434,5 @@ class FilesysBrowser(QWidget):
                 return QIcon()
         
         FilesysBrowser._icon_file = ensure_icon_loaded(FilesysBrowser._icon_file, 'filesys_file.png')
-        FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir, 'filesys_dir.png')
+        FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir,  'filesys_directory.png')
         FilesysBrowser._icon_arch = ensure_icon_loaded(FilesysBrowser._icon_arch, 'filesys_archive.png')
