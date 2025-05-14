@@ -13,14 +13,16 @@ from .axes_dialog import AxesDialog
 from .about_dialog import AboutDialog
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from .helpers.help import show_help
+from .helpers.filesys_browser import FilesysBrowserItemType
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10
+from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser
+from lib import PathExt
 from info import Info
 
 import pathlib
@@ -32,7 +34,6 @@ import datetime
 import numpy as np
 import re
 import os
-import zipfile
 import scipy.signal
 from typing import Optional, Callable
 
@@ -528,19 +529,13 @@ class MainWindow(MainWindowUi):
                 return
         self.sparamfile_list_counter += 1
 
-        abspath = str(pathlib.Path(path).absolute())
-
-        def filetype_is_supported(path):
-            ext = pathlib.Path(path).suffix
-            return re.match(r'(\.ci?ti)|(\.s[0-9]+p)', ext, re.IGNORECASE)
-    
-        def archivetype_is_supported(path):
-            ext = pathlib.Path(path).suffix
-            return re.match(r'\.zip', ext, re.IGNORECASE)
+        path_obj = pathlib.Path(path)
+        abspath = str(path_obj.absolute())
+        ext = path_obj.suffix
     
         def load_file(filename, archive_path=None):
             try:
-                file = SParamFile(filename, archive_path=archive_path)
+                file = SParamFile(PathExt(filename, arch_path=archive_path))
                 if file in self.files:
                     logging.debug(f'File <{filename}> is already loaded, ignoring')
                     return
@@ -549,17 +544,11 @@ class MainWindow(MainWindowUi):
                 logging.warning(f'Unable to load file <{filename}>, ignoring: {ex}')
         
         try:
-            if filetype_is_supported(abspath):
+            if is_ext_supported_file(ext):
                 load_file(abspath)
-            elif Settings.extract_zip and archivetype_is_supported(abspath):
-                try:
-                    with zipfile.ZipFile(abspath, 'r') as zf:
-                        for internal_name in zf.namelist():
-                            if not filetype_is_supported(internal_name):
-                                continue
-                            load_file(internal_name, archive_path=abspath)
-                except Exception as ex:
-                    logging.warning(f'Unable to open zip file <{abspath}>: {ex}')
+            elif Settings.extract_zip and is_ext_supported_archive(ext):
+                for internal_name in find_files_in_archive(abspath):
+                    load_file(internal_name, archive_path=abspath)
             else:
                 logging.info(f'Unknown file type <{abspath}>, ignoring')
 
@@ -652,13 +641,19 @@ class MainWindow(MainWindowUi):
 
 
     def get_selected_files(self) -> "list[SParamFile]":
-        selected_files = []
-        for index in self.ui_get_selected_fileview_indices():
-            for file in self.files:
-                if file.tag == index:
-                    selected_files.append(file)
-                    break
+        all_files = self.files
+        selected_paths = self._ui_filesys_browser.selected_files
+        selected_files = [file for file in all_files if file.path in selected_paths]
         return selected_files
+
+        # TODO: change this?
+        # selected_files = []
+        # for index in self.ui_get_selected_fileview_indices():
+        #     for file in self.files:
+        #         if file.tag == index:
+        #             selected_files.append(file)
+        #             break
+        # return selected_files
     
 
     def on_select_file(self):
@@ -1001,7 +996,8 @@ class MainWindow(MainWindowUi):
         self.prepare_cursors()
 
 
-    def on_filesys_doubleclick(self, path_str: str):
+    def on_filesys_doubleclick(self, path: PathExt, item_type: FilesysBrowserItemType):
+        return  # TODO: implement
         path = pathlib.Path(path_str)
         if not path.exists():
             return
@@ -1012,7 +1008,8 @@ class MainWindow(MainWindowUi):
             self.load_path(abspath, append=True)
 
 
-    def on_filesys_contextmenu(self, path_str: str):
+    def on_filesys_contextmenu(self, path: PathExt, item_type: FilesysBrowserItemType):
+        return  # TODO: implement
         path = pathlib.Path(path_str)
         if not path.exists():
             return None
@@ -1048,8 +1045,13 @@ class MainWindow(MainWindowUi):
             })
     
 
-    def on_filesys_select(self, path: str):
-        self.ui_filesys_navigate(path)
+    def on_filesys_select(self):
+        self.clear_load_counter()
+        self.update_plot()
+        self.prepare_cursors()
+        
+        # TODO: remove?
+        # self.ui_filesys_navigate(path)
     
         
     def on_pathbar_change(self, path: str):

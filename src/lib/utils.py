@@ -4,8 +4,73 @@ import string
 import subprocess
 import pathlib
 import re
+import io
 import numpy as np
 import math
+import zipfile
+import logging
+import tempfile
+
+
+
+_rex_filetypes = re.compile(r'^\.(s[0-9]+p)|(ci?ti)$', re.IGNORECASE)
+_rex_archtypes = re.compile(r'^\.zip$', re.IGNORECASE)
+
+
+def is_ext_supported_file(ext: str) -> bool:
+    return _rex_filetypes.match(ext)
+
+
+def is_ext_supported_archive(ext: str) -> bool:
+    return _rex_archtypes.match(ext)
+
+
+def is_ext_supported(ext: str) -> bool:
+    return _rex_filetypes.match(ext) or _rex_archtypes.match(ext)
+
+
+def find_files_in_archive(path: str) -> list[str]:
+    result = []
+    try:
+        with zipfile.ZipFile(path, 'r') as zf:
+            for internal_name in zf.namelist():
+                ext = os.path.splitext(internal_name)[1]
+                if is_ext_supported_file(ext):
+                    result.append(internal_name)
+    except Exception as ex:
+        logging.warning(f'Unable to open zip file <{path}>: {ex}')
+    return result
+
+
+def load_file_from_archive(archive_path: str, path_in_archive: str, target_path: str = None) -> str:
+    """ Extracts a file from an archive, returns the path of the extracted file """
+    with zipfile.ZipFile(archive_path, 'r') as zf:
+        return zf.extract(path_in_archive, target_path)
+
+
+class AchiveFileLoader:
+    """
+    Usage:
+        with AchiveFileLoader('/path/arch.zip', 'file.ext') as extracted_path:
+            # The extracted file is at <extracted_path>, in a temporary directory.
+            # The directory will be deleted when you exit the context manager.
+            ...
+    """
+
+    def __inif__(self, archive_path: str, path_in_archive: str):
+        self._archive_path, self._path_in_archive = archive_path, path_in_archive
+        self._tempdir: tempfile.TemporaryDirectory = None
+        self._tempdir_path: str = None
+
+    def __enter__(self) -> str:
+        self._tempdir = tempfile.TemporaryDirectory()
+        self._tempdir_path = self._tempdir.__enter__()
+        with zipfile.ZipFile(self._archive_path, 'r') as zf:
+            return zf.extract(self._path_in_archive, self._tempdir_path)
+
+    def __exit__(self, exc, value, tb):
+        self._tempdir.__exit__(exc, value, tb)
+        
 
 
 def get_unique_short_filename(name: str, all_names: "list[str]", min_length: int = 5) -> "str":

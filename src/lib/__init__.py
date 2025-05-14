@@ -1,9 +1,10 @@
 from .sparam_helpers import get_sparam_name, sparam_to_timedomain
 from .si import Si, SiFmt, parse_si_range, format_si_range
-from .structs import SParamFile, PlotData, PlotDataQuantity
+from .structs import SParamFile, PlotData, PlotDataQuantity, PathExt
 from .plot import PlotHelper
 from .appsettings import AppSettings
-from .utils import get_unique_short_filename, is_windows, open_file_in_default_viewer, group_delay, v2db, start_process, is_running_from_binary, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10
+from .utils import get_unique_short_filename, is_windows, open_file_in_default_viewer, group_delay, v2db, start_process, is_running_from_binary, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10, is_ext_supported, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, load_file_from_archive
+from .utils import AchiveFileLoader
 from .expressions import ExpressionParser
 from .apppaths import AppPaths
 from .spreadsheet import SpreadsheetGen

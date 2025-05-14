@@ -1,16 +1,47 @@
+from __future__ import annotations
+
 import os
 from .si import Si, SiFmt
 from .citi import CitiReader
+from .utils import AchiveFileLoader
 
 import dataclasses
 import numpy as np
 import skrf
 import logging
-import zipfile
-import tempfile
+import pathlib
 import datetime
 import os
 from typing import Callable
+
+
+
+class PathExt(pathlib.Path):
+    """ An extension of Path with has the additional property arch_path, to represent a file inside an archive """
+
+    def __init__(self, path, *, arch_path: str|None = None):
+        super().__init__(path)
+        self._arch_path = arch_path
+    
+    @property
+    def arch_path(self) -> str|None:
+        return self._arch_path
+    
+    @property
+    def arch_name(self) -> str:
+        if self._arch_path:
+            return pathlib.Path(self._arch_path).name
+        return None
+    
+    # @property
+    # def absolute(self) -> PathExt:
+    #     return PathExt(super().absolute, arch_path=self._arch_path)
+    
+    # def __eq__(self, other) -> bool:
+    #     if isinstance(other, PathExt):
+    #         if self._arch_path!=other._arch_path:
+    #             return False
+    #     return super().__eq__(other)
 
 
 
@@ -21,17 +52,16 @@ class SParamFile:
     before_load: Callable[None,bool] = None
 
 
-    def __init__(self, file_path: str, archive_path: str = None, tag: int = None, name: str = None, short_name: str = None):
+    def __init__(self, path: str|PathExt, tag: int = None, name: str = None, short_name: str = None):
 
-        self._file_path = os.path.abspath(file_path)
-        self._archive_path = os.path.abspath(archive_path) if archive_path else None
+        self.path: PathExt = path if isinstance(path,PathExt) else PathExt(path)
         self.tag = tag
 
         self._nw = None
         self._error = None
 
-        if archive_path is not None:
-            name_prefix = os.path.split(archive_path)[1] + '/'
+        if path.arch_path:
+            name_prefix = path.arch_name + '/'
         else:
             name_prefix = ''
         self.name = name if name is not None else name_prefix+self.filename
@@ -75,21 +105,18 @@ class SParamFile:
                 self._nw = None
         
         if self.is_from_archive:
-            with tempfile.TemporaryDirectory() as tempdir:
-                with zipfile.ZipFile(self.archive_path, 'r') as zf:
-                    try:
-                        zipped_filename = zf.extract(self.file_path, tempdir)
-                        load(zipped_filename)
-                        os.remove(zipped_filename)
-                    except Exception as ex:
-                        logging.warning(f'Unable to extract "{self.file_path}" from "{self.archive_path}" ({ex})')
+            try:
+                with AchiveFileLoader(self.path, self.path.arch_path) as extracted_path:
+                    load(extracted_path)
+            except Exception as ex:
+                logging.warning(f'Unable to extract and load "{self.file_path}" from "{self.archive_path}" ({ex})')
         else:
             load(self.file_path)
 
     
     @property
     def is_from_archive(self) -> bool:
-        return self.archive_path is not None
+        return self.path.arch_path is not None
 
     
     @property
@@ -100,17 +127,17 @@ class SParamFile:
 
     @property
     def file_path(self) -> str:
-        return self._file_path
+        return str(self.path)
 
 
     @property
     def filename(self) -> str:
-        return os.path.split(self._file_path)[1]
+        return self.path.name
 
 
     @property
     def archive_path(self) -> str:
-        return self._archive_path
+        return self.path.arch_path
     
 
     @property
@@ -132,16 +159,11 @@ class SParamFile:
                 logging.exception(f'Unable to read plaintext from "{path}" ({ex})')
         
         if self.is_from_archive:
-            with tempfile.TemporaryDirectory() as tempdir:
-                with zipfile.ZipFile(self.archive_path, 'r') as zf:
-                    try:
-                        zipped_filename = zf.extract(self.file_path, tempdir)
-                        plaintext = load(zipped_filename)
-                        os.remove(zipped_filename)
-                        return plaintext
-                    except Exception as ex:
-                        logging.warning(f'Unable to extract "{self.file_path}" from "{self.archive_path}" ({ex})')
-                        return f'[Error: unable to extract "{self.file_path}" from "{self.archive_path}"]'
+            try:
+                with AchiveFileLoader(self.archive_path, self.file_path) as extracted_path:
+                    return load(extracted_path)
+            except Exception as ex:
+                logging.warning(f'Unable to extract and load "{self.file_path}" from "{self.archive_path}" ({ex})')
         else:
             return load(self.file_path)
     

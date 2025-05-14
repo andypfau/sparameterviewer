@@ -3,8 +3,8 @@ from .helpers.plot_widget import PlotWidget
 from .helpers.statusbar import StatusBar
 from .helpers.syntax_highlight import PythonSyntaxHighlighter
 from .helpers.path_bar import PathBar
-from .helpers.filesys_browser import FilesysBrowser
-from lib import AppPaths
+from .helpers.filesys_browser import FilesysBrowser, FilesysBrowserItemType
+from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -58,8 +58,10 @@ class MainWindowUi(QMainWindow):
         files_tab = QWidget()
         self._ui_tabs.addTab(files_tab, 'Files')
         self._ui_filesys_browser = FilesysBrowser()
-        self._ui_filesys_browser.doubleClick.connect(self.on_filesys_doubleclick)
-        self._ui_filesys_browser.contextMenuRequest.connect(self.on_filesys_contextmenu)
+        self._ui_filesys_browser.doubleClicked.connect(self.on_filesys_doubleclick)
+        self._ui_filesys_browser.contextMenuRequested.connect(self.on_filesys_contextmenu)
+        self._ui_filesys_browser.selectionChanged.connect(self.on_filesys_select)
+
         self._ui_fileview = QTreeView()
         self._ui_filemodel = QStandardItemModel()
         self._ui_filemodel.setHorizontalHeaderLabels(['File', 'Properties'])
@@ -169,8 +171,6 @@ class MainWindowUi(QMainWindow):
         self.ui_menu_bar = self.menuBar()
         
         self._ui_mainmenu_file = QtHelper.add_submenu(self.ui_menu_bar, '&File')
-        self._ui_menuitem_open_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_open_directory, shortcut='Ctrl+O')
-        self._ui_menuitem_append_dir = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Append Directory...', self.on_append_directory)
         self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
         self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu_file, 'Recent Directories', visible=False)
         self._ui_menuitem_recent_items = []
@@ -188,7 +188,6 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
         
         self._ui_mainmenu_view = QtHelper.add_submenu(self.ui_menu_bar, '&View')
-        self._ui_menuitem_filesys = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Toggle Filesystem Browser', self.on_toggle_filesys, shortcut='Ctrl+B')
         self._ui_menuitem_filter = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Filter Files...', self.on_show_filter, shortcut='Ctrl+F')
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_show_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Show Legend', self.on_show_legend, checkable=True)
@@ -640,15 +639,15 @@ class MainWindowUi(QMainWindow):
         pass
     def on_statusbar_click(self):
         pass
-    def on_filesys_doubleclick(self, path: str):
+    def on_filesys_doubleclick(self, path: PathExt, item_type: FilesysBrowserItemType):
         pass
-    def on_filesys_contextmenu(self, path: str):
+    def on_filesys_contextmenu(self, path: PathExt, item_type: FilesysBrowserItemType):
         pass
     def on_toggle_filesys(self):
         pass
     def on_filesys_visible_changed(self):
         pass
-    def on_filesys_select(self, path: str):
+    def on_filesys_select(self):
         pass
     def on_pathbar_change(self, path: str):
         pass
