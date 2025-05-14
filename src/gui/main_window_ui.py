@@ -550,7 +550,7 @@ class MainWindowUi(QMainWindow):
         pass
     def on_filesys_selection_changed(self):
         pass
-    def on_filesys_doubleclick(self, path: PathExt, item_type: FilesysBrowserItemType):
+    def on_filesys_doubleclick(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         pass
-    def on_filesys_contextmenu(self, path: PathExt, item_type: FilesysBrowserItemType):
+    def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         pass

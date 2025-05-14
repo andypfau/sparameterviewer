@@ -47,6 +47,7 @@ class SettingsDialogUi(QDialog):
 
         format_widget = QWidget()
         self._ui_tabs.addTab(format_widget, 'Formats')
+        self._ui_color_combo = QComboBox()
         self._ui_deg_radio = QRadioButton('Degrees')
         self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_rad_radio = QRadioButton('Radians')
@@ -56,6 +57,7 @@ class SettingsDialogUi(QDialog):
             QtHelper.layout_v(
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
+                            ['Trace Color:', QtHelper.layout_h(self._ui_color_combo, ...)],
                             ['Phase:', QtHelper.layout_h(self._ui_deg_radio, self._ui_rad_radio, ...)],
                             ['CSV Separator:', QtHelper.layout_h(self._ui_csvsep_combo, ...)],
                     ]), ...
@@ -174,6 +176,21 @@ class SettingsDialogUi(QDialog):
         for option in options:
             self._ui_td_window_combo.addItem(option)
         self._ui_td_window_combo.currentIndexChanged.connect(self.on_td_window_changed)
+
+    
+    @property
+    def ui_color_assignment(self) -> str:
+        return self._ui_color_combo.currentText()
+    @ui_color_assignment.setter
+    def ui_color_assignment(self, value: str):
+        self._ui_color_combo.setCurrentText(value)
+
+
+    def ui_set_color_assignment_options(self, options: list[str]):
+        self._ui_color_combo.clear()
+        for option in options:
+            self._ui_color_combo.addItem(option)
+        self._ui_color_combo.currentIndexChanged.connect(self.on_colorassignments_changed)
 
     
     @property
@@ -365,4 +382,6 @@ class SettingsDialogUi(QDialog):
     def _on_warncount_list_changed(self):
         pass
     def _on_warncount_load_changed(self):
+        pass
+    def on_colorassignments_changed(self):
         pass

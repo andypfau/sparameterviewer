@@ -51,6 +51,12 @@ class CursorSnap(enum.StrEnum):
     X = 'x'
     Point = 'point'
 
+class ColorAssignment(enum.StrEnum):
+    Auto = 'autp'
+    ByParam = 'param'
+    ByFile = 'file'
+    ByFileLoc = 'file-container'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -83,6 +89,7 @@ class SParamViewerAppSettings(AppSettings):
     cursor_snap: CursorSnap = CursorSnap.Point
     warncount_file_list: int = 1_000
     warncount_file_load: int = 30
+    color_assignment: ColorAssignment = ColorAssignment.ByFile
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

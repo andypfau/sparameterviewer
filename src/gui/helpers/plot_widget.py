@@ -88,6 +88,11 @@ class PlotWidget(QWidget):
         return list(matplotlib.pyplot.style.available)
 
 
+    @staticmethod
+    def get_color_cycle() -> list[str]:
+        return matplotlib.pyplot.rcParams['axes.prop_cycle'].by_key()['color']
+
+
     def attach(self, callback: Callable):
         self._observers.append(callback)
 

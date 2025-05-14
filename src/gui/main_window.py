@@ -2,7 +2,8 @@ import matplotlib.backend_bases
 import matplotlib.backend_bases
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap
+from .helpers.settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap, ColorAssignment
+from .helpers.plot_widget import PlotWidget
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
@@ -133,10 +134,10 @@ class MainWindow(MainWindowUi):
         for path_str in initial_paths:
             path = PathExt(path_str)
             if path.is_file():
+                initial_selection.append(path)
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
             self._ui_filesys_browser.add_toplevel(path)  # TODO: add redirection through MainWindowUI class
-            initial_selection.append(path)
         self._ui_filesys_browser.selected_files = initial_selection
 
         self.update_most_recent_paths_menu()
@@ -869,11 +870,14 @@ class MainWindow(MainWindowUi):
         def get_parent_dirs_and_names(path: PathExt, n_max: int = 10) -> list[tuple[PathExt,str]]:
             result = []
             path_parent = path.parent
-            for _ in range(n_max):
+            for i in range(n_max):
                 if path_parent == path:
                     break
                 name = path_parent.name if path_parent.name else str(path_parent)
-                result.append((path_parent, name))
+                prefix = os.sep.join(['..']*(i+1))
+                if not name.startswith(os.sep):
+                    prefix += os.sep
+                result.append((path_parent, prefix+name))
                 if path_parent.parent == path_parent:
                     break
                 path_parent = path_parent.parent
@@ -885,15 +889,16 @@ class MainWindow(MainWindowUi):
             menu.append(('Pin Directory of This File', make_pin(path.parent)))
             menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
+            typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
             if is_toplevel:
                 for (ppath, pname) in get_parent_dirs_and_names(path):
-                    menu.append((f'Navigate Up To <{pname}>', make_chroot(ppath)))
+                    menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
                 menu.append((None, None))
-                menu.append(('Unpin This Directory', make_unpin()))
+                menu.append((f'Unpin This {typename}', make_unpin()))
             else:
-                menu.append(('Navigate Down To This Directory', make_chroot(path)))
+                menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
                 menu.append((None, None))
-                menu.append(('Pin This Directory', make_pin(path)))
+                menu.append((f'Pin This {typename}', make_pin(path)))
         
         if len(menu) > 0:
             self.ui_filesys_show_contextmenu(menu)
@@ -1215,8 +1220,12 @@ class MainWindow(MainWindowUi):
                         y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
-
-            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None):
+            available_colors = PlotWidget.get_color_cycle()
+            next_color_index = 0
+            color_mapping = {}
+            
+            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
+                nonlocal available_colors, next_color_index, color_mapping
 
                 if np.all(np.isnan(sp)):
                     return
@@ -1236,6 +1245,27 @@ class MainWindow(MainWindowUi):
                     style_y2 = ':'
                 else:
                     style_y2 = style
+
+                if not color:  # assign a color
+                    key: any|None = None
+                    match Settings.color_assignment:
+                        case ColorAssignment.ByParam:
+                            key = param_kind
+                        case ColorAssignment.ByFile:
+                            if original_file:
+                                key = original_file.full_path
+                        case ColorAssignment.ByFileLoc:
+                            if original_file:
+                                if original_file.arch_path:
+                                    key = str(original_file)
+                                else:
+                                    key = str(original_file.parent)
+                    if key:
+                        if key not in color_mapping:  # use next color in the list
+                            next_color = available_colors[next_color_index % len(available_colors)]
+                            next_color_index += 1
+                            color_mapping[key] = next_color
+                        color = color_mapping[key]
 
                 kwargs = dict(width=width, color=color, opacity=opacity)
                 

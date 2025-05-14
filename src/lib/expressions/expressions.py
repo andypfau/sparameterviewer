@@ -1,4 +1,4 @@
-from ..structs import SParamFile
+from ..structs import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import parse_quick_param
@@ -19,7 +19,7 @@ class ExpressionParser:
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
         selected_networks: "list[SParamFile]", \
-        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float]"):
+        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str]"):
         
         SParam._plot_fn = plot_fn
 

@@ -132,7 +132,6 @@ class FilesysBrowser(QWidget):
         def __init__(self, parent):
             super().__init__(parent)
             self.show_archives = False
-            self.setHorizontalHeaderLabels(['Files', 'Info'])
         
         @override
         def hasChildren(self, index: QModelIndex = ...):
@@ -174,6 +173,7 @@ class FilesysBrowser(QWidget):
         
         self._ui_filesys_view = QTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
+        self._ui_filesys_model.setHorizontalHeaderLabels(['File', 'Info'])
         self._ui_filesys_model.dataChanged.connect(self._on_checked_change)
         self._ui_filesys_model.filesChanged.connect(self.filesChanged)
         self._ui_filesys_model.show_archives = self._show_archives

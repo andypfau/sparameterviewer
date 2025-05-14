@@ -1,4 +1,6 @@
-from ..structs import SParamFile
+from __future__ import annotations
+
+from ..structs import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..utils import sanitize_filename
@@ -18,12 +20,24 @@ from typing import Callable
 class SParam:
 
 
-    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float], None]
+    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str], None]
 
 
-    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float):
+    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_file: PathExt|None = None, param_type: str|None=None):
         assert len(f) == len(s)
         self.name, self.f, self.s, self.z0 = name, f, s, z0
+        self.original_file, self.param_type = original_file, param_type
+    
+
+    def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_file: PathExt|None = None, param_type: str|None=None) -> SParam:
+        return SParam(
+            name or self.name,
+            f or self.f,
+            s or self.s,
+            z0 or self.z0,
+            original_file or self.original_file,
+            param_type or self.param_type
+        )
     
 
     @staticmethod
@@ -50,7 +64,7 @@ class SParam:
         a_s = np.array(np.ndarray.flatten(a_nw.s))
         b_s = np.array(np.ndarray.flatten(b_nw.s))
         c_s = op(a_s, b_s)
-        return SParam(a.name, a_nw.f, c_s, a_nw.z0)
+        return a._modified_copy(f=a_nw.f, s=c_s)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
@@ -94,31 +108,31 @@ class SParam:
 
 
     def __invert__(self) -> "SParam":
-        return SParam(self.name, self.f, 1/self.s, self.z0)
+        return self._modified_copy(s=1/self.s)
 
     
     def abs(self) -> "SParam":
-        return SParam(self.name, self.f, np.abs(self.s), self.z0)
+        return self._modified_copy(s=np.abs(self.s))
 
     
     def db(self) -> "SParam":
-        return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))))
 
     
     def db10(self) -> "SParam":
-        return SParam(self.name, self.f, 10*np.log10(np.maximum(1e-30,np.abs(self.s))), self.z0)
+        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))))
 
     
     def db20(self) -> "SParam":
-        return SParam(self.name, self.f, 20*np.log10(np.maximum(1e-15,np.abs(self.s))), self.z0)
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))))
 
     
     def ml(self) -> "SParam":
-        return SParam(self.name + ' ML', self.f, 1-(np.abs(self.s)**2), self.z0)
+        return self._modified_copy(name=self.name+' ML', s=1-(np.abs(self.s)**2))
 
     
     def vswr(self) -> "SParam":
-        return SParam(self.name + ' VSWR', self.f, (1+np.abs(self.s))/(1-np.abs(self.s)), self.z0)
+        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)))
 
     
     def phase(self, processing: "str|None" = None) -> "SParam":
@@ -130,20 +144,20 @@ class SParam:
             s = np.unwrap(s)
         elif s is not None:
             raise ValueError(f'Invalid processing option "{processing}"')
-        return SParam(self.name, self.f, s, self.z0)
+        return self._modified_copy(s=s)
 
     
     @staticmethod
-    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
-        SParam._plot_fn(x, y, z0, label, style, color, width, opacity)
+    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_type: str = None):
+        SParam._plot_fn(x, y, z0, label, style, color, width, opacity, original_file, param_type)
 
     
-    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None):
+    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_type: str = None):
         if label is None:
             label = self.name
         else:
             label = label.replace('%n', self.name)
-        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity)
+        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_file, param_type)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
@@ -153,7 +167,7 @@ class SParam:
         if len(new)<1:
             raise Exception('SParam.crop_f(): frequency out of range')
         new_f, new_s = zip(*new)
-        return SParam(self.name, new_f, new_s, self.z0)
+        return self._modified_copy(f=new_f, s=new_s)
         
     
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParam":
@@ -177,7 +191,7 @@ class SParam:
 
         f = np.array([f_target_start, f_target_end])
         s = np.array([s11_linear, s11_linear])
-        return SParam(self.name, f, s, self.z0)
+        return self._modified_copy(f=f, s=s)
     
         
 
@@ -185,7 +199,8 @@ class SParam:
         s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
-        return SParam(self.name, self.f, s, self.z0)    
+        return self._modified_copy(s=s)
+    
     
     def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
         new_name = self.name
@@ -199,7 +214,7 @@ class SParam:
             if pattern is None or subs is None:
                 raise ValueError('SParam.rename(): pattern and subs must be specified together')
             new_name = re.sub(pattern, subs, new_name)
-        return SParam(new_name, self.f, self.s, self.z0)
+        return self._modified_copy(name=new_name)
     
 
     def save(self, filename: str):
@@ -345,7 +360,11 @@ class SParams:
     
 
     def plot(self, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
-        self._unary_op(SParam.plot, False, label=label, style=style, color=color, width=width, opacity=opacity)
+        for sp in self.sps:
+            try:
+                sp.plot(label=label, style=style, color=color, width=width, opacity=opacity, original_file=sp.original_file, param_type=sp.param_type)
+            except Exception as ex:
+                logging.warning(f'Plotting of <{sp.name}> failed ({ex}), ignoring')
     
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParams":
