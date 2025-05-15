@@ -178,6 +178,7 @@ class FilesysBrowser(QWidget):
 
         self._contextmenu_point: QPoint = None
         self._contextmenu_item: FilesysBrowser.MyFileItem = None
+        self._inhibit_triggers = True
         self._show_archives = False
         
         self._ui_pathbar = PathBar()
@@ -201,6 +202,8 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
         self._ui_filesys_view.doubleClicked.connect(self._on_doubleclick)
         self.setLayout(QtHelper.layout_v(self._ui_pathbar, self._ui_filesys_view))
+
+        self._inhibit_triggers = False
     
 
     @property
@@ -252,7 +255,6 @@ class FilesysBrowser(QWidget):
     @selected_files.setter
     def selected_files(self, selected_paths: list[PathExt]):
         #logging.debug(f'FilesysBrowser.selected_files.setter({selected_paths=})')
-
         def recurse(parent: FilesysBrowser.MyFileItem):
             if parent is None:
                 return
@@ -264,7 +266,12 @@ class FilesysBrowser(QWidget):
                     item.checked = item.path in selected_paths
                 else:
                     recurse(item)
-        recurse(self._ui_filesys_model.invisibleRootItem())
+        try:
+            self._inhibit_triggers = True
+            recurse(self._ui_filesys_model.invisibleRootItem())
+        finally:
+            self._inhibit_triggers = False
+        self.selectionChanged.emit()
     
 
     def update_status(self, path: PathExt, status: str):
@@ -282,12 +289,20 @@ class FilesysBrowser(QWidget):
                         continue
                     status_item.setText(status)
                 recurse(item)
-        recurse(self._ui_filesys_model.invisibleRootItem())
+        try:
+            self._inhibit_triggers = True
+            recurse(self._ui_filesys_model.invisibleRootItem())
+        finally:
+            self._inhibit_triggers = False
     
 
     def add_toplevel(self, path: PathExt):
         #logging.debug(f'FilesysBrowser.add_toplevel({path=})')
-        self._add_toplevel(path, 0)
+        try:
+            self._inhibit_triggers = True
+            self._add_toplevel(path, 0)
+        finally:
+            self._inhibit_triggers = False
         self.filesChanged.emit()
 
 
@@ -295,34 +310,40 @@ class FilesysBrowser(QWidget):
         #logging.debug(f'FilesysBrowser.remove_toplevel({path=})')
         if self._ui_filesys_model.invisibleRootItem().rowCount() <= 1:
             return #  only one top-level element left; ignore
-        for row_index in reversed(range(self._ui_filesys_model.invisibleRootItem().rowCount())):
-            item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
-            if not isinstance(item, FilesysBrowser.MyFileItem):
-                continue
-            if item.path == path:
-                self._ui_filesys_model.removeRow(row_index)
-                    
+        try:
+            self._inhibit_triggers = True
+            for row_index in reversed(range(self._ui_filesys_model.invisibleRootItem().rowCount())):
+                item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                if item.path == path:
+                    self._ui_filesys_model.removeRow(row_index)
+        finally:
+            self._inhibit_triggers = False
         self.filesChanged.emit()
 
     
     def change_root(self, current_root: PathExt, new_root: PathExt):
         #logging.debug(f'FilesysBrowser.change_root({current_root=},{new_root=})')
-        toplevel_item: FilesysBrowser.MyFileItem = None
-        toplevel_index: int = 0
-        for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
-            item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
-            if not isinstance(item, FilesysBrowser.MyFileItem):
-                continue
-            if item.path == current_root:
-                toplevel_item = item
-                toplevel_index = row_index
-                break
-        if not isinstance(toplevel_item, FilesysBrowser.MyFileItem):
-            return
-        self._ui_filesys_model.removeRow(toplevel_index)
-        new_item = self._add_toplevel(new_root, toplevel_index)
-        self._ui_filesys_view.expand(self._ui_filesys_model.indexFromItem(new_item))
-        
+        try:
+            self._inhibit_triggers = True
+            toplevel_item: FilesysBrowser.MyFileItem = None
+            toplevel_index: int = 0
+            for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
+                item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                if item.path == current_root:
+                    toplevel_item = item
+                    toplevel_index = row_index
+                    break
+            if not isinstance(toplevel_item, FilesysBrowser.MyFileItem):
+                return
+            self._ui_filesys_model.removeRow(toplevel_index)
+            new_item = self._add_toplevel(new_root, toplevel_index)
+            self._ui_filesys_view.expand(self._ui_filesys_model.indexFromItem(new_item))
+        finally:
+            self._inhibit_triggers = False
         self.filesChanged.emit()
 
 
@@ -334,18 +355,22 @@ class FilesysBrowser(QWidget):
 
     def refresh(self):
         #logging.debug(f'FilesysBrowser.refresh()')
-        toplevel_paths: list[PathExt] = []
-        for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
-            item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
-            if not isinstance(item, FilesysBrowser.MyFileItem):
-                continue
-            toplevel_paths.append(item.path)
-        
-        self._ui_filesys_model.invisibleRootItem().removeRows(0, self._ui_filesys_model.invisibleRootItem().rowCount())
-
-        for i,path in enumerate(toplevel_paths):
-            self._add_toplevel(path, i)
+        try:
+            self._inhibit_triggers = True
+            toplevel_paths: list[PathExt] = []
+            for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
+                item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                toplevel_paths.append(item.path)
             
+            self._ui_filesys_model.invisibleRootItem().removeRows(0, self._ui_filesys_model.invisibleRootItem().rowCount())
+
+            for i,path in enumerate(toplevel_paths):
+                self._add_toplevel(path, i)
+        finally:
+            self._inhibit_triggers = False
+
         self.filesChanged.emit()
 
     
@@ -406,11 +431,15 @@ class FilesysBrowser(QWidget):
     
     def _on_files_changed(self):
         #logging.debug(f'FilesysBrowser._on_files_changed()')
+        if self._inhibit_triggers:
+            return
         self.filesChanged.emit()
     
 
     def _on_checked_change(self):
         #logging.debug(f'FilesysBrowser._on_checked_change()')
+        if self._inhibit_triggers:
+            return
         self.selectionChanged.emit()
 
     

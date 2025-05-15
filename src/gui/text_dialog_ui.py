@@ -29,11 +29,11 @@ class TextDialogUi(QDialog):
         self._ui_infostr.setFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
         self._ui_infostr.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
-        self._ui_copy_button = QtHelper.make_button('Copy', self.on_copy)
+        self._ui_copy_button = QtHelper.make_button(self, 'Copy', self.on_copy)
         self._ui_copy_shortcut = QtHelper.make_shortcut(self, 'Ctrl+C', self.on_copy)
-        self._ui_save_button = QtHelper.make_button('Save As...', self.on_save)
+        self._ui_save_button = QtHelper.make_button(self, 'Save As...', self.on_save)
         self._ui_save_shortcut = QtHelper.make_shortcut(self, 'Ctrl+S', self.on_save)
-        self._ui_open_button = QtHelper.make_button('Open Externally', self.on_open_ext)
+        self._ui_open_button = QtHelper.make_button(self, 'Open Externally', self.on_open_ext)
         
         self.setLayout(QtHelper.layout_v(
             self._ui_infostr,

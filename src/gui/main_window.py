@@ -187,6 +187,7 @@ class MainWindow(MainWindowUi):
 
 
     def clear_load_counter(self):
+        logging.debug(f'MainWindow.clear_load_counter()')
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = Settings.warncount_file_load
         self.sparamfile_load_aborted = False
@@ -542,50 +543,6 @@ class MainWindow(MainWindowUi):
             del Settings.path_history[-1]
         
         self.update_most_recent_paths_menu()
-
-    
-    def read_single_file(self, path: str):
-
-        if self.sparamfile_list_aborted:
-            return
-        if self.sparamfile_list_counter >= self.sparamfile_list_next_warning:
-            self.sparamfile_list_next_warning = get_next_1_10_100(self.sparamfile_list_next_warning)
-            if not yesno_dialog(
-                'Too Many Files',
-                f'Already discovered {self.sparamfile_list_counter} files, with more to come. Continue?',
-                f'Will ask again after {self.sparamfile_list_next_warning} files.'):
-                self.sparamfile_list_aborted = True
-                return
-        self.sparamfile_list_counter += 1
-
-        path_obj = pathlib.Path(path)
-        abspath = str(path_obj.absolute())
-        ext = path_obj.suffix
-    
-        def load_file(filename, archive_path=None):
-            try:
-                file = SParamFile(PathExt(filename, arch_path=archive_path))
-                if file in self.files:
-                    #logging.debug(f'File <{filename}> is already loaded, ignoring')
-                    return
-                self.files.append(file)
-            except Exception as ex:
-                logging.warning(f'Unable to load file <{filename}>, ignoring: {ex}')
-        
-        try:
-            if is_ext_supported_file(ext):
-                load_file(abspath)
-            elif Settings.extract_zip and is_ext_supported_archive(ext):
-                for internal_name in find_files_in_archive(abspath):
-                    load_file(internal_name, archive_path=abspath)
-            else:
-                logging.info(f'Unknown file type <{abspath}>, ignoring')
-
-            self.files = list(sorted(self.files, key=lambda file: natural_sort_key(file.name)))
-        
-        except Exception as ex:
-            logging.exception(f'Unable to load file <{abspath}>: {ex}')
-            raise ex
 
 
     def reload_all_files(self):
@@ -1146,7 +1103,6 @@ class MainWindow(MainWindowUi):
         
         if not self.ready:
             return
-        self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESET_LOAD_ID, MainWindow.TIMER_RESET_LOAD_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
@@ -1396,4 +1352,5 @@ class MainWindow(MainWindowUi):
             self.show_error(f'Plotting failed', ex)
 
         finally:
+            self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESET_LOAD_ID, MainWindow.TIMER_RESET_LOAD_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
             self.ready = True

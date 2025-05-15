@@ -128,7 +128,7 @@ class SettingsDialogUi(QDialog):
         self._ui_exted_edit = QLineEdit()
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
-        self._ui_exted_btn = QtHelper.make_button('...', self.on_browse_ext_ed)
+        self._ui_exted_btn = QtHelper.make_button(self, '...', self.on_browse_ext_ed)
         misc_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_comment_expr_combo,

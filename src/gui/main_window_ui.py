@@ -35,6 +35,42 @@ class MainWindowUi(QMainWindow):
         
         self._build_main_menu()
 
+        
+        self._ui_ribbon = QTabWidget()
+        color_base = QPalette().color(QPalette.ColorRole.Base).name()
+        color_dark = QPalette().color(QPalette.ColorRole.Dark).name()
+        color_light = QPalette().color(QPalette.ColorRole.Light).name()
+        color_hl = QPalette().color(QPalette.ColorRole.Highlight).name()
+        color_hl_text = QPalette().color(QPalette.ColorRole.HighlightedText).name()
+        self._ui_ribbon.setStyleSheet(f"""
+            QTabWidget::pane {{
+                background-color: {color_base};
+                border: 0;
+            }}
+            QPushButton {{
+                background-color: {color_base};
+            }}
+            QPushButton:hover {{
+                background-color: {color_light};
+            }}
+            QPushButton:checked {{
+                background-color: {color_hl};
+                color: {color_hl_text};
+            }}
+            """)
+        self._ui_ribbon.setContentsMargins(0, 0, 0, 0)
+        view_ribbon = QWidget()
+        view_ribbon.setContentsMargins(0, 0, 0, 0)
+        self._ui_ribbon.addTab(view_ribbon, 'View')
+        self._ui_logx_button = QtHelper.make_button(self, 'Log X', self.on_logx_changed, flat=True, checked=False)
+        view_ribbon.setLayout(QtHelper.layout_h(
+            QtHelper.make_button(self, 'Filter...', self.on_show_filter, flat=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F'),
+            self._ui_logx_button,
+            ...,
+            dense=True
+        ))
+
+        
         splitter = QSplitter(Qt.Orientation.Vertical)
         splitter_top = QWidget()
         splitter.addWidget(splitter_top)
@@ -135,7 +171,7 @@ class MainWindowUi(QMainWindow):
         self._ui_status_bar = StatusBar()
         self._ui_status_bar.clicked.connect(self.on_statusbar_click)
 
-        splitter_top.setLayout(QtHelper.layout_v(self._ui_plot))
+        splitter_top.setLayout(QtHelper.layout_v(self._ui_ribbon, self._ui_plot))
         splitter_bottom.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(self._ui_mode_combo, self._ui_unit_combo, self._ui_unit2_combo),
             self._ui_tabs,
@@ -344,10 +380,12 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_logx(self) -> bool:
-        return self._ui_menuitem_logx.isChecked()
+        #return self._ui_menuitem_logx.isChecked()
+        return self._ui_logx_button.isChecked()
     @ui_logx.setter
     def ui_logx(self, value):
-        self._ui_menuitem_logx.setChecked(value)
+        #self._ui_menuitem_logx.setChecked(value)
+        self._ui_logx_button.setChecked(value)
 
 
     @property

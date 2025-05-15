@@ -77,11 +77,23 @@ class QtHelper:
 
 
     @staticmethod
-    def make_button(text: str, action: Callable = None) -> QPushButton:
+    def make_button(parent: QObject, text: str, action: Callable = None, /, *, flat: bool = False, icon: QIcon = None, checked: bool = None, tooltip: str = None, shortcut: str = None) -> QPushButton:
         button = QPushButton()
         button.setText(text)
         if action:
             button.clicked.connect(action)
+        if flat:
+            button.setFlat(True)
+        if icon:
+            button.setIcon(icon)
+        if checked is not None:
+            button.setCheckable(True)
+            button.setChecked(checked)
+        if tooltip:
+            button.setToolTip(tooltip)
+        if shortcut:
+            shorcut_obj = QShortcut(QKeySequence(shortcut), parent)
+            shorcut_obj.activated.connect(action)
         return button
 
 
@@ -204,7 +216,7 @@ class QtHelper:
 
 
     @staticmethod
-    def _box_layout(layout: QBoxLayout, direction: str, *items):
+    def _box_layout(layout: QBoxLayout, direction: str, *items, dense: bool = False):
         for item in items:
             if item is ...:
                 layout.addStretch()
@@ -223,17 +235,19 @@ class QtHelper:
                     raise ValueError()
             else:
                 layout.addWidget(item)
+        if dense:
+            layout.setContentsMargins(0, 0, 0, 0)
         return layout
 
 
     @staticmethod
-    def layout_h(*items):
-        return QtHelper._box_layout(QHBoxLayout(), 'h', *items)
+    def layout_h(*items, dense: bool = False):
+        return QtHelper._box_layout(QHBoxLayout(), 'h', *items, dense=dense)
 
 
     @staticmethod
-    def layout_v(*items):
-        return QtHelper._box_layout(QVBoxLayout(), 'v', *items)
+    def layout_v(*items, dense: bool = False):
+        return QtHelper._box_layout(QVBoxLayout(), 'v', *items, dense=dense)
 
 
     @dataclasses.dataclass
@@ -244,7 +258,7 @@ class QtHelper:
 
 
     @staticmethod
-    def layout_grid(items_rows_then_columns):
+    def layout_grid(items_rows_then_columns, dense: bool = False):
         layout = QGridLayout()
         for i_row,columns in enumerate(items_rows_then_columns):
             for i_col,item in enumerate(columns):
@@ -261,6 +275,8 @@ class QtHelper:
                     layout.addWidget(QtHelper.make_label(item), i_row, i_col, rows, cols)
                 else:
                     layout.addWidget(item, i_row, i_col, rows, cols)
+        if dense:
+            layout.setContentsMargins(0, 0, 0, 0)
         return layout
 
 
