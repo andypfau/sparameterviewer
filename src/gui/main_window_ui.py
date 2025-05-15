@@ -28,7 +28,7 @@ class MainWindowUi(QMainWindow):
 
 
     def __init__(self):
-        self._ui_timers: dict[any,QTimer] = {}
+        self._ui_timers: dict[any,tuple[QTimer,Callable]] = {}
 
         super().__init__()
         QtHelper.set_dialog_icon(self)
@@ -160,7 +160,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_save_plot_image = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Plot Image...', self.on_save_plot_image)
         self._ui_mainmenu_file.addSeparator()
         self._ui_menuitem_file_info = QtHelper.add_menuitem(self._ui_mainmenu_file, 'File Info', self.on_file_info, shortcut='Ctrl+I')
-        self._ui_menuitem_view_tabular = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
+        self._ui_menuitem_view_tabular = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View/Copy/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
         self._ui_menuitem_view_plain = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View Plaintext Data', self.on_view_plaintext, shortcut='Ctrl+P')
         self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally, shortcut='Ctrl+E')
         self._ui_mainmenu_file.addSeparator()
@@ -177,6 +177,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_shorten_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Shorten Legend Items', self.on_shorten_legend, checkable=True)
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
+        self._ui_menuitem_view_tabular2 = QtHelper.add_menuitem(self._ui_mainmenu_view, 'View/Copy/Export Tabular Data...', self.on_view_tabular)
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_lock_x = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock X-Axis Scale', self.on_lock_xaxis, checkable=True)
         self._ui_menuitem_lock_y = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Lock Y-Axis Scale', self.on_lock_yaxis, checkable=True)
@@ -238,25 +239,22 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
-    def ui_is_timer_scheduled(self, identifier) -> bool:
-        return identifier in self._ui_timers
-    
-    
-    def ui_schedule_timer(self, identifier, seconds: float):
+    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable):
         if identifier in self._ui_timers:
-            raise RuntimeError(f'Timer <{identifier}> already pending')
+            return  # already scheduled -> ignore
         
-        self._ui_timers[identifier] = QTimer()
+        self._ui_timers[identifier] = (QTimer(), callback)
         def make_timeout_function(identifier):
             def timeout_function():
+                callback = self._ui_timers[identifier][1]
                 del self._ui_timers[identifier]
-                self.on_timer_timeout(identifier)
+                callback()
             return timeout_function
-        self._ui_timers[identifier].timeout.connect(make_timeout_function(identifier))
+        self._ui_timers[identifier][0].timeout.connect(make_timeout_function(identifier))
         
         msec = max(1,int(round(seconds*1e3)))
-        self._ui_timers[identifier].setSingleShot(True)
-        self._ui_timers[identifier].start(msec)
+        self._ui_timers[identifier][0].setSingleShot(True)
+        self._ui_timers[identifier][0].start(msec)
         
     
 

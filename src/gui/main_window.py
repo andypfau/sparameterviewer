@@ -47,7 +47,13 @@ class MainWindow(MainWindowUi):
     CURSOR_OFF_NAME = '—'
 
     TIMER_CURSORS_ID = 1
-    TIMER_CURSORS_TIMEOUT_S = 10e-3
+    TIMER_CURSORS_TIMEOUT_S = 25e-3
+
+    TIMER_UPDATE_ID = 2
+    TIMER_UPDATE_TIMEOUT_S = 10e-3
+
+    TIMER_SELECT_ID = 3
+    TIMER_SELECT_TIMEOUT_S = 100e-3
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
@@ -130,15 +136,16 @@ class MainWindow(MainWindowUi):
                     initial_paths = [dir]
         if len(initial_paths) < 1:
             initial_paths = [AppPaths.get_default_file_dir()]
-        initial_selection = []
+        self._initial_selection = []
         for path_str in initial_paths:
             path = PathExt(path_str)
             if path.is_file():
-                initial_selection.append(path)
+                self._initial_selection.append(path)
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
             self._ui_filesys_browser.add_toplevel(path)  # TODO: add redirection through MainWindowUI class
-        self._ui_filesys_browser.selected_files = initial_selection
+        if len(self._initial_selection) > 0:
+            self.ui_schedule_oneshot_timer(MainWindow.TIMER_SELECT_ID, MainWindow.TIMER_SELECT_TIMEOUT_S, self.select_initial_files)
 
         self.update_most_recent_paths_menu()
         Settings.attach(self.on_settings_change)
@@ -173,6 +180,10 @@ class MainWindow(MainWindowUi):
             logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
 
 
+    def select_initial_files(self):
+        self._ui_filesys_browser.selected_files = self._initial_selection  # TODO: add redirection through MainWindowUI class
+
+
     def clear_list_counter(self):
         self.sparamfile_list_counter = 0
         self.sparamfile_list_next_warning = Settings.warncount_file_list
@@ -195,7 +206,7 @@ class MainWindow(MainWindowUi):
                 f'Already loaded {self.sparamfile_load_counter} files, with more to come. Continue?',
                 f'Will ask again after {self.sparamfile_load_next_warning} files.'):
                 self.sparamfile_load_aborted = True
-                self.ui_select_fileview_items([])
+                self._ui_filesys_browser.selected_files = []  # TODO: add redirection through MainWindowUI class
                 return False
         self.sparamfile_load_counter += 1
         return True
@@ -204,6 +215,7 @@ class MainWindow(MainWindowUi):
     def after_load_sparamfile(self, path: PathExt):
         if path not in self.files:
             return
+        #logging.debug(f'MainWindow.after_load_sparamfile({path=})')
         self._ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
 
     
@@ -558,7 +570,7 @@ class MainWindow(MainWindowUi):
             try:
                 file = SParamFile(PathExt(filename, arch_path=archive_path))
                 if file in self.files:
-                    logging.debug(f'File <{filename}> is already loaded, ignoring')
+                    #logging.debug(f'File <{filename}> is already loaded, ignoring')
                     return
                 self.files.append(file)
             except Exception as ex:
@@ -692,7 +704,7 @@ class MainWindow(MainWindowUi):
         if selected_file.is_from_archive:
             TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
         else:
-            TextDialog(self).show_modal_dialog(title, file_path=selected_file.file_path)
+            TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
 
 
     def on_open_externally(self):
@@ -867,6 +879,13 @@ class MainWindow(MainWindowUi):
                 self.add_to_most_recent_paths(str(new_path))
                 self._ui_filesys_browser.change_root(toplevel_path, new_path)  # TODO: redirect through MainWindowUI
             return chroot
+        def make_selall(file_path: PathExt):
+            def selall():
+                files_in_path = [p for p in file_path.parent.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
+                if len(files_in_path) < 1:
+                    return
+                self._ui_filesys_browser.selected_files = [*files_in_path, *self._ui_filesys_browser.selected_files]
+            return selall
         def get_parent_dirs_and_names(path: PathExt, n_max: int = 10) -> list[tuple[PathExt,str]]:
             result = []
             path_parent = path.parent
@@ -888,6 +907,8 @@ class MainWindow(MainWindowUi):
         if item_type == FilesysBrowserItemType.File:
             menu.append(('Pin Directory of This File', make_pin(path.parent)))
             menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
+            menu.append((None, None))
+            menu.append((f'Select All Files From Same Directory', make_selall(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
             if is_toplevel:
@@ -905,6 +926,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_filesys_files_changed(self):
+        #logging.debug(f'MainWindow.on_filesys_files_changed()')
         browser_paths = self._ui_filesys_browser.all_files  # TODO: add rediction though MainWindowUI
 
         # discard the files that are no longer displayed in the filebrowser
@@ -922,6 +944,10 @@ class MainWindow(MainWindowUi):
 
 
     def on_filesys_selection_changed(self):
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_UPDATE_ID, MainWindow.TIMER_UPDATE_TIMEOUT_S, self._on_filesys_selection_changed_timed)
+    
+
+    def _on_filesys_selection_changed_timed(self):
         self.update_plot()
         self.prepare_cursors()
 
@@ -949,16 +975,10 @@ class MainWindow(MainWindowUi):
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         # events are handled slower than they may come in, which leads to lag; queue them, then handle them in bulk
         self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y, x2, y2))
-        if not self.ui_is_timer_scheduled(MainWindow.TIMER_CURSORS_ID):
-            self.ui_schedule_timer(MainWindow.TIMER_CURSORS_ID, MainWindow.TIMER_CURSORS_TIMEOUT_S)
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_CURSORS_ID, MainWindow.TIMER_CURSORS_TIMEOUT_S, self._on_plot_mouse_event_timed)
     
 
-    def on_timer_timeout(self, identifier: any):
-        if identifier == MainWindow.TIMER_CURSORS_ID:
-            self.on_cursor_timer_timeout()
-
-    
-    def on_cursor_timer_timeout(self):
+    def _on_plot_mouse_event_timed(self):
         if len(self.cursor_event_queue) < 1:
             return
         event = self.cursor_event_queue.pop(0)

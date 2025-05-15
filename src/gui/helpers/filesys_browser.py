@@ -37,7 +37,8 @@ class FilesysBrowser(QWidget):
 
     class MyFileItem(QStandardItem):
 
-        def __init__(self, path: PathExt, type: FilesysBrowserItemType, *, is_toplevel: bool = False):
+        def __init__(self, model: FilesysBrowser.MyFileItemModel, path: PathExt, type: FilesysBrowserItemType, *, is_toplevel: bool = False):
+            self._model = model
             self._path = path
             self._children: list[PathExt]|None = None
             self._type = type
@@ -88,9 +89,6 @@ class FilesysBrowser(QWidget):
         @property
         def type(self) -> FilesysBrowserItemType:
             return self._type
-                
-        def hasChildren(self) -> bool:
-            return self._has_children
     
         def add_children_to_tree(self, support_archives: bool) -> bool:
             if self._children_added:
@@ -110,23 +108,34 @@ class FilesysBrowser(QWidget):
 
             if self._type == FilesysBrowserItemType.Arch:
                 for arch_path in children:
-                    super().appendRow((FilesysBrowser.MyFileItem(PathExt(self._path, arch_path=arch_path), FilesysBrowserItemType.File), QStandardItem('')))
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, PathExt(self._path, arch_path=arch_path), FilesysBrowserItemType.File), QStandardItem('')))
             else:
                 dirs = [p for p in children if p.is_dir()]
                 files = [p for p in children if p.is_file()]
                 for file in sorted([p for p in files if is_ext_supported_file(p.suffix)], key=lambda p: p.name):
-                    super().appendRow((FilesysBrowser.MyFileItem(file, FilesysBrowserItemType.File), QStandardItem('')))
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, file, FilesysBrowserItemType.File), QStandardItem('')))
                 if support_archives:
                     for arch in sorted([p for p in files if is_ext_supported_archive(p.suffix)], key=lambda p: p.name):
-                        super().appendRow(FilesysBrowser.MyFileItem(arch, FilesysBrowserItemType.Arch))
+                        super().appendRow(FilesysBrowser.MyFileItem(self._model, arch, FilesysBrowserItemType.Arch))
                 for dir in sorted(dirs, key=lambda p: p.name):
-                    super().appendRow(FilesysBrowser.MyFileItem(dir, FilesysBrowserItemType.Dir))
+                    super().appendRow(FilesysBrowser.MyFileItem(self._model, dir, FilesysBrowserItemType.Dir))
             
             return self._has_children
+                
+        @override
+        def hasChildren(self) -> bool:
+            return self._has_children
+    
+        @override
+        def setData(self, value: any, role: int):
+            if role == Qt.ItemDataRole.CheckStateRole:
+                self._model.checkedChanged.emit()
+            super().setData(value, role)
 
 
     class MyFileItemModel(QStandardItemModel):
         
+        checkedChanged = pyqtSignal()
         filesChanged = pyqtSignal()
     
         def __init__(self, parent):
@@ -174,8 +183,8 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view = QTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
         self._ui_filesys_model.setHorizontalHeaderLabels(['File', 'Info'])
-        self._ui_filesys_model.dataChanged.connect(self._on_checked_change)
-        self._ui_filesys_model.filesChanged.connect(self.filesChanged)
+        self._ui_filesys_model.checkedChanged.connect(self._on_checked_change)
+        self._ui_filesys_model.filesChanged.connect(self._on_files_changed)
         self._ui_filesys_model.show_archives = self._show_archives
         self._ui_filesys_view.setToolTip('Select files to plot; right-click a directory to navigate')
         self._ui_filesys_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -203,6 +212,7 @@ class FilesysBrowser(QWidget):
     
     @property
     def all_files(self) -> list[PathExt]:
+        ##logging.debug(f'FilesysBrowser.all_files.getter()')
         result = set()
         def recurse(parent: FilesysBrowser.MyFileItem):
             nonlocal result
@@ -220,6 +230,7 @@ class FilesysBrowser(QWidget):
 
     @property
     def selected_files(self) -> list[PathExt]:
+        ##logging.debug(f'FilesysBrowser.selected_files.getter()')
         result = set()
         def recurse(parent: FilesysBrowser.MyFileItem):
             nonlocal result
@@ -236,6 +247,7 @@ class FilesysBrowser(QWidget):
         return list(result)
     @selected_files.setter
     def selected_files(self, selected_paths: list[PathExt]):
+        #logging.debug(f'FilesysBrowser.selected_files.setter({selected_paths=})')
         self._ui_filesys_view.selectionModel().clearSelection()
 
         def recurse(parent: FilesysBrowser.MyFileItem):
@@ -252,6 +264,7 @@ class FilesysBrowser(QWidget):
     
 
     def update_status(self, path: PathExt, status: str):
+        #logging.debug(f'FilesysBrowser.update_status({path=},{status=})')
         def recurse(parent: FilesysBrowser.MyFileItem):
             if parent is None:
                 return
@@ -269,11 +282,13 @@ class FilesysBrowser(QWidget):
     
 
     def add_toplevel(self, path: PathExt):
+        #logging.debug(f'FilesysBrowser.add_toplevel({path=})')
         self._add_toplevel(path, 0)
         self.filesChanged.emit()
 
 
     def remove_toplevel(self, path: PathExt):
+        #logging.debug(f'FilesysBrowser.remove_toplevel({path=})')
         if self._ui_filesys_model.invisibleRootItem().rowCount() <= 1:
             return #  only one top-level element left; ignore
         for row_index in reversed(range(self._ui_filesys_model.invisibleRootItem().rowCount())):
@@ -287,6 +302,7 @@ class FilesysBrowser(QWidget):
 
     
     def change_root(self, current_root: PathExt, new_root: PathExt):
+        #logging.debug(f'FilesysBrowser.change_root({current_root=},{new_root=})')
         toplevel_item: FilesysBrowser.MyFileItem = None
         toplevel_index: int = 0
         for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
@@ -307,11 +323,13 @@ class FilesysBrowser(QWidget):
 
 
     def show_context_menu(self, items: list[tuple[str,Callable|list]]):
+        #logging.debug(f'FilesysBrowser.show_context_menu({items=})')
         point = self._contextmenu_point or QCursor().pos()
         QtHelper.show_popup_menu(self, items, point)
 
 
     def refresh(self):
+        #logging.debug(f'FilesysBrowser.refresh()')
         toplevel_paths: list[PathExt] = []
         for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
             item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
@@ -336,11 +354,11 @@ class FilesysBrowser(QWidget):
                 return  # path is already at top-level; ignore
 
         if path.is_dir():
-            new_item = FilesysBrowser.MyFileItem(path, FilesysBrowserItemType.Dir, is_toplevel=True)
+            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Dir, is_toplevel=True)
         elif path.is_file() and is_ext_supported_archive(path.suffix):
             if not self._show_archives:
                 return None
-            new_item = FilesysBrowser.MyFileItem(path, FilesysBrowserItemType.Arch, is_toplevel=True)
+            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Arch, is_toplevel=True)
         else:
             return  # files cannot be a top-lvel item; ignore
         
@@ -370,9 +388,15 @@ class FilesysBrowser(QWidget):
                 item.checked = item in selected_items
                 recurse(item)
         recurse(self._ui_filesys_model.invisibleRootItem())
+
+    
+    def _on_files_changed(self):
+        #logging.debug(f'FilesysBrowser._on_files_changed()')
+        self.filesChanged.emit()
     
 
-    def _on_checked_change(self, index: QModelIndex, index2: QModelIndex):
+    def _on_checked_change(self):
+        #logging.debug(f'FilesysBrowser._on_checked_change()')
         self.selectionChanged.emit()
 
     

@@ -2,7 +2,7 @@ from .text_dialog_ui import TextDialogUi
 from .settings_dialog import SettingsDialog
 from .helpers.simple_dialogs import save_file_dialog, error_dialog
 from .helpers.settings import Settings
-from lib import Clipboard, AppPaths, start_process
+from lib import Clipboard, AppPaths, start_process, PathExt
 
 
 class TextDialog(TextDialogUi):
@@ -15,7 +15,7 @@ class TextDialog(TextDialogUi):
         super().__init__(parent)
     
 
-    def show_modal_dialog(self, title: str, *, text: str = None, file_path: str = None, save_filetypes = None):
+    def show_modal_dialog(self, title: str, *, text: str = None, file_path: PathExt = None, save_filetypes = None):
         self.title = title
         self.file_path = file_path
         self.filetypes = save_filetypes
@@ -23,7 +23,8 @@ class TextDialog(TextDialogUi):
         if file_path:
             assert text is None
             try:
-                with open(file_path, 'r') as fp:
+                # TODO: support archives. My idea is that PathExt offers a helper method to obtain the file contents.
+                with open(str(file_path), 'r') as fp:
                     self.text = fp.read()
             except Exception as ex:
                 error_dialog('Error', 'Unable to read file contents', str(ex))

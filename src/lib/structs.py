@@ -113,13 +113,12 @@ class SParamFile:
         if self._nw is not None:
             return
 
-        try:
-            if SParamFile.before_load:
-                if not SParamFile.before_load(self.path):
-                    self._error = 'aborted by user'
-                    return
-        except:
-            pass
+        if SParamFile.before_load:
+            if not SParamFile.before_load(self.path):
+                #logging.debug(f'SParamFile<{self.path}>._load() -> denied')
+                self._error = 'aborted by user'
+                raise RuntimeError(f'Loading aborted by user')
+        #logging.debug(f'SParamFile<{self.path}>._load()')
 
         def load(path: str):
             try:
