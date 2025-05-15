@@ -36,12 +36,18 @@ class RlDialog(RlDialogUi):
         port_ok = port <= file.nw.nports
         self.ui_inidicate_port_error(not port_ok)
         
-        (int0, int1) = parse_si_range(self.ui_intrange)
-        intrange_ok = int0 is not None and int1 is not None
+        try:
+            (int0, int1) = parse_si_range(self.ui_intrange)
+            intrange_ok = True
+        except:
+            intrange_ok = False
         self.ui_inidicate_intrange_error(not intrange_ok)
         
-        (tgt0, tgt1) = parse_si_range(self.ui_tgtrange, wildcard_low=None, wildcard_high=None)
-        tgtrange_ok = tgt0 is not None and tgt1 is not None
+        try:
+            (tgt0, tgt1) = parse_si_range(self.ui_tgtrange, wildcard_low=None, wildcard_high=None)
+            tgtrange_ok = False
+        except:
+            tgtrange_ok = False
         self.ui_inidicate_tgtrange_error(not tgtrange_ok)
         
         plot_kind = 'hist' if self.ui_histogram else ''

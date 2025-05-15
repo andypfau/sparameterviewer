@@ -4,6 +4,7 @@ from .helpers.statusbar import StatusBar
 from .helpers.syntax_highlight import PythonSyntaxHighlighter
 from .helpers.path_bar import PathBar
 from .helpers.filesys_browser import FilesysBrowser, FilesysBrowserItemType
+from .helpers.range_edit import RangeEdit
 from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -63,9 +64,14 @@ class MainWindowUi(QMainWindow):
         view_ribbon.setContentsMargins(0, 0, 0, 0)
         self._ui_ribbon.addTab(view_ribbon, 'View')
         self._ui_logx_button = QtHelper.make_button(self, 'Log X', self.on_logx_changed, flat=True, checked=False)
+        self._ui_xaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(0,10e9)])
+        self._ui_yaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(+3,-25),(-25,+25),(+3,-50),(+3,-100)])
         view_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.make_button(self, 'Filter...', self.on_show_filter, flat=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F'),
-            self._ui_logx_button,
+            QtHelper.layout_grid([
+                ['X', self._ui_xaxis_range, QtHelper.layout_h(self._ui_logx_button, ...)],
+                ['Y', self._ui_yaxis_range, QtHelper.layout_h(...)],
+            ]),
             ...,
             dense=True
         ))

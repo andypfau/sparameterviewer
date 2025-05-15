@@ -95,10 +95,10 @@ class Si:
         return self.__str__()
 
 
-def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wildcards=True, allow_individual_wildcards=True):
+def parse_si_range(s: str, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wildcards=True, allow_individual_wildcards=True) -> tuple[any,any]:
     """
     Parse a numeric range, given as float or SI-prefixed numbers.
-    Returns the range `(a,b)` if successful, or `(None,None)` on invalid input.
+    Returns the range `(a,b)` if successful, or raises ValueError on invalid input.
     Suported formats include e.g.:
     - "1m-1G": ragne from 1e-3 to 1e9
     - "*-1G": range from `wildcard_low` to 1e9
@@ -137,7 +137,7 @@ def parse_si_range(s, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wil
         if a <= b:
             return a, b
 
-    return None, None
+    raise ValueError(f'Cannot parse range "{s}')
 
 
 def format_si_range(a, b, allow_total_wildcard=False) -> str:

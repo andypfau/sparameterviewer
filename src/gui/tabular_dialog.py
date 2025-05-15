@@ -350,7 +350,7 @@ class TabularDialog(TabularDialogUi):
         writer.close()
     
 
-    def get_filters(self) -> tuple[tuple[float,float],str]:
+    def filter_dataset(self, dataset: TabularDataset) -> TabularDataset:
         
         def parse_cols(s: str):
             s = s.strip()
@@ -359,27 +359,21 @@ class TabularDialog(TabularDialogUi):
             parts = [p for p in re.split(r'\s+', s) if p!='']
             return parts
 
-        filter_x = parse_si_range(self.ui_selected_freq_filter)
-        filter_cols = parse_cols(self.ui_selected_param_filter)
-        
-        self.ui_indicate_freq_filter_error(filter_x==(None,None))
-
-        return filter_x, filter_cols
-
-
-    def filter_dataset(self, dataset: TabularDataset) -> TabularDataset:
-        
         ycols = dataset.ycols
         xcol_data = dataset.xcol_data
         ycol_datas = dataset.ycol_datas
 
-        (filter_x0, filter_x1), filter_cols = self.get_filters()
+        try:
+            (filter_x0, filter_x1) = parse_si_range(self.ui_selected_freq_filter)
+            self.ui_indicate_freq_filter_error(False)
+        except:
+            self.ui_indicate_freq_filter_error(True)
+            return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
+        
+        filter_cols = parse_cols(self.ui_selected_param_filter)
 
         if not dataset.is_spar:
             filter_cols = any  # ignore filter
-        
-        if filter_x0 is None or filter_x1 is None:
-            return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
         
         if filter_cols is not any:
             ycols_filtered = []

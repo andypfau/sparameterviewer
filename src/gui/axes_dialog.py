@@ -49,11 +49,12 @@ class AxesDialog(AxesDialogUi):
 
 
     def on_x_change(self):
-        (x0,x1) = parse_si_range(self.ui_x, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True, allow_individual_wildcards=False)
-        if (x0,x1) == (None,None):
+        try:
+            (x0,x1) = parse_si_range(self.ui_x, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True, allow_individual_wildcards=False)
+        except:
             self.ui_inidicate_x_error(True)
             return
-        elif (x0,x1) == (any,any):
+        if (x0,x1) == (any,any):
             self.xauto = True
         else:
             self.x0, self.x1, self.xauto = x0, x1, False
@@ -62,11 +63,12 @@ class AxesDialog(AxesDialogUi):
 
 
     def on_y_change(self):
-        (y0,y1) = parse_si_range(self.ui_y, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True, allow_individual_wildcards=False)
-        if (y0,y1) == (None,None):
+        try:
+            (y0,y1) = parse_si_range(self.ui_y, wildcard_low=any, wildcard_high=any, allow_both_wildcards=True, allow_individual_wildcards=False)
+        except:
             self.ui_inidicate_y_error(True)
             return
-        elif (y0,y1) == (any,any):
+        if (y0,y1) == (any,any):
             self.yauto = True
         else:
             self.y0, self.y1, self.yauto = y0, y1, False
