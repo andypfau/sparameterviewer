@@ -3,6 +3,7 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, parse_quick_param
 from .sparams import SParam, SParams
+from .helpers import format_call_signature
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
 from info import Info
@@ -574,7 +575,7 @@ class Networks:
         elif len(n.nws) == len(self.nws):
             return self.nws
         raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nws)}')
-    
+
 
     def _unary_op(self, fn, return_type, *args, **kwargs):
         result = []
@@ -586,7 +587,7 @@ class Networks:
                 else:
                     result.append(r)
             except Exception as ex:
-                logging.warning(f'Unary operation <{fn}> on network <{nw.nw.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,*args,**kwargs)})> on network <{nw.nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
             return Networks(nws=result)
         elif return_type == SParams:
@@ -605,7 +606,7 @@ class Networks:
                 else:
                     result.append(r)
             except Exception as ex:
-                logging.warning(f'Binary operation <{fn}> on network <{nw.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,args,kwargs)}> on network <{nw.name}> failed ({ex}), ignoring')
         if return_type == Networks:
             return Networks(nws=result)
         elif return_type == SParams:

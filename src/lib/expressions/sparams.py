@@ -5,6 +5,7 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
+from .helpers import format_call_signature
 
 import skrf, math, os
 import numpy as np
@@ -275,7 +276,7 @@ class SParams:
             try:
                 result.append(fn(sp, **kwargs))
             except Exception as ex:
-                logging.warning(f'Unary operation <{fn}> on sparam <{sp.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,[],kwargs)}> on sparam <{sp.name}> failed ({ex}), ignoring')
         if return_sps:
             return SParams(sps=result)
         else:
@@ -288,7 +289,7 @@ class SParams:
             try:
                 result.append(fn(sp, other, **kwargs))
             except Exception as ex:
-                logging.warning(f'Binary operation <{fn}> on sparam <{sp.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,[],kwargs)}> on sparam <{sp.name}> failed ({ex}), ignoring')
         if return_sps:
             return SParams(sps=result)
         else:
