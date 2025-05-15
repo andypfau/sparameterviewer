@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .qt_helper import QtHelper
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -11,6 +12,11 @@ import enum
 
 
 class PathBar(QWidget):
+
+
+    class Mode(enum.Enum):
+        Text = enum.auto()
+        Breadcrumbs = enum.auto()
 
 
     class MyWidget(QWidget):
@@ -56,6 +62,7 @@ class PathBar(QWidget):
         self._path = pathlib.Path(path)
         self._breadcrumb_paths: dict[any,pathlib.Path] = {}
         self._enabled = True
+        self._default_mode = PathBar.Mode.Breadcrumbs
 
         self._toggle_button = QPushButton('...')
         self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
@@ -79,8 +86,26 @@ class PathBar(QWidget):
         layout.setSpacing(0)
         self.setLayout(layout)
 
-        self._implement_enabled_state()
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
     
+
+    @property
+    def mode(self) -> PathBar.Mode:
+        if self._breadcrumb.isVisible():
+            return PathBar.Mode.Breadcrumbs
+        return PathBar.Mode.Text
+
+
+    @property
+    def default_mode(self) -> PathBar.Mode:
+        return self._default_mode
+    @default_mode.setter
+    def default_mode(self, value: PathBar.Mode):
+        self._default_mode = value
+
 
     @property
     def path(self) -> str:
@@ -97,7 +122,10 @@ class PathBar(QWidget):
             return
         
         self._path = path
-        self._update_and_show_text()
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
     
 
     def enabled(self) -> bool:
@@ -106,7 +134,10 @@ class PathBar(QWidget):
         if self._enabled == value:
             return
         self._enabled = value
-        self._update_and_show_text()
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
 
 
     def _text_press_enter(self):
@@ -127,7 +158,10 @@ class PathBar(QWidget):
     def _text_press_escape(self):
         if not self._enabled:
             return
-        self._update_and_show_text()
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
 
 
     def _implement_enabled_state(self):
@@ -225,7 +259,10 @@ class PathBar(QWidget):
         
         actually_changed = self._path != path
         self._path = pathlib.Path(path)
-        self._update_and_show_text()
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
         if actually_changed:
             self.pathChanged.emit(str(path.absolute()))
         

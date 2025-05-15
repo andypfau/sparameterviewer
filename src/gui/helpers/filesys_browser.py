@@ -182,6 +182,7 @@ class FilesysBrowser(QWidget):
         
         self._ui_pathbar = PathBar()
         self._ui_pathbar.setEnabled(False)
+        self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
         self._ui_pathbar.pathChanged.connect(self._on_pathbar_change)
         self._ui_filesys_view = QTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
