@@ -123,6 +123,7 @@ def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[
     dialog.setFileMode(QFileDialog.FileMode.AnyFile)
     dialog.setWindowTitle(title)
     dialog.setViewMode(QFileDialog.ViewMode.Detail)
+    dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
     if Settings.last_dir_filedialog and pathlib.Path(Settings.last_dir_filedialog).exists():
         dialog.setDirectory(Settings.last_dir_filedialog)
     elif AppPaths.get_default_file_dir() and pathlib.Path(AppPaths.get_default_file_dir()).exists():
@@ -139,7 +140,7 @@ def save_file_dialog(parent, *, title: str = 'Save File', filetypes: list[tuple[
         return None
     
     path = dialog.selectedFiles()[0]
-    Settings.last_dir_filedialog = str(pathlib.Path(path).parent())
+    Settings.last_dir_filedialog = str(pathlib.Path(path).parent)
     
     return path
 
