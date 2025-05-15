@@ -27,7 +27,7 @@ class FilterDialog(FilterDialogUi):
 
 
     def _set_displayed_files(self, matched_files: list[PathExt], unmatched_files: list[PathExt]):
-        self.ui_set_files(['✅ '+file.final_name for file in matched_files], [file.final_name for file in unmatched_files])
+        self.ui_set_files([file.final_name for file in matched_files], [file.final_name for file in unmatched_files])
     
 
     def do_filtering(self):

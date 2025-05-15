@@ -79,6 +79,8 @@ class FilterDialogUi(QDialog):
         self._ui_files_model.clear()
         for file in files:
             item = QtGui.QStandardItem(file)
+            item.setForeground(QPalette().color(QPalette.ColorRole.HighlightedText))
+            item.setBackground(QPalette().color(QPalette.ColorRole.Highlight))
             self._ui_files_model.appendRow(item)
         for other_file in other_files:
             item = QtGui.QStandardItem(other_file)

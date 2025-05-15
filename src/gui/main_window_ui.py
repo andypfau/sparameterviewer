@@ -58,6 +58,8 @@ class MainWindowUi(QMainWindow):
                 background-color: {color_hl};
                 color: {color_hl_text};
             }}
+            QComboBox {{
+            }}
             """)
         self._ui_ribbon.setContentsMargins(0, 0, 0, 0)
         view_ribbon = QWidget()
@@ -65,15 +67,17 @@ class MainWindowUi(QMainWindow):
         self._ui_ribbon.addTab(view_ribbon, 'View')
         self._ui_logx_button = QtHelper.make_button(self, 'Log X', self.on_logx_changed, flat=True, checked=False)
         self._ui_xaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(0,10e9)])
+        self._ui_xaxis_range.rangeChanged.connect(self.on_axis_range_change)
         self._ui_yaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(+3,-25),(-25,+25),(+3,-50),(+3,-100)])
+        self._ui_yaxis_range.rangeChanged.connect(self.on_axis_range_change)
         view_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.make_button(self, 'Filter...', self.on_show_filter, flat=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F'),
             QtHelper.layout_grid([
                 ['X', self._ui_xaxis_range, QtHelper.layout_h(self._ui_logx_button, ...)],
                 ['Y', self._ui_yaxis_range, QtHelper.layout_h(...)],
-            ]),
+            ], dense=False),
             ...,
-            dense=True
+            dense=False
         ))
 
         
@@ -603,4 +607,6 @@ class MainWindowUi(QMainWindow):
     def on_filesys_doubleclick(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         pass
     def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
+        pass
+    def on_axis_range_change(self):
         pass
