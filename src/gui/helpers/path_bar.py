@@ -65,16 +65,24 @@ class PathBar(QWidget):
         self._default_mode = PathBar.Mode.Breadcrumbs
 
         self._toggle_button = QPushButton('...')
-        self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
+        self._toggle_button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self._toggle_button.setFlat(True)
         self._toggle_button.setContentsMargins(0, 0, 0, 0)
+        self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
         self._breadcrumb = PathBar.MyWidget()
+        self._breadcrumb.setContentsMargins(0, 0, 0, 0)
         self._breadcrumb.setVisible(False)
         self._breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
         self._breadcrumb.backClicked.connect(self._on_back_click)
         self._breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
         self._breadcrumb_label = QLabel()
         self._breadcrumb_label.linkActivated.connect(self._on_link_click)
-        self._breadcrumb.setLayout(QtHelper.layout_h(self._breadcrumb_label, ...))
+        self._breadcrumb_label.setContentsMargins(0, 0, 0, 0)
+        self._breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        layout = QtHelper.layout_h(self._breadcrumb_label)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self._breadcrumb.setLayout(layout)
         self._text = PathBar.MyLineEdit(self)
         self._text.setText(str(self._path.absolute()))
         self._text.setToolTip('Press Enter to accept path / Escape to discard, and show breadcrumb bar')
@@ -211,8 +219,6 @@ class PathBar(QWidget):
         paths = [self._path]
         while paths[0].parent != paths[0]:
             paths.insert(0, paths[0].parent)
-
-
 
         label_width = self._text.width()
         font_metrics = QFontMetrics(self._text.font())

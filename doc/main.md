@@ -25,7 +25,7 @@ To switch to a different directory, or append files from another directory, go *
 - *Insertion Loss*: only the $S_{i,j}$-terms, e.g. $S_{21}$ or $S_{12}$.
 - *\* (reciprocal)*: include e.g. $S_{21}$, but not $S_{12}$.
 - *Return Loss / Impedance*: only the $S_{i,i}$-terms, e.g. $S_{11}$ or $S_{22}$.
-- *Expression-Based*: use expressions (see later section).
+- *Expression-Based*: use expressions for even more flexibility ([see here](expressions.md)).
 
 ### Plot Formats
 

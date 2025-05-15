@@ -19,10 +19,7 @@ class FilterDialog(FilterDialogUi):
         
         self._set_displayed_files([], self._files)
         self.ui_regex_mode = Settings.search_regex
-        if Settings.search_regex:
-            self.ui_search_text = '.*'
-        else:
-            self.ui_search_text = '*'
+        self.ui_search_text = Settings.last_search
         if super().ui_show_modal():
             if len(self._matched_files) > 0:
                 return self._matched_files
@@ -30,7 +27,7 @@ class FilterDialog(FilterDialogUi):
 
 
     def _set_displayed_files(self, matched_files: list[PathExt], unmatched_files: list[PathExt]):
-        self.ui_set_files([file.final_name for file in matched_files], [file.final_name for file in unmatched_files])
+        self.ui_set_files(['✅ '+file.final_name for file in matched_files], [file.final_name for file in unmatched_files])
     
 
     def do_filtering(self):
@@ -71,9 +68,11 @@ class FilterDialog(FilterDialogUi):
 
 
     def on_search_change(self):
+        Settings.last_search = self.ui_search_text
         self.do_filtering()
         
 
     def on_search_mode_change(self):
+        Settings.search_regex = self.ui_regex_mode
         self.do_filtering()
     

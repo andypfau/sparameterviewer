@@ -53,7 +53,7 @@ class SettingsDialog(SettingsDialogUi):
     }
 
     COLOR_ASSIGNMENT_NAMES = {
-        ColorAssignment.Auto: 'Automatic',
+        ColorAssignment.Default: 'Default',
         ColorAssignment.ByParam: 'By Parameter',
         ColorAssignment.ByFile: 'By File',
         ColorAssignment.ByFileLoc: 'By File Location',

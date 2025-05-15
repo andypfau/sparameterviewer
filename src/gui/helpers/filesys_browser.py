@@ -252,7 +252,6 @@ class FilesysBrowser(QWidget):
     @selected_files.setter
     def selected_files(self, selected_paths: list[PathExt]):
         #logging.debug(f'FilesysBrowser.selected_files.setter({selected_paths=})')
-        self._ui_filesys_view.selectionModel().clearSelection()
 
         def recurse(parent: FilesysBrowser.MyFileItem):
             if parent is None:
@@ -261,9 +260,10 @@ class FilesysBrowser(QWidget):
                 item = parent.child(row_index, 0)
                 if not isinstance(item, FilesysBrowser.MyFileItem):
                     continue
-                if item.path in selected_paths:
-                    item.checked = True
-                recurse(item)
+                if item.type == FilesysBrowserItemType.File:
+                    item.checked = item.path in selected_paths
+                else:
+                    recurse(item)
         recurse(self._ui_filesys_model.invisibleRootItem())
     
 

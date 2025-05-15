@@ -52,7 +52,7 @@ class CursorSnap(enum.StrEnum):
     Point = 'point'
 
 class ColorAssignment(enum.StrEnum):
-    Auto = 'autp'
+    Default = 'default'
     ByParam = 'param'
     ByFile = 'file'
     ByFileLoc = 'file-container'
@@ -84,6 +84,7 @@ class SParamViewerAppSettings(AppSettings):
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon
     search_regex: bool = False
+    last_search: str = ''
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
