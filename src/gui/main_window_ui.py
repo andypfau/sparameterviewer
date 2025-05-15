@@ -239,9 +239,18 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
-    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable):
+    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable, retrigger_behavior: str = 'ignore'):
+        
+        msec = max(1,int(round(seconds*1e3)))
+        
         if identifier in self._ui_timers:
-            return  # already scheduled -> ignore
+            if retrigger_behavior == 'ignore':
+                return
+            elif retrigger_behavior == 'extend':
+                timer = self._ui_timers[identifier][0]
+                timer.stop()
+                timer.start(msec)
+                return
         
         self._ui_timers[identifier] = (QTimer(), callback)
         def make_timeout_function(identifier):
@@ -252,7 +261,6 @@ class MainWindowUi(QMainWindow):
             return timeout_function
         self._ui_timers[identifier][0].timeout.connect(make_timeout_function(identifier))
         
-        msec = max(1,int(round(seconds*1e3)))
         self._ui_timers[identifier][0].setSingleShot(True)
         self._ui_timers[identifier][0].start(msec)
         

@@ -6,6 +6,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import pathlib
 import os
+import enum
 
 
 
@@ -54,6 +55,7 @@ class PathBar(QWidget):
             path = AppPaths.get_default_file_dir()
         self._path = pathlib.Path(path)
         self._breadcrumb_paths: list[pathlib.Path] = []
+        self._enabled = True
 
         self._toggle_button = QPushButton('...')
         self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
@@ -79,6 +81,8 @@ class PathBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
+
+        self._implement_enabled_state()
     
 
     @property
@@ -95,38 +99,68 @@ class PathBar(QWidget):
         if not path.is_dir() or not path.exists():
             return
         
-        actually_changed = self._path != path
         self._path = path
-        self._update_and_show_breadcrumbs()
-        if actually_changed:
-            self.pathChanged.emit(str(path.absolute()))
+        self._update_and_show_text()
+    
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+    @enabled.setter
+    def enabled(self, value: bool):
+        if self._enabled == value:
+            return
+        self._enabled = value
+        self._update_and_show_text()
 
 
     def _text_press_enter(self):
+        if not self._enabled:
+            return
         path = pathlib.Path(self._text.text())
         if not (path.exists() and path.is_dir()):
             return
         
         actually_changed = self._path != path
         self._path = path
-        self.pathChanged.emit(str(path.absolute()))
         self._breadcrumb.setVisible(False)
         self._text.setVisible(True)
         if actually_changed:
             self.pathChanged.emit(str(path.absolute()))
 
 
+    def _implement_enabled_state(self):
+        self._toggle_button.setVisible(self._enabled)
+        self._text.setEnabled(self._enabled)
+        if self._enabled:
+            self._text.setPlaceholderText('Enter path...')
+        else:
+            self._text.setText('')
+            self._text.setPlaceholderText('')
+            self._breadcrumb.setVisible(False)
+            self._text.setVisible(True)
+
+
     def _update_and_show_text(self):
+        self._implement_enabled_state()
+        if not self._enabled:
+            return
+
         if not self._path.exists():
             return
 
-        self._text.setText(str(self._path.absolute()))
         self._breadcrumb.setVisible(False)
+        self._text.setText(str(self._path.absolute()))
+        self._text.setEnabled(True)
         self._text.setVisible(True)
         self._text.setFocus()
 
 
     def _update_and_show_breadcrumbs(self):
+        self._implement_enabled_state()
+        if not self._enabled:
+            return
+        
         if not self._path.exists():
             return
         
@@ -155,10 +189,14 @@ class PathBar(QWidget):
 
 
     def _text_press_escape(self):
-        self._update_and_show_breadcrumbs()
+        if not self._enabled:
+            return
+        self._update_and_show_text()
 
 
     def _on_link_click(self, identifier):
+        if not self._enabled:
+            return
         try:
             path = self._breadcrumb_paths[int(identifier)]
         except:
@@ -175,16 +213,21 @@ class PathBar(QWidget):
         
     
     def _on_outside_breadcrumb_click(self):
+        if not self._enabled:
+            return
         self._update_and_show_text()
     
 
     def _on_toggle_breadcrumb(self):
+        if not self._enabled:
+            return
         if self._breadcrumb.isVisible():
             self._update_and_show_text()
         elif self._text.isVisible():
             self._update_and_show_breadcrumbs()
 
 
-
     def _on_back_click(self):
+        if not self._enabled:
+            return
         self.backClicked.emit()

@@ -180,6 +180,8 @@ class FilesysBrowser(QWidget):
         self._contextmenu_item: FilesysBrowser.MyFileItem = None
         self._show_archives = False
         
+        self._ui_pathbar = PathBar()
+        self._ui_pathbar.pathChanged.connect(self._on_pathbar_change)
         self._ui_filesys_view = QTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
         self._ui_filesys_model.setHorizontalHeaderLabels(['File', 'Info'])
@@ -196,7 +198,7 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
         self._ui_filesys_view.doubleClicked.connect(self._on_doubleclick)
-        self.setLayout(QtHelper.layout_v(self._ui_filesys_view))
+        self.setLayout(QtHelper.layout_v(self._ui_pathbar, self._ui_filesys_view))
     
 
     @property
@@ -372,9 +374,18 @@ class FilesysBrowser(QWidget):
         newly_selected_items = list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in selected.indexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
         
         if len(newly_selected_items)==1:
-            if newly_selected_items[0].type != FilesysBrowserItemType.File:
-                # the user selected a non-file; ignore this action
+            selected_item = newly_selected_items[0]
+            if selected_item.type == FilesysBrowserItemType.Dir and selected_item.is_toplevel:
+                self._ui_pathbar.path = str(selected_item.path)
+                self._ui_pathbar.enabled = True
                 return
+
+            if selected_item.type != FilesysBrowserItemType.File:
+                # the user selected a non-file; ignore this action
+                self._ui_pathbar.enabled = False
+                return
+        
+        self._ui_pathbar.enabled = False
 
         # the user selected or de-selected some files; check them accordingly
         selected_items = [item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)]
@@ -443,6 +454,18 @@ class FilesysBrowser(QWidget):
         if not isinstance(top_item, FilesysBrowser.MyFileItem):
             return
         self.doubleClicked.emit(item.path, top_item.path, item.type)
+
+
+    def _on_pathbar_change(self, path: str):
+        selected_items = list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
+        if len(selected_items) != 1:
+            return
+        item = selected_items[0]
+        if not item.type == FilesysBrowserItemType.Dir:
+            return
+        if not item.is_toplevel:
+            return
+        self.change_root(item.path, PathExt(path))
 
 
     @staticmethod
