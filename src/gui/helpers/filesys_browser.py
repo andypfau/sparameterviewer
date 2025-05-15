@@ -181,6 +181,7 @@ class FilesysBrowser(QWidget):
         self._show_archives = False
         
         self._ui_pathbar = PathBar()
+        self._ui_pathbar.setEnabled(False)
         self._ui_pathbar.pathChanged.connect(self._on_pathbar_change)
         self._ui_filesys_view = QTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
@@ -376,16 +377,17 @@ class FilesysBrowser(QWidget):
         if len(newly_selected_items)==1:
             selected_item = newly_selected_items[0]
             if selected_item.type == FilesysBrowserItemType.Dir and selected_item.is_toplevel:
+                # the user selected a top-level directory; update path bar, but do not change selection
                 self._ui_pathbar.path = str(selected_item.path)
-                self._ui_pathbar.enabled = True
+                self._ui_pathbar.setEnabled(True)
                 return
 
             if selected_item.type != FilesysBrowserItemType.File:
-                # the user selected a non-file; ignore this action
-                self._ui_pathbar.enabled = False
+                # the user selected a non-file; do not change selection
+                self._ui_pathbar.setEnabled(False)
                 return
         
-        self._ui_pathbar.enabled = False
+        self._ui_pathbar.setEnabled(False)
 
         # the user selected or de-selected some files; check them accordingly
         selected_items = [item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)]

@@ -228,3 +228,12 @@ def get_next_1_10_100(x: int) -> int:
     if x < 1:
         return 1
     return int(round(10**(math.floor(math.log10(x))+1)))
+
+
+
+__unique_id_counter__: int = 0
+
+def get_unique_id() -> int:
+    global __unique_id_counter__
+    __unique_id_counter__ += 1
+    return __unique_id_counter__

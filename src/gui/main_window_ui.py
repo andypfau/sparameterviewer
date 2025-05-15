@@ -239,14 +239,14 @@ class MainWindowUi(QMainWindow):
         self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
-    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable, retrigger_behavior: str = 'ignore'):
+    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable, retrigger_behavior: str = 'keep'):
         
         msec = max(1,int(round(seconds*1e3)))
         
         if identifier in self._ui_timers:
-            if retrigger_behavior == 'ignore':
+            if retrigger_behavior == 'keep':
                 return
-            elif retrigger_behavior == 'extend':
+            elif retrigger_behavior == 'postpone':
                 timer = self._ui_timers[identifier][0]
                 timer.stop()
                 timer.start(msec)

@@ -18,7 +18,7 @@ from .helpers.filesys_browser import FilesysBrowserItemType
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive
+from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
@@ -46,14 +46,10 @@ class MainWindow(MainWindowUi):
 
     CURSOR_OFF_NAME = '—'
 
-    TIMER_CURSORS_ID = 1
-    TIMER_CURSORS_TIMEOUT_S = 25e-3
-
-    TIMER_UPDATE_ID = 2
-    TIMER_UPDATE_TIMEOUT_S = 10e-3
-
-    TIMER_SELECT_ID = 3
-    TIMER_SELECT_TIMEOUT_S = 100e-3
+    TIMER_CURSORS_ID, TIMER_CURSORS_TIMEOUT_S = get_unique_id(), 25e-3
+    TIMER_UPDATE_ID, TIMER_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
+    TIMER_SELECT_ID, TIMER_SELECT_TIMEOUT_S = get_unique_id(), 100e-3
+    TIMER_RESET_LOAD_ID, TIMER_RESET_LOAD_TIMEOUT_S = get_unique_id(), 250e-3
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
@@ -1150,7 +1146,7 @@ class MainWindow(MainWindowUi):
         
         if not self.ready:
             return
-        self.clear_load_counter()
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESET_LOAD_ID, MainWindow.TIMER_RESET_LOAD_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls

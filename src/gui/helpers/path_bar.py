@@ -54,7 +54,7 @@ class PathBar(QWidget):
         if not path:
             path = AppPaths.get_default_file_dir()
         self._path = pathlib.Path(path)
-        self._breadcrumb_paths: list[pathlib.Path] = []
+        self._breadcrumb_paths: dict[any,pathlib.Path] = {}
         self._enabled = True
 
         self._toggle_button = QPushButton('...')
@@ -66,9 +66,6 @@ class PathBar(QWidget):
         self._breadcrumb.backClicked.connect(self._on_back_click)
         self._breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
         self._breadcrumb_label = QLabel()
-        self._breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._breadcrumb_label.setWordWrap(True)
-
         self._breadcrumb_label.linkActivated.connect(self._on_link_click)
         self._breadcrumb.setLayout(QtHelper.layout_h(self._breadcrumb_label, ...))
         self._text = PathBar.MyLineEdit(self)
@@ -103,11 +100,9 @@ class PathBar(QWidget):
         self._update_and_show_text()
     
 
-    @property
     def enabled(self) -> bool:
         return self._enabled
-    @enabled.setter
-    def enabled(self, value: bool):
+    def setEnabled(self, value: bool):
         if self._enabled == value:
             return
         self._enabled = value
@@ -127,6 +122,12 @@ class PathBar(QWidget):
         self._text.setVisible(True)
         if actually_changed:
             self.pathChanged.emit(str(path.absolute()))
+
+
+    def _text_press_escape(self):
+        if not self._enabled:
+            return
+        self._update_and_show_text()
 
 
     def _implement_enabled_state(self):
@@ -164,41 +165,58 @@ class PathBar(QWidget):
         if not self._path.exists():
             return
         
-        self._breadcrumb_paths = []
-        parts = list(self._path.parts)
-        prev_part = ''
-        parts_so_far = []
-        html = ''
-        for i, part in enumerate(parts):
-            
-            parts_so_far.append(part)
-            self._breadcrumb_paths.append(pathlib.Path(os.path.join(*parts_so_far)))
+        def path_to_disp_str(path: pathlib.Path) -> str:
+            if path.parent == path:
+                s = path.anchor
+            else:
+                s = path.name
+            return s.strip(os.sep)
+        
+        self._breadcrumb_paths.clear()
 
-            if (i > 0) and (os.sep not in prev_part):
-                html += os.sep
-            html += f'<a href="{i}">{part}</a>'
-            if os.sep in part:
-                html += ' '
+        paths = [self._path]
+        while paths[0].parent != paths[0]:
+            paths.insert(0, paths[0].parent)
 
-            prev_part = part
+
+
+        label_width = self._text.width()
+        font_metrics = QFontMetrics(self._text.font())
+        char_width = font_metrics.averageCharWidth()
+        MARGIN_CHARS = 3
+        max_chars = label_width // char_width - MARGIN_CHARS
+        SHORTENER = '...'
+        shortened = False
+        while True:
+            plaintext = os.sep.join([path_to_disp_str(p) for p in paths])
+            if shortened:
+                plaintext += os.sep + SHORTENER
+            if len(plaintext) <= max_chars:
+                break
+            if len(paths) < 3:
+                break
+            del paths[1]
+            shortened = True
+        
+        html_parts = []
+        for i,path in enumerate(paths):
+            identifier = f'#{i}'
+            if shortened and i==1:
+                html_parts.append(SHORTENER)
+            html_parts.append(f'<a href="{identifier}">{path_to_disp_str(path)}</a>')
+            self._breadcrumb_paths[identifier] = path
+        html = os.sep.join(html_parts)
         
         self._breadcrumb_label.setText(html)
-
         self._text.setVisible(False)
         self._breadcrumb.setVisible(True)
-
-
-    def _text_press_escape(self):
-        if not self._enabled:
-            return
-        self._update_and_show_text()
 
 
     def _on_link_click(self, identifier):
         if not self._enabled:
             return
         try:
-            path = self._breadcrumb_paths[int(identifier)]
+            path = self._breadcrumb_paths[identifier]
         except:
             return
 
