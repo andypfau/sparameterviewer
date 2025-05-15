@@ -18,7 +18,8 @@ class Clipboard:
         width = int(fig.get_figwidth() * fig.dpi)
         height = int(fig.get_figheight() * fig.dpi)
 
-        image = QImage(rgba_buffer, width, height, QImage.Format.Format_ARGB32)
+        image_rgba = QImage(rgba_buffer, width, height, QImage.Format.Format_ARGB32)
+        image = image_rgba.rgbSwapped()  # the format of matplotlib and Qt differ, must swap colors
 
         clipboard = QGuiApplication.clipboard()
         clipboard.clear(mode=QClipboard.Mode.Clipboard)
