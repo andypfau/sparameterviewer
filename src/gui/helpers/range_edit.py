@@ -42,6 +42,7 @@ class RangeEdit(QComboBox):
     
 
     def _update_text_from_value(self):
+        QtHelper.indicate_error(self, False)
         self.setCurrentText(format_si_range(self._start, self._end, self._allow_both_wildcards))
 
 
@@ -56,5 +57,6 @@ class RangeEdit(QComboBox):
         try:
             self._start, self._end = parse_si_range(self.currentText(), wildcard_low=self._wildcard_low, wildcard_high=self._wildcard_high, allow_both_wildcards=self._allow_both_wildcards, allow_individual_wildcards=self._allow_individual_wildcards)
             self.rangeChanged.emit()
+            QtHelper.indicate_error(self, False)
         except:
-            return
+            QtHelper.indicate_error(self, True)

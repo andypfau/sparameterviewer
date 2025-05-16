@@ -52,13 +52,6 @@ class SettingsDialog(SettingsDialogUi):
         CursorSnap.Point: 'Closest Point',
     }
 
-    COLOR_ASSIGNMENT_NAMES = {
-        ColorAssignment.Default: 'Default',
-        ColorAssignment.ByParam: 'By Parameter',
-        ColorAssignment.ByFile: 'By File',
-        ColorAssignment.ByFileLoc: 'By File Location',
-    }
-
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -68,7 +61,6 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
         self.ui_set_font_options(QtHelper.get_all_available_font_families(monospace_only=True))
         self.ui_set_cursor_snap_options(list(SettingsDialog.CURSOR_SNAP_NAMES.values()))
-        self.ui_set_color_assignment_options(list(SettingsDialog.COLOR_ASSIGNMENT_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -83,7 +75,6 @@ class SettingsDialog(SettingsDialogUi):
         try:
             self.ui_radians = Settings.phase_unit == PhaseUnit.Radians
             self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
-            self.ui_color_assignment = SettingsDialog.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
             self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
             self.ui_td_window_param = Settings.window_arg
             self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
@@ -222,10 +213,3 @@ class SettingsDialog(SettingsDialogUi):
 
     def _on_warncount_load_changed(self):
         Settings.warncount_file_load = self.ui_warncount_load
-
-
-    def on_colorassignments_changed(self):
-        for ca, name in SettingsDialog.COLOR_ASSIGNMENT_NAMES.items():
-            if name == self.ui_color_assignment:
-                Settings.color_assignment = ca
-                break

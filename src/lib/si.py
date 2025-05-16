@@ -107,13 +107,14 @@ def parse_si_range(s: str, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_bot
     `wildcard_low` and `wildcard_high` can be disabled by setting them to None.
     """
     
-    s = s.strip()
-    if allow_both_wildcards:
-        if(s=='*') or re.match(r'\*\s*-\s*\*', s):
-            return wildcard_low, wildcard_high
-
     REX_FLOAT = r'[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?'
     REX_SI_FLOAT = REX_FLOAT + r'\s*[fpnuµmkMGTE]?'
+    REX_SEPARATOR = r'(?:-|;|,|\.\.|\.\.\.)'
+
+    s = s.strip()
+    if allow_both_wildcards:
+        if(s=='*') or re.match(r'\*\s*'+REX_SEPARATOR+r'\s*\*', s):
+            return wildcard_low, wildcard_high
 
     def parse_si_float(s):
         PREFIXES = {'f':1e-15, 'p':1e-12, 'n':1e-9, 'u': 1e-6, 'µ': 1e-6, 'm':1e-3, 'k':1e3, 'M':1e6, 'G':1e9, 'T':1e12, 'E':1e15}
@@ -124,15 +125,15 @@ def parse_si_range(s: str, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_bot
                 s = s[:-1]
         return factor * float(s)
 
-    if allow_individual_wildcards and (m := re.match(r'\*\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
+    if allow_individual_wildcards and (m := re.match(r'\*\s*'+REX_SEPARATOR+r'\s*('+REX_SI_FLOAT+r')\s*$', s)):
         b = parse_si_float(m.group(1))
         return wildcard_low, b
     
-    if allow_individual_wildcards and (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*\*\s*$', s)):
+    if allow_individual_wildcards and (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*'+REX_SEPARATOR+r'\s*\*\s*$', s)):
         a = parse_si_float(m.group(1))
         return a, wildcard_high
     
-    if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*-\s*('+REX_SI_FLOAT+r')\s*$', s)):
+    if (m := re.match(r'^\s*('+REX_SI_FLOAT+r')\s*'+REX_SEPARATOR+r'\s*('+REX_SI_FLOAT+r')\s*$', s)):
         a, b = parse_si_float(m.group(1)), parse_si_float(m.group(2))
         if a <= b:
             return a, b
@@ -148,7 +149,7 @@ def format_si_range(a, b, allow_total_wildcard=False) -> str:
         result += '*'
     else:
         result += str(Si(a))
-    result += ' - '
+    result += ' .. '
     if b is any:
         result += '*'
     else:

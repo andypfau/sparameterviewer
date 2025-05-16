@@ -26,17 +26,21 @@ Roadmap
 
 ### Missing Features
 
-- GUI: a toolbar
-- Display: more presets, to quickly scroll through all S-parameters
-- Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness
-    - The idea is that the GUI has 3 steps: transform → select parameter → plot format
-    - The plot format for step/impulse response would have to be changed to a transformation
-- Allow user to select between generic and file-specific generated expressions
-- Equation file history
-- Equation-based plot type (i.e. when I run that equation, it automatically sets up the plot type)
-- Log output for equations (so that you can also print some data or status)
-- Allow to provide regex to strip names in expression plots
-- File type registration script for Windows (using `assoc` and `ftype`)
+- GUI: a toolbar/ribbon.
+    - Also allow phase unit and trace color to be selected.
+    - Try to merge the pan/zoom tools into toolbar.
+- GUI: a control to qickly select individual parameters in a matrix-style visualization (e.g. a grid of checkboxes).
+- GUI: allow to enter frequency to set cursor position.
+- Display: more presets, to quickly scroll through all S-parameters.
+- Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness.
+    - The idea is that the GUI has 3 steps: transform → select parameter → plot format.
+    - The plot format for step/impulse response would have to be changed to a transformation.
+- Allow user to select between generic and file-specific generated expressions.
+- Equation file history.
+- Equation-based plot type (i.e. when I run that equation, it automatically sets up the plot type).
+- Log output for equations (so that you can also print some data or status).
+- Allow to provide regex to strip names in expression plots.
+- File type registration script for Windows (using `assoc` and `ftype`).
 
 
 ### Known Issues

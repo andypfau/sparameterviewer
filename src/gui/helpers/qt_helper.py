@@ -1,11 +1,11 @@
 from .settings import Settings
 from lib import is_windows, AppPaths
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets, QtSvg
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import logging
-import pathlib
+from pathlib import Path
 from typing import Callable, Optional, Union
 import dataclasses
 
@@ -22,12 +22,27 @@ class QtHelper:
             images_to_try = ['sparamviewer.png', 'sparamviewer.xbm']
         for image in images_to_try:
             try:
-                icon_path = pathlib.Path(AppPaths.get_resource_dir()) / image
-                dialog.setWindowIcon(QtGui.QIcon(str(icon_path)))
+                dialog.setWindowIcon(QtHelper.load_resource_icon(image))
                 return
             except Exception as ex:
                 pass
         logging.error(f'Unable to set window icon')
+
+
+    @staticmethod
+    def load_resource_icon(filename: str, svg_size: QSize|None = None) -> QIcon:
+        path = Path(AppPaths.get_resource_dir()) / filename
+        if path.suffix.lower() == '.svg':
+            renderer = QtSvg.QSvgRenderer(str(path))
+            size = svg_size or renderer.defaultSize()
+            pixmap = QPixmap(size)
+            pixmap.fill(QColorConstants.Transparent)
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            return QIcon(pixmap)
+        else:
+            return QIcon(str(path))
 
 
     @staticmethod
@@ -77,15 +92,20 @@ class QtHelper:
 
 
     @staticmethod
-    def make_button(parent: QObject, text: str, action: Callable = None, /, *, flat: bool = False, icon: QIcon = None, checked: bool = None, tooltip: str = None, shortcut: str = None) -> QPushButton:
-        button = QPushButton()
+    def make_button(parent: QObject, text: str = None, action: Callable = None, /, *, toolbar: bool = False, icon: str|QIcon|tuple[str,QSize]|None = None, checked: bool = None, tooltip: str = None, shortcut: str = None) -> QPushButton:
+        if toolbar:
+            button = QToolButton()
+            button.setAutoRaise(True)
+        else:
+            button = QPushButton()
         button.setText(text)
         if action:
             button.clicked.connect(action)
-        if flat:
-            button.setFlat(True)
         if icon:
-            button.setIcon(icon)
+            image = QtHelper.load_resource_icon(icon)
+            button.setIcon(image)
+            sizes = image.availableSizes()
+            button.setIconSize(sizes[-1])
         if checked is not None:
             button.setCheckable(True)
             button.setChecked(checked)
@@ -236,7 +256,6 @@ class QtHelper:
             else:
                 layout.addWidget(item)
         if dense:
-            layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(0)
         return layout
 

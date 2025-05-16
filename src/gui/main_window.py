@@ -50,6 +50,9 @@ class MainWindow(MainWindowUi):
     TIMER_UPDATE_ID, TIMER_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
     TIMER_SELECT_ID, TIMER_SELECT_TIMEOUT_S = get_unique_id(), 100e-3
     TIMER_RESET_LOAD_ID, TIMER_RESET_LOAD_TIMEOUT_S = get_unique_id(), 250e-3
+    TIMER_RESCALE_ID, TIMER_RESCALE_TIMEOUT_S = get_unique_id(), 500e-3
+
+    UNLOCKED = (any,any)
 
     MODE_NAMES = {
         ParamMode.All: 'All S-Parameters',
@@ -88,6 +91,18 @@ class MainWindow(MainWindowUi):
         PlotUnit2.GDelay: 'Group Delay',
     }
 
+    PHASE_NAMES = {
+        PhaseUnit.Degrees: '°',
+        PhaseUnit.Radians: 'rad',
+    }
+
+    COLOR_ASSIGNMENT_NAMES = {
+        ColorAssignment.Default: 'Trace',
+        ColorAssignment.ByParam: 'Parameter',
+        ColorAssignment.ByFile: 'File',
+        ColorAssignment.ByFileLoc: 'Location',
+    }
+
 
     def __init__(self, filenames: list[str]):
         self.ready = False
@@ -121,6 +136,8 @@ class MainWindow(MainWindowUi):
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
         self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
+        self.ui_set_color_assignment_options(list(MainWindow.COLOR_ASSIGNMENT_NAMES.values()))
+        self.ui_set_phase_options(list(MainWindow.PHASE_NAMES.values()))
 
         self.apply_settings_to_ui()
 
@@ -159,11 +176,14 @@ class MainWindow(MainWindowUi):
                 self.ui_mode = MainWindow.MODE_NAMES[Settings.plot_mode]
                 self.ui_unit = MainWindow.UNIT_NAMES[Settings.plot_unit]
                 self.ui_unit2 = MainWindow.UNIT2_NAMES[Settings.plot_unit2]
+                self.ui_phase_unit = MainWindow.PHASE_NAMES[Settings.phase_unit]
+                self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
+                self.ui_logx = Settings.log_freq
                 self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
                 return None
             except Exception as ex:
@@ -187,7 +207,7 @@ class MainWindow(MainWindowUi):
 
 
     def clear_load_counter(self):
-        logging.debug(f'MainWindow.clear_load_counter()')
+        #logging.debug(f'MainWindow.clear_load_counter()')
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = Settings.warncount_file_load
         self.sparamfile_load_aborted = False
@@ -449,6 +469,20 @@ class MainWindow(MainWindowUi):
                 ('Cascade Selected Networks', cascade),
             ]),
         ])
+
+
+    def on_color_change(self):
+        for ca, name in MainWindow.COLOR_ASSIGNMENT_NAMES.items():
+            if name == self.ui_color_assignment:
+                Settings.color_assignment = ca
+                return
+
+
+    def on_phase_unit_change(self):
+        for pu, name in MainWindow.PHASE_NAMES.items():
+            if name == self.ui_phase_unit:
+                Settings.phase_unit = pu
+                return
 
 
     def on_select_mode(self):
@@ -744,48 +778,58 @@ class MainWindow(MainWindowUi):
     
 
     def on_lock_xaxis(self):
-        if not self.ui_lock_x:
-            self.update_plot()
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        if self.ui_xaxis_range==MainWindow.UNLOCKED:
+            self.ui_xaxis_range = self.plot.plot.get_xlim()
+        else:
+            self.ui_xaxis_range = (any,any)
+        
+    def on_resize(self):
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESCALE_ID, MainWindow.TIMER_RESCALE_TIMEOUT_S, self.after_resize, retrigger_behavior='postpone')
+    
+
+    def after_resize(self):
+        self.update_plot()
 
     
     def on_lock_yaxis(self):
-        if not self.ui_lock_y:
-            self.update_plot()
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        if self.ui_yaxis_range==MainWindow.UNLOCKED:
+            self.ui_yaxis_range = self.plot.plot.get_ylim()
+        else:
+            self.ui_yaxis_range = (any,any)
 
 
-    def on_lock_both(self):
-        self.ui_lock_x = True
-        self.ui_lock_y = True
-
-
-    def on_unlock_axes(self):
-        self.ui_lock_x = False
-        self.ui_lock_y = False
+    def on_lock_both_axes(self):
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        if self.ui_xaxis_range==MainWindow.UNLOCKED or self.ui_yaxis_range==MainWindow.UNLOCKED:
+            self.ui_xaxis_range = self.plot.plot.get_xlim()
+            self.ui_yaxis_range = self.plot.plot.get_ylim()
+        else:
+            self.ui_xaxis_range = (any, any)
+            self.ui_yaxis_range = (any, any)
+    
+    
+    def on_xaxis_range_change(self):
+        if self.ui_xaxis_range!=MainWindow.UNLOCKED:
+            self.plot.plot.set_xlim(*self.ui_xaxis_range)
         self.update_plot()
-    
-
-    def on_rescale_locked_axes(self):
-        self.invalidate_axes_lock()
-    
-    
-    def on_manual_axes(self):
-        def scaling_callback(x0, x1, xauto, y0, y1, yauto):
-            try:
-                self.ui_lock_x = not xauto
-                if not xauto:
-                    self.plot.plot.set_xlim((x0,x1))
-                self.ui_lock_y = not yauto
-                if not yauto:
-                    self.plot.plot.set_ylim((y0,y1))
-            except:
-                pass
-            self.update_plot()
-        
-        (x0,x1) = self.plot.plot.get_xlim()
-        (y0,y1) = self.plot.plot.get_ylim()
-        AxesDialog(self).show_modal_dialog(x0, x1, not self.ui_lock_x, y0, y1, not self.ui_lock_y, scaling_callback)
 
 
+    def on_yaxis_range_change(self):
+        if self.ui_yaxis_range!=MainWindow.UNLOCKED:
+            self.plot.plot.set_ylim(*self.ui_yaxis_range)
+        self.update_plot()
+
+
+    def on_update_plot(self):
+        if self.ui_tab == MainWindowUi.Tab.Cursors:
+            return
+        if self.ui_tab == MainWindowUi.Tab.Expressions:
+            self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
+        self.update_plot()
+
+    
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
@@ -809,6 +853,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_tab_change(self):
+        self.ui_allow_plot_tool = self.ui_tab != MainWindowUi.Tab.Cursors
         self.prepare_cursors()
 
 
@@ -950,7 +995,7 @@ class MainWindow(MainWindowUi):
 
     def prepare_cursors(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
-            self.ui_plot.stop_user_action()
+            self.ui_plot_tool = PlotWidget.Tool.Off
             if self.plot:
                 self.plot.cursors[0].enable(False)
                 self.plot.cursors[1].enable(False)
@@ -1103,6 +1148,8 @@ class MainWindow(MainWindowUi):
         
         if not self.ready:
             return
+        
+        self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_ID)
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
@@ -1338,9 +1385,9 @@ class MainWindow(MainWindowUi):
             self.plot.render()
 
             if self.plot_axes_are_valid:
-                if self.ui_lock_x and prev_xlim is not None:
+                if self.ui_xaxis_range!=MainWindow.UNLOCKED and prev_xlim is not None:
                     self.plot.plot.set_xlim(prev_xlim)
-                if self.ui_lock_y and prev_ylim is not None:
+                if self.ui_yaxis_range!=MainWindow.UNLOCKED and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
 
             self.ui_plot.draw()

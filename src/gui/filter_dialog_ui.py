@@ -79,12 +79,15 @@ class FilterDialogUi(QDialog):
         self._ui_files_model.clear()
         for file in files:
             item = QtGui.QStandardItem(file)
-            item.setForeground(QPalette().color(QPalette.ColorRole.HighlightedText))
-            item.setBackground(QPalette().color(QPalette.ColorRole.Highlight))
+            #item.setForeground(QPalette().color(QPalette.ColorRole.HighlightedText))
+            #item.setBackground(QPalette().color(QPalette.ColorRole.Highlight))
             self._ui_files_model.appendRow(item)
+        font = None            
         for other_file in other_files:
             item = QtGui.QStandardItem(other_file)
             item.setForeground(QPalette().color(QPalette.ColorRole.PlaceholderText))
+            font = font or QtHelper.make_font(base=item.font(), strikethru=True)
+            item.setFont(font)
             self._ui_files_model.appendRow(item)
     
 
