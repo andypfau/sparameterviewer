@@ -169,21 +169,16 @@ class SParamFile:
 
     
     def get_plaintext(self) -> str:
-        def load(path):
-            try:
-                with open(path, 'r') as fp:
-                    return fp.read()
-            except Exception as ex:
-                logging.exception(f'Unable to read plaintext from "{path}" ({ex})')
-        
         if self.is_from_archive:
             try:
                 with AchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
-                    return load(extracted_path)
+                    with open(extracted_path, 'r') as fp:
+                        return fp.read()
             except Exception as ex:
-                logging.warning(f'Unable to extract and load <{self.path.arch_path}> from archive <{str(self.path)}> ({ex})')
+                raise RuntimeError(f'Unable to extract and load <{self.path.arch_path}> from archive <{str(self.path)}> ({ex})')
         else:
-            return load(str(self.path))
+            with open(self.path, 'r') as fp:
+                return fp.read()
     
 
     def get_info_str(self) -> str:

@@ -31,6 +31,11 @@ class QtHelper:
 
     @staticmethod
     def load_resource_icon(filename: str, svg_size: QSize|None = None) -> QIcon:
+        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size))
+
+
+    @staticmethod
+    def load_resource_pixmap(filename: str, svg_size: QSize|None = None) -> QPixmap:
         path = Path(AppPaths.get_resource_dir()) / filename
         if path.suffix.lower() == '.svg':
             renderer = QtSvg.QSvgRenderer(str(path))
@@ -40,9 +45,9 @@ class QtHelper:
             painter = QPainter(pixmap)
             renderer.render(painter)
             painter.end()
-            return QIcon(pixmap)
+            return pixmap
         else:
-            return QIcon(str(path))
+            return QPixmap(str(path))
 
 
     @staticmethod

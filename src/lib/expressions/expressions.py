@@ -13,8 +13,6 @@ import logging
 
 class ExpressionParser:
 
-    touched_files: list[SParamFile] = []
-
     @staticmethod
     def eval(code: str, \
         available_networks: "list[SParamFile]", \
@@ -35,9 +33,6 @@ class ExpressionParser:
                 if len(nws) != 1:
                     logging.warning(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
                     nws = []
-            for nw in nws:
-                if nws not in ExpressionParser.touched_files:
-                    ExpressionParser.touched_files.append(nw)
             return Networks(nws)
         
         def sel_nws(pattern: str = None) -> Networks:

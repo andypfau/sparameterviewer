@@ -1,7 +1,7 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
 from .helpers.simple_dialogs import info_dialog
 from .helpers.help import show_help
-from .helpers.settings import Settings, ParamMode, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator, CursorSnap, ColorAssignment
+from .helpers.settings import Settings, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator, CursorSnap, ColorAssignment
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.plot_widget import PlotWidget
 from .helpers.qt_helper import QtHelper

@@ -4,19 +4,6 @@ import enum
 
 
 
-class ParamMode(enum.StrEnum):
-    All = 'all'
-    AllFwd = 'all_fwd'
-    IL = 'il'
-    IlFwd = 'il_fwd'
-    S21 = 's21'
-    RL = 'rl'
-    S11 = 's11'
-    S22 = 's22'
-    S33 = 's33'
-    S44 = 's44'
-    Expr = 'expr'
-
 class PlotUnit(enum.StrEnum):
     Off = 'off'
     dB = 'db'
@@ -58,9 +45,22 @@ class ColorAssignment(enum.StrEnum):
     ByFileLoc = 'file-container'
 
 
+class Parameters(enum.IntFlag):
+    Off = 0
+    S11 = 1
+    S22 = 2
+    Sii = 4  # this is NOT a combination of S11 and S22, because then e.g. S33, S44 would be ignored!
+    S21 = 8  # all Sij with i>j
+    S12 = 16  # all Sij with i<j
+    Sij = 8+16
+    All = 4+8+16
+    Custom = 32
+    Expressions = 64
+
+
 
 class SParamViewerAppSettings(AppSettings):
-    plot_mode: ParamMode = ParamMode.All
+    plotted_params: Parameters = Parameters.All
     plot_unit: PlotUnit = PlotUnit.dB
     plot_unit2: PlotUnit2 = PlotUnit2.Off
     show_legend: bool = True

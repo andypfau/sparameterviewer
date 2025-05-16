@@ -2,7 +2,8 @@ import matplotlib.backend_bases
 import matplotlib.backend_bases
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.settings import Settings, ParamMode, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap, ColorAssignment
+from .helpers.settings import Settings, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap, ColorAssignment, Parameters
+from .helpers.param_selector import ParamSelector
 from .helpers.plot_widget import PlotWidget
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
@@ -53,20 +54,6 @@ class MainWindow(MainWindowUi):
     TIMER_RESCALE_ID, TIMER_RESCALE_TIMEOUT_S = get_unique_id(), 500e-3
 
     UNLOCKED = (any,any)
-
-    MODE_NAMES = {
-        ParamMode.All: 'All S-Parameters',
-        ParamMode.AllFwd: 'All S-Parameters (reciprocal)',
-        ParamMode.IL: 'Insertion Loss',
-        ParamMode.IlFwd: 'Insertion Loss (reciprocal)',
-        ParamMode.S21: 'Insertion Loss S21',
-        ParamMode.RL: 'Return Loss / Impedance',
-        ParamMode.S11: 'Return Loss S11',
-        ParamMode.S22: 'Return Loss S22',
-        ParamMode.S33: 'Return Loss S33',
-        ParamMode.S44: 'Return Loss S44',
-        ParamMode.Expr: 'Expression-Based',
-    }
 
     UNIT_NAMES = {
         PlotUnit.Off: '—',
@@ -122,6 +109,8 @@ class MainWindow(MainWindowUi):
         self.sparamfile_load_aborted = False
 
         super().__init__()
+        
+        LogHandler.inst().attach(self.on_log_entry)
 
         self.clear_list_counter()
         self.clear_load_counter()
@@ -132,7 +121,6 @@ class MainWindow(MainWindowUi):
         SParamFile.before_load = before_load_sparamfile
         SParamFile.after_load = after_load_sparamfile
 
-        self.ui_set_modes_list(list(MainWindow.MODE_NAMES.values()))
         self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
         self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
@@ -173,7 +161,7 @@ class MainWindow(MainWindowUi):
     def apply_settings_to_ui(self):
         def load_settings():
             try:
-                self.ui_mode = MainWindow.MODE_NAMES[Settings.plot_mode]
+                self.ui_params = Settings.plotted_params
                 self.ui_unit = MainWindow.UNIT_NAMES[Settings.plot_unit]
                 self.ui_unit2 = MainWindow.UNIT2_NAMES[Settings.plot_unit2]
                 self.ui_phase_unit = MainWindow.PHASE_NAMES[Settings.phase_unit]
@@ -242,6 +230,11 @@ class MainWindow(MainWindowUi):
         if not self._log_dialog:
             self._log_dialog = LogDialog(self)
         return self._log_dialog
+
+
+    def on_log_entry(self, record: logging.LogRecord):
+        if record.levelno >= logging.WARNING:
+            self.ui_show_status_message(record.message, record.levelno)
     
 
     def on_template_button(self):
@@ -261,7 +254,7 @@ class MainWindow(MainWindowUi):
                     new += '\n'
                 new += existing_line
             self.ui_expression = new
-            self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
+            self.ui_params = Parameters.Expressions
             self.update_plot()
         
         def ensure_selected_file_count(op, n_required):
@@ -485,13 +478,10 @@ class MainWindow(MainWindowUi):
                 return
 
 
-    def on_select_mode(self):
-        for mode,name in MainWindow.MODE_NAMES.items():
-            if name==self.ui_mode:
-                Settings.plot_mode = mode
-                self.prepare_cursors()
-                self.update_plot()
-                return
+    def on_params_change(self):
+        Settings.plotted_params = self.ui_params
+        self.prepare_cursors()
+        self.update_plot()
 
 
     def on_select_unit(self):
@@ -612,7 +602,7 @@ class MainWindow(MainWindowUi):
         RlDialog(self).show_modal_dialog(self.files.values(), selected_file)
 
 
-    def on_log(self):
+    def on_show_log(self):
         self.log_dialog.show_dialog()
     
     
@@ -688,10 +678,15 @@ class MainWindow(MainWindowUi):
 
         selected_file = self.get_selected_files()[0]
         title = f'Plaintext Data of <{selected_file.name}>'
-        if selected_file.is_from_archive:
-            TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
-        else:
-            TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
+        try:
+            selected_file = self.get_selected_files()[0]
+            title = f'Plaintext Data of <{selected_file.name}>'
+            if selected_file.is_from_archive:
+                TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
+            else:
+                TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
+        except Exception as ex:
+            error_dialog('Error', 'Unable to load show plaintext.', str(ex))
 
 
     def on_open_externally(self):
@@ -789,7 +784,10 @@ class MainWindow(MainWindowUi):
     
 
     def after_resize(self):
-        self.update_plot()
+        try:
+            self.ui_plot.draw()
+        except:
+            pass
 
     
     def on_lock_yaxis(self):
@@ -826,14 +824,14 @@ class MainWindow(MainWindowUi):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
         if self.ui_tab == MainWindowUi.Tab.Expressions:
-            self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
+            self.ui_params = Parameters.Expressions
         self.update_plot()
 
     
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        self.ui_mode = MainWindow.MODE_NAMES[ParamMode.Expr]
+        self.ui_params = Parameters.Expressions
         self.update_plot()
 
     
@@ -1132,16 +1130,6 @@ class MainWindow(MainWindowUi):
         
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
-
-
-    def show_error(self, error: "str|None", exception: Exception = None):
-        if error:
-            logging.error(error)
-            self.ui_update_status_message('\u26A0 ' + error)
-        else:
-            self.ui_update_status_message('No problems found')
-        if exception:
-            logging.exception(exception)
     
 
     def update_plot(self):
@@ -1153,6 +1141,9 @@ class MainWindow(MainWindowUi):
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
+            
+            log_entries = LogHandler.inst().get_records(logging.WARNING)
+            last_log_entry_at_start = log_entries[-1] if log_entries else None
 
             prev_xlim, prev_ylim = None, None
             if self.plot is not None:
@@ -1166,11 +1157,6 @@ class MainWindow(MainWindowUi):
             self.ui_plot.clear()
             self.generated_expressions = ''
             self.plot = None
-
-            self.show_error(None)              
-            n_log_entries_before = len(LogHandler.inst().get_messages(logging.WARNING))
-
-            data_expr_based = Settings.plot_mode==ParamMode.Expr
 
             enable_1st_y = (Settings.plot_unit != PlotUnit.Off)
             enable_2nd_y = (Settings.plot_unit2 != PlotUnit2.Off)
@@ -1327,60 +1313,41 @@ class MainWindow(MainWindowUi):
                         self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                     
             selected_files = self.get_selected_files()
-            touched_files = []
 
-            if data_expr_based:
+            if self.ui_params == Parameters.Expressions:
 
                 raw_exprs = self.ui_expression
                 Settings.expression = raw_exprs
 
-                ExpressionParser.touched_files = []
                 ExpressionParser.eval(raw_exprs, self.files.values(), selected_files, add_to_plot)  
-                touched_files.extend(ExpressionParser.touched_files)
 
             else:
 
-                if Settings.plot_mode == ParamMode.All:
+                if self.ui_params == Parameters.All:
                     self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
                     self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == ParamMode.AllFwd:
-                    self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot(style="-")\n'
-                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                elif Settings.plot_mode == ParamMode.IL:
-                    self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
-                elif Settings.plot_mode == ParamMode.IlFwd:
-                    self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()'
-                elif Settings.plot_mode == ParamMode.RL:
-                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
-                elif Settings.plot_mode == ParamMode.S21:
-                    self.generated_expressions += 'sel_nws().s(2,1).plot()'
-                elif Settings.plot_mode == ParamMode.S11:
-                    self.generated_expressions += 'sel_nws().s(1,1).plot()'
-                elif Settings.plot_mode == ParamMode.S22:
-                    self.generated_expressions += 'sel_nws().s(2,2).plot()'
-                elif Settings.plot_mode == ParamMode.S33:
-                    self.generated_expressions += 'sel_nws().s(3,3).plot()'
-                elif Settings.plot_mode == ParamMode.S44:
-                    self.generated_expressions += 'sel_nws().s(4,4).plot()'
+                else:
+                    if self.ui_params & Parameters.Sij:
+                        self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
+                    else:
+                        if self.ui_params & Parameters.S21:
+                            self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()\n'
+                        if self.ui_params & Parameters.S12:
+                            self.generated_expressions += 'sel_nws().s(rev_il_only=True).plot()\n'
+                    
+                    if self.ui_params & Parameters.Sii:
+                        self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
+                    else:
+                        if self.ui_params & Parameters.S11:
+                            self.generated_expressions += 'sel_nws().s(11).plot()'
+                        if self.ui_params & Parameters.S22:
+                            self.generated_expressions += 'sel_nws().s(22).plot()'
 
                 try:
                     ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
-                    self.show_error(None)              
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
-                    self.show_error(f'ERROR: {ex}')
-                
-                touched_files = selected_files
-            
-            for f in touched_files:
-                # TODO: implement
-                pass#self.update_file_in_list(f)
-            
-            log_entries_after = len(LogHandler.inst().get_messages(logging.WARNING))
-            n_new_entries = log_entries_after - n_log_entries_before
-            if n_new_entries > 0:
-                self.show_error(LogHandler.inst().get_messages(logging.WARNING)[-1])
 
             self.plot.render()
 
@@ -1393,10 +1360,15 @@ class MainWindow(MainWindowUi):
             self.ui_plot.draw()
 
             self.plot_axes_are_valid = True
+            
+            log_entries = LogHandler.inst().get_records(logging.WARNING)
+            last_log_entry_at_end = log_entries[-1] if log_entries else None
+            if last_log_entry_at_end == last_log_entry_at_start:
+                self.ui_show_status_message(None)
 
         except Exception as ex:
             self.ui_plot.clear()
-            self.show_error(f'Plotting failed', ex)
+            logging.error(f'Plotting failed: {ex}')
 
         finally:
             self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESET_LOAD_ID, MainWindow.TIMER_RESET_LOAD_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')

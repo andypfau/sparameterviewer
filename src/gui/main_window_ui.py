@@ -5,6 +5,8 @@ from .helpers.syntax_highlight import PythonSyntaxHighlighter
 from .helpers.path_bar import PathBar
 from .helpers.filesys_browser import FilesysBrowser, FilesysBrowserItemType
 from .helpers.range_edit import RangeEdit
+from .helpers.param_selector import ParamSelector
+from .helpers.settings import Parameters
 from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -60,6 +62,8 @@ class MainWindowUi(QMainWindow):
             QComboBox {{
             }}
             """)
+        self._ui_params = ParamSelector(self)
+        self._ui_params.paramsChanged.connect(self.on_params_change)
         self._ui_filter_button = QtHelper.make_button(self, None, self.on_show_filter, icon='toolbar_filter.svg', toolbar=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
         self._ui_refresh_button = QtHelper.make_button(self, None, self.on_update_plot, icon='toolbar_refresh.svg', toolbar=True, tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_button(self, None, self.on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', toolbar=True, checked=False)
@@ -81,6 +85,7 @@ class MainWindowUi(QMainWindow):
         self._ui_color_combo = QComboBox()
         self._ui_phase_unit_combo = QComboBox()
         self._ui_ribbon.setLayout(QtHelper.layout_h(
+            QtHelper.layout_v(self._ui_params, dense=True),
             QtHelper.layout_v(
                 self._ui_filter_button,
                 QtHelper.layout_h(self._ui_pan_button, self._ui_zoom_button, dense=True),
@@ -89,6 +94,7 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, ..., dense=True),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., dense=True),
+                ...,dense=True
             ),
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -134,8 +140,6 @@ class MainWindowUi(QMainWindow):
         self._ui_plot = PlotWidget()
         self._ui_plot.setMinimumSize(150, 100)
         
-        self._ui_mode_combo = QComboBox()
-        self._ui_mode_combo.setToolTip('Select which parameter to plot')
         self._ui_unit_combo = QComboBox()
         self._ui_unit_combo.setToolTip('Select how to plot the selected parameter (primary Y-axis)')
         self._ui_unit2_combo = QComboBox()
@@ -225,7 +229,7 @@ class MainWindowUi(QMainWindow):
 
         splitter_top.setLayout(QtHelper.layout_v(
             self._ui_ribbon,
-            QtHelper.layout_h(self._ui_mode_combo, self._ui_unit_combo, self._ui_unit2_combo),
+            QtHelper.layout_h(self._ui_unit_combo, self._ui_unit2_combo, ...),
             self._ui_plot,))
         splitter_bottom.setLayout(QtHelper.layout_v(
             self._ui_tabs,
@@ -274,7 +278,7 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_tools = QtHelper.add_submenu(self._ui_menu_bar, '&Tools')
         self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
         self._ui_mainmenu_tools.addSeparator()
-        self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Status Log', self.on_log, shortcut='Ctrl+L')
+        self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Status Log', self.on_show_log, shortcut='Ctrl+L')
         self._ui_mainmenu_tools.addSeparator()
         self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
 
@@ -343,13 +347,6 @@ class MainWindowUi(QMainWindow):
     
     def ui_set_window_title(self, title: str):
         self.setWindowTitle(title)
-
-    
-    def ui_set_modes_list(self, items: list[str]):
-        self._ui_mode_combo.clear()
-        for item in items:
-            self._ui_mode_combo.addItem(item)
-        self._ui_mode_combo.currentTextChanged.connect(self.on_select_mode)
 
     
     def ui_set_units_list(self, items: list[str]):
@@ -530,11 +527,11 @@ class MainWindowUi(QMainWindow):
 
 
     @property
-    def ui_mode(self) -> str:
-        return self._ui_mode_combo.currentText()
-    @ui_mode.setter
-    def ui_mode(self, mode: str):
-        self._ui_mode_combo.setCurrentText(mode)
+    def ui_params(self) -> Parameters:
+        return self._ui_params.params()
+    @ui_params.setter
+    def ui_params(self, params: Parameters):
+        self._ui_params.setParams(params)
 
 
     @property
@@ -620,11 +617,9 @@ class MainWindowUi(QMainWindow):
         self._ui_cursor_syncx_check.setChecked(value)
 
 
-    def ui_update_status_message(self, status_message: str):
-        if status_message:
-            self._ui_status_bar.showMessage(status_message)
-        else:
-            self._ui_status_bar.clearMessage()
+    def ui_show_status_message(self, message: str|None = None, level: int = logging.INFO):
+        self._ui_status_bar.setMessage(message, level)
+        self._ui_status_bar.setVisible(message is not None)
 
 
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
@@ -640,7 +635,7 @@ class MainWindowUi(QMainWindow):
 
 
     # to be implemented in derived class
-    def on_select_mode(self):
+    def on_params_change(self):
         pass
     def on_select_unit(self):
         pass
@@ -652,7 +647,7 @@ class MainWindowUi(QMainWindow):
         pass
     def on_rl_calc(self):
         pass
-    def on_log(self):
+    def on_show_log(self):
         pass
     def on_settings(self):
         pass
