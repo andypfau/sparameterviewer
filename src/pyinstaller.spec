@@ -5,21 +5,18 @@ datas = []
 hiddenimports = []
 
 
-# add icon
+# add icons
 datas.extend([
-    ('../res/sparamviewer.ico', './res/'),
-    ('../res/sparamviewer.png', './res/'),
-    ('../res/sparamviewer.xbm', './res/'),
+    ('../res/*.ico', './res/'),
+    ('../res/*.png', './res/'),
+    ('../res/*.xbm', './res/'),
+    ('../res/*.svg', './res/'),
 ])
 
 
 # add help
 datas.extend([
-    ('../doc/main.md', './doc/'),
-    ('../doc/howtorun.md', './doc/'),
-    ('../doc/tools.md', './doc/'),
-    ('../doc/expressions.md', './doc/'),
-    ('../doc/settings.md', './doc/'),
+    ('../doc/*.md', './doc/'),
 ])
 
 

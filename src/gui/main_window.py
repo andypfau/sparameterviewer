@@ -132,9 +132,10 @@ class MainWindow(MainWindowUi):
         initial_paths = filenames
         if len(initial_paths) < 1:
             if len(Settings.path_history) > 0:
-                dir = Settings.path_history
-                if os.path.exists(dir):
-                    initial_paths = [dir]
+                if len(Settings.path_history) > 0:
+                    dir = Settings.path_history[0]
+                    if os.path.exists(dir):
+                        initial_paths = [dir]
         if len(initial_paths) < 1:
             initial_paths = [AppPaths.get_default_file_dir()]
         self._initial_selection = []

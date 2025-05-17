@@ -110,7 +110,8 @@ class QtHelper:
             image = QtHelper.load_resource_icon(icon)
             button.setIcon(image)
             sizes = image.availableSizes()
-            button.setIconSize(sizes[-1])
+            if len(sizes) >= 1:
+                button.setIconSize(sizes[-1])
         if checked is not None:
             button.setCheckable(True)
             button.setChecked(checked)
