@@ -26,10 +26,7 @@ Roadmap
 
 ### Missing Features
 
-- GUI: a toolbar/ribbon.
-    - Also allow phase unit and trace color to be selected.
-    - Try to merge the pan/zoom tools into toolbar.
-- GUI: a control to qickly select individual parameters in a matrix-style visualization (e.g. a grid of checkboxes).
+- GUI: a control to select individual parameters when grid is too large.
 - GUI: allow to enter frequency to set cursor position.
 - Display: more presets, to quickly scroll through all S-parameters.
 - Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness.

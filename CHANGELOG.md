@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b1 (2025-05-17)
+-------------------
+
+- new: new UI (unified file browser; toolbar; more dynamic statusbar; flexible parameter selection; wide mode)
+
+
 0.32b1 (2025-05-14)
 -------------------
 
