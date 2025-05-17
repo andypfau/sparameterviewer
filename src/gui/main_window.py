@@ -152,7 +152,6 @@ class MainWindow(MainWindowUi):
         self.update_most_recent_paths_menu()
         Settings.attach(self.on_settings_change)
         self.ready = True
-        self.update_plot()
 
 
     def show(self):

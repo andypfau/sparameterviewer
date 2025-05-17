@@ -106,7 +106,7 @@ class ParamSelector(QWidget):
     
         @property
         def data(self) -> np.ndarray:
-            return self._data
+            return self._data.copy()
         @data.setter
         def data(self, value: np.ndarray):
             if value.shape == self._data.shape:
