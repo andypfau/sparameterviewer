@@ -84,10 +84,10 @@ class MainWindow(MainWindowUi):
     }
 
     COLOR_ASSIGNMENT_NAMES = {
-        ColorAssignment.Default: 'Trace',
-        ColorAssignment.ByParam: 'Parameter',
-        ColorAssignment.ByFile: 'File',
-        ColorAssignment.ByFileLoc: 'Location',
+        ColorAssignment.Default: 'Individual',
+        ColorAssignment.ByParam: 'By Parameter',
+        ColorAssignment.ByFile: 'By File',
+        ColorAssignment.ByFileLoc: 'By Location',
     }
 
 
@@ -172,6 +172,9 @@ class MainWindow(MainWindowUi):
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_logx = Settings.log_freq
+                self.ui_wide_layout = Settings.wide_layout
+                self.ui_wide_layout_option = Settings.wide_layout
+                self.ui_params_max_size = Settings.paramgrid_max_size
                 self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
                 return None
             except Exception as ex:
@@ -230,6 +233,10 @@ class MainWindow(MainWindowUi):
         if not self._log_dialog:
             self._log_dialog = LogDialog(self)
         return self._log_dialog
+    
+
+    def on_wide_layout_change(self):
+        Settings.wide_layout = self.ui_wide_layout_option
 
 
     def on_log_entry(self, record: logging.LogRecord):
@@ -572,6 +579,7 @@ class MainWindow(MainWindowUi):
     def reload_all_files(self):
         self.clear_list_counter()
         self.files.clear()
+        self.update_params_size()
         self._ui_filesys_browser.refresh()  # TODO: add redirection though MainWindowUI
 
 
@@ -841,9 +849,17 @@ class MainWindow(MainWindowUi):
             self.update_plot()
     
 
-    def on_settings_change(self):
+    def on_settings_change(self, attributes: list[str]):
         self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWindowUI
-        self.update_plot()
+        self.ui_wide_layout = Settings.wide_layout
+        
+        if set(['paramgrid_min_size','paramgrid_max_size']) & set(attributes):
+            self.ui_params_max_size = Settings.paramgrid_max_size
+            self.update_params_size()
+
+        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items','log_freq',
+                'expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize','plot_mark_points','color_assignment']) & set(attributes):
+            self.update_plot()
     
     
     def on_help_button(self):
@@ -944,6 +960,7 @@ class MainWindow(MainWindowUi):
     
 
     def _on_filesys_selection_changed_timed(self):
+        self.update_params_size()
         self.update_plot()
         self.prepare_cursors()
 
@@ -1130,6 +1147,15 @@ class MainWindow(MainWindowUi):
         
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
+    
+
+    def update_params_size(self):
+        size = 1
+        for file in self.get_selected_files():
+            size = max(size, file.nw.number_of_ports)
+        #if size < self.ui_params_size:
+        #    size = min(self.ui_params_size, Settings.paramgrid_max_size)
+        self.ui_params_size = size
     
 
     def update_plot(self):
@@ -1323,32 +1349,46 @@ class MainWindow(MainWindowUi):
 
             else:
 
-                if self.ui_params == Parameters.All:
-                    self.generated_expressions += 'sel_nws().s(il_only=True).plot(style="-")\n'
-                    self.generated_expressions += 'sel_nws().s(rl_only=True).plot(style="--")'
-                else:
-                    if self.ui_params & Parameters.Sij:
-                        self.generated_expressions += 'sel_nws().s(il_only=True).plot()'
-                    else:
-                        if self.ui_params & Parameters.S21:
-                            self.generated_expressions += 'sel_nws().s(fwd_il_only=True).plot()\n'
-                        if self.ui_params & Parameters.S12:
-                            self.generated_expressions += 'sel_nws().s(rev_il_only=True).plot()\n'
-                    
-                    if self.ui_params & Parameters.Sii:
-                        self.generated_expressions += 'sel_nws().s(rl_only=True).plot()'
-                    else:
-                        if self.ui_params & Parameters.S11:
-                            self.generated_expressions += 'sel_nws().s(11).plot()'
-                        if self.ui_params & Parameters.S22:
-                            self.generated_expressions += 'sel_nws().s(22).plot()'
+                expression_list = []
+                if self.ui_params == Parameters.Custom:
 
+                    # TODO: ensure that the mask shape is sufficiently large for all displayed files
+                    
+                    mask = self.ui_params_mask
+                    for i in range(mask.shape[0]):
+                        for j in range(mask.shape[1]):
+                            if mask[i,j]:
+                                expression_list.append(f'sel_nws().s({i+1},{j+1}).plot()')
+
+                else:
+                    if self.ui_params == Parameters.ComboAll:
+                        expression_list.append('sel_nws().s(il_only=True).plot(style="-")')
+                        expression_list.append('sel_nws().s(rl_only=True).plot(style="--")')
+                    else:
+                        if self.ui_params & Parameters.S21 and self.ui_params & Parameters.S12:
+                            expression_list.append('sel_nws().s(il_only=True).plot()')
+                        else:
+                            if self.ui_params & Parameters.S21:
+                                expression_list.append('sel_nws().s(fwd_il_only=True).plot()')
+                            if self.ui_params & Parameters.S12:
+                                expression_list.append('sel_nws().s(rev_il_only=True).plot()')
+                        
+                        if self.ui_params & Parameters.Sii:
+                            expression_list.append('sel_nws().s(rl_only=True).plot()')
+                        else:
+                            if self.ui_params & Parameters.S11:
+                                expression_list.append('sel_nws().s(11).plot()')
+                            if self.ui_params & Parameters.S22:
+                                expression_list.append('sel_nws().s(22).plot()')
+                
+                self.generated_expressions = '\n'.join(expression_list)
                 try:
                     ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
 
+            self.update_params_size()
             self.plot.render()
 
             if self.plot_axes_are_valid:

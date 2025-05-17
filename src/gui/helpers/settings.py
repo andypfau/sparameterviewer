@@ -52,15 +52,15 @@ class Parameters(enum.IntFlag):
     Sii = 4  # this is NOT a combination of S11 and S22, because then e.g. S33, S44 would be ignored!
     S21 = 8  # all Sij with i>j
     S12 = 16  # all Sij with i<j
-    Sij = 8+16
-    All = 4+8+16
+    ComboSij = 8+16
+    ComboAll = 4+8+16
     Custom = 32
     Expressions = 64
 
 
 
 class SParamViewerAppSettings(AppSettings):
-    plotted_params: Parameters = Parameters.All
+    plotted_params: Parameters = Parameters.ComboAll
     plot_unit: PlotUnit = PlotUnit.dB
     plot_unit2: PlotUnit2 = PlotUnit2.Off
     show_legend: bool = True
@@ -91,6 +91,9 @@ class SParamViewerAppSettings(AppSettings):
     warncount_file_list: int = 1_000
     warncount_file_load: int = 30
     color_assignment: ColorAssignment = ColorAssignment.ByFile
+    wide_layout: bool = False
+    paramgrid_min_size: int = 2
+    paramgrid_max_size: int = 4
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

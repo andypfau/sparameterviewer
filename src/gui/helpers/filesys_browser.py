@@ -511,6 +511,6 @@ class FilesysBrowser(QWidget):
                 logging.warning(f'Unable to load icon <{filename}> from resource directory ({ex})')
                 return QIcon()
         
-        FilesysBrowser._icon_file = ensure_icon_loaded(FilesysBrowser._icon_file, 'filesys_file.png')
-        FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir,  'filesys_directory.png')
-        FilesysBrowser._icon_arch = ensure_icon_loaded(FilesysBrowser._icon_arch, 'filesys_archive.png')
+        FilesysBrowser._icon_file = ensure_icon_loaded(FilesysBrowser._icon_file, 'filesys_file.svg')
+        FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir,  'filesys_directory.svg')
+        FilesysBrowser._icon_arch = ensure_icon_loaded(FilesysBrowser._icon_arch, 'filesys_archive.svg')

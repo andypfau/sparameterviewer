@@ -157,7 +157,7 @@ class SParam:
         if label is None:
             label = self.name
         else:
-            label = label.replace('%n', self.name)
+            label = label.replace('$NAME', self.name)
         SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_file, param_type)
 
     

@@ -241,7 +241,7 @@ class QtHelper:
 
 
     @staticmethod
-    def _box_layout(layout: QBoxLayout, direction: str, *items, dense: bool = False):
+    def _box_layout(layout: QBoxLayout, direction: str, *items, spacing: int|None = None):
         for item in items:
             if item is ...:
                 layout.addStretch()
@@ -260,19 +260,19 @@ class QtHelper:
                     raise ValueError()
             else:
                 layout.addWidget(item)
-        if dense:
-            layout.setSpacing(0)
+        if spacing is not None:
+            layout.setSpacing(spacing)
         return layout
 
 
     @staticmethod
-    def layout_h(*items, dense: bool = False):
-        return QtHelper._box_layout(QHBoxLayout(), 'h', *items, dense=dense)
+    def layout_h(*items, spacing: int|None = None):
+        return QtHelper._box_layout(QHBoxLayout(), 'h', *items, spacing=spacing)
 
 
     @staticmethod
-    def layout_v(*items, dense: bool = False):
-        return QtHelper._box_layout(QVBoxLayout(), 'v', *items, dense=dense)
+    def layout_v(*items, spacing: int|None = None):
+        return QtHelper._box_layout(QVBoxLayout(), 'v', *items, spacing=spacing)
 
 
     @dataclasses.dataclass
@@ -283,7 +283,7 @@ class QtHelper:
 
 
     @staticmethod
-    def layout_grid(items_rows_then_columns, dense: bool = False):
+    def layout_grid(items_rows_then_columns, spacing: int|None = None):
         layout = QGridLayout()
         for i_row,columns in enumerate(items_rows_then_columns):
             for i_col,item in enumerate(columns):
@@ -300,23 +300,22 @@ class QtHelper:
                     layout.addWidget(QtHelper.make_label(item), i_row, i_col, rows, cols)
                 else:
                     layout.addWidget(item, i_row, i_col, rows, cols)
-        if dense:
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(0)
+        if spacing is not None:
+            layout.setSpacing(spacing)
         return layout
 
 
     @staticmethod
-    def layout_widget_h(*items):
+    def layout_widget_h(*items, spacing: int|None = None):
         widget = QWidget()
-        widget.setLayout(QtHelper.layout_h(*items))
+        widget.setLayout(QtHelper.layout_h(*items, spacing=spacing))
         return widget
 
 
     @staticmethod
-    def layout_widget_v(*items):
+    def layout_widget_v(*items, spacing: int|None = None):
         widget = QWidget()
-        widget.setLayout(QtHelper.layout_v(*items))
+        widget.setLayout(QtHelper.layout_v(*items, spacing=spacing))
         return widget
 
 

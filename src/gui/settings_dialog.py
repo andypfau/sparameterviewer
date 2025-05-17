@@ -67,14 +67,20 @@ class SettingsDialog(SettingsDialogUi):
         if tab:
             self.ui_select_tab(tab)
         self.apply_settings_to_controls()
-        Settings.attach(self.apply_settings_to_controls)
+        Settings.attach(self.on_settings_change)
         super().ui_show_modal()
     
+
+    def on_settings_change(self, attributes: list[str]):
+        self.apply_settings_to_controls()
+
 
     def apply_settings_to_controls(self):
         try:
             self.ui_radians = Settings.phase_unit == PhaseUnit.Radians
             self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
+            self.ui_paramsmin = Settings.paramgrid_min_size
+            self.ui_paramsmax = Settings.paramgrid_max_size
             self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
             self.ui_td_window_param = Settings.window_arg
             self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
@@ -213,3 +219,13 @@ class SettingsDialog(SettingsDialogUi):
 
     def _on_warncount_load_changed(self):
         Settings.warncount_file_load = self.ui_warncount_load
+    
+    
+    def on_param_minsize_changed(self):
+        if self.ui_paramsmin <= self.ui_paramsmax:
+            Settings.paramgrid_min_size = self.ui_paramsmin
+
+
+    def on_param_maxsize_changed(self):
+        if self.ui_paramsmin <= self.ui_paramsmax:
+            Settings.paramgrid_max_size = self.ui_paramsmax

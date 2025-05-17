@@ -510,8 +510,9 @@ class TabularDialog(TabularDialogUi):
         return TabularDataset( dataset.name, dataset.xcol, ycols, dataset.xcol_data, ycol_datas, dataset.is_spar)
     
 
-    def on_settings_change(self):
-        self.update_data()
+    def on_settings_change(self, attributes: list[str]):
+        if set(['phase_unit']) & set(attributes):
+            self.update_data()
 
 
     def on_change_dataset(self):

@@ -18,19 +18,19 @@ class AppSettings:
         self._file = AppPaths.get_settings_path(format_version_str)
         self._observers: list[Callable[None,None]] = []
         self._inhbit_listeners = False
-        self.load()
+        self._load()
 
 
-    def attach(self, callback: Callable[None,None]):
+    def attach(self, callback: Callable[tuple[list[str]],None]):
         self._observers.append(callback)
     
 
-    def notify(self):
+    def _notify(self, attributes: list[str]):
         if self._inhbit_listeners:
             return
         for i in reversed(range(len(self._observers))):
             try:
-                self._observers[i]()
+                self._observers[i](attributes)
             except Exception as ex:
                 del self._observers[i]
     
@@ -43,11 +43,11 @@ class AppSettings:
                 return
         super().__setattr__(__name, __value)
         if is_setting:
-            self.save()
-            self.notify()
+            self._save()
+            self._notify([__name])
 
     
-    def load(self):
+    def _load(self):
         self._inhbit_listeners = True
         try:
             with open(self._file, 'r') as fp:
@@ -69,12 +69,12 @@ class AppSettings:
                 
         except Exception as ex:
             logging.warning(f'Unable to load settings ({ex})')
-            self.reset()
+            self._reset()
         self._inhbit_listeners = False
-        self.notify()
+        self._notify([*self._defaults.keys()])
     
 
-    def save(self):
+    def _save(self):
         try:
             data = {}
             for n in self._defaults.keys():
@@ -89,10 +89,10 @@ class AppSettings:
             logging.warning(f'Unable to save settings ({ex})')
     
 
-    def reset(self):
+    def _reset(self):
         self._inhbit_listeners = True
         for k,v in self._defaults.items():
             self.__dict__[k] = v
-        self.save()
+        self._save()
         self._inhbit_listeners = False
-        self.notify()
+        self._notify([*self._defaults.keys()])

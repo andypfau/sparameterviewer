@@ -433,7 +433,7 @@ To get an `SParams` object, call `s()` on a `Networks` object.
 plot(label=None, style='-', color=None, width=None, opacity=None)
 ```
 
-Plots the data. `label` is any string. The placeholder `'%n'` is replaced with the name of the parameter.
+Plots the data. `label` is any string. The placeholder `'$NAME'` is replaced with the name of the parameter.
 
 `style` is a [matplotlib](https://matplotlib.org/stable/users)-compatible format (e.g. `'-'`, `':'`, `'--'`, `'o-'`).
 
