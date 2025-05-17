@@ -48,13 +48,13 @@ class ParamSelector(QWidget):
             if self._overflow:
                 self.overflowClicked.emit()
                 return
-            for ix in range(self.grid_size):
-                for iy in range(self.grid_size):
-                    x = self._x0 + ix*(self._cell_size+self._cell_spacing)
-                    y = self._y0 + iy*(self._cell_size+self._cell_spacing)
+            for i in range(self.grid_size):
+                for j in range(self.grid_size):
+                    x = self._x0 + j*(self._cell_size+self._cell_spacing)
+                    y = self._y0 + i*(self._cell_size+self._cell_spacing)
                     rect = QRect(x, y, self._cell_size, self._cell_size)
                     if rect.contains(event.pos()):
-                        self.paramClicked.emit(ix, iy)
+                        self.paramClicked.emit(i, j)
 
         def paintEvent(self, event):
             painter = QPainter(self)
@@ -76,10 +76,10 @@ class ParamSelector(QWidget):
                 painter.drawLine(x0+total_size, y0, x0, y0+total_size)
                 return
 
-            for ix in range(self.grid_size):
-                for iy in range(self.grid_size):
-                    x = x0 + ix*(cell_size+cell_spacing)
-                    y = y0 + iy*(cell_size+cell_spacing)
+            for i in range(self.grid_size):
+                for j in range(self.grid_size):
+                    x = x0 + j*(cell_size+cell_spacing)
+                    y = y0 + i*(cell_size+cell_spacing)
 
                     if self._use_expressions:
                         if cell_size >= 8:
@@ -93,7 +93,7 @@ class ParamSelector(QWidget):
                     if self._use_expressions:
                         painter.setBrush(QColorConstants.Gray)
                         painter.setPen(Qt.PenStyle.NoPen)
-                    elif self._data[ix,iy]:
+                    elif self._data[i,j]:
                         painter.setBrush(QColorConstants.Black)
                         painter.setPen(Qt.PenStyle.NoPen)
                     else:
