@@ -1,6 +1,6 @@
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.settings import Settings, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap, ColorAssignment, Parameters
+from .helpers.settings import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
@@ -55,34 +55,6 @@ class MainWindow(MainWindowUi):
 
     UNLOCKED = (any,any)
 
-    UNIT_NAMES = {
-        PlotUnit.Off: '—',
-        PlotUnit.dB: 'dB',
-        PlotUnit.LogMag: 'Log Mag',
-        PlotUnit.LinMag: 'Lin Mag',
-        PlotUnit.ReIm: 'Real+Imag',
-        PlotUnit.Real: 'Real',
-        PlotUnit.Imag: 'Imag',
-        PlotUnit.ReImPolar: 'Polar',
-        PlotUnit.SmithZ: 'Smith (Z)',
-        PlotUnit.SmithY: 'Smith (Y)',
-        PlotUnit.Impulse: 'Impulse Resp.',
-        PlotUnit.Step: 'Step Resp.',
-    }
-
-    UNIT2_NAMES = {
-        PlotUnit2.Off: '—',
-        PlotUnit2.Phase: 'Phase',
-        PlotUnit2.Unwrap: 'Unwrapped',
-        PlotUnit2.LinRem: 'Lin. Removed',
-        PlotUnit2.GDelay: 'Group Delay',
-    }
-
-    PHASE_NAMES = {
-        PhaseUnit.Degrees: '°',
-        PhaseUnit.Radians: 'rad',
-    }
-
     COLOR_ASSIGNMENT_NAMES = {
         ColorAssignment.Default: 'Individual',
         ColorAssignment.ByParam: 'By Parameter',
@@ -121,11 +93,8 @@ class MainWindow(MainWindowUi):
         SParamFile.before_load = before_load_sparamfile
         SParamFile.after_load = after_load_sparamfile
 
-        self.ui_set_units_list(list(MainWindow.UNIT_NAMES.values()))
-        self.ui_set_units2_list(list(MainWindow.UNIT2_NAMES.values()))
         self.ui_set_window_title(Info.AppName)
         self.ui_set_color_assignment_options(list(MainWindow.COLOR_ASSIGNMENT_NAMES.values()))
-        self.ui_set_phase_options(list(MainWindow.PHASE_NAMES.values()))
 
         self.apply_settings_to_ui()
 
@@ -162,9 +131,14 @@ class MainWindow(MainWindowUi):
         def load_settings():
             try:
                 self.ui_params = Settings.plotted_params
-                self.ui_unit = MainWindow.UNIT_NAMES[Settings.plot_unit]
-                self.ui_unit2 = MainWindow.UNIT2_NAMES[Settings.plot_unit2]
-                self.ui_phase_unit = MainWindow.PHASE_NAMES[Settings.phase_unit]
+                self._ui_plot_selector.setPlotType(Settings.plot_type)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setTdr(Settings.plot_tdr)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setTdrStepResponse(Settings.tdr_step_response)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setPhaseUnit(Settings.phase_unit)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setPhaseProcessing(Settings.phase_processing)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setSmithY(Settings.smith_y)  # TODO: redirect through MainWIndowUI
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
@@ -479,48 +453,23 @@ class MainWindow(MainWindowUi):
 
 
     def on_phase_unit_change(self):
+        # TODO: remove this
         for pu, name in MainWindow.PHASE_NAMES.items():
             if name == self.ui_phase_unit:
                 Settings.phase_unit = pu
                 return
+    
+
+    def on_plottype_changed(self):
+        self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
+        self.prepare_cursors()
+        self.update_plot()
 
 
     def on_params_change(self):
         Settings.plotted_params = self.ui_params
         self.prepare_cursors()
         self.update_plot()
-
-
-    def on_select_unit(self):
-        for unit,name in MainWindow.UNIT_NAMES.items():
-            if name==self.ui_unit:
-                Settings.plot_unit = unit
-                
-                # different kind of chart -> axes scale is probably no longer valid
-                self.invalidate_axes_lock(update=False)
-
-                # only allow phase in specific combinations
-                if Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]:
-                    self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
-
-                self.prepare_cursors()
-                self.update_plot()
-    
-
-    def on_select_unit2(self):
-        for unit,name in MainWindow.UNIT2_NAMES.items():
-            if name==self.ui_unit2:
-                Settings.plot_unit2 = unit
-                
-                # different kind of chart -> axes scale is probably no longer valid
-                self.invalidate_axes_lock(update=False)
-
-                if Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]:
-                    self.ui_unit2 = MainWindow.UNIT2_NAMES[PlotUnit2.Off]
-                    return # no phase allowed
-
-                self.prepare_cursors()
-                self.update_plot()
     
 
     def on_show_filter(self):
@@ -1184,71 +1133,54 @@ class MainWindow(MainWindowUi):
             self.generated_expressions = ''
             self.plot = None
 
-            enable_1st_y = (Settings.plot_unit != PlotUnit.Off)
-            enable_2nd_y = (Settings.plot_unit2 != PlotUnit2.Off)
-            if (Settings.plot_unit not in [PlotUnit.Off, PlotUnit.dB, PlotUnit.LinMag, PlotUnit.LogMag]):
-                enable_2nd_y = False
-            dual_y_axis = enable_1st_y and enable_2nd_y
+            # TODO: redirect through MainWIndowUI
+            plot_type = self._ui_plot_selector.plotType()
+            y_qty = self._ui_plot_selector.yQuantity()
+            y2_qty = self._ui_plot_selector.y2Quantity()
+            tdr = self._ui_plot_selector.tdr()
+            tdr_z = Settings.tdr_impedance  # TODO: obtain from toolbar?
+            tdr_step_resp = self._ui_plot_selector.tdrStepResponse()
+            phase_unit = self._ui_plot_selector.phaseUnit()
+            phase_processing = self._ui_plot_selector.phaseProcessing()
+            smith_y = self._ui_plot_selector.smithY()
 
-            qty_db = (Settings.plot_unit == PlotUnit.dB)
-            qty_lin_mag = (Settings.plot_unit == PlotUnit.LinMag)
-            qty_log_mag = (Settings.plot_unit == PlotUnit.LogMag)
-            qty_re = (Settings.plot_unit in [PlotUnit.ReIm, PlotUnit.Real])
-            qty_im = (Settings.plot_unit in [PlotUnit.ReIm, PlotUnit.Imag])
-            
-            polar = (Settings.plot_unit == PlotUnit.ReImPolar)
-            smith = (Settings.plot_unit in [PlotUnit.SmithZ, PlotUnit.SmithY])
-            timedomain = (Settings.plot_unit in [PlotUnit.Impulse, PlotUnit.Step])
-            stepresponse = (Settings.plot_unit == PlotUnit.Step)
-            tdr_z = (Settings.tdr_impedance)
-            if Settings.plot_unit == PlotUnit.SmithZ:
-                smith_type = 'z'
-            else:
-                smith_type = 'y'
-            
-            if enable_2nd_y:
-                qty_phase = (Settings.plot_unit2 in [PlotUnit2.Phase, PlotUnit2.Unwrap, PlotUnit2.LinRem])
-                unwrap_phase = (Settings.plot_unit2 == PlotUnit2.Unwrap)
-                remove_lin_phase = (Settings.plot_unit2 == PlotUnit2.LinRem)
-                qty_group_delay = (Settings.plot_unit2 == PlotUnit2.GDelay)
-            else:
-                qty_phase = False
-                unwrap_phase = False
-                remove_lin_phase = False
-                qty_group_delay = False
+            # TODO: log Y axis
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
-            if polar:
+            if plot_type == PlotType.Polar:
                 self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
-            elif smith:
+            elif plot_type == PlotType.Smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=smith_type, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type='y' if smith_y else 'z', smith_z=smith_z, **common_plot_args)
             else:
                 y2q, y2f = None, None
-                if timedomain:
+                if tdr:
                     xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
                     if tdr_z:
-                        yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(unit='Ω', force_sign=True),False
+                        yq,yf,yl = 'Step Response' if tdr_step_resp else 'Impulse Response',SiFmt(unit='Ω', force_sign=True),False
                     else:
-                        yq,yf,yl = 'Step Response' if stepresponse else 'Impulse Response',SiFmt(force_sign=True),False
+                        yq,yf,yl = 'Step Response' if tdr_step_resp else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
                     xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),Settings.log_freq
-                    if qty_re or qty_im:
+                    if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
                         yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
-                    elif qty_lin_mag:
+                    elif y_qty == YQuantity.Magnitude:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),False
-                    elif qty_log_mag:
-                        yq,yf,yl = 'Magnitude',SiFmt(unit=''),True
-                    else:
+                    elif y_qty == YQuantity.Decibels:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
-                    if qty_phase:
-                        if Settings.phase_unit==PhaseUnit.Radians:
+                    else:
+                        yq,yf,yl = '',lambda s: str(s), False  # dummy
+                    
+                    if y2_qty == YQuantity.Phase:
+                        if phase_unit == PhaseUnit.Radians:
                             y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
                         else:
                             y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
-                    elif qty_group_delay:
+                    elif y2_qty == YQuantity.GroupDelay:
                         y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
+                    else:
+                        y2q,y2f = '',lambda s: str(s)  # dummy
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
             available_colors = PlotWidget.get_color_cycle()
@@ -1272,7 +1204,7 @@ class MainWindow(MainWindowUi):
                 if Settings.plot_mark_points:
                     style += 'o'
                     style2 += 'o'
-                if dual_y_axis:
+                if y_qty!=YQuantity.Off and y2_qty!=YQuantity.Off:
                     style_y2 = ':'
                 else:
                     style_y2 = style
@@ -1305,37 +1237,38 @@ class MainWindow(MainWindowUi):
                         return radians * 180 / math.pi
                     return radians
 
-                if polar or smith:
+                if plot_type in [PlotType.Polar, PlotType.Smith]:
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
+                elif tdr:
+                    t,lev = sparam_to_timedomain(f, sp, step_response=tdr_step_resp, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
+                    if tdr_z:
+                        lev[lev==0] = 1e-20 # avoid division by zero in the next step
+                        imp = z0 * (1+lev) / (1-lev) # convert to impedance
+                        self.plot.add(t, np.real(imp), None, name, style, **kwargs)
+                    else:
+                        self.plot.add(t, lev, None, name, style, **kwargs)
                 else:
-                    if timedomain:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=stepresponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
-                        if tdr_z:
-                            lev[lev==0] = 1e-20 # avoid division by zero in the next step
-                            imp = z0 * (1+lev) / (1-lev) # convert to impedance
-                            self.plot.add(t, np.real(imp), None, name, style, **kwargs)
-                        else:
-                            self.plot.add(t, lev, None, name, style, **kwargs)
-                    elif qty_db:
+                    # TODO: only apply transformation to S-Parameters
+                    if y_qty == YQuantity.Decibels:
                         self.plot.add(f, v2db(sp), None, name, style, **kwargs)
-                    elif qty_lin_mag or qty_log_mag:
+                    elif y_qty == YQuantity.Magnitude:
                         self.plot.add(f, np.abs(sp), None, name, style, **kwargs)
-                    elif qty_re and qty_im:
+                    elif y_qty == YQuantity.RealImag:
                         self.plot.add(f, np.real(sp), None, name+' re', style, **kwargs)
                         self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
-                    elif qty_re:
+                    elif y_qty == YQuantity.Real:
                         self.plot.add(f, np.real(sp), None, name, style, **kwargs)
-                    elif qty_im:
+                    elif y_qty == YQuantity.Imag:
                         self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
                     
-                    if qty_phase:
-                        if remove_lin_phase:
+                    if y2_qty == YQuantity.Phase:
+                        if phase_processing == PhaseProcessing.UnwrapDetrend:
                             self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
-                        elif unwrap_phase:
+                        elif phase_processing == PhaseProcessing.Unwrap:
                             self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                         else:
                             self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
-                    elif qty_group_delay:
+                    elif y2_qty == YQuantity.GroupDelay:
                         self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                     
             selected_files = self.get_selected_files()

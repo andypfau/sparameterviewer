@@ -4,27 +4,26 @@ import enum
 
 
 
-class PlotUnit(enum.StrEnum):
-    Off = 'off'
-    dB = 'db'
-    LogMag = 'lin_mag'
-    LinMag = 'log_mag'
-    ReIm = 're_im'
-    Real = 're'
-    Imag = 'im'
-    ReImPolar = 'polar'
-    SmithY = 'smith_z'
-    SmithZ = 'smith_y'
-    Impulse = 'impulse'
-    Step = 'step'
+class PlotType(enum.Enum):
+    Cartesian = 0
+    Smith = 1
+    Polar = 2
 
-class PlotUnit2(enum.StrEnum):
-    Off = 'off'
-    Phase = 'phase'
-    Unwrap = 'unwrap'
-    LinRem = 'remove_linear'
-    GDelay = 'groupdelay'
+class YQuantity(enum.Enum):
+    Off = 0
+    Decibels = 1
+    Magnitude = 2
+    Real = 3
+    Imag = 4
+    RealImag = 5
+    Phase = 6
+    GroupDelay = 7
 
+class PhaseProcessing(enum.Enum):
+    Off = 0
+    Unwrap = 1
+    UnwrapDetrend = 2
+    
 class PhaseUnit(enum.StrEnum):
     Degrees = 'deg'
     Radians = 'rad'
@@ -61,8 +60,13 @@ class Parameters(enum.IntFlag):
 
 class SParamViewerAppSettings(AppSettings):
     plotted_params: Parameters = Parameters.ComboAll
-    plot_unit: PlotUnit = PlotUnit.dB
-    plot_unit2: PlotUnit2 = PlotUnit2.Off
+    plot_type: PlotType = PlotType.Cartesian
+    plot_y_quantitiy: YQuantity = YQuantity.Decibels
+    plot_y2_quantitiy: YQuantity = YQuantity.Off
+    plot_tdr: bool = False
+    tdr_step_response: bool = False
+    smith_y: bool = False
+    phase_processing: PhaseProcessing = PhaseProcessing.Off
     show_legend: bool = True
     hide_single_item_legend: bool = True
     shorten_legend_items: bool = True

@@ -8,6 +8,7 @@ from .components.filesys_browser import FilesysBrowser, FilesysBrowserItemType
 from .components.range_edit import RangeEdit
 from .components.param_selector import ParamSelector
 from .components.hv_splitter import HvSplitter
+from .components.plot_selector import PlotSelector
 from lib import AppPaths, PathExt
 
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -53,15 +54,18 @@ class MainWindowUi(QMainWindow):
         self._ui_ribbon.setStyleSheet(f"""
             QWidget {{
             }}
-            QPushButton {{
+            QToolButton {{
                 background-color: {color_base};
             }}
-            QPushButton:hover {{
+            QToolButton:checked {{
+                background-color: {color_hl};
+            }}
+            QToolButton:hover {{
                 background-color: {color_light};
             }}
-            QPushButton:checked {{
-                background-color: {color_hl};
-                color: {color_hl_text};
+            QToolButton:disabled {{
+                background-color: {color_base};
+                border-color: {color_base};
             }}
             QComboBox {{
                 border-bottom: 1px solid {color_dark};
@@ -87,6 +91,8 @@ class MainWindowUi(QMainWindow):
             return frame
         self._ui_params = ParamSelector(self)
         self._ui_params.paramsChanged.connect(self.on_params_change)
+        self._ui_plot_selector = PlotSelector(self)
+        self._ui_plot_selector.valueChanged.connect(self.on_plottype_changed)
         self._ui_filter_button = QtHelper.make_button(self, None, self.on_show_filter, icon='toolbar_filter.svg', toolbar=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
         self._ui_refresh_button = QtHelper.make_button(self, None, self.on_update_plot, icon='toolbar_refresh.svg', toolbar=True, tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_button(self, None, self.on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', toolbar=True, checked=False)
@@ -107,12 +113,6 @@ class MainWindowUi(QMainWindow):
         self._ui_yaxis_range.rangeChanged.connect(self.on_yaxis_range_change)
         self._ui_color_combo = QComboBox()
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
-        self._ui_phase_unit_combo = QComboBox()
-        self._ui_phase_unit_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 8ex; }')
-        self._ui_unit_combo = QComboBox()
-        self._ui_unit_combo.setToolTip('Select how to plot the selected parameter (primary Y-axis)')
-        self._ui_unit2_combo = QComboBox()
-        self._ui_unit2_combo.setToolTip('Select how to plot the selected parameter (secondary Y-axis)')
         default_spacing, wide_spacing = 3, 10
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(...,
@@ -120,11 +120,7 @@ class MainWindowUi(QMainWindow):
                 ..., spacing=default_spacing,
             ),
             vline(),
-            QtHelper.layout_v(...,
-                QtHelper.layout_h(self._ui_unit_combo, ..., spacing=default_spacing),
-                QtHelper.layout_h(self._ui_unit2_combo, self._ui_phase_unit_combo),
-                ..., spacing=wide_spacing
-            ),
+            self._ui_plot_selector,
             vline(),
             QtHelper.layout_v(...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, ..., spacing=default_spacing),
@@ -372,21 +368,6 @@ class MainWindowUi(QMainWindow):
         self._ui_splitter.setOrientation(HvSplitter.Orientation.Left2Right1 if value else HvSplitter.Orientation.Top1Bottom2)
 
 
-    def ui_set_phase_options(self, options: list[str]):
-        self._ui_phase_unit_combo.clear()
-        for option in options:
-            self._ui_phase_unit_combo.addItem(option)
-        self._ui_phase_unit_combo.currentIndexChanged.connect(self.on_phase_unit_change)
-
-    
-    @property
-    def ui_phase_unit(self) -> str:
-        return self._ui_phase_unit_combo.currentText()
-    @ui_phase_unit.setter
-    def ui_phase_unit(self, value: str):
-        self._ui_phase_unit_combo.setCurrentText(value)
-
-
     def ui_show_template_menu(self, items: list[tuple[str,Callable|list]]):
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
         QtHelper.show_popup_menu(self, items, button_pos)
@@ -394,20 +375,6 @@ class MainWindowUi(QMainWindow):
     
     def ui_set_window_title(self, title: str):
         self.setWindowTitle(title)
-
-    
-    def ui_set_units_list(self, items: list[str]):
-        self._ui_unit_combo.clear()
-        for item in items:
-            self._ui_unit_combo.addItem(item)
-        self._ui_unit_combo.currentTextChanged.connect(self.on_select_unit)
-
-    
-    def ui_set_units2_list(self, items: list[str]):
-        self._ui_unit2_combo.clear()
-        for item in items:
-            self._ui_unit2_combo.addItem(item)
-        self._ui_unit2_combo.currentTextChanged.connect(self.on_select_unit2)
 
 
     def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable, retrigger_behavior: str = 'keep'):
@@ -605,22 +572,6 @@ class MainWindowUi(QMainWindow):
         self._ui_params.setGridSize(value)
 
 
-    @property
-    def ui_unit(self) -> str:
-        return self._ui_unit_combo.currentText()
-    @ui_unit.setter
-    def ui_unit(self, unit: str):
-        self._ui_unit_combo.setCurrentText(unit)
-
-
-    @property
-    def ui_unit2(self) -> str:
-        return self._ui_unit2_combo.currentText()
-    @ui_unit2.setter
-    def ui_unit2(self, unit2: str):
-        self._ui_unit2_combo.setCurrentText(unit2)
-
-
     def ui_set_cursor_trace_list(self, traces: list[str]):
         for combo in [self._ui_cursor1_trace_combo, self._ui_cursor2_trace_combo]:
             combo.clear()
@@ -708,9 +659,7 @@ class MainWindowUi(QMainWindow):
     # to be implemented in derived class
     def on_params_change(self):
         pass
-    def on_select_unit(self):
-        pass
-    def on_select_unit2(self):
+    def on_plottype_changed(self):
         pass
     def on_show_filter(self):
         pass
@@ -795,8 +744,6 @@ class MainWindowUi(QMainWindow):
     def on_yaxis_range_change(self):
         pass
     def on_color_change(self):
-        pass
-    def on_phase_unit_change(self):
         pass
     def on_resize(self):
         pass
