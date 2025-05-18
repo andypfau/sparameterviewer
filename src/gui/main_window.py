@@ -212,6 +212,7 @@ class MainWindow(MainWindowUi):
 
     def on_wide_layout_change(self):
         Settings.wide_layout = self.ui_wide_layout_option
+        self.on_resize()
 
 
     def on_log_entry(self, record: logging.LogRecord):
@@ -742,6 +743,7 @@ class MainWindow(MainWindowUi):
         else:
             self.ui_xaxis_range = (any,any)
         
+    
     def on_resize(self):
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESCALE_ID, MainWindow.TIMER_RESCALE_TIMEOUT_S, self.after_resize, retrigger_behavior='postpone')
     

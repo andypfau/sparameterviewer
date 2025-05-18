@@ -42,6 +42,7 @@ class HvSplitter(QWidget):
         self._collapsible1, self._collapsible2 = False, False
 
         self._ui_splitter = QSplitter(self)
+        self._ui_splitter.splitterMoved.connect(self.splitterMoved)
         self._ui_splitter.addWidget(self._child1)
         self._ui_splitter.addWidget(self._child2)
         self._ui_layout = QVBoxLayout(self)
