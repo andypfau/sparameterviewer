@@ -27,7 +27,7 @@ class TextDialog(TextDialogUi):
                 with open(str(file_path), 'r') as fp:
                     self.text = fp.read()
             except Exception as ex:
-                error_dialog('Error', 'Unable to read file contents', str(ex))
+                error_dialog('Error', 'Unable to read file contents', detailed_text=str(ex))
         else:
             assert file_path is None
             self.text = text
@@ -43,7 +43,7 @@ class TextDialog(TextDialogUi):
         try:
             Clipboard.copy_string(self.text)
         except Exception as ex:
-            error_dialog('Copying Failed', 'Unable to copy text.', str(ex))
+            error_dialog('Copying Failed', 'Unable to copy text.', detailed_text=str(ex))
 
 
     def on_save(self):
@@ -54,7 +54,7 @@ class TextDialog(TextDialogUi):
             with open(filename, 'w') as fp:
                 fp.write(self.text)
         except Exception as ex:
-            error_dialog('Saving Failed', 'Unable to save file.', str(ex))
+            error_dialog('Saving Failed', 'Unable to save file.', detailed_text=str(ex))
 
 
     def on_open_ext(self):
@@ -65,4 +65,4 @@ class TextDialog(TextDialogUi):
         try:
             start_process(Settings.ext_editor_cmd, self.file_path)
         except Exception as ex:
-            error_dialog('Open File Externally', 'Unable to open file with external editor.', str(ex))
+            error_dialog('Open File Externally', 'Unable to open file with external editor.', detailed_text=str(ex))

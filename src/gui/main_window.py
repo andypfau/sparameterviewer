@@ -606,7 +606,7 @@ class MainWindow(MainWindowUi):
                 return
             self.ui_plot.figure.savefig(filename)
         except Exception as ex:
-            error_dialog('Error', 'Exporting failed.', str(ex))
+            error_dialog('Error', 'Exporting failed.', detailed_text=str(ex))
     
 
     def on_file_info(self):
@@ -653,7 +653,7 @@ class MainWindow(MainWindowUi):
             else:
                 TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
         except Exception as ex:
-            error_dialog('Error', 'Unable to load show plaintext.', str(ex))
+            error_dialog('Error', 'Unable to load show plaintext.', detailed_text=str(ex))
 
 
     def on_open_externally(self):
@@ -671,7 +671,7 @@ class MainWindow(MainWindowUi):
         try:
             start_process(Settings.ext_editor_cmd, *[file.file_path for file in selected_files_nonarchive])
         except Exception as ex:
-            error_dialog('Open File Externally', 'Unable to open file with external editor.', str(ex))
+            error_dialog('Open File Externally', 'Unable to open file with external editor.', detailed_text=str(ex))
     
 
     def on_load_expressions(self):
@@ -688,7 +688,7 @@ class MainWindow(MainWindowUi):
                 py = fp.read()
             self.ui_expression = py.strip()
         except Exception as ex:
-            error_dialog('Error', 'Loading expressions failed.', str(ex))
+            error_dialog('Error', 'Loading expressions failed.', detailed_text=str(ex))
     
 
     def on_save_expressions(self):
@@ -699,7 +699,7 @@ class MainWindow(MainWindowUi):
             with open(fn, 'w') as fp:
                 fp.write(self.ui_expression.strip())
         except Exception as ex:
-            error_dialog('Error', 'Saving expressions failed.', str(ex))
+            error_dialog('Error', 'Saving expressions failed.', detailed_text=str(ex))
     
 
     def on_show_legend(self):
@@ -741,7 +741,7 @@ class MainWindow(MainWindowUi):
         try:
             Clipboard.copy_figure(self.ui_plot.figure)
         except Exception as ex:
-            error_dialog('Error', 'Copying plot to clipboard failed.', str(ex))
+            error_dialog('Error', 'Copying plot to clipboard failed.', detailed_text=str(ex))
     
 
     def on_lock_xaxis(self):

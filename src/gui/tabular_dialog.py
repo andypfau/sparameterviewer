@@ -626,4 +626,4 @@ class TabularDialog(TabularDialogUi):
         try:
             start_process(Settings.ext_editor_cmd, self.selected_dataset.path)
         except Exception as ex:
-            error_dialog('Open File Externally', 'Unable to open file with external editor.', str(ex))
+            error_dialog('Open File Externally', 'Unable to open file with external editor.', detailed_text=str(ex))

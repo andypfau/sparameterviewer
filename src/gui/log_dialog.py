@@ -48,6 +48,6 @@ class LogDialog(LogDialogUi):
 
 
     def on_clear(self):
-        if not okcancel_dialog('Clear Log', 'All log entries will be deleted.', f'You can still find the whole log in <{AppPaths.get_log_path()}>'):
+        if not okcancel_dialog('Clear Log', 'All log entries will be deleted.', detailed_text=f'You can still find the whole log in <{AppPaths.get_log_path()}>'):
             return
         LogHandler.inst().clear()

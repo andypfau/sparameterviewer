@@ -1,59 +1,61 @@
 from lib import AppPaths
 from .qt_helper import QtHelper
 from .settings import Settings
-from PyQt6.QtWidgets import QMessageBox, QFileDialog
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QCheckBox
 import logging
 from typing import Optional
 import pathlib
 
 
 
-def _make_dialog(title: str, text: str, extra_text: str, icon: QMessageBox.Icon) -> QMessageBox:
+def _make_dialog(title: str, text: str, informative_text: str|None, detailed_text: str|None, checkbox_text: str|None, checkbox_value: bool, icon: QMessageBox.Icon) -> QMessageBox:
     dialog = QMessageBox()
     dialog.setIcon(icon)
     dialog.setWindowTitle(title)
     dialog.setText(text)
     QtHelper.set_dialog_icon(dialog)
-    if extra_text:
-        dialog.setInformativeText(extra_text)
+    if informative_text:
+        dialog.setInformativeText(informative_text)
+    if detailed_text:
+        dialog.setDetailedText(detailed_text)
+    if checkbox_text:
+        cb = QCheckBox(checkbox_text, dialog)
+        cb.setChecked(checkbox_value)
+        dialog.setCheckBox(cb)
     return dialog
 
 
-def info_dialog(title: str, text: str, extra_text: str = None):
-    _make_dialog(title, text, extra_text, QMessageBox.Icon.Information).exec()
+def info_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False):
+    _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Information).exec()
 
 
-def _format_log_entry(title: str, text: str, extra_text: str):
-    if extra_text:
-        return f'{title}: {text}; {extra_text}'
-    else:
-        return f'{title}: {text}'
+def _format_log_entry(title: str, text: str):
+    return f'{title}: {text}'
 
 
-def warning_dialog(title: str, text: str, extra_text: str = None):
-    logging.warning(_format_log_entry(title, text, extra_text))
-    _make_dialog(title, text, extra_text, QMessageBox.Icon.Warning).exec()
+def warning_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False):
+    logging.warning(_format_log_entry(title, text))
+    _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Warning).exec()
 
 
-def error_dialog(title: str, text: str, extra_text: str = None):
-    logging.error(_format_log_entry(title, text, extra_text))
-    _make_dialog(title, text, extra_text, QMessageBox.Icon.Critical).exec()
+def error_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False):
+    logging.error(_format_log_entry(title, text))
+    _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Critical).exec()
+
+def exception_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False):
+    logging.critical(_format_log_entry(title, text))
+    _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Critical).exec()
 
 
-def exception_dialog(title: str, text: str, extra_text: str = None):
-    logging.critical(_format_log_entry(title, text, extra_text))
-    _make_dialog(title, text, extra_text, QMessageBox.Icon.Critical).exec()
-
-
-def okcancel_dialog(title: str, text: str, extra_text: str = None) -> bool:
-    dlg = _make_dialog(title, text, extra_text, QMessageBox.Icon.Information)
+def okcancel_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False) -> bool:
+    dlg = _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Information)
     dlg.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
     result = dlg.exec()
     return result==QMessageBox.StandardButton.Ok
 
 
-def yesno_dialog(title: str, text: str, extra_text: str = None) -> bool:
-    dlg = _make_dialog(title, text, extra_text, QMessageBox.Icon.Question)
+def yesno_dialog(title: str, text: str, informative_text: str|None = None, detailed_text: str|None = None, checkbox_text: str|None = None, checkbox_value: bool = False) -> bool:
+    dlg = _make_dialog(title, text, informative_text, detailed_text, checkbox_text, checkbox_value, QMessageBox.Icon.Question)
     dlg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
     result = dlg.exec()
     return result==QMessageBox.StandardButton.Yes
