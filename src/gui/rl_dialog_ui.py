@@ -1,9 +1,11 @@
 from .helpers.qt_helper import QtHelper
-from .helpers.plot_widget import PlotWidget
+from .components.plot_widget import PlotWidget
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import pathlib

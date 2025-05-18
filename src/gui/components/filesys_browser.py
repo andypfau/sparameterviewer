@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import pathlib
-from .qt_helper import QtHelper
+from ..helpers.qt_helper import QtHelper
 from .path_bar import PathBar
 from lib import AppPaths, PathExt, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive
 

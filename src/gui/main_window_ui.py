@@ -1,18 +1,20 @@
 from .helpers.qt_helper import QtHelper
-from .helpers.plot_widget import PlotWidget
-from .helpers.statusbar import StatusBar
-from .helpers.syntax_highlight import PythonSyntaxHighlighter
-from .helpers.path_bar import PathBar
-from .helpers.filesys_browser import FilesysBrowser, FilesysBrowserItemType
-from .helpers.range_edit import RangeEdit
-from .helpers.param_selector import ParamSelector
 from .helpers.settings import Parameters
-from .helpers.hv_splitter import HvSplitter
+from .components.plot_widget import PlotWidget
+from .components.statusbar import StatusBar
+from .components.syntax_highlight import PythonSyntaxHighlighter
+from .components.path_bar import PathBar
+from .components.filesys_browser import FilesysBrowser, FilesysBrowserItemType
+from .components.range_edit import RangeEdit
+from .components.param_selector import ParamSelector
+from .components.hv_splitter import HvSplitter
 from lib import AppPaths, PathExt
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import pathlib

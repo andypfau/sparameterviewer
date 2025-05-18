@@ -1,21 +1,21 @@
-import matplotlib.backend_bases
-import matplotlib.backend_bases
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
 from .helpers.settings import Settings, PlotUnit, PlotUnit2, PhaseUnit, CursorSnap, ColorAssignment, Parameters
-from .helpers.param_selector import ParamSelector
-from .helpers.plot_widget import PlotWidget
+from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
+from .helpers.help import show_help
+from .components.param_selector import ParamSelector
+from .components.plot_widget import PlotWidget
+from .components.filesys_browser import FilesysBrowserItemType
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
 from .filter_dialog import FilterDialog
 from .text_dialog import TextDialog
 from .log_dialog import LogDialog
-from .axes_dialog import AxesDialog
 from .about_dialog import AboutDialog
-from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
-from .helpers.help import show_help
-from .helpers.filesys_browser import FilesysBrowserItemType
+
+import matplotlib.backend_bases
+import matplotlib.backend_bases
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths

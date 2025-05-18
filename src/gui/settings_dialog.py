@@ -3,8 +3,8 @@ from .helpers.simple_dialogs import info_dialog
 from .helpers.help import show_help
 from .helpers.settings import Settings, PhaseUnit, PlotUnit, PlotUnit2, CsvSeparator, CursorSnap, ColorAssignment
 from .helpers.simple_dialogs import open_file_dialog
-from .helpers.plot_widget import PlotWidget
 from .helpers.qt_helper import QtHelper
+from .components.plot_widget import PlotWidget
 from lib.utils import is_windows
 import pathlib
 import logging

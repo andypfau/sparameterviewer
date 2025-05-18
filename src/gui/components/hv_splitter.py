@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from .qt_helper import QtHelper
-from .settings import Parameters
+from ..helpers.qt_helper import QtHelper
+from ..helpers.settings import Parameters
 from lib import AppPaths, PathExt
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import pathlib

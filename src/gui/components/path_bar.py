@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .qt_helper import QtHelper
+from ..helpers.qt_helper import QtHelper
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *

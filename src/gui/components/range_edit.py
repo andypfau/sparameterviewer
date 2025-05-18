@@ -1,7 +1,9 @@
 from __future__ import annotations
-from .qt_helper import QtHelper
+
+from ..helpers.qt_helper import QtHelper
 from lib import AppPaths
 from lib import parse_si_range, format_si_range
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *

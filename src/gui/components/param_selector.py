@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .qt_helper import QtHelper
-from .settings import Parameters
+from ..helpers.qt_helper import QtHelper
+from ..helpers.settings import Parameters
 from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
