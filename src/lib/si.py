@@ -18,7 +18,7 @@ class SiFmt:
 class Si:
 
     @staticmethod
-    def get_scale(value: float) -> "tuple(float,str)":
+    def get_scale(value: float) -> "tuple[float,str]":
         
         if value==0:
             return 1.0, ''

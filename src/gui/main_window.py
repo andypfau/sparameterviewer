@@ -130,6 +130,7 @@ class MainWindow(MainWindowUi):
     def apply_settings_to_ui(self):
         def load_settings():
             try:
+                logging.debug(f'Param init {Settings.plotted_params}')
                 self.ui_params = Settings.plotted_params
                 self._ui_plot_selector.setPlotType(Settings.plot_type)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)  # TODO: redirect through MainWIndowUI
@@ -774,8 +775,7 @@ class MainWindow(MainWindowUi):
     def on_lock_both_axes(self):
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_xaxis_range==MainWindow.UNLOCKED or self.ui_yaxis_range==MainWindow.UNLOCKED:
-            self.ui_xaxis_range = self.plot.plot.get_xlim()
-            self.ui_yaxis_range = self.plot.plot.get_ylim()
+            self.ui_xaxis_range, self.ui_yaxis_range = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
         else:
             self.ui_xaxis_range = (any, any)
             self.ui_yaxis_range = (any, any)
@@ -822,8 +822,9 @@ class MainWindow(MainWindowUi):
             self.ui_params_max_size = Settings.paramgrid_max_size
             self.update_params_size()
 
-        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items','log_x','log_y',
-                'expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize','plot_mark_points','color_assignment']) & set(attributes):
+        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
+                'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
+                'plot_mark_points','color_assignment','treat_all_as_complex']) & set(attributes):
             self.update_plot()
     
     
@@ -1156,12 +1157,15 @@ class MainWindow(MainWindowUi):
             phase_unit = self._ui_plot_selector.phaseUnit()
             phase_processing = self._ui_plot_selector.phaseProcessing()
             smith_norm = self._ui_plot_selector.smithNorm()
-
-            # TODO: log Y axis
+            log_x, log_y = self.ui_logx, self.ui_logy
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
-            y2q, y2f = None, None  # dummy
+            # initialize dummy data
+            xq, xf, xl = '', SiFmt(), False
+            yq, yf, yl = '', SiFmt(), False
+            y2q, y2f = '', SiFmt()
+
             if plot_type == PlotType.Polar:
                 self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif plot_type == PlotType.Smith:
@@ -1178,15 +1182,16 @@ class MainWindow(MainWindowUi):
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
             else:
                 
-                xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), Settings.log_x
+                if log_y and y_qty != YQuantity.Magnitude and Settings.verbose:
+                    logging.info('Ignoring logarithmic Y-axis (only valid for magnitude)')
+
+                xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), log_x
                 if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
                     yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
                 elif y_qty == YQuantity.Magnitude:
-                    yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),Settings.log_y
+                    yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),log_y
                 elif y_qty == YQuantity.Decibels:
                     yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
-                else:
-                    yq,yf,yl = '',lambda s: str(s), False  # dummy
                 
                 if y2_qty == YQuantity.Phase:
                     if phase_unit == PhaseUnit.Radians:
@@ -1251,39 +1256,52 @@ class MainWindow(MainWindowUi):
                         return radians * 180 / math.pi
                     return radians
 
+                treat_as_complex = Settings.treat_all_as_complex or np.iscomplexobj(sp)
                 if plot_type in [PlotType.Polar, PlotType.Smith]:
-                    self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
-                elif plot_type == PlotType.TimeDomain:
-                    t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
-                    if tdr_z:
-                        lev[lev==0] = 1e-20 # avoid division by zero in the next step
-                        imp = z0 * (1+lev) / (1-lev) # convert to impedance
-                        self.plot.add(t, np.real(imp), None, name, style, **kwargs)
+                    if treat_as_complex:
+                        self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
                     else:
-                        self.plot.add(t, lev, None, name, style, **kwargs)
-                else:
-                    # TODO: only apply transformation to S-Parameters
-                    if y_qty == YQuantity.Decibels:
-                        self.plot.add(f, v2db(sp), None, name, style, **kwargs)
-                    elif y_qty == YQuantity.Magnitude:
-                        self.plot.add(f, np.abs(sp), None, name, style, **kwargs)
-                    elif y_qty == YQuantity.RealImag:
-                        self.plot.add(f, np.real(sp), None, name+' re', style, **kwargs)
-                        self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
-                    elif y_qty == YQuantity.Real:
-                        self.plot.add(f, np.real(sp), None, name, style, **kwargs)
-                    elif y_qty == YQuantity.Imag:
-                        self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
-                    
-                    if y2_qty == YQuantity.Phase:
-                        if phase_processing == PhaseProcessing.UnwrapDetrend:
-                            self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
-                        elif phase_processing == PhaseProcessing.Unwrap:
-                            self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                        if Settings.verbose:
+                            logging.debug(f'The trace "{name}" is real-valued; omitting from chart')
+                elif plot_type == PlotType.TimeDomain:
+                    if treat_as_complex:
+                        t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
+                        if tdr_z:
+                            lev[lev==0] = 1e-20 # avoid division by zero in the next step
+                            imp = z0 * (1+lev) / (1-lev) # convert to impedance
+                            self.plot.add(t, np.real(imp), None, name, style, **kwargs)
                         else:
-                            self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
-                    elif y2_qty == YQuantity.GroupDelay:
-                        self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            self.plot.add(t, lev, None, name, style, **kwargs)
+                    else:
+                        if Settings.verbose:
+                            logging.debug(f'The trace "{name}" is real-valued; omitting from time-domain transformation')
+                else:
+                    if treat_as_complex:
+                        if y_qty == YQuantity.Decibels:
+                            self.plot.add(f, v2db(sp), None, name, style, **kwargs)
+                        elif y_qty == YQuantity.Magnitude:
+                            self.plot.add(f, np.abs(sp), None, name, style, **kwargs)
+                        elif y_qty == YQuantity.RealImag:
+                            self.plot.add(f, np.real(sp), None, name+' re', style, **kwargs)
+                            self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
+                        elif y_qty == YQuantity.Real:
+                            self.plot.add(f, np.real(sp), None, name, style, **kwargs)
+                        elif y_qty == YQuantity.Imag:
+                            self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
+                        
+                        if y2_qty == YQuantity.Phase:
+                            if phase_processing == PhaseProcessing.UnwrapDetrend:
+                                self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            elif phase_processing == PhaseProcessing.Unwrap:
+                                self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            else:
+                                self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                        elif y2_qty == YQuantity.GroupDelay:
+                            self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                    else:  # real-valued data
+                        if Settings.verbose:
+                            logging.debug(f'The trace "{name}" is real-valued; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
+                        self.plot.add(f, sp, None, name, style, **kwargs)
                     
             selected_files = self.get_selected_files()
 

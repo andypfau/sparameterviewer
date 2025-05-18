@@ -107,6 +107,8 @@ class SParamViewerAppSettings(AppSettings):
     wide_layout: bool = False
     paramgrid_min_size: int = 2
     paramgrid_max_size: int = 4
+    treat_all_as_complex: bool = False
+    verbose: bool = False
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

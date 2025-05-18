@@ -58,6 +58,9 @@ class SettingsDialogUi(QDialog):
         self._ui_paramsmax_spin = QSpinBox()
         self._ui_paramsmax_spin.setMinimum(1)
         self._ui_paramsmax_spin.valueChanged.connect(self.on_param_maxsize_changed)
+        self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
+        self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
+        self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -66,7 +69,9 @@ class SettingsDialogUi(QDialog):
                             ['Parameter Grid Size:', QtHelper.layout_h(self._ui_paramsmin_spin, '...', self._ui_paramsmax_spin, ...)],
                             ['CSV Separator:', QtHelper.layout_h(self._ui_csvsep_combo, ...)],
                     ]), ...
-                ), ...
+                ),
+                self._ui_allcomplex_check,
+                ...
             )
         )
 
@@ -134,6 +139,8 @@ class SettingsDialogUi(QDialog):
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
         self._ui_exted_btn = QtHelper.make_button(self, '...', self.on_browse_ext_ed)
+        self._ui_verbose_check = QCheckBox('Verbose Log Output')
+        self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
         misc_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_comment_expr_combo,
@@ -142,7 +149,9 @@ class SettingsDialogUi(QDialog):
                         ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
                         ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
-                ]), ...
+                ]),
+                self._ui_verbose_check,
+                ...
             )
         )
 
@@ -220,6 +229,22 @@ class SettingsDialogUi(QDialog):
         for option in options:
             self._ui_td_minsize_combo.addItem(option)
         self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
+
+    
+    @property
+    def ui_verbose(self) -> bool:
+        return self._ui_verbose_check.isChecked()
+    @ui_verbose.setter
+    def ui_verbose(self, value: bool):
+        self._ui_verbose_check.setChecked(value)
+
+    
+    @property
+    def ui_all_complex(self) -> bool:
+        return self._ui_allcomplex_check.isChecked()
+    @ui_all_complex.setter
+    def ui_all_complex(self, value: bool):
+        self._ui_allcomplex_check.setChecked(value)
 
     
     @property
@@ -394,4 +419,8 @@ class SettingsDialogUi(QDialog):
     def on_param_minsize_changed(self):
         pass
     def on_param_maxsize_changed(self):
+        pass
+    def on_allcomplex_changed(self):
+        pass
+    def on_verbose_changed(self):
         pass

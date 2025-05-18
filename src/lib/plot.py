@@ -396,31 +396,49 @@ class PlotHelper:
             else:
                 y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y_qty, self._y_fmt, self._y_log, None, None
         
-        if self._x_qty is not None:
-            self.plot.set_xlabel(self._x_qty)
-        if y_qty is not None:
-            self.plot.set_ylabel(y_qty)
-        if y2_qty is not None:
-            self.plot2.set_ylabel(y2_qty)
+        if self._x_qty is not None and self.plot is not None:
+            x_highest_abs_value = max(abs(self.plot.get_xlim()[0]), abs(self.plot.get_xlim()[1]))
+            if self._x_fmt.use_si_prefix:
+                x_scale, x_prefix = Si.get_scale(x_highest_abs_value)
+            else:
+                x_scale, x_prefix = 1, ''
+            parts = [s for s in [f'{self._x_qty}', f'{x_prefix}{self._x_fmt.unit}'] if s!='']
+            self.plot.set_xlabel(' / '.join(parts))
+            @ticker.FuncFormatter
+            def x_axis_formatter(value, _):
+                return f'{value/x_scale:.{self._x_fmt.significant_digits}g}'
+                #return str(Si(value, si_fmt=x_format))
+            self.plot.xaxis.set_major_formatter(x_axis_formatter)
         
-        @ticker.FuncFormatter
-        def x_axis_formatter(value, _):
-            return str(Si(value, si_fmt=self._x_fmt))
-        self.plot.xaxis.set_major_formatter(x_axis_formatter)
-        
-        if y_fmt is not None:
+        if y_qty is not None and self.plot is not None:
+            y_highest_abs_value = max(abs(self.plot.get_ylim()[0]), abs(self.plot.get_ylim()[1]))
+            if y_fmt.use_si_prefix:
+                y_scale, y_prefix = Si.get_scale(y_highest_abs_value)
+            else:
+                y_scale, y_prefix = 1, ''
+            parts = [s for s in [f'{y_qty}', f'{y_prefix}{y_fmt.unit}'] if s!='']
+            self.plot.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
             def y_axis_formatter(value, _):
-                return str(Si(value, si_fmt=y_fmt))
+                return f'{value/y_scale:.{y_fmt.significant_digits}g}'
+                #return str(Si(value, si_fmt=y_format))
             self.plot.yaxis.set_major_formatter(y_axis_formatter)
-        
-        if y2_fmt is not None:
+
+        if y2_qty is not None and self.plot2 is not None:
+            y2_highest_abs_value = max(abs(self.plot2.get_ylim()[0]), abs(self.plot2.get_ylim()[1]))
+            if y2_fmt.use_si_prefix:
+                y2_scale, y2_prefix = Si.get_scale(y2_highest_abs_value)
+            else:
+                y2_scale, y2_prefix = 1, ''
+            parts = [s for s in [f'{y2_qty}', f'{y2_prefix}{y2_fmt.unit}'] if s!='']
+            self.plot2.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
-            def y_axis_formatter(value, _):
-                return str(Si(value, si_fmt=y2_fmt))
-            self.plot2.yaxis.set_major_formatter(y_axis_formatter)
-        
-        if self._x_log:
+            def y2_axis_formatter(value, _):
+                return f'{value/y2_scale:.{y2_fmt.significant_digits}g}'
+                #return str(Si(value, si_fmt=y2_format))
+            self.plot2.yaxis.set_major_formatter(y2_axis_formatter)
+
+        if self._x_log and self.plot is not None:
             self.plot.set_xscale('log')
-        if y_log:
+        if y_log and self.plot is not None:
             self.plot.set_yscale('log')

@@ -34,7 +34,7 @@ class LogDialog(LogDialogUi):
         super().ui_show()
     
 
-    def update_log_text(self):
+    def update_log_text(self, entry: logging.LogRecord):
         text = '\n'.join(reversed(LogHandler.inst().get_messages(Settings.log_level)))
         self.ui_set_logtext(text)
 

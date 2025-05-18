@@ -158,7 +158,8 @@ class Network:
                     label = name
                 else:
                     label = param_name
-                result.append(SParam(f'{self.nw.name} {label}', self.nw.f, self.nw.s[:,ep-1,ip-1], self.nw.z0[0,ep-1], original_file=self.original_file, param_type=param_name))
+                param = self.nw.s[:,ep-1,ip-1].astype(complex)
+                result.append(SParam(f'{self.nw.name} {label}', self.nw.f, param, self.nw.z0[0,ep-1], original_file=self.original_file, param_type=param_name))
         return result
     
 

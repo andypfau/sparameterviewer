@@ -147,7 +147,7 @@ class ParamSelector(QWidget):
 
         self._ui_grid = ParamSelector.GraphicWidget(self)
         self._ui_grid.setContentsMargins(0, 0, 0, 0)
-        self._ui_grid.data = np.full([1, 1], False, dtype=bool)
+        self._ui_grid.data = np.full([2, 2], False, dtype=bool)
         self._ui_grid.paramClicked.connect(self._on_param_clicked)
         self._ui_grid.overflowClicked.connect(self._on_overflow_clicked)
         self._ui_sall_button = QtHelper.make_button(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show All Terms (e.g. S11, S21, S12, ...); Hold Ctrl to Toggle', toolbar=True)
@@ -179,8 +179,8 @@ class ParamSelector(QWidget):
             return
         
         current_pattern = self.params()
-        if current_pattern == Parameters.Custom:
-            # try to extend/shrink the matrix
+
+        if current_pattern == Parameters.Custom:  # try to extend/shrink the matrix
             current_params = self.paramMask()
             new_params = np.full([size, size], False, dtype=bool)
             if size > current_size:  # expand
@@ -196,10 +196,11 @@ class ParamSelector(QWidget):
                 for i in range(size):
                     for j in range(size):
                         new_params[i,j] = current_params[i,j]
-            self.setParamMask(new_params)
-        else:  # just apply pattern
-            self._ui_grid.data = np.ndarray([size,size], dtype=bool)
-            self.setParams(current_pattern)
+            self._ui_grid.data = new_params
+        
+        else:  # just re-apply the current pattern to a new matrix
+            guessed_pattern = self._guess_params_from_data(self.paramMask())
+            self._ui_grid.data = self._make_data_from_params(guessed_pattern, size)
 
         self.paramsChanged.emit()
 
@@ -208,13 +209,9 @@ class ParamSelector(QWidget):
         return self._ui_grid.max_size
     def setMaxGridSize(self, value: int):
         self._ui_grid.max_size = value
-    
 
-    def params(self) -> Parameters:
-        if self._ui_expr_button.isChecked():
-            return Parameters.Expressions
-        params = self.paramMask()
-        
+    
+    def _guess_params_from_data(self, params: np.ndarray) -> Parameters:
         if np.all(params):
             return Parameters.ComboAll
         if not np.any(params):
@@ -250,29 +247,35 @@ class ParamSelector(QWidget):
             return result
         else:
             return Parameters.Custom
+    
+    
+    def _make_data_from_params(self, params: Parameters, size: int) -> np.ndarray:
+        mask = np.full([size, size], False, dtype=bool)
+        if Parameters.Sii & params:
+            mask[self._mask_sii()] = True
+        elif Parameters.S11 & params:
+            mask[self._mask_s11()] = True
+        elif Parameters.S22 & params:
+            mask[self._mask_s22()] = True
+        if Parameters.S21 & params:
+            mask[self._mask_s21()] = True
+        if Parameters.S12 & params:
+            mask[self._mask_s12()] = True
+        return mask
+    
+
+    def params(self) -> Parameters:
+        if self._ui_grid.use_expressions:
+            return Parameters.Expressions
+        return self._guess_params_from_data(self.paramMask())
     def setParams(self, value: Parameters):
-        use_expressions = bool(Parameters.Expressions & value)
-        self._ui_expr_button.setChecked(use_expressions)
-        self._ui_grid.use_expressions = use_expressions
-
-        params = np.full([self.gridSize(), self.gridSize()], False, dtype=bool)
-        if Parameters.Sii & value:
-            params[self._mask_sii()] = True
-        elif Parameters.S11 & value:
-            params[self._mask_s11()] = True
-        elif Parameters.S22 & value:
-            params[self._mask_s22()] = True
-        if Parameters.S21 & value:
-            params[self._mask_s21()] = True
-        if Parameters.S12 & value:
-            params[self._mask_s12()] = True
-        self._ui_grid.data = params
-
-
-    def useExpressions(self) -> bool:
-        return self._ui_expr_button.isChecked()
-    def setUseExpressions(self, value: bool):
-        self._ui_expr_button.setChecked(value)
+        if value == Parameters.Expressions:
+            self._ui_grid.use_expressions = True
+            self._ui_expr_button.setChecked(True)
+            return
+        
+        self._ui_expr_button.setChecked(False)
+        self._ui_grid.data = self._make_data_from_params(value, self.gridSize())
 
 
     def paramMask(self) -> np.ndarray:

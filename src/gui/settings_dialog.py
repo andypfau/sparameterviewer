@@ -94,6 +94,8 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_ext_ed = Settings.ext_editor_cmd
             self.ui_plotstyle = Settings.plot_style
             self.ui_font = Settings.editor_font
+            self.ui_all_complex = Settings.treat_all_as_complex
+            self.ui_verbose = Settings.verbose
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
@@ -229,3 +231,11 @@ class SettingsDialog(SettingsDialogUi):
     def on_param_maxsize_changed(self):
         if self.ui_paramsmin <= self.ui_paramsmax:
             Settings.paramgrid_max_size = self.ui_paramsmax
+
+
+    def on_allcomplex_changed(self):
+        Settings.treat_all_as_complex = self.ui_all_complex
+
+
+    def on_verbose_changed(self):
+        Settings.verbose = self.ui_verbose
