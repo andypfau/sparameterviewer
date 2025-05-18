@@ -70,7 +70,8 @@ class SParamViewerAppSettings(AppSettings):
     show_legend: bool = True
     hide_single_item_legend: bool = True
     shorten_legend_items: bool = True
-    log_freq: bool = False
+    log_x: bool = False
+    log_y: bool = False
     expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
     window_arg: float = 35.0

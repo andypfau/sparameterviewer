@@ -97,6 +97,7 @@ class MainWindowUi(QMainWindow):
         self._ui_refresh_button = QtHelper.make_button(self, None, self.on_update_plot, icon='toolbar_refresh.svg', toolbar=True, tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_button(self, None, self.on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', toolbar=True, checked=False)
         self._ui_logx_button = QtHelper.make_button(self, None, self.on_logx_changed, icon='toolbar_log-x.svg', tooltip='Logarithmic X-Axis', toolbar=True, checked=False)
+        self._ui_logy_button = QtHelper.make_button(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis (only valid for Magnitude)', toolbar=True, checked=False)
         self._ui_lockx_button = QtHelper.make_button(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale', toolbar=True)
         self._ui_locky_button = QtHelper.make_button(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock Y-Axis Scale', toolbar=True)
         self._ui_lockboth_button = QtHelper.make_button(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Toggle X- and Y-Axis Scale Lock', toolbar=True)
@@ -107,6 +108,7 @@ class MainWindowUi(QMainWindow):
         self._ui_copy_image_button = QtHelper.make_button(self, None, self.on_copy_image, icon='toolbar_copy-image.svg', tooltip='Copy Image to Clipboard', toolbar=True)
         self._ui_tabular_button = QtHelper.make_button(self, None, self.on_view_tabular, icon='toolbar_tabular.svg', tooltip='View/Copy/Save Tabular Data (Ctrl+T)', toolbar=True)
         self._ui_plaintext_button = QtHelper.make_button(self, None, self.on_view_plaintext, icon='toolbar_plaintext.svg', tooltip='View/Copy/Save Plaintext Data (Ctrl+P)', toolbar=True)
+        self._ui_fileinfo_button = QtHelper.make_button(self, None, self.on_file_info, icon='toolbar_fileinfo.svg', tooltip='View Info About File (Ctrl+I)', toolbar=True)
         self._ui_xaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(0,10e9)])
         self._ui_xaxis_range.rangeChanged.connect(self.on_xaxis_range_change)
         self._ui_yaxis_range = RangeEdit(self, any, any, False, True, [(any,any),(-25,+3),(-25,+25),(-50,+3),(-100,+3)])
@@ -123,26 +125,10 @@ class MainWindowUi(QMainWindow):
             self._ui_plot_selector,
             vline(),
             QtHelper.layout_v(...,
-                QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, ..., spacing=default_spacing),
+                QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockboth_button, ..., spacing=default_spacing),
                 ...,spacing=default_spacing
-            ),
-            vline(),
-            QtHelper.layout_v(...,
-                QtHelper.layout_h(
-                    self._ui_filter_button,
-                    wide_spacing,
-                    self._ui_tabular_button,
-                    self._ui_plaintext_button,
-                    ...,spacing=default_spacing
-                ),
-                QtHelper.layout_h(
-                    self._ui_copy_image_button,
-                    self._ui_save_image_button,
-                    ...,spacing=default_spacing
-                ),
-                ..., spacing=default_spacing
             ),
             vline(),
             QtHelper.layout_v(...,
@@ -163,6 +149,25 @@ class MainWindowUi(QMainWindow):
                     ...,spacing=default_spacing
                 ),
                 ...,spacing=default_spacing
+            ),
+            vline(),
+            QtHelper.layout_v(...,
+                QtHelper.layout_h(
+                    self._ui_filter_button,
+                    ...,spacing=default_spacing
+                ),
+                QtHelper.layout_h(
+                    self._ui_tabular_button,
+                    self._ui_plaintext_button,
+                    self._ui_fileinfo_button,
+                    ...,spacing=default_spacing
+                ),
+                QtHelper.layout_h(
+                    self._ui_copy_image_button,
+                    self._ui_save_image_button,
+                    ...,spacing=default_spacing
+                ),
+                ..., spacing=default_spacing
             ),
             ..., spacing=wide_spacing
         ))
@@ -516,6 +521,14 @@ class MainWindowUi(QMainWindow):
     
 
     @property
+    def ui_logy(self) -> bool:
+        return self._ui_logy_button.isChecked()
+    @ui_logy.setter
+    def ui_logy(self, value: bool):
+        self._ui_logy_button.setChecked(value)
+    
+
+    @property
     def ui_xaxis_range(self) -> tuple[float,float]:
         return self._ui_xaxis_range.range()
     @ui_xaxis_range.setter
@@ -728,6 +741,8 @@ class MainWindowUi(QMainWindow):
     def on_mark_datapoints_changed(self):
         pass
     def on_logx_changed(self):
+        pass
+    def on_logy_changed(self):
         pass
     def on_statusbar_click(self):
         pass

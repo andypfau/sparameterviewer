@@ -20,6 +20,7 @@ class StatusBar(QStatusBar):
         self._icon_error = QtHelper.load_resource_pixmap('status_error.svg')
         self.insertWidget(0, self._ui_icon, 0)
         self.insertWidget(1, self._ui_text, 1)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed))
     
 
     def setMessage(self, message: str = '', level: int = logging.INFO):

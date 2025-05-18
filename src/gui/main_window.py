@@ -145,7 +145,8 @@ class MainWindow(MainWindowUi):
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
-                self.ui_logx = Settings.log_freq
+                self.ui_logx = Settings.log_x
+                self.ui_logy = Settings.log_y
                 self.ui_wide_layout = Settings.wide_layout
                 self.ui_wide_layout_option = Settings.wide_layout
                 self.ui_params_max_size = Settings.paramgrid_max_size
@@ -713,7 +714,12 @@ class MainWindow(MainWindowUi):
 
 
     def on_logx_changed(self):
-        Settings.log_freq = self.ui_logx
+        Settings.log_x = self.ui_logx
+        self.update_plot()
+
+
+    def on_logy_changed(self):
+        Settings.log_y = self.ui_logy
         self.update_plot()
 
 
@@ -806,7 +812,7 @@ class MainWindow(MainWindowUi):
             self.ui_params_max_size = Settings.paramgrid_max_size
             self.update_params_size()
 
-        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items','log_freq',
+        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items','log_x','log_y',
                 'expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize','plot_mark_points','color_assignment']) & set(attributes):
             self.update_plot()
     
@@ -1162,11 +1168,11 @@ class MainWindow(MainWindowUi):
                     else:
                         yq,yf,yl = 'Step Response' if tdr_step_resp else 'Impulse Response',SiFmt(force_sign=True),False
                 else:
-                    xq,xf,xl = 'Frequency',SiFmt(unit='Hz'),Settings.log_freq
+                    xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), Settings.log_x
                     if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
                         yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
                     elif y_qty == YQuantity.Magnitude:
-                        yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),False
+                        yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),Settings.log_y
                     elif y_qty == YQuantity.Decibels:
                         yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                     else:
