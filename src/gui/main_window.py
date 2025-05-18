@@ -1115,11 +1115,9 @@ class MainWindow(MainWindowUi):
     
 
     def update_params_size(self):
-        size = 1
+        size = Settings.paramgrid_min_size
         for file in self.get_selected_files():
             size = max(size, file.nw.number_of_ports)
-        #if size < self.ui_params_size:
-        #    size = min(self.ui_params_size, Settings.paramgrid_max_size)
         self.ui_params_size = size
     
 
