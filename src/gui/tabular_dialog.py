@@ -256,6 +256,7 @@ class TabularDialog(TabularDialogUi):
         ds_fmt = self.format_dataset(self.filter_dataset(dataset), code_safe_names=True)
         df = self.get_dataframe(ds_fmt)
         sio = io.StringIO()
+        sio.write(f'# {dataset.name}\n')
         df.to_csv(sio, index=None, sep=self.csv_separator_char())
         return sio.getvalue()
 
@@ -264,18 +265,20 @@ class TabularDialog(TabularDialogUi):
         dataset = self.format_dataset(self.filter_dataset(dataset), code_safe_names=True)
         def sanitize_name(name: str) -> str:
             return name.replace('"', "'")
-        j = {}
-        j[sanitize_name(dataset.xcol)] = list(dataset.xcol_data)
+        json_data = { 'Name': dataset.name }
+        json_data[sanitize_name(dataset.xcol)] = list(dataset.xcol_data)
         for col_name,col_data in zip(dataset.ycols,dataset.ycol_datas):
-            j[sanitize_name(col_name)] = list(col_data)
-        jstr = json.dumps(j, indent=4)
-        return jstr
+            json_data[sanitize_name(col_name)] = list(col_data)
+        json_str = json.dumps(json_data, indent=4)
+        return json_str
 
         
     def create_numpy(self, dataset: "TabularDataset"):
         dataset = self.filter_dataset(dataset)
         def split_words(name: str) -> list[str]:
             return re.split(r'\W|^(?=\d)', name)
+        def sanitize_str(name: str) -> str:
+            return name.replace('"', "'")
         def sanitize_var_name(name: str) -> str:
             return '_'.join([w.lower() for w in split_words(name)])
         def sanitize_class_name(name: str) -> str:
@@ -283,7 +286,8 @@ class TabularDialog(TabularDialogUi):
         def format_value(x) -> str:
             return f'{x:.{TabularDialog.DISPLAY_PREC}g}'
         py = 'import numpy as np\n\n'
-        py += f'class {sanitize_class_name(dataset.name)}:  # {dataset.name}\n'
+        py += f'class {sanitize_class_name(dataset.name)}:\n'
+        py += f'\tname = "{sanitize_str(dataset.name)}"\n'
         py += f'\t{sanitize_var_name(dataset.xcol)} = np.array([{", ".join([format_value(x) for x in dataset.xcol_data])}])\n'
         for col_name,col_data in zip(dataset.ycols,dataset.ycol_datas):
             py += f'\t{sanitize_var_name(col_name)} = np.array([{", ".join([format_value(x) for x in col_data])}])\n'
@@ -295,8 +299,7 @@ class TabularDialog(TabularDialogUi):
                 y_py = f'{sanitize_class_name(dataset.name)}.{sanitize_var_name(col_name)}'
                 if dataset.is_spar:
                     y_py = f'20*np.log10(np.maximum(1e-15,np.abs({y_py})))'
-                n_py = col_name.replace("'",'"')
-                py += f'fig.add_trace(go.Scatter(x={sanitize_class_name(dataset.name)}.{sanitize_var_name(dataset.xcol)}, y={y_py}, name=\'{n_py}\'))\n'
+                py += f'fig.add_trace(go.Scatter(x={sanitize_class_name(dataset.name)}.{sanitize_var_name(dataset.xcol)}, y={y_py}, name={sanitize_class_name(dataset.name)}.name))\n'
             x_py = dataset.xcol.replace("'",'"')
             py += f'fig.update_layout(xaxis_title=\'{x_py}\')\n'
             if dataset.is_spar:
