@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="43.9"
-     inkscape:cx="9.9886105"
-     inkscape:cy="10.022779"
+     inkscape:zoom="31.041988"
+     inkscape:cx="10.389154"
+     inkscape:cy="10.083117"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
      inkscape:window-x="0"
@@ -69,18 +69,13 @@
   <defs
      id="defs1" />
   <path
+     style="fill:none;fill-opacity:0.33;stroke:#1a1a1a;stroke-width:0.264999;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:0.33"
+     d="M 0.66166617,4.1012494 4.6302082,4.1010415"
+     id="path1-5"
+     sodipodi:nodetypes="cc" />
+  <path
      style="fill:none;fill-opacity:0.33;stroke:#1a1a1a;stroke-width:0.264999;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:10"
-     d="m 0.6614583,4.1010414 1.0583333,1e-7"
+     d="m 0.6614583,4.1010414 1.0583333,1e-7 C 1.984375,0.13229166 2.1166666,1.190625 3.0427083,1.190625 l 1.5874999,0"
      id="path1"
-     sodipodi:nodetypes="cc" />
-  <path
-     style="fill:none;fill-opacity:0.33;stroke:#1a1a1a;stroke-width:0.264999;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:10"
-     d="m 1.7197916,1.4552083 2.9104166,0"
-     id="path1-6"
-     sodipodi:nodetypes="cc" />
-  <path
-     style="fill:none;fill-opacity:0.33;stroke:#1a1a1a;stroke-width:0.264999;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:10"
-     d="M 1.7197916,4.1010415 V 1.4552083"
-     id="path1-7"
-     sodipodi:nodetypes="cc" />
+     sodipodi:nodetypes="cccc" />
 </svg>

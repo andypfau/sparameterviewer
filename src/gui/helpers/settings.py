@@ -4,25 +4,34 @@ import enum
 
 
 
-class PlotType(enum.Enum):
-    Cartesian = 0
-    Smith = 1
-    Polar = 2
+class PlotType(enum.StrEnum):
+    Cartesian = 'cartesian'
+    TimeDomain = 'timedomain'
+    Smith = 'smith'
+    Polar = 'polar'
 
-class YQuantity(enum.Enum):
-    Off = 0
-    Decibels = 1
-    Magnitude = 2
-    Real = 3
-    Imag = 4
-    RealImag = 5
-    Phase = 6
-    GroupDelay = 7
+class SmithNorm(enum.StrEnum):
+    Impedance = 'impedance'
+    Admittance = 'admittance'
 
-class PhaseProcessing(enum.Enum):
-    Off = 0
-    Unwrap = 1
-    UnwrapDetrend = 2
+class TdResponse(enum.StrEnum):
+    ImpulseResponse = 'impulse'
+    StepResponse = 'step'
+
+class YQuantity(enum.StrEnum):
+    Off = 'none'
+    Decibels = 'db'
+    Magnitude = ''
+    Real = 'real'
+    Imag = 'imag'
+    RealImag = 'real+imag'
+    Phase = 'phase'
+    GroupDelay = 'groupdelay'
+
+class PhaseProcessing(enum.StrEnum):
+    Off = 'none'
+    Unwrap = 'unwrap'
+    UnwrapDetrend = 'unwrap+detrend'
     
 class PhaseUnit(enum.StrEnum):
     Degrees = 'deg'
@@ -63,9 +72,8 @@ class SParamViewerAppSettings(AppSettings):
     plot_type: PlotType = PlotType.Cartesian
     plot_y_quantitiy: YQuantity = YQuantity.Decibels
     plot_y2_quantitiy: YQuantity = YQuantity.Off
-    plot_tdr: bool = False
-    tdr_step_response: bool = False
-    smith_y: bool = False
+    td_response = TdResponse = TdResponse.StepResponse
+    smith_norm: SmithNorm = SmithNorm.Impedance
     phase_processing: PhaseProcessing = PhaseProcessing.Off
     show_legend: bool = True
     hide_single_item_legend: bool = True

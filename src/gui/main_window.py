@@ -1,6 +1,6 @@
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.settings import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity
+from .helpers.settings import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
@@ -134,11 +134,11 @@ class MainWindow(MainWindowUi):
                 self._ui_plot_selector.setPlotType(Settings.plot_type)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setTdr(Settings.plot_tdr)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setTdrStepResponse(Settings.tdr_step_response)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setTdResponse(Settings.td_response)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setPhaseUnit(Settings.phase_unit)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setPhaseProcessing(Settings.phase_processing)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setSmithY(Settings.smith_y)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setSmithNorm(Settings.smith_norm)  # TODO: redirect through MainWIndowUI
+                self._ui_plot_selector.setTdImpedance(Settings.tdr_impedance)  # TODO: redirect through MainWIndowUI
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
@@ -147,7 +147,6 @@ class MainWindow(MainWindowUi):
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_logx = Settings.log_x
                 self.ui_logy = Settings.log_y
-                self.ui_wide_layout = Settings.wide_layout
                 self.ui_wide_layout_option = Settings.wide_layout
                 self.ui_params_max_size = Settings.paramgrid_max_size
                 self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
@@ -463,6 +462,15 @@ class MainWindow(MainWindowUi):
     
 
     def on_plottype_changed(self):
+        Settings.plot_type = self._ui_plot_selector.plotType()
+        Settings.phase_unit = self._ui_plot_selector.phaseUnit()
+        Settings.phase_processing = self._ui_plot_selector.phaseProcessing()
+        Settings.td_response = self._ui_plot_selector.tdResponse()
+        Settings.smith_norm = self._ui_plot_selector.smithNorm()
+        Settings.tdr_impedance = self._ui_plot_selector.tdImpedance()
+        Settings.plot_y_quantitiy = self._ui_plot_selector.yQuantity()
+        Settings.plot_y2_quantitiy = self._ui_plot_selector.y2Quantity()
+
         self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
         self.prepare_cursors()
         self.update_plot()
@@ -1145,50 +1153,50 @@ class MainWindow(MainWindowUi):
             plot_type = self._ui_plot_selector.plotType()
             y_qty = self._ui_plot_selector.yQuantity()
             y2_qty = self._ui_plot_selector.y2Quantity()
-            tdr = self._ui_plot_selector.tdr()
             tdr_z = Settings.tdr_impedance  # TODO: obtain from toolbar?
-            tdr_step_resp = self._ui_plot_selector.tdrStepResponse()
+            tdr_resp = self._ui_plot_selector.tdResponse()
             phase_unit = self._ui_plot_selector.phaseUnit()
             phase_processing = self._ui_plot_selector.phaseProcessing()
-            smith_y = self._ui_plot_selector.smithY()
+            smith_norm = self._ui_plot_selector.smithNorm()
 
             # TODO: log Y axis
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
 
+            y2q, y2f = None, None  # dummy
             if plot_type == PlotType.Polar:
                 self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
             elif plot_type == PlotType.Smith:
                 smith_z = 1.0
-                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type='y' if smith_y else 'z', smith_z=smith_z, **common_plot_args)
-            else:
-                y2q, y2f = None, None
-                if tdr:
-                    xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
-                    if tdr_z:
-                        yq,yf,yl = 'Step Response' if tdr_step_resp else 'Impulse Response',SiFmt(unit='Ω', force_sign=True),False
-                    else:
-                        yq,yf,yl = 'Step Response' if tdr_step_resp else 'Impulse Response',SiFmt(force_sign=True),False
+                typ = 'y' if smith_norm==SmithNorm.Admittance else 'z'
+                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
+            elif plot_type == PlotType.TimeDomain:
+                resp_name = 'Step Response' if tdr_resp==TdResponse.StepResponse else 'Impulse Response'
+                xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
+                if tdr_z:
+                    yq,yf,yl = resp_name,SiFmt(unit='Ω', force_sign=True),False
                 else:
-                    xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), Settings.log_x
-                    if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
-                        yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
-                    elif y_qty == YQuantity.Magnitude:
-                        yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),Settings.log_y
-                    elif y_qty == YQuantity.Decibels:
-                        yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
+                    yq,yf,yl = resp_name,SiFmt(force_sign=True),False
+                self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
+            else:
+                
+                xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), Settings.log_x
+                if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
+                    yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
+                elif y_qty == YQuantity.Magnitude:
+                    yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),Settings.log_y
+                elif y_qty == YQuantity.Decibels:
+                    yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
+                else:
+                    yq,yf,yl = '',lambda s: str(s), False  # dummy
+                
+                if y2_qty == YQuantity.Phase:
+                    if phase_unit == PhaseUnit.Radians:
+                        y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
                     else:
-                        yq,yf,yl = '',lambda s: str(s), False  # dummy
-                    
-                    if y2_qty == YQuantity.Phase:
-                        if phase_unit == PhaseUnit.Radians:
-                            y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
-                        else:
-                            y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
-                    elif y2_qty == YQuantity.GroupDelay:
-                        y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
-                    else:
-                        y2q,y2f = '',lambda s: str(s)  # dummy
+                        y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
+                elif y2_qty == YQuantity.GroupDelay:
+                    y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
             available_colors = PlotWidget.get_color_cycle()
@@ -1247,8 +1255,8 @@ class MainWindow(MainWindowUi):
 
                 if plot_type in [PlotType.Polar, PlotType.Smith]:
                     self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
-                elif tdr:
-                    t,lev = sparam_to_timedomain(f, sp, step_response=tdr_step_resp, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
+                elif plot_type == PlotType.TimeDomain:
+                    t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
                     if tdr_z:
                         lev[lev==0] = 1e-20 # avoid division by zero in the next step
                         imp = z0 * (1+lev) / (1-lev) # convert to impedance

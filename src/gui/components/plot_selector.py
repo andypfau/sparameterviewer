@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from ..helpers.settings import PhaseUnit
-from ..helpers.settings import PlotType, YQuantity, PhaseProcessing
+from ..helpers.settings import PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse
 from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -34,12 +34,13 @@ class PlotSelector(QWidget):
         self._y1 = YQuantity.Decibels
         self._y2 = YQuantity.Off
         self._phase_processing = PhaseProcessing.Off
-        self._tdr = False
-        self._tdr_step_response = True
-        self._smith_y = False
+        self._td_response = TdResponse.StepResponse
+        self._smith_norm = SmithNorm.Impedance
         self._phase_unit = PhaseUnit.Degrees
+        self._td_z = False
         
         self._ui_cartesian_button = QtHelper.make_button(self, None, self._on_select_cartesian, icon='plot_cartesian.svg', tooltip='Cartesian Plot', toolbar=True, checked=False)
+        self._ui_tdr_button = QtHelper.make_button(self, None, self._on_select_tdr, icon='plot_tdr.svg', tooltip='Cartesian Plot of Time-Domain Transform', toolbar=True, checked=False)
         self._ui_smith_button = QtHelper.make_button(self, None, self._on_select_smith, icon='plot_smith.svg', tooltip='Smith Plot', toolbar=True, checked=False)
         self._ui_polar_button = QtHelper.make_button(self, None, self._on_select_polar, icon='plot_polar.svg', tooltip='Polar Plot', toolbar=True, checked=False)
         self._ui_db_button = QtHelper.make_button(self, None, self._on_select_db, icon='plot_db.svg', tooltip='Plot Decibels (dB) on Y-Axis', toolbar=True, checked=False)
@@ -50,25 +51,23 @@ class PlotSelector(QWidget):
         self._ui_gdelay_button = QtHelper.make_button(self, None, self._on_select_gdelay, icon='plot_gdelay.svg', tooltip='Plot Group Delay on Y-Axis', toolbar=True, checked=False)
         self._ui_unwrap_button = QtHelper.make_button(self, None, self._on_select_unwrap, icon='plot_phase-unwrap.svg', tooltip='Unwrap Phase', toolbar=True, checked=False)
         self._ui_detrend_button = QtHelper.make_button(self, None, self._on_select_detrend, icon='plot_phase-detrend.svg', tooltip='Unwrap and De-Trend Phase', toolbar=True, checked=False)
-        self._ui_tdr_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_tdr.svg', tooltip='Apply Time-Domain Transformation', toolbar=True, checked=False)
         self._ui_impulse_button = QtHelper.make_button(self, None, self._on_select_impulse, icon='plot_tdr-impulse.svg', tooltip='Show Impulse Response', toolbar=True, checked=False)
         self._ui_step_button = QtHelper.make_button(self, None, self._on_select_step, icon='plot_tdr-step.svg', tooltip='Show Step Response', toolbar=True, checked=False)
-        self._ui_y_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_admittance.svg', tooltip='Use Admittance (Y) Instad of Impedance (Z) Chart', toolbar=True, checked=False)
+        self._ui_impeance_button = QtHelper.make_button(self, None, self._on_select_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', toolbar=True, checked=False)
+        self._ui_admittance_button = QtHelper.make_button(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', toolbar=True, checked=False)
         self._ui_degrees_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_degree.svg', tooltip='Plot Phase in Degrees (°) Instad of Radians', toolbar=True, checked=False)
-        default_spacing, medium_spacing, wide_spacing = 1, 5, 12
+        self._ui_tdz_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_ohms.svg', tooltip='Transform Y-Axis to Impedance', toolbar=True, checked=False)
+        default_spacing, medium_spacing, wide_spacing = 1, 12, 12
         self.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
-                self._ui_cartesian_button, self._ui_smith_button, self._ui_polar_button,
+                self._ui_cartesian_button, self._ui_tdr_button, self._ui_smith_button, self._ui_polar_button,
             ..., spacing=default_spacing),
-            medium_spacing,
+            wide_spacing,
             QtHelper.layout_h(
-                self._ui_db_button, self._ui_mag_button, self._ui_real_button, self._ui_imag_button, wide_spacing, self._ui_phase_button, self._ui_gdelay_button,
-            ..., spacing=default_spacing),
-            QtHelper.layout_h(
-                self._ui_unwrap_button, self._ui_detrend_button, self._ui_degrees_button, wide_spacing, self._ui_y_button,
+                self._ui_impeance_button, self._ui_admittance_button, self._ui_db_button, self._ui_mag_button, self._ui_real_button, self._ui_imag_button, self._ui_impulse_button, self._ui_step_button, medium_spacing, self._ui_tdz_button,
             ..., spacing=default_spacing),
             QtHelper.layout_h(
-                self._ui_tdr_button, self._ui_impulse_button, self._ui_step_button,
+                self._ui_phase_button, self._ui_unwrap_button, self._ui_detrend_button, self._ui_degrees_button, self._ui_gdelay_button,
             ..., spacing=default_spacing),
             ..., spacing=default_spacing
         ))
@@ -109,17 +108,24 @@ class PlotSelector(QWidget):
         self._update_controls()
     
 
-    def tdrStepResponse(self) -> bool:
-        return self._tdr_step_response
-    def setTdrStepResponse(self, value: bool):
-        self._tdr_step_response = value
+    def tdResponse(self) -> TdResponse:
+        return self._td_response
+    def setTdResponse(self, value: TdResponse):
+        self._td_response = value
         self._update_controls()
     
 
-    def smithY(self) -> bool:
-        return self._smith_y
-    def setSmithY(self, value: bool):
-        self._smith_y = value
+    def tdImpedance(self) -> bool:
+        return self._td_z
+    def setTdImpedance(self, value: bool):
+        self._td_z = value
+        self._update_controls()
+    
+
+    def smithNorm(self) -> SmithNorm:
+        return self._smith_norm
+    def setSmithNorm(self, value: SmithNorm):
+        self._smith_norm = value
         self._update_controls()
     
 
@@ -139,6 +145,7 @@ class PlotSelector(QWidget):
 
     def _update_controls(self):
         self._ui_cartesian_button.setChecked(self._plot_type == PlotType.Cartesian)
+        self._ui_tdr_button.setChecked(self._plot_type == PlotType.TimeDomain)
         self._ui_smith_button.setChecked(self._plot_type == PlotType.Smith)
         self._ui_polar_button.setChecked(self._plot_type == PlotType.Polar)
 
@@ -148,33 +155,39 @@ class PlotSelector(QWidget):
         self._ui_imag_button.setChecked(self._y1 == YQuantity.Imag or self._y1 == YQuantity.RealImag)
         self._ui_phase_button.setChecked(self._y2 == YQuantity.Phase)
         self._ui_gdelay_button.setChecked(self._y2 == YQuantity.GroupDelay)
-        
-        self._ui_tdr_button.setChecked(self._tdr)
-        self._ui_impulse_button.setChecked(not self._tdr_step_response)
-        self._ui_step_button.setChecked(self._tdr_step_response)
+        self._ui_impulse_button.setChecked(self._td_response == TdResponse.ImpulseResponse)
+        self._ui_step_button.setChecked(self._td_response == TdResponse.StepResponse)
         self._ui_degrees_button.setChecked(self._phase_unit == PhaseUnit.Degrees)
-        self._ui_y_button.setChecked(self._smith_y)
+        self._ui_impeance_button.setChecked(self._smith_norm == SmithNorm.Impedance)
+        self._ui_admittance_button.setChecked(self._smith_norm == SmithNorm.Admittance)
+        self._ui_tdz_button.setChecked(self._td_z)
         self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
         self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
 
-        self._ui_db_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-        self._ui_mag_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-        self._ui_real_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-        self._ui_imag_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-        self._ui_phase_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-        self._ui_gdelay_button.setEnabled(self._plot_type == PlotType.Cartesian and not self._tdr)
-
-        self._ui_unwrap_button.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_detrend_button.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_tdr_button.setEnabled(self._plot_type == PlotType.Cartesian)
-        self._ui_step_button.setEnabled(self._plot_type == PlotType.Cartesian and self._tdr)
-        self._ui_impulse_button.setEnabled(self._plot_type == PlotType.Cartesian and self._tdr)
-        self._ui_y_button.setEnabled(self._plot_type == PlotType.Smith)
-        self._ui_degrees_button.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_db_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_mag_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_real_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_imag_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_phase_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_gdelay_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_unwrap_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_degrees_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_tdz_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
+        self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
     
 
     def _on_select_cartesian(self):
         self._plot_type = PlotType.Cartesian
+        self._update_controls()
+        self.valueChanged.emit()
+    
+
+    def _on_select_tdr(self):
+        self._plot_type = PlotType.TimeDomain
         self._update_controls()
         self.valueChanged.emit()
 
@@ -254,13 +267,25 @@ class PlotSelector(QWidget):
 
 
     def _on_select_impulse(self):
-        self._tdr_step_response = False
+        self._td_response = TdResponse.ImpulseResponse
         self._update_controls()
         self.valueChanged.emit()
 
 
     def _on_select_step(self):
-        self._tdr_step_response = True
+        self._td_response = TdResponse.StepResponse
+        self._update_controls()
+        self.valueChanged.emit()
+
+
+    def _on_select_z(self):
+        self._smith_norm = SmithNorm.Impedance
+        self._update_controls()
+        self.valueChanged.emit()
+
+
+    def _on_select_y(self):
+        self._smith_norm = SmithNorm.Admittance
         self._update_controls()
         self.valueChanged.emit()
 
@@ -284,11 +309,7 @@ class PlotSelector(QWidget):
 
 
     def _on_select_other(self):
-        self._tdr = self._ui_tdr_button.isChecked()
-        self._unwrap_phase = self._ui_unwrap_button.isChecked()
-        self._detrend_phase = self._ui_detrend_button.isChecked()
-        self._smith_y = self._ui_y_button.isChecked()
-        self._tdr_step_response = self._ui_step_button.isChecked()
         self._phase_unit = PhaseUnit.Degrees if self._ui_degrees_button.isChecked() else PhaseUnit.Radians
+        self._td_z = self._ui_tdz_button.isChecked()
         self._update_controls()
         self.valueChanged.emit()
