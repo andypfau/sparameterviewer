@@ -220,8 +220,8 @@ class PathBar(QWidget):
         while paths[0].parent != paths[0]:
             paths.insert(0, paths[0].parent)
 
-        label_width = self._text.width()
-        font_metrics = QFontMetrics(self._text.font())
+        label_width = self._breadcrumb_label.width()
+        font_metrics = QFontMetrics(self._breadcrumb_label.font())
         char_width = font_metrics.averageCharWidth()
         MARGIN_CHARS = 3
         max_chars = label_width // char_width - MARGIN_CHARS

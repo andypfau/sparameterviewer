@@ -61,13 +61,17 @@ class SettingsDialogUi(QDialog):
         self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
         self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
+        self._ui_logxneg_combo = QComboBox()
+        self._ui_logyneg_combo = QComboBox()
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
                             ['Phase Unit:', QtHelper.layout_h(self._ui_deg_radio, self._ui_rad_radio, ...)],
-                            ['Parameter Grid Size:', QtHelper.layout_h(self._ui_paramsmin_spin, '...', self._ui_paramsmax_spin, ...)],
+                            ['Parameter Grid Size:', QtHelper.layout_h(self._ui_paramsmin_spin, ' - ', self._ui_paramsmax_spin, ...)],
                             ['CSV Separator:', QtHelper.layout_h(self._ui_csvsep_combo, ...)],
+                            ['Log. Y-Axis:', QtHelper.layout_h(self._ui_logyneg_combo, ...)],
+                            ['Log. X-Axis:', QtHelper.layout_h(self._ui_logxneg_combo, ...)],
                     ]), ...
                 ),
                 self._ui_allcomplex_check,
@@ -87,17 +91,14 @@ class SettingsDialogUi(QDialog):
         self._ui_td_shift_spinner.setMinimum(-1e9)
         self._ui_td_shift_spinner.setMaximum(+1e9)
         self._ui_td_shift_spinner.valueChanged.connect(self.on_td_shift_changed)
-        self._ui_td_z_checkbox = QCheckBox('Convert to Impedance')
-        self._ui_td_z_checkbox.toggled.connect(self.on_td_z_changed)
         tb_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
                         ['Window:', QtHelper.layout_h(self._ui_td_window_combo, ...)],
                         ['Parameter:', QtHelper.layout_h(self._ui_td_window_param_spinner, ...)],
-                        ['Min. Size:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
+                        ['Min. Length:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
                         ['Shift:', QtHelper.layout_h(self._ui_td_shift_spinner, 'ps', ...)],
-                        [None, QtHelper.layout_h(self._ui_td_z_checkbox, ...)],
                     ]), ...
                 ), ...
             )
@@ -200,6 +201,10 @@ class SettingsDialogUi(QDialog):
         self._ui_td_window_param_spinner.setValue(value)
 
     
+    def ui_enable_window_param(self, enable: bool = True):
+        self._ui_td_window_param_spinner.setEnabled(enable)
+
+    
     @property
     def ui_td_minsize(self) -> str:
         return self._ui_td_minsize_combo.currentText()
@@ -215,20 +220,42 @@ class SettingsDialogUi(QDialog):
     def ui_td_shift(self, value: float):
         self._ui_td_shift_spinner.setValue(value / 1e-12)
 
-    
-    @property
-    def ui_td_z(self) -> bool:
-        return self._ui_td_z_checkbox.isChecked()
-    @ui_td_z.setter
-    def ui_td_z(self, value: bool):
-        self._ui_td_z_checkbox.setChecked(value)
-
 
     def ui_set_td_minsize_options(self, options: list[str]):
         self._ui_td_minsize_combo.clear()
         for option in options:
             self._ui_td_minsize_combo.addItem(option)
         self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
+
+    
+    @property
+    def ui_logxneg(self) -> str:
+        return self._ui_logxneg_combo.currentText()
+    @ui_logxneg.setter
+    def ui_logxneg(self, value: str):
+        self._ui_logxneg_combo.setCurrentText(value)
+
+
+    def ui_set_logxneg_options(self, options: list[str]):
+        self._ui_logxneg_combo.clear()
+        for option in options:
+            self._ui_logxneg_combo.addItem(option)
+        self._ui_logxneg_combo.currentIndexChanged.connect(self.on_logxneg_changed)
+
+    
+    @property
+    def ui_logyneg(self) -> str:
+        return self._ui_logyneg_combo.currentText()
+    @ui_logyneg.setter
+    def ui_logyneg(self, value: str):
+        self._ui_logyneg_combo.setCurrentText(value)
+
+
+    def ui_set_logyneg_options(self, options: list[str]):
+        self._ui_logyneg_combo.clear()
+        for option in options:
+            self._ui_logyneg_combo.addItem(option)
+        self._ui_logyneg_combo.currentIndexChanged.connect(self.on_logyneg_changed)
 
     
     @property
@@ -392,8 +419,6 @@ class SettingsDialogUi(QDialog):
         pass
     def on_td_shift_changed(self):
         pass
-    def on_td_z_changed(self):
-        pass
     def on_zip_change(self):
         pass
     def on_comment_change(self):
@@ -423,4 +448,8 @@ class SettingsDialogUi(QDialog):
     def on_allcomplex_changed(self):
         pass
     def on_verbose_changed(self):
+        pass
+    def on_logxneg_changed(self):
+        pass
+    def on_logyneg_changed(self):
         pass

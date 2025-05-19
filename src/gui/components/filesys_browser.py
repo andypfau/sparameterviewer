@@ -190,8 +190,6 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._ui_filesys_view.setModel(self._ui_filesys_model)
         self._ui_filesys_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self._ui_filesys_view.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self._ui_filesys_view.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self._ui_filesys_view.selectionModel().selectionChanged.connect(self._on_selection_change)
         self._ui_filesys_view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
@@ -432,6 +430,7 @@ class FilesysBrowser(QWidget):
         #logging.debug(f'FilesysBrowser._on_files_changed()')
         if self._inhibit_triggers:
             return
+        self._ui_filesys_view.header().resizeSections(QHeaderView.ResizeMode.ResizeToContents)
         self.filesChanged.emit()
     
 

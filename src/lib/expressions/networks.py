@@ -134,6 +134,8 @@ class Network:
                 ip_filter = ingress_port
 
         result = []
+        if not self.nw:
+            return result
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
                 if ep_filter is not None and ep!=ep_filter:
@@ -202,68 +204,54 @@ class Network:
         return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_file=self.original_file, param_type=f'µ{mu}')
     
 
-    def losslessness(self, egress_port_or_kind: "int|str" = None, ingress_port: int = None):
+    def losslessness(self):
         s = self.nw.s
-        s_t = np.transpose(s, (0,2,1))
-        s_c = np.conjugate(s)
-        prod = np.matmul(s_t, s_c)
-        if (egress_port_or_kind == 'ii') and ingress_port is None:
-            name = 'Losslessness_ii,worst'
-            diag = np.diagonal(prod,0,1,2)
-            worst_idx = np.argmax(np.abs(diag-1), (1)) # find the indices where the diagonal is the farthest away from 1
-            matrix = np.take_along_axis(diag, np.expand_dims(worst_idx, 1), 1)
-        elif (egress_port_or_kind == 'ij') and ingress_port is None:
-            if self.nw.nports < 2:
-                return []
-            name = 'Losslessness_ij,worst'
-            antidiag = np.copy(prod)
-            for i in range(antidiag.shape[1]):
-                antidiag[:,i,i] = 0
-            antidiag = np.reshape(antidiag, (antidiag.shape[0],antidiag.shape[1]**2))
-            worst_idx = np.argmax(np.abs(antidiag), (1)) # find the indices where the diagonal has greatest magnitude
-            matrix = np.take_along_axis(antidiag, np.expand_dims(worst_idx,1), 1)
-        elif egress_port_or_kind is not None and ingress_port is not None:
-            name = get_sparam_name(egress_port_or_kind,ingress_port,"Losslessness")
-            matrix = prod[:,egress_port_or_kind-1,ingress_port-1]
-        else:
-            raise ValueError(f'Network.losslessness(egress_port_or_kind,ingress_port): invalid arguments')
-        return SParam(f'{self.nw.name} {name}', self.nw.f, matrix, self.nw.z0[0,0], original_file=self.original_file, param_type=f'losslessness')
+        
+        # A network is lossless if S^T x S* = U (see e.g. Pozar, 4.3). This function returns, per frequency,
+        #   the highest element of the matrix |S^T x S* - U|, i.e. if the result is 0, the network is lossless
+
+        st = np.transpose(s, (0,2,1))
+        sc = np.conjugate(s)
+        prod = np.matmul(st, sc)
+        target = np.eye(self.nw.nports)
+        errors = np.abs(prod - target)
+        result_metric = np.max(errors, axis=(1,2))  # should be zero if lossless
+        
+        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'losslessness')
     
 
     def passivity(self):
         s = self.nw.s
+        
+        # A network is passive if λ <= 1 for all eigenvalues λ of (S^T)* x S (see <https://www.simberian.com/Presentations/Shlepnev_S_ParameterQualityMetrics_July2014_final.pdf>)
+        # This function returns, per frequency, max(0,λ'-1) of the highest eigenvector λ', i.e. if the result is zero, the network is reciprocal.
         s_tc = np.conjugate(np.transpose(s, (0,2,1)))
         prod = np.matmul(s_tc, s)
-        eigenvals = []
-        for idx in range(prod.shape[0]):
-            submat = prod[idx,:,:]
-            ev = np.linalg.eigvals(submat)
-            evmax = np.max(np.real(ev))
-            eigenvals.append(evmax)
-        return SParam(f'{self.nw.name} Passivity', self.nw.f, np.array(eigenvals), self.nw.z0[0,0], original_file=self.original_file, param_type=f'passivity')
+
+        result_metric = np.zeros([len(self.nw.f)], dtype=float)
+        for idx in range(len(self.nw.f)):  # for each frequency
+            prod_submat = prod[idx,:,:]
+            eigenvalues = np.real(np.linalg.eigvals(prod_submat))
+            worst_eigenvalue = np.max(eigenvalues)
+            result_metric[idx] = max(0, worst_eigenvalue - 1)
+        
+        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'passivity')
     
 
-    def reciprocity(self, egress_port: int = None, ingress_port: int = None):
+    def reciprocity(self):
         if self.nw.nports < 2:
             raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.nw.name} (only valid for 2-port or higher networks)')
         s = self.nw.s
-        if egress_port is None and ingress_port is None:
-            name = 'Reciprocity_worst'
-            errors = []
-            for i in range(s.shape[1]):
-                for j in range(i+1,s.shape[2]):
-                    errors.append(s[:,i,j]-s[:,j,i])
-            errmat = np.stack(errors)
-            worst_idx = np.argmax(np.abs(errmat),(0))
-            error = np.take_along_axis(errmat, np.expand_dims(worst_idx, 0), 0).reshape((s.shape[0],1))
-        elif egress_port is not None and ingress_port is not None:
-            if egress_port == ingress_port:
-                raise ValueError(f'Network.reciprocity(egress_port,ingress_port): ports must be different')
-            name = get_sparam_name(egress_port,ingress_port,"Reciprocity")
-            error = s[:,egress_port-1,ingress_port-1] - s[:,ingress_port-1,egress_port-1]
-        else:
-            raise ValueError(f'Network.reciprocity(egress_port,ingress_port): invalid arguments')
-        return SParam(f'{self.nw.name} {name}', self.nw.f, error, self.nw.z0[0,0], original_file=self.original_file, param_type=f'reciprocity')
+        
+        # A network is reciprocal if S^T = S (see e.g. Pozar, 1.9), This function returns, per frequency,
+        #   the highest element of the matrix |S^T-S|, i.e. if the result is zero, the network is reciprocal.
+
+        st = np.transpose(s, (0,2,1))
+        diff = st - s
+        absdiff = np.abs(diff)
+        result_metric = np.max(absdiff, axis=(1,2))  # should be zero if reciprocal
+
+        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'reciprocity')
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
@@ -666,11 +654,12 @@ class Networks:
         return self._unary_op(Network.passivity, SParams)
         
     
-    def losslessness(self, egress_port_or_kind: "int|str" = None, ingress_port: int = None):
-        return self._unary_op(Network.losslessness, SParams, egress_port_or_kind=egress_port_or_kind, ingress_port=ingress_port)
+    def losslessness(self):
+        return self._unary_op(Network.losslessness, SParams)
     
-    def reciprocity(self, egress_port: int = None, ingress_port: int = None):
-        return self._unary_op(Network.reciprocity, SParams, egress_port=egress_port, ingress_port=ingress_port)
+
+    def reciprocity(self):
+        return self._unary_op(Network.reciprocity, SParams)
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Networks":

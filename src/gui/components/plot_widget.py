@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..helpers.settings import Settings
+from lib import Settings
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *

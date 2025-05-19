@@ -1,6 +1,5 @@
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.settings import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
@@ -25,6 +24,7 @@ from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser
 from lib import PathExt
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
 from info import Info
 
 import pathlib
@@ -130,7 +130,6 @@ class MainWindow(MainWindowUi):
     def apply_settings_to_ui(self):
         def load_settings():
             try:
-                logging.debug(f'Param init {Settings.plotted_params}')
                 self.ui_params = Settings.plotted_params
                 self._ui_plot_selector.setPlotType(Settings.plot_type)  # TODO: redirect through MainWIndowUI
                 self._ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)  # TODO: redirect through MainWIndowUI
@@ -148,6 +147,7 @@ class MainWindow(MainWindowUi):
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_logx = Settings.log_x
                 self.ui_logy = Settings.log_y
+                self.ui_wide_layout = Settings.wide_layout
                 self.ui_wide_layout_option = Settings.wide_layout
                 self.ui_params_max_size = Settings.paramgrid_max_size
                 self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
@@ -259,64 +259,69 @@ class MainWindow(MainWindowUi):
                 info_dialog('Invalid operation', 'To use this template, select anything other than Expression-Based.')
                 return
             set_expression(self.generated_expressions)
-        
+
+        def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
+            if plot_type:
+                self._ui_plot_selector.setPlotType(plot_type)  # TODO: redirect through MainWindpwUI
+            if quantity:
+                self._ui_plot_selector.setYQuantity(quantity)  # TODO: redirect through MainWindpwUI
+
         def all_sparams():
             set_expression('sel_nws().s().plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def insertion_loss():
             set_expression('sel_nws().s(il_only=True).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def insertion_loss_reciprocal():
             set_expression('sel_nws().s(fwd_il_only=True).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def return_loss():
             set_expression('sel_nws().s(rl_only=True).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def vswr():
             set_expression('sel_nws().s(rl_only=True).vswr().plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def mismatch_loss():
             set_expression('sel_nws().s(rl_only=True).ml().plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
 
         def quick11():
             set_expression('quick(11)')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def quick112122():
             set_expression('quick(11)', 'quick(21)', 'quick(22)')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def quick11211222():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
 
         def quick112122313233():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.dB]
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def stability():
             set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
                            'sel_nws().mu(2).plot() # should be > 1 for stable network')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def reciprocity():
             set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def passivity():
-            set_expression('sel_nws().passivity().plot() # should be <= 1 for passive network')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            set_expression('sel_nws().passivity().plot() # should be 0 for passive network')
+            setup_plot(PlotType.Cartesian)
         
         def losslessness():
-            set_expression("sel_nws().losslessness('ii').plot() # should be 1 for lossless network",
-                           "sel_nws().losslessness('ij').plot() # should be 0 for lossless network")
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            set_expression('sel_nws().losslessness().plot() # should be 0 for lossless network')
+            setup_plot(PlotType.Cartesian)
         
         def cascade():
             if not ensure_selected_file_count('>=', 2):
@@ -374,23 +379,23 @@ class MainWindow(MainWindowUi):
         
         def z():
             set_expression('sel_nws().z(any,any).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def y():
             set_expression('sel_nws().y(any,any).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def abcd():
             set_expression('sel_nws().abcd(any,any).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def t():
             set_expression('sel_nws().t(any,any).plot()')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.LinMag]
+            setup_plot(PlotType.Cartesian)
         
         def stability_circles():
             set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)')
-            self.ui_unit = MainWindow.UNIT_NAMES[PlotUnit.SmithZ]
+            setup_plot(PlotType.Smith)
 
         def all_selected():
             if not ensure_selected_file_count('>=', 1):
@@ -1118,6 +1123,8 @@ class MainWindow(MainWindowUi):
     def update_params_size(self):
         size = Settings.paramgrid_min_size
         for file in self.get_selected_files():
+            if not file.nw:
+                continue
             size = max(size, file.nw.number_of_ports)
         self.ui_params_size = size
     
@@ -1127,11 +1134,16 @@ class MainWindow(MainWindowUi):
         if not self.ready:
             return
         
+        import traceback
+        callstack_top = traceback.extract_stack()[-3:]
+        callstack_top_str = '->'.join([f'{s.name}()' for s in callstack_top])
+        logging.debug(f'Updating plot; top of callstack: {callstack_top_str}')
+        
         self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_ID)
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
-            
+
             log_entries = LogHandler.inst().get_records(logging.WARNING)
             last_log_entry_at_start = log_entries[-1] if log_entries else None
 
@@ -1182,15 +1194,14 @@ class MainWindow(MainWindowUi):
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
             else:
                 
-                if log_y and y_qty != YQuantity.Magnitude and Settings.verbose:
-                    logging.info('Ignoring logarithmic Y-axis (only valid for magnitude)')
-
                 xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), log_x
                 if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
-                    yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),False
+                    yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),log_y
                 elif y_qty == YQuantity.Magnitude:
                     yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),log_y
                 elif y_qty == YQuantity.Decibels:
+                    if log_y and Settings.verbose:
+                        logging.info(f'Ignoring logarithmic Y-axis because Y-axis is in decibels')
                     yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
                 
                 if y2_qty == YQuantity.Phase:

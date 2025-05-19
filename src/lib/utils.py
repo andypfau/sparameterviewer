@@ -242,4 +242,6 @@ def get_unique_id() -> int:
 def window_has_argument(window: str) -> bool:
     if window in ['dpss', 'exponential', 'general_gaussian', 'taylor']:
         raise RuntimeError(f'The window function "{window}" more than one argumentsy')
-    return window in ['general_cosine', 'general_hamming', 'kaiser', 'kaiser_bessel_derived', 'tukey']
+    if window in ['general_cosine', 'general_hamming', 'kaiser', 'kaiser_bessel_derived', 'tukey']:
+        return True
+    return False

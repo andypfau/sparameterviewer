@@ -5,9 +5,8 @@ from PyQt6 import QtWidgets
 
 from gui.main_window import MainWindow
 from gui.helpers.log_handler import LogHandler
-from gui.helpers.settings import Settings
 from gui.helpers.qt_helper import QtHelper
-from lib import AppPaths, is_running_from_binary
+from lib import AppPaths, is_running_from_binary, Settings
 
 
 if __name__ == '__main__':

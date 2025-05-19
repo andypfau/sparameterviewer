@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
-from ..helpers.settings import Parameters
-from lib import AppPaths, PathExt
+from lib import AppPaths, PathExt, Parameters
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -28,7 +27,7 @@ class ParamSelector(QWidget):
 
     class GraphicWidget(QWidget):
 
-        paramClicked = pyqtSignal(int, int)
+        paramClicked = pyqtSignal(int, int, QtCore.Qt.KeyboardModifier)
         overflowClicked = pyqtSignal()
 
         def __init__(self, parent = ...):
@@ -48,13 +47,14 @@ class ParamSelector(QWidget):
             if self._overflow:
                 self.overflowClicked.emit()
                 return
+            keys = QApplication.keyboardModifiers()
             for i in range(self.grid_size):
                 for j in range(self.grid_size):
                     x = self._x0 + j*(self._cell_size+self._cell_spacing)
                     y = self._y0 + i*(self._cell_size+self._cell_spacing)
                     rect = QRect(x, y, self._cell_size, self._cell_size)
                     if rect.contains(event.pos()):
-                        self.paramClicked.emit(i, j)
+                        self.paramClicked.emit(i, j, keys)
 
         def paintEvent(self, event):
             painter = QPainter(self)
@@ -76,31 +76,53 @@ class ParamSelector(QWidget):
                 painter.drawLine(x0+total_size, y0, x0, y0+total_size)
                 return
 
+            if self._use_expressions:
+                if cell_size >= 8:
+                    delta = 4
+                else:
+                    delta = 2
+            else:
+                delta = 0
+            final_cell_size = cell_size - delta
+            show_text = (self.grid_size <= 9) and (final_cell_size >= 12)
+
+            palette = QPalette()
+            color_base = palette.color(QPalette.ColorRole.Base)
+            color_dark = palette.color(QPalette.ColorRole.Dark)
+            color_light = palette.color(QPalette.ColorRole.Light)
+            color_text = palette.color(QPalette.ColorRole.Text)
+            color_hl = palette.color(QPalette.ColorRole.Highlight)
+            color_hl_text = palette.color(QPalette.ColorRole.HighlightedText)
+            
             for i in range(self.grid_size):
                 for j in range(self.grid_size):
                     x = x0 + j*(cell_size+cell_spacing)
                     y = y0 + i*(cell_size+cell_spacing)
 
+                    rect = QRect(x+delta//2, y+delta//2, final_cell_size, final_cell_size)
+                    
                     if self._use_expressions:
-                        if cell_size >= 8:
-                            delta = 4
+                        painter.setBrush(color_dark)
+                        painter.setPen(Qt.PenStyle.NoPen)
+                        painter.drawRect(rect)
+                    
+                    else:
+                        enabled = self._data[i,j]
+                        if enabled:
+                            painter.setBrush(color_hl)
+                            painter.setPen(Qt.PenStyle.NoPen)
                         else:
-                            delta = 2
-                    else:
-                        delta = 0
-                    rect = QRect(x+delta//2, y+delta//2, cell_size-delta, cell_size-delta)
+                            painter.setBrush(Qt.BrushStyle.NoBrush)
+                            painter.setPen(Qt.PenStyle.NoPen)
+                            
+                        painter.drawRect(rect)
 
-                    if self._use_expressions:
-                        painter.setBrush(QColorConstants.Gray)
-                        painter.setPen(Qt.PenStyle.NoPen)
-                    elif self._data[i,j]:
-                        painter.setBrush(QColorConstants.Black)
-                        painter.setPen(Qt.PenStyle.NoPen)
-                    else:
-                        painter.setBrush(Qt.BrushStyle.NoBrush)
-                        painter.setPen(QColorConstants.Gray)
-
-                    painter.drawRect(rect)
+                        if show_text:
+                            if enabled:
+                                painter.setPen(color_hl_text)
+                            else:
+                                painter.setPen(color_dark)
+                            painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, f'{i+1}{j+1}')
 
             painter.end()
     
@@ -144,21 +166,31 @@ class ParamSelector(QWidget):
         super().__init__(parent)
         
         self._largest_data = np.ndarray([0,0], dtype=bool)
+        self._simplified = False
+        
+        self._ui_simple = QWidget()
+        self._ui_simple.setVisible(self._simplified)
+        # TODO: implement simplified UI
+        self._ui_simple.setLayout(QtHelper.layout_v('Simplified plot selector comes here...'))
+
+        self._ui_advanced = QWidget()
+        self._ui_advanced.setVisible(not self._simplified)
 
         self._ui_grid = ParamSelector.GraphicWidget(self)
         self._ui_grid.setContentsMargins(0, 0, 0, 0)
+        self._ui_grid.setToolTip('Click a parameter to show it; hold Ctrl to toggle')
         self._ui_grid.data = np.full([2, 2], False, dtype=bool)
         self._ui_grid.paramClicked.connect(self._on_param_clicked)
         self._ui_grid.overflowClicked.connect(self._on_overflow_clicked)
-        self._ui_sall_button = QtHelper.make_button(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show All Terms (e.g. S11, S21, S12, ...); Hold Ctrl to Toggle', toolbar=True)
-        self._ui_sii_button = QtHelper.make_button(self, None, self._on_sii, icon='toolbar_sii.svg', tooltip='Show All Sii Terms (e.g. S11, S22, S33, ...); Hold Ctrl to Toggle', toolbar=True)
-        self._ui_sij_button = QtHelper.make_button(self, None, self._on_sij, icon='toolbar_sij.svg', tooltip='Show All Sij Terms (e.g. S21, S12, S31, ...); Hold Ctrl to Toggle', toolbar=True)
-        self._ui_s11_button = QtHelper.make_button(self, None, self._on_s11, icon='toolbar_s11.svg', tooltip='Show S11 Term; Hold Ctrl to Toggle', toolbar=True)
-        self._ui_s22_button = QtHelper.make_button(self, None, self._on_s22, icon='toolbar_s22.svg', tooltip='Show S22 Term; Hold Ctrl to Toggle', toolbar=True)
-        self._ui_s21_button = QtHelper.make_button(self, None, self._on_s21, icon='toolbar_s21.svg', tooltip='Show All Sij Terms With i>j (e.g. S21, S31, S32, ...); Hold Ctrl to Toggle', toolbar=True)
-        self._ui_s12_button = QtHelper.make_button(self, None, self._on_s12, icon='toolbar_s12.svg', tooltip='Show All Sij Terms With i<j(e.g. S12, S13, S23, ...); Hold Ctrl to Toggle', toolbar=True)
-        self._ui_expr_button = QtHelper.make_button(self, None, self._on_expr, icon='toolbar_s-expr.svg', tooltip='Use Expressions', toolbar=True, checked=False)
-        self.setLayout(QtHelper.layout_h(
+        self._ui_sall_button = QtHelper.make_button(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show all terms (e.g. S11, S21, S12, ...); hold ctrl to toggle', toolbar=True)
+        self._ui_sii_button = QtHelper.make_button(self, None, self._on_sii, icon='toolbar_sii.svg', tooltip='Show all Sii terms (e.g. S11, S22, S33, ...); hold ctrl to toggle', toolbar=True)
+        self._ui_sij_button = QtHelper.make_button(self, None, self._on_sij, icon='toolbar_sij.svg', tooltip='Show all Sij terms (e.g. S21, S12, S31, ...); hold ctrl to toggle', toolbar=True)
+        self._ui_s11_button = QtHelper.make_button(self, None, self._on_s11, icon='toolbar_s11.svg', tooltip='Show S11 term; hold Ctrl to toggle', toolbar=True)
+        self._ui_s22_button = QtHelper.make_button(self, None, self._on_s22, icon='toolbar_s22.svg', tooltip='Show S22 term; hold Ctrl to toggle', toolbar=True)
+        self._ui_s21_button = QtHelper.make_button(self, None, self._on_s21, icon='toolbar_s21.svg', tooltip='Show all Sij terms with i>j (e.g. S21, S31, S32, ...); hold ctrl to toggle', toolbar=True)
+        self._ui_s12_button = QtHelper.make_button(self, None, self._on_s12, icon='toolbar_s12.svg', tooltip='Show all Sij terms with i<j(e.g. S12, S13, S23, ...); hold ctrl to toggle', toolbar=True)
+        self._ui_expr_button = QtHelper.make_button(self, None, self._on_expr, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', toolbar=True, checked=False)
+        self._ui_advanced.setLayout(QtHelper.layout_h(
             QtHelper.layout_grid([
                 [self._ui_sall_button, None, self._ui_expr_button],
                 [self._ui_s12_button, self._ui_sij_button, self._ui_s21_button],
@@ -168,6 +200,17 @@ class ParamSelector(QWidget):
             spacing=10
         ))
         self.setContentsMargins(0, 0, 0, 0)
+        self._ui_simple.setContentsMargins(0, 0, 0, 0)
+        self._ui_advanced.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
+    
+
+    def simplified(self) -> bool:
+        return self._simplified
+    def setSimplified(self, value: bool):
+        self._simplified = value
+        self._ui_simple.setVisible(self._simplified)
+        self._ui_advanced.setVisible(not self._simplified)
 
         
     def gridSize(self) -> int:
@@ -175,7 +218,7 @@ class ParamSelector(QWidget):
     def setGridSize(self, size: int):
         assert size >= 1
         current_size = self.gridSize()
-        if current_size == self.size():
+        if size == current_size:
             return
         
         current_pattern = self.params()
@@ -200,7 +243,7 @@ class ParamSelector(QWidget):
         
         else:  # just re-apply the current pattern to a new matrix
             guessed_pattern = self._guess_params_from_data(self.paramMask())
-            self._ui_grid.data = self._make_data_from_params(guessed_pattern, size)
+            self._ui_grid.data = self._make_mask(guessed_pattern, size)
 
         self.paramsChanged.emit()
 
@@ -218,50 +261,24 @@ class ParamSelector(QWidget):
             return Parameters.Off
 
         result = Parameters.Off
-        if np.all(params[self._mask_sii()]):
+        if np.all(params[self._make_mask(Parameters.Sii)]):
             result |= Parameters.Sii
         else:
-            if np.all(params[self._mask_s11()]):
+            if np.all(params[self._make_mask(Parameters.S11)]):
                 result |= Parameters.S11
-            if np.all(params[self._mask_s22()]):
+            if np.all(params[self._make_mask(Parameters.S22)]):
                 result |= Parameters.S22
-        if np.all(params[self._mask_s21()]):
+        if np.all(params[self._make_mask(Parameters.S21)]):
             result |= Parameters.S21
-        if np.all(params[self._mask_s12()]):
+        if np.all(params[self._make_mask(Parameters.S12)]):
             result |= Parameters.S12
         
         # is there any outlier to this pattern?
-        result_params = self._mask_s_none()
-        if result & Parameters.Sii:
-            result_params |= self._mask_sii()
-        else:
-            if result & Parameters.S11:
-                result_params |= self._mask_s11()
-            if result & Parameters.S22:
-                result_params |= self._mask_s22()
-        if result & Parameters.S21:
-            result_params |= self._mask_s21()
-        if result & Parameters.S12:
-            result_params |= self._mask_s12()
+        result_params = self._make_mask(result)
         if np.array_equal(result_params, self.paramMask()):
             return result
         else:
             return Parameters.Custom
-    
-    
-    def _make_data_from_params(self, params: Parameters, size: int) -> np.ndarray:
-        mask = np.full([size, size], False, dtype=bool)
-        if Parameters.Sii & params:
-            mask[self._mask_sii()] = True
-        elif Parameters.S11 & params:
-            mask[self._mask_s11()] = True
-        elif Parameters.S22 & params:
-            mask[self._mask_s22()] = True
-        if Parameters.S21 & params:
-            mask[self._mask_s21()] = True
-        if Parameters.S12 & params:
-            mask[self._mask_s12()] = True
-        return mask
     
 
     def params(self) -> Parameters:
@@ -275,7 +292,7 @@ class ParamSelector(QWidget):
             return
         
         self._ui_expr_button.setChecked(False)
-        self._ui_grid.data = self._make_data_from_params(value, self.gridSize())
+        self._ui_grid.data = self._make_mask(value)
 
 
     def paramMask(self) -> np.ndarray:
@@ -286,62 +303,26 @@ class ParamSelector(QWidget):
         self._ui_grid.data = value
     
 
-    def _mask_s_none(self) -> np.ndarray:
-        return np.full([self.gridSize(), self.gridSize()], False, dtype=bool)
-
-
-    def _mask_s_all(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        for i in range(self.gridSize()):
-            for j in range(self.gridSize()):
-                mask[i,j] = True
-        return mask
-
-
-    def _mask_sii(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        for i in range(self.gridSize()):
-            mask[i,i] = True
-        return mask
-
-
-    def _mask_sij(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        for i in range(self.gridSize()):
-            for j in range(self.gridSize()):
-                if i != j:
-                    mask[i,j] = True
-        return mask
-
-
-    def _mask_s11(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        mask[0,0] = True
-        return mask
-
-
-    def _mask_s22(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        if self.gridSize() >= 2:
+    def _make_mask(self, params: Parameters = Parameters.Off, size: int|None = None) -> np.ndarray:
+        size = size or self.gridSize()
+        mask = np.full([size, size], False, dtype=bool)
+        if params & Parameters.S11 and size >= 1:
+            mask[0,0] = True
+        if params & Parameters.S22 and size >= 2:
             mask[1,1] = True
-        return mask
-
-
-    def _mask_s21(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        for i in range(self.gridSize()):
-            for j in range(self.gridSize()):
-                if i > j:
-                    mask[i,j] = True
-        return mask
-
-
-    def _mask_s12(self) -> np.ndarray:
-        mask = self._mask_s_none()
-        for i in range(self.gridSize()):
-            for j in range(self.gridSize()):
-                if i < j:
-                    mask[i,j] = True
+        if params & Parameters.Sii:
+            for i in range(size):
+                mask[i,i] = True
+        if params & Parameters.S21:
+            for i in range(size):
+                for j in range(size):
+                    if i > j:
+                        mask[i,j] = True
+        if params & Parameters.S12:
+            for i in range(size):
+                for j in range(size):
+                    if i < j:
+                        mask[i,j] = True
         return mask
 
     
@@ -366,42 +347,50 @@ class ParamSelector(QWidget):
 
     
     def _on_s_all(self):
-        self._apply_mask(self._mask_s_all())
+        self._apply_mask(self._make_mask(Parameters.ComboAll))
 
 
     def _on_sii(self):
-        self._apply_mask(self._mask_sii())
+        self._apply_mask(self._make_mask(Parameters.Sii))
 
     
     def _on_sij(self):
-        self._apply_mask(self._mask_sij())
+        self._apply_mask(self._make_mask(Parameters.ComboSij))
 
     
     def _on_s11(self):
-        self._apply_mask(self._mask_s11())
+        self._apply_mask(self._make_mask(Parameters.S11))
 
     
     def _on_s22(self):
-        self._apply_mask(self._mask_s22())
+        self._apply_mask(self._make_mask(Parameters.S22))
 
     
     def _on_s21(self):
-        self._apply_mask(self._mask_s21())
+        self._apply_mask(self._make_mask(Parameters.S21))
 
     
     def _on_s12(self):
-        self._apply_mask(self._mask_s12())
+        self._apply_mask(self._make_mask(Parameters.S12))
 
     
     def _on_expr(self):
         self._ui_grid.use_expressions = self._ui_expr_button.isChecked()
         self.paramsChanged.emit()
 
-    def _on_param_clicked(self, x: int, y: int):
-        mask = self.paramMask()
-        mask[x,y] = not mask[x,y]
+
+    def _on_param_clicked(self, x: int, y: int, keys: QtCore.Qt.KeyboardModifier):
+        if keys & QtCore.Qt.KeyboardModifier.ControlModifier:
+            # Ctrl is held -> toggle this
+            mask = self.paramMask()
+            mask[x,y] = not mask[x,y]
+        else:
+            # set this, un-set all others
+            mask = self._make_mask()
+            mask[x,y] = True
         self.setParamMask(mask)
         self.paramsChanged.emit()
+
 
     def _on_overflow_clicked(self):
         pass  # TODO: show a dialog

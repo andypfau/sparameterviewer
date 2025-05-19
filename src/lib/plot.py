@@ -1,13 +1,14 @@
-import matplotlib.lines
 from .si import Si, SiFmt
 from .structs import PlotData, PlotDataQuantity
 from .shortstr import remove_common_prefixes_and_suffixes
 from .utils import natural_sort_key
+from .settings import Settings, LogNegativeHandling
 
 import math
 import numpy as np
 import logging
 import matplotlib
+import matplotlib.lines
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 import pandas as pd
@@ -317,6 +318,41 @@ class PlotHelper:
                 self.plot2 = self.plot.twinx()
         
     
+    def _get_log_data_fn(self, mode: LogNegativeHandling):
+        
+        def _abs(data, other_data, name):
+            mask = data == 0
+            if np.any(mask):
+                if np.all(mask):
+                    raise ValueError(f'Cannot plot trace "{name}" on logarithmic axis (data only consists of zeros)')
+                elif Settings.verbose:
+                    logging.info(f'Dropping zero values from trace "{name}" (cannot be plot on logarithmic axis)')
+                data, other_data = data[~mask], other_data[~mask]
+            if Settings.verbose and np.any(data < 0):
+                logging.info(f'Taking absolute of negative values from trace "{name}" (cannot be plot on logarithmic axis)')
+            return np.abs(data), other_data
+        
+        def _ignore(data, other_data, name):
+            mask = data <= 0
+            if np.any(mask):
+                if np.all(mask):
+                    raise ValueError(f'Cannot plot trace "{name}" on logarithmic axis (data only consists of zero or negative values)')
+                elif Settings.verbose:
+                    logging.info(f'Dropping zero and negative values from trace "{name}" (cannot be plot on logarithmic axis)')
+            return data[~mask], other_data[~mask]
+        
+        def _fail(data, other_data, name):
+            if np.any(data <= 0):
+                raise ValueError(f'Cannot plot trace "{name}" on logarithmic axis (data contains zero or negative values)')
+            return data, other_data
+        
+        match mode:
+            case LogNegativeHandling.Abs:    return _abs
+            case LogNegativeHandling.Ignore: return _ignore
+            case LogNegativeHandling.Fail:   return _fail
+        raise ValueError(f'Unknown value for LogNegativeHandling: {mode}')
+            
+
     def _add_traces_to_plots(self):
         self.any_legend = False
 
@@ -331,41 +367,51 @@ class PlotHelper:
         self.items = sorted(self.items, key=lambda item: natural_sort_key(item.label))
 
         for item_index,item in enumerate(self.items):
-            if item.prefer_seconary_yaxis and self._use_two_yaxes:
-                plot = self.plot2
-                self.items[item_index].currently_used_axis = 2
-            else:
-                plot = self.plot
-                self.items[item_index].currently_used_axis = 1
-        
-            x, y, style, color, width, opacity = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity
-
-            # escaping for matplotlib
-            if item.label.startswith('_'):
-                item.label = ' _' + item.label[1:]
-
-            def fix_log(x,y):
-                if x[0]<=0 and self._x_log:
-                    x,y = x[1:], y[1:]
-                if y[0]<=0 and self._y_log:
-                    x,y = x[1:], y[1:]
-                return x,y
+            try:
+                if item.prefer_seconary_yaxis and self._use_two_yaxes:
+                    use_y2 = True
+                    plot = self.plot2
+                    self.items[item_index].currently_used_axis = 2
+                else:
+                    use_y2 = False
+                    plot = self.plot
+                    self.items[item_index].currently_used_axis = 1
             
-            if self._polar:
-                c = x + 1j*y
-                new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label, color=color, lw=width, alpha=opacity)
-            elif self._smith:
-                c = x + 1j*y
-                from skrf import plotting
-                new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None, color=color, lw=width, alpha=opacity)
-            elif self._x_log or self._y_log:
-                x,y = fix_log(x,y)
-                new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
-            else:
-                new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
+                x, y, style, color, width, opacity = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity
 
-            color = new_plt[0].get_color() if new_plt is not None else None
-            self.items[item_index].data.color = color
+                if np.any(np.iscomplex(x)):
+                    logging.error(f'Trace "{item.label}" will not be plotted (X-values are complex-valued)')
+                    continue
+                if np.any(np.iscomplex(y)):
+                    logging.error(f'Trace "{item.label}" will not be plotted (Y-values are complex-valued)')
+                    continue
+
+                fix_log_x = self._get_log_data_fn(Settings.logx_negative_handling)
+                fix_log_y = self._get_log_data_fn(Settings.logy_negative_handling)
+
+                # escaping for matplotlib
+                if item.label.startswith('_'):
+                    item.label = ' _' + item.label[1:]
+                
+                if self._polar:
+                    c = x + 1j*y
+                    new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label, color=color, lw=width, alpha=opacity)
+                elif self._smith:
+                    c = x + 1j*y
+                    from skrf import plotting
+                    new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None, color=color, lw=width, alpha=opacity)
+                else:
+                    if self._x_log:
+                        x, y = fix_log_x(data=x, other_data=y, name=item.label)
+                    if self._y_log and (not use_y2):
+                        y, x = fix_log_y(data=y, other_data=x, name=item.label)
+                    new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
+
+                color = new_plt[0].get_color() if new_plt is not None else None
+                self.items[item_index].data.color = color
+            
+            except Exception as ex:
+                logging.error(f'Unable to plot item ({ex})')
         
         if self._smith:
             assert self._r_smith is not None
@@ -398,7 +444,7 @@ class PlotHelper:
         
         if self._x_qty is not None and self.plot is not None:
             x_highest_abs_value = max(abs(self.plot.get_xlim()[0]), abs(self.plot.get_xlim()[1]))
-            if self._x_fmt.use_si_prefix:
+            if self._x_fmt.use_si_prefix and not self._x_log:
                 x_scale, x_prefix = Si.get_scale(x_highest_abs_value)
             else:
                 x_scale, x_prefix = 1, ''
@@ -412,7 +458,7 @@ class PlotHelper:
         
         if y_qty is not None and self.plot is not None:
             y_highest_abs_value = max(abs(self.plot.get_ylim()[0]), abs(self.plot.get_ylim()[1]))
-            if y_fmt.use_si_prefix:
+            if y_fmt.use_si_prefix and not y_log:
                 y_scale, y_prefix = Si.get_scale(y_highest_abs_value)
             else:
                 y_scale, y_prefix = 1, ''

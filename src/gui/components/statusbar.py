@@ -16,14 +16,19 @@ class StatusBar(QStatusBar):
         super().__init__()
         self._ui_icon = QLabel()
         self._ui_text = QLabel()
+        self._ui_text.setWordWrap(False)
         self._icon_warning = QtHelper.load_resource_pixmap('status_warning.svg')
         self._icon_error = QtHelper.load_resource_pixmap('status_error.svg')
         self.insertWidget(0, self._ui_icon, 0)
         self.insertWidget(1, self._ui_text, 1)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed))
     
 
     def setMessage(self, message: str = '', level: int = logging.INFO):
+        if not message:
+            self.setVisible(False)
+            return
+        
         if level >= logging.ERROR:
             self._ui_icon.setPixmap(self._icon_error)
             self._ui_icon.setVisible(True)
@@ -33,9 +38,8 @@ class StatusBar(QStatusBar):
         else:
             self._ui_icon.setVisible(False)
         
-        font_metrics = QFontMetrics(self._ui_text.font())
-        elided_text = font_metrics.elidedText(message, Qt.TextElideMode.ElideRight, 400)
-        self._ui_text.setText(elided_text)
+        self._ui_text.setText(message)
+        self.setVisible(True)
 
 
     def mouseReleaseEvent(self, event: QMouseEvent):

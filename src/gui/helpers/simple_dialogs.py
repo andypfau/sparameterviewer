@@ -1,10 +1,10 @@
-from lib import AppPaths
 from .qt_helper import QtHelper
-from .settings import Settings
+from lib import AppPaths, Settings
+
 from PyQt6.QtWidgets import QMessageBox, QFileDialog, QCheckBox
 import logging
-from typing import Optional
 import pathlib
+from typing import Optional
 
 
 
@@ -100,7 +100,7 @@ def _open_file_dialog(parent, *, title: str = 'Open File', filetypes: list[tuple
         return None
     
     path1 = dialog.selectedFiles()[0]
-    Settings.last_dir_filedialog = str(pathlib.Path(path1).parent())
+    Settings.last_dir_filedialog = str(pathlib.Path(path1).parent)
     
     if allow_multiple:
         return dialog.selectedFiles()

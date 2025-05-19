@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
-from ..helpers.settings import PhaseUnit
-from ..helpers.settings import PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse
-from lib import AppPaths, PathExt
+from lib import AppPaths, PathExt, PhaseUnit, PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -38,7 +36,15 @@ class PlotSelector(QWidget):
         self._smith_norm = SmithNorm.Impedance
         self._phase_unit = PhaseUnit.Degrees
         self._td_z = False
+        self._simplified = False
         
+        self._ui_simple = QWidget()
+        self._ui_simple.setVisible(self._simplified)
+        # TODO: implement simplified UI
+        self._ui_simple.setLayout(QtHelper.layout_v('Simplified plot selector comes here...'))
+
+        self._ui_advanced = QWidget()
+        self._ui_advanced.setVisible(not self._simplified)
         self._ui_cartesian_button = QtHelper.make_button(self, None, self._on_select_cartesian, icon='plot_cartesian.svg', tooltip='Cartesian Plot', toolbar=True, checked=False)
         self._ui_tdr_button = QtHelper.make_button(self, None, self._on_select_tdr, icon='plot_tdr.svg', tooltip='Cartesian Plot of Time-Domain Transform', toolbar=True, checked=False)
         self._ui_smith_button = QtHelper.make_button(self, None, self._on_select_smith, icon='plot_smith.svg', tooltip='Smith Plot', toolbar=True, checked=False)
@@ -58,7 +64,7 @@ class PlotSelector(QWidget):
         self._ui_degrees_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_degree.svg', tooltip='Plot Phase in Degrees (°) Instad of Radians', toolbar=True, checked=False)
         self._ui_tdz_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_ohms.svg', tooltip='Transform Y-Axis to Impedance', toolbar=True, checked=False)
         default_spacing, medium_spacing, wide_spacing = 1, 12, 12
-        self.setLayout(QtHelper.layout_v(
+        self._ui_advanced.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
                 self._ui_cartesian_button, self._ui_tdr_button, self._ui_smith_button, self._ui_polar_button,
             ..., spacing=default_spacing),
@@ -72,8 +78,19 @@ class PlotSelector(QWidget):
             ..., spacing=default_spacing
         ))
         self.setContentsMargins(0, 0, 0, 0)
+        self._ui_simple.setContentsMargins(0, 0, 0, 0)
+        self._ui_advanced.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
 
         self._update_controls()
+    
+
+    def simplified(self) -> bool:
+        return self._simplified
+    def setSimplified(self, value: bool):
+        self._simplified = value
+        self._ui_simple.setVisible(self._simplified)
+        self._ui_advanced.setVisible(not self._simplified)
     
 
     def plotType(self) -> PlotType:

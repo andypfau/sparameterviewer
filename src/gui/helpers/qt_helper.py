@@ -1,5 +1,4 @@
-from .settings import Settings
-from lib import is_windows, AppPaths
+from lib import is_windows, AppPaths, Settings
 from PyQt6 import QtCore, QtGui, QtWidgets, QtSvg
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *

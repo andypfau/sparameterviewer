@@ -189,9 +189,9 @@ Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Si
 losslessness(egress_port_or_kind,ingress_port=None) → SParams
 ```
 
-Returns the losslessness metric S^T·S^* For a lossless network, the diagonal (i.e. indices i,i) should be 1, and all other elements (i.e. indices i,j) should be 0.
+Checks a network for losslessness. For a reciprocal network, the result should be 0.
 
-You can either request a specific matrix element, e.g. with losslessness(2,1), or you can request the worst of all diagonal elements with `losslessness('ii')` (which must all be 1 for a lossless network), or you can request the worst of all non-diagonal elements with `losslessness('ij')` (which must all be 0 for a lossless network).
+For a reciprocal network, $S^T \cdot S^* = U$ (wher $U$ is the unit matrix). This function calculates, for each frequency, $|S^T \cdot S^* - U|$, and returns the highest value of that matrix.
 
 
 ##### passivity()
@@ -200,17 +200,20 @@ You can either request a specific matrix element, e.g. with losslessness(2,1), o
 passivity() → SParams
 ```
 
-Returns the passivity metric Eigenvalues(S^H·S). For a passive network, this should be ≤ 1.
+Checks a network for passivity. For a reciprocal network, the result should be 0.
+
+For a passive network, all eigenvalues $\lambda$ of the matrix $S^{T*} \cdot S$ should be $\lambda \le 1$. This function calculates, for each frequency, the eigenvalues, finds the highest eigenvalue $\lambda'$, and returns $max(0, \lambda'-1)$.
 
 
 ##### reciprocity()
 
 ```python
-reciprocity(egress_port=None, ingress_port=None) → SParams
+reciprocity() → SParams
 ```
-Returns the reciprocity metric S[i,j]-S[j,i]. For a reciprocal network, this should be 0.
 
-You can either request a specific matrix element, e.g. with `reciprocity(2,1)`, or you can request the worst of all elements with `reciprocity()`.
+Checks a network for reciprocity. For a reciprocal network, the result should be 0.
+
+For a reciprocal network, $S^T = S$. This function calculates, for each frequency, $|S^T - S|$, and returns the highest value of that matrix.
 
 
 ##### crop_f()

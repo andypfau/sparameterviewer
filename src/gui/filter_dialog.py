@@ -1,6 +1,5 @@
 from .filter_dialog_ui import FilterDialogUi
-from .helpers.settings import Settings
-from lib import PathExt
+from lib import Settings, PathExt
 from typing import Optional
 import re
 

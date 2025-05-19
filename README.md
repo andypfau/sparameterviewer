@@ -28,15 +28,12 @@ Roadmap
 
 - GUI: a control to select individual parameters when grid is too large.
 - GUI: allow to enter frequency to set cursor position.
-- Display: more presets, to quickly scroll through all S-parameters.
-- Add transformations in GUI: TDR, Z, Y, H, ABCD, Reciprocity, Passivity, Losslessness.
-    - The idea is that the GUI has 3 steps: transform → select parameter → plot format.
-    - The plot format for step/impulse response would have to be changed to a transformation.
-- Allow user to select between generic and file-specific generated expressions.
-- Equation file history.
-- Equation-based plot type (i.e. when I run that equation, it automatically sets up the plot type).
-- Log output for equations (so that you can also print some data or status).
-- Allow to provide regex to strip names in expression plots.
+- GUI: allow to re-arrange the three main components (toolbar, plot, files) in a "T".
+- GUI: simplified UI options (dropdowns for parameters and plots; hide expressions; simplified file browser).
+- GUI: equation file history.
+- Expressions: better interaction with Numpy.
+- Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
+- Expressions: log output for equations (so that you can also print some data or status).
 - File type registration script for Windows (using `assoc` and `ftype`).
 
 

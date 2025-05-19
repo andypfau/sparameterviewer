@@ -182,6 +182,10 @@ class SParamFile:
     
 
     def get_info_str(self) -> str:
+        if not self.nw:
+            if self.error:
+                return self.error
+            return 'File not loaded'
                 
         f0, f1 = self.nw.f[0], self.nw.f[-1]
         n_pts = len(self.nw.f)

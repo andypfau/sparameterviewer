@@ -1,8 +1,7 @@
 from .log_dialog_ui import LogDialogUi
 from .helpers.log_handler import LogHandler
 from .helpers.simple_dialogs import okcancel_dialog
-from .helpers.settings import Settings
-from lib import AppPaths
+from lib import Settings, AppPaths
 import logging
 
 
@@ -30,11 +29,15 @@ class LogDialog(LogDialogUi):
     
 
     def show_dialog(self):
-        LogHandler.inst().attach(self.update_log_text)
+        LogHandler.inst().attach(self.on_log_entry)
         super().ui_show()
+
+
+    def on_log_entry(self, entry: logging.LogRecord):
+        self.update_log_text()
     
 
-    def update_log_text(self, entry: logging.LogRecord):
+    def update_log_text(self):
         text = '\n'.join(reversed(LogHandler.inst().get_messages(Settings.log_level)))
         self.ui_set_logtext(text)
 

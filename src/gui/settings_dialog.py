@@ -1,11 +1,11 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
 from .helpers.simple_dialogs import info_dialog
 from .helpers.help import show_help
-from .helpers.settings import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
-from lib.utils import is_windows
+from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling
+from lib.utils import is_windows, window_has_argument
 import pathlib
 import logging
 
@@ -52,6 +52,12 @@ class SettingsDialog(SettingsDialogUi):
         CursorSnap.Point: 'Closest Point',
     }
 
+    LOGNEG_NAMES = {
+        LogNegativeHandling.Abs: 'Take Absoute, Ignore Zeros',
+        LogNegativeHandling.Ignore: 'Ignore Values ≤0',
+        LogNegativeHandling.Fail: 'Do Not Plot If ≤0',
+    }
+
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -61,6 +67,8 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
         self.ui_set_font_options(QtHelper.get_all_available_font_families(monospace_only=True))
         self.ui_set_cursor_snap_options(list(SettingsDialog.CURSOR_SNAP_NAMES.values()))
+        self.ui_set_logxneg_options(list(SettingsDialog.LOGNEG_NAMES.values()))
+        self.ui_set_logyneg_options(list(SettingsDialog.LOGNEG_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -81,11 +89,12 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
             self.ui_paramsmin = Settings.paramgrid_min_size
             self.ui_paramsmax = Settings.paramgrid_max_size
+            self.ui_logxneg = SettingsDialog.LOGNEG_NAMES[Settings.logx_negative_handling]
+            self.ui_logyneg = SettingsDialog.LOGNEG_NAMES[Settings.logy_negative_handling]
             self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
             self.ui_td_window_param = Settings.window_arg
             self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
             self.ui_td_shift = Settings.tdr_shift
-            self.ui_td_z = Settings.tdr_impedance
             self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
@@ -97,6 +106,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_all_complex = Settings.treat_all_as_complex
             self.ui_verbose = Settings.verbose
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
+            self.ui_enable_window_param(window_has_argument(Settings.window_type))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
             logging.exception(ex)
@@ -159,6 +169,7 @@ class SettingsDialog(SettingsDialogUi):
             if name == self.ui_td_window:
                 Settings.window_type = window
                 break
+        self.ui_enable_window_param(window_has_argument(Settings.window_type))
     
     
     def on_td_window_param_changed(self):
@@ -174,10 +185,6 @@ class SettingsDialog(SettingsDialogUi):
     
     def on_td_shift_changed(self):
         Settings.tdr_shift = self.ui_td_shift
-    
-
-    def on_td_z_changed(self):
-        Settings.tdr_impedance = self.ui_td_z
 
     
     def on_zip_change(self):
@@ -239,3 +246,17 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_verbose_changed(self):
         Settings.verbose = self.ui_verbose
+
+
+    def on_logxneg_changed(self):
+        for option, name in SettingsDialog.LOGNEG_NAMES.items():
+            if name == self.ui_logxneg:
+                Settings.logx_negative_handling = option
+                break
+
+
+    def on_logyneg_changed(self):
+        for option, name in SettingsDialog.LOGNEG_NAMES.items():
+            if name == self.ui_logyneg:
+                Settings.logy_negative_handling = option
+                break

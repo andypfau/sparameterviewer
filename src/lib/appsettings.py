@@ -1,3 +1,4 @@
+from .apppaths import AppPaths
 from logging import warning
 import os, json, logging
 from typing import Callable
@@ -14,7 +15,6 @@ class AppSettings:
 
 
     def __init__(self, format_version_str: str):
-        from lib import AppPaths
         self._file = AppPaths.get_settings_path(format_version_str)
         self._observers: list[Callable[None,None]] = []
         self._inhbit_listeners = False

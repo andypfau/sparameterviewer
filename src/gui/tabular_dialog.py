@@ -1,10 +1,9 @@
 from .tabular_dialog_ui import TabularDialogUi
-from .helpers.simple_dialogs import save_file_dialog, error_dialog
+from .helpers.simple_dialogs import save_file_dialog, error_dialog, exception_dialog
 from .settings_dialog import SettingsDialog, SettingsTab
-from .helpers.settings import Settings, PhaseUnit, CsvSeparator
 from .helpers.help import show_help
 from .text_dialog import TextDialog
-from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process
+from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process, Settings, PhaseUnit, CsvSeparator
 import dataclasses
 import io
 import pathlib
@@ -96,9 +95,9 @@ class TabularDatasetSFile(TabularDataset):
         return 'S-Param: ' + self.name
     @property
     def path(self) -> str:
-        if self.file.archive_path:
-            return self.file.archive_path
-        return self.file.file_path
+        if self.file.path.arch_path:
+            return self.file.path.arch_path
+        return str(self.file.path)
     @property
     def xcol(self) -> str:
         return 'Frequency'
@@ -197,13 +196,16 @@ class TabularDialog(TabularDialogUi):
 
     def show_modal_dialog(self, datasets: list[any], initial_selection: int = None):
         assert len(datasets) > 0
-        self.datasets = [TabularDataset.create(dataset) for dataset in datasets]
-        if initial_selection:
-            selected_name = self.datasets[initial_selection].display_name
-        else:
-            selected_name = None
-        self.ui_set_datasets_list([ds.display_name for ds in self.datasets], selection=selected_name)
-        Settings.attach(self.on_settings_change)
+        try:
+            self.datasets = [TabularDataset.create(dataset) for dataset in datasets]
+            if initial_selection:
+                selected_name = self.datasets[initial_selection].display_name
+            else:
+                selected_name = None
+            self.ui_set_datasets_list([ds.display_name for ds in self.datasets], selection=selected_name)
+            Settings.attach(self.on_settings_change)
+        except Exception as ex:
+            exception_dialog('Data Update Failed', 'Unable to update displayed data', detailed_text=str(ex))
         super().ui_show_modal()
 
 
@@ -232,10 +234,13 @@ class TabularDialog(TabularDialogUi):
     
 
     def update_data(self):
-        if self.selected_dataset:
-            self.populate_table(self.selected_dataset)
-        else:
-            self.clear_table()
+        try:
+            if self.selected_dataset:
+                self.populate_table(self.selected_dataset)
+            else:
+                self.clear_table()
+        except Exception as ex:
+            exception_dialog('Data Update Failed', 'Unable to update displayed data', detailed_text=str(ex))
     
 
     def clear_table(self):

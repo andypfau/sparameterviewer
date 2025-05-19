@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import override, Callable
-from .settings import Settings
+from lib import Settings
 
 import logging
 

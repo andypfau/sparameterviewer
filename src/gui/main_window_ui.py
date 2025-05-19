@@ -1,5 +1,4 @@
 from .helpers.qt_helper import QtHelper
-from .helpers.settings import Parameters
 from .components.plot_widget import PlotWidget
 from .components.statusbar import StatusBar
 from .components.syntax_highlight import PythonSyntaxHighlighter
@@ -9,7 +8,7 @@ from .components.range_edit import RangeEdit
 from .components.param_selector import ParamSelector
 from .components.hv_splitter import HvSplitter
 from .components.plot_selector import PlotSelector
-from lib import AppPaths, PathExt
+from lib import AppPaths, PathExt, Parameters
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -46,13 +45,19 @@ class MainWindowUi(QMainWindow):
 
         
         self._ui_ribbon = QWidget()
-        color_base = QPalette().color(QPalette.ColorRole.Base).name()
-        color_dark = QPalette().color(QPalette.ColorRole.Dark).name()
-        color_light = QPalette().color(QPalette.ColorRole.Light).name()
-        color_hl = QPalette().color(QPalette.ColorRole.Highlight).name()
-        color_hl_text = QPalette().color(QPalette.ColorRole.HighlightedText).name()
+
+        palette = QPalette()
+        color_base = palette.color(QPalette.ColorRole.Base).name()
+        color_dark = palette.color(QPalette.ColorRole.Dark).name()
+        color_light = palette.color(QPalette.ColorRole.Light).name()
+        color_hl = palette.color(QPalette.ColorRole.Highlight).name()
+        color_hl_text = palette.color(QPalette.ColorRole.HighlightedText).name()
+        combo_arrow_image_url = os.path.join(AppPaths.get_resource_dir(), 'combo_arrow.svg').replace('\\', '/')
+        print(combo_arrow_image_url)
         self._ui_ribbon.setStyleSheet(f"""
             QWidget {{
+                background-color: {color_base};
+                border-radius: 2px;
             }}
             QToolButton {{
                 background-color: {color_base};
@@ -81,7 +86,7 @@ class MainWindowUi(QMainWindow):
                 border: none;
             }}
             QComboBox::down-arrow {{
-                image: url({os.path.join(AppPaths.get_resource_dir(),'combo_arrow.svg')});
+                image: url({combo_arrow_image_url});
             }}
             """)
         def vline():
@@ -97,7 +102,7 @@ class MainWindowUi(QMainWindow):
         self._ui_refresh_button = QtHelper.make_button(self, None, self.on_update_plot, icon='toolbar_refresh.svg', toolbar=True, tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_button(self, None, self.on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', toolbar=True, checked=False)
         self._ui_logx_button = QtHelper.make_button(self, None, self.on_logx_changed, icon='toolbar_log-x.svg', tooltip='Logarithmic X-Axis', toolbar=True, checked=False)
-        self._ui_logy_button = QtHelper.make_button(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis (only valid for Magnitude)', toolbar=True, checked=False)
+        self._ui_logy_button = QtHelper.make_button(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis', toolbar=True, checked=False)
         self._ui_lockx_button = QtHelper.make_button(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale', toolbar=True)
         self._ui_locky_button = QtHelper.make_button(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock Y-Axis Scale', toolbar=True)
         self._ui_lockboth_button = QtHelper.make_button(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Toggle X- and Y-Axis Scale Lock', toolbar=True)
@@ -654,7 +659,6 @@ class MainWindowUi(QMainWindow):
 
     def ui_show_status_message(self, message: str|None = None, level: int = logging.INFO):
         self._ui_status_bar.setMessage(message, level)
-        self._ui_status_bar.setVisible(message is not None)
 
 
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):

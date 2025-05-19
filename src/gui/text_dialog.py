@@ -1,8 +1,7 @@
 from .text_dialog_ui import TextDialogUi
 from .settings_dialog import SettingsDialog
 from .helpers.simple_dialogs import save_file_dialog, error_dialog
-from .helpers.settings import Settings
-from lib import Clipboard, AppPaths, start_process, PathExt
+from lib import Clipboard, AppPaths, start_process, PathExt, Settings
 
 
 class TextDialog(TextDialogUi):
