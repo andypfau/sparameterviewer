@@ -79,13 +79,16 @@ class ParamSelector(QWidget):
             
             else:  # widget is fixed size, adjust cell size
                 cell_size = math.floor((self._target_size - 2*WIDGET_BORDER) / grid_size)
+                cell_border = CELL_BORDER
                 if cell_size > MAXIMUM_CELL_SIZE:
                     cell_size = MAXIMUM_CELL_SIZE
                 all_cells_size = grid_size * cell_size
                 total_size = 2*WIDGET_BORDER + all_cells_size
                 x0, y0 = WIDGET_BORDER + (self._target_size- total_size) // 2, WIDGET_BORDER + (self._target_size - total_size) // 2
                 overflow = cell_size < MINIMUM_CELL_SIZE
-                return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, CELL_BORDER, all_cells_size, total_size, overflow)
+                if overflow:
+                    cell_border = 0
+                return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, cell_border, all_cells_size, total_size, overflow)
         
         def _adjust_widget_size(self):
             #logging.debug(f'_adjust_widget_size()')
@@ -122,10 +125,13 @@ class ParamSelector(QWidget):
         def paintEvent(self, event):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            default_font = painter.font()
+            small_font = QtHelper.make_font(base=default_font, rel_size=0.75)
 
             geometry = self.get_geometry()
             grid_size, x0, y0, cell_size, cell_border, all_cells_size, overflow = \
                 self.matrix_dimensions, geometry.x0, geometry.y0, geometry.cell_size, geometry.cell_border, geometry.all_cells_size, geometry.overflow
+            always_use_comma = self.matrix_dimensions >= 10
 
             MIN_CELL_SIZE_FOR_RENDERING = 3
             if overflow and cell_size < MIN_CELL_SIZE_FOR_RENDERING:
@@ -171,7 +177,13 @@ class ParamSelector(QWidget):
                                 painter.setPen(color_hl_text)
                             else:
                                 painter.setPen(color_text)
-                            text = f'{i+1}{j+1}' if (i+1<10 and j+1<10) else f'{i+1},{j+1}'
+                            ep, ip = i+1, j+1
+                            if ep>=10 or ip>=10:
+                                text = f'{ep},{ip}'
+                                painter.setFont(small_font)
+                            else:
+                                text = f'{ep},{ip}' if always_use_comma else f'{ep}{ip}'
+                                painter.setFont(default_font)
                             painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, text)
 
             painter.end()
@@ -480,15 +492,13 @@ class ParamSelector(QWidget):
 
 
     def _on_param_clicked(self, x: int, y: int, keys: QtCore.Qt.KeyboardModifier):
-        toggle = not(keys & QtCore.Qt.KeyboardModifier.ControlModifier)
+        toggle = keys & QtCore.Qt.KeyboardModifier.ControlModifier
         apply_to_whole_range = keys & QtCore.Qt.KeyboardModifier.ShiftModifier
         
-        mask = self.paramMask()
         if toggle:
-            # Ctrl is held -> toggle this
+            mask = self.paramMask()
             new_value = not mask[x,y]
         else:
-            # set this, un-set all others
             mask = self._make_mask()
             new_value = True
         

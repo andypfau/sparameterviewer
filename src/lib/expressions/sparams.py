@@ -32,12 +32,12 @@ class SParam:
 
     def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_file: PathExt|None = None, param_type: str|None=None) -> SParam:
         return SParam(
-            name or self.name,
-            f or self.f,
-            s or self.s,
-            z0 or self.z0,
-            original_file or self.original_file,
-            param_type or self.param_type
+            name if name is not None else self.name,
+            f if f is not None else self.f,
+            s if s is not None else self.s,
+            z0 if z0 is not None else self.z0,
+            original_file if original_file is not None else self.original_file,
+            param_type if param_type is not None else self.param_type
         )
     
 

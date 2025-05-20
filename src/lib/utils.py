@@ -189,7 +189,10 @@ def shorten_path(path: str, max_len: int) -> str:
 def natural_sort_key(s):
     def prepare_token(s: str):
         if s.isdigit():
-            return int(s)
+            try:
+                return int(s)
+            except:
+                s
         else:
             return s.casefold()
     return [prepare_token(part) for part in re.split('([0-9]+)', s)]

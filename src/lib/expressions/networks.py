@@ -208,7 +208,7 @@ class Network:
         s = self.nw.s
         
         # A network is lossless if S^T x S* = U (see e.g. Pozar, 4.3). This function returns, per frequency,
-        #   the highest element of the matrix |S^T x S* - U|, i.e. if the result is 0, the network is lossless
+        #   the highest element of the matrix |S^T ⋅ S * - U|, i.e. if the result is 0, the network is lossless
 
         st = np.transpose(s, (0,2,1))
         sc = np.conjugate(s)
@@ -223,17 +223,19 @@ class Network:
     def passivity(self):
         s = self.nw.s
         
-        # A network is passive if λ <= 1 for all eigenvalues λ of (S^T)* x S (see <https://www.simberian.com/Presentations/Shlepnev_S_ParameterQualityMetrics_July2014_final.pdf>)
-        # This function returns, per frequency, max(0,λ'-1) of the highest eigenvector λ', i.e. if the result is zero, the network is reciprocal.
-        s_tc = np.conjugate(np.transpose(s, (0,2,1)))
-        prod = np.matmul(s_tc, s)
+        # A network is passive if λ >= 0 for all eigenvalues λ of U - S^H ⋅ S (see <https://ibis.org/summits/nov10b/tseng.pdf> and also
+        #   <https://www.simberian.com/Presentations/Shlepnev_S_ParameterQualityMetrics_July2014_final.pdf>)
+        # This function returns, per frequency, max(0,λ) of the highest eigenvector λ, i.e. if the result is zero, the network is reciprocal.
+        s_h = np.conjugate(np.transpose(s, (0,2,1)))
+        prod = np.eye(self.nw.nports) - np.matmul(s_h, s)
 
         result_metric = np.zeros([len(self.nw.f)], dtype=float)
         for idx in range(len(self.nw.f)):  # for each frequency
             prod_submat = prod[idx,:,:]
             eigenvalues = np.real(np.linalg.eigvals(prod_submat))
-            worst_eigenvalue = np.max(eigenvalues)
-            result_metric[idx] = max(0, worst_eigenvalue - 1)
+            passivity_error = np.maximum(0, -eigenvalues)
+            worst_error = np.max(passivity_error)
+            result_metric[idx] = worst_error
         
         return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'passivity')
     
