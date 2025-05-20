@@ -29,38 +29,42 @@ class RlDialog(RlDialogUi):
     def update(self):
         if len(self.files) < 1:
             return
-
-        file = next(file for file in self.files if file.name==self.ui_file)
-
-        port = self.ui_port
-        port_ok = port <= file.nw.nports
-        self.ui_inidicate_port_error(not port_ok)
         
         try:
-            (int0, int1) = parse_si_range(self.ui_intrange)
-            intrange_ok = True
-        except:
-            intrange_ok = False
-        self.ui_inidicate_intrange_error(not intrange_ok)
-        
-        try:
-            (tgt0, tgt1) = parse_si_range(self.ui_tgtrange, wildcard_low=None, wildcard_high=None)
-            tgtrange_ok = False
-        except:
-            tgtrange_ok = False
-        self.ui_inidicate_tgtrange_error(not tgtrange_ok)
-        
-        plot_kind = 'hist' if self.ui_histogram else ''
+            file = next(file for file in self.files if file.name==self.ui_file)
 
-        ok = port_ok and intrange_ok and tgtrange_ok
-        if ok:
+            port = self.ui_port
+            port_ok = port <= file.nw.nports
+            self.ui_inidicate_port_error(not port_ok)
+            
             try:
-                self.calculate(file, port, int0, int1, tgt0, tgt1, plot_kind)
-            except Exception as ex:
-                logging.error(ex)
-                self.ui_set_result(str(ex), True)
-        else:
-            self.ui_set_result('Invalid parameters', True)
+                (int0, int1) = parse_si_range(self.ui_intrange)
+                intrange_ok = True
+            except:
+                intrange_ok = False
+            self.ui_inidicate_intrange_error(not intrange_ok)
+            
+            try:
+                (tgt0, tgt1) = parse_si_range(self.ui_tgtrange, wildcard_low=None, wildcard_high=None)
+                tgtrange_ok = False
+            except:
+                tgtrange_ok = False
+            self.ui_inidicate_tgtrange_error(not tgtrange_ok)
+            
+            plot_kind = 'hist' if self.ui_histogram else ''
+
+            ok = port_ok and intrange_ok and tgtrange_ok
+            if ok:
+                try:
+                    self.calculate(file, port, int0, int1, tgt0, tgt1, plot_kind)
+                except Exception as ex:
+                    logging.error(ex)
+                    self.ui_set_result(str(ex), True)
+            else:
+                self.ui_set_result('Invalid parameters', True)
+                self.ui_plot.clear()
+        except Exception as ex:
+            self.ui_set_result(f'Error: {ex}', True)
             self.ui_plot.clear()
 
 

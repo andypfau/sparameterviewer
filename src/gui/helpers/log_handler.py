@@ -44,8 +44,8 @@ class LogHandler(logging.StreamHandler):
         return [record for record in self._records if record.levelno >= level]
     
 
-    def get_messages(self, level=logging.INFO) -> list[str]:
-        return [f'{record.levelname}: {record.message} ({record.exc_text})' for record in self.get_records(level)]
+    def get_formatted_messages(self, level=logging.INFO) -> list[str]:
+        return [f'{record.msecs/1e3:5.3f} {str(record.levelname).capitalize()}: {record.msg}' for record in self.get_records(level)]
 
 
     def _notify(self, record: logging.LogRecord|None):
@@ -56,6 +56,6 @@ class LogHandler(logging.StreamHandler):
                 del self._observers[i]
 
 
-    def attach(self, callback: Callable[tuple[logging.LogRecord],None]):
+    def attach(self, callback: Callable[tuple[logging.LogRecord|None],None]):
         """ Attach a log listener """
         self._observers.append(callback)

@@ -52,12 +52,6 @@ class SettingsDialogUi(QDialog):
         self._ui_rad_radio = QRadioButton('Radians')
         self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_csvsep_combo = QComboBox()
-        self._ui_paramsmin_spin = QSpinBox()
-        self._ui_paramsmin_spin.setMinimum(1)
-        self._ui_paramsmin_spin.valueChanged.connect(self.on_param_minsize_changed)
-        self._ui_paramsmax_spin = QSpinBox()
-        self._ui_paramsmax_spin.setMinimum(1)
-        self._ui_paramsmax_spin.valueChanged.connect(self.on_param_maxsize_changed)
         self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
         self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
@@ -68,7 +62,6 @@ class SettingsDialogUi(QDialog):
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
                             ['Phase Unit:', QtHelper.layout_h(self._ui_deg_radio, self._ui_rad_radio, ...)],
-                            ['Parameter Grid Size:', QtHelper.layout_h(self._ui_paramsmin_spin, ' - ', self._ui_paramsmax_spin, ...)],
                             ['CSV Separator:', QtHelper.layout_h(self._ui_csvsep_combo, ...)],
                             ['Log. Y-Axis:', QtHelper.layout_h(self._ui_logyneg_combo, ...)],
                             ['Log. X-Axis:', QtHelper.layout_h(self._ui_logxneg_combo, ...)],
@@ -281,22 +274,6 @@ class SettingsDialogUi(QDialog):
     def ui_csvsep(self, value: str):
         self._ui_csvsep_combo.setCurrentText(value)
 
-    
-    @property
-    def ui_paramsmin(self) -> int:
-        return self._ui_paramsmin_spin.value()
-    @ui_paramsmin.setter
-    def ui_paramsmin(self, value: float):
-        self._ui_paramsmin_spin.setValue(value)
-
-    
-    @property
-    def ui_paramsmax(self) -> int:
-        return self._ui_paramsmax_spin.value()
-    @ui_paramsmax.setter
-    def ui_paramsmax(self, value: float):
-        self._ui_paramsmax_spin.setValue(value)
-
 
     def ui_set_csvset_options(self, options: list[str]):
         self._ui_csvsep_combo.clear()
@@ -440,10 +417,6 @@ class SettingsDialogUi(QDialog):
     def _on_warncount_load_changed(self):
         pass
     def on_colorassignments_changed(self):
-        pass
-    def on_param_minsize_changed(self):
-        pass
-    def on_param_maxsize_changed(self):
         pass
     def on_allcomplex_changed(self):
         pass

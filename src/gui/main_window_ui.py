@@ -96,6 +96,7 @@ class MainWindowUi(QMainWindow):
             return frame
         self._ui_params = ParamSelector(self)
         self._ui_params.paramsChanged.connect(self.on_params_change)
+        self._ui_params.setGridSize(100)
         self._ui_plot_selector = PlotSelector(self)
         self._ui_plot_selector.valueChanged.connect(self.on_plottype_changed)
         self._ui_filter_button = QtHelper.make_button(self, None, self.on_show_filter, icon='toolbar_filter.svg', toolbar=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
@@ -584,10 +585,10 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_params_size(self) -> int:
-        return self._ui_params.gridSize()
+        return self._ui_params.matrixDimensions()
     @ui_params_size.setter
     def ui_params_size(self, value: int):
-        self._ui_params.setGridSize(value)
+        self._ui_params.setMatrixDimensions(value)
 
 
     def ui_set_cursor_trace_list(self, traces: list[str]):

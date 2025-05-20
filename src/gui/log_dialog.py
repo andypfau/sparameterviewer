@@ -38,7 +38,7 @@ class LogDialog(LogDialogUi):
     
 
     def update_log_text(self):
-        text = '\n'.join(reversed(LogHandler.inst().get_messages(Settings.log_level)))
+        text = '\n'.join(reversed(LogHandler.inst().get_formatted_messages(Settings.log_level)))
         self.ui_set_logtext(text)
 
 

@@ -87,8 +87,6 @@ class SettingsDialog(SettingsDialogUi):
         try:
             self.ui_radians = Settings.phase_unit == PhaseUnit.Radians
             self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
-            self.ui_paramsmin = Settings.paramgrid_min_size
-            self.ui_paramsmax = Settings.paramgrid_max_size
             self.ui_logxneg = SettingsDialog.LOGNEG_NAMES[Settings.logx_negative_handling]
             self.ui_logyneg = SettingsDialog.LOGNEG_NAMES[Settings.logy_negative_handling]
             self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
@@ -230,16 +228,6 @@ class SettingsDialog(SettingsDialogUi):
         Settings.warncount_file_load = self.ui_warncount_load
     
     
-    def on_param_minsize_changed(self):
-        if self.ui_paramsmin <= self.ui_paramsmax:
-            Settings.paramgrid_min_size = self.ui_paramsmin
-
-
-    def on_param_maxsize_changed(self):
-        if self.ui_paramsmin <= self.ui_paramsmax:
-            Settings.paramgrid_max_size = self.ui_paramsmax
-
-
     def on_allcomplex_changed(self):
         Settings.treat_all_as_complex = self.ui_all_complex
 

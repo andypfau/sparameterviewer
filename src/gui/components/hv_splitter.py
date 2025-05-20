@@ -53,9 +53,10 @@ class HvSplitter(QWidget):
     def orientation(self) -> HvSplitter.orientation:
         return self._orientation
     def setOrientation(self, orienation: HvSplitter.orientation):
-        if orienation != self._orientation:
-            self._orientation = orienation
-            self._rearrange()
+        if orienation == self._orientation:
+            return
+        self._orientation = orienation
+        self._rearrange()
     
     
     def setCollapsible(self, child1: bool = False, child2: bool = False):

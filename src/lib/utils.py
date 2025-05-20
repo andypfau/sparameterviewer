@@ -10,6 +10,7 @@ import math
 import zipfile
 import logging
 import tempfile
+import traceback
 
 
 
@@ -245,3 +246,12 @@ def window_has_argument(window: str) -> bool:
     if window in ['general_cosine', 'general_hamming', 'kaiser', 'kaiser_bessel_derived', 'tukey']:
         return True
     return False
+
+
+def get_callstack_str(depth: int = 5) -> str:
+    callstack = traceback.extract_stack()
+    actual_depth = len(callstack) - 1  # remove the call to this function
+    if actual_depth < 1:
+        return 'Call: [empty callstack]'  # should never happen
+    callstack_top = list(reversed(callstack[-depth-1:-1]))
+    return 'Call: ' + ' < '.join([f'{s.name}()' for s in callstack_top]) + f' ({os.path.split(callstack_top[0].filename)[1]}#{callstack_top[0].lineno})'

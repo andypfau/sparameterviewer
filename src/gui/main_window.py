@@ -18,7 +18,7 @@ import matplotlib.backend_bases
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id
+from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
@@ -47,11 +47,11 @@ class MainWindow(MainWindowUi):
 
     CURSOR_OFF_NAME = '—'
 
-    TIMER_CURSORS_ID, TIMER_CURSORS_TIMEOUT_S = get_unique_id(), 25e-3
-    TIMER_UPDATE_ID, TIMER_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
-    TIMER_SELECT_ID, TIMER_SELECT_TIMEOUT_S = get_unique_id(), 100e-3
-    TIMER_RESET_LOAD_ID, TIMER_RESET_LOAD_TIMEOUT_S = get_unique_id(), 250e-3
-    TIMER_RESCALE_ID, TIMER_RESCALE_TIMEOUT_S = get_unique_id(), 500e-3
+    TIMER_CURSORUPDATE_ID, TIMER_CURSOR_UPDATE_TIMEOUT_S = get_unique_id(), 25e-3
+    TIMER_PLOT_UPDATE_ID, TIMER_PLOT_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
+    TIMER_INITIAL_SELECTION_ID, TIMER_INITIAL_SELECTION_TIMEOUT_S = get_unique_id(), 0.5
+    TIMER_CLEAR_LOAD_COUNTER_ID, TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S = get_unique_id(), 0.5
+    TIMER_RESCALE_GUI_ID, TIMER_RESCALE_GUI_TIMEOUT_S = get_unique_id(), 0.5
 
     UNLOCKED = (any,any)
 
@@ -116,7 +116,7 @@ class MainWindow(MainWindowUi):
             self.add_to_most_recent_paths(str(path))
             self._ui_filesys_browser.add_toplevel(path)  # TODO: add redirection through MainWindowUI class
         if len(self._initial_selection) > 0:
-            self.ui_schedule_oneshot_timer(MainWindow.TIMER_SELECT_ID, MainWindow.TIMER_SELECT_TIMEOUT_S, self.select_initial_files)
+            self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIAL_SELECTION_ID, MainWindow.TIMER_INITIAL_SELECTION_TIMEOUT_S, self.select_initial_files)
 
         self.update_most_recent_paths_menu()
         Settings.attach(self.on_settings_change)
@@ -149,7 +149,6 @@ class MainWindow(MainWindowUi):
                 self.ui_logy = Settings.log_y
                 self.ui_wide_layout = Settings.wide_layout
                 self.ui_wide_layout_option = Settings.wide_layout
-                self.ui_params_max_size = Settings.paramgrid_max_size
                 self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
                 return None
             except Exception as ex:
@@ -238,7 +237,7 @@ class MainWindow(MainWindowUi):
                 new += existing_line
             self.ui_expression = new
             self.ui_params = Parameters.Expressions
-            self.update_plot()
+            self.schedule_plot_upate()
         
         def ensure_selected_file_count(op, n_required):
             n = len(selected_file_names())
@@ -315,12 +314,25 @@ class MainWindow(MainWindowUi):
             set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
             setup_plot(PlotType.Cartesian)
         
+        def symmetry():
+            set_expression('sel_nws().symmetry().plot() # should be 0 for symmetric network')
+            setup_plot(PlotType.Cartesian)
+        
         def passivity():
             set_expression('sel_nws().passivity().plot() # should be 0 for passive network')
             setup_plot(PlotType.Cartesian)
         
         def losslessness():
             set_expression('sel_nws().losslessness().plot() # should be 0 for lossless network')
+            setup_plot(PlotType.Cartesian)
+        
+        def four_metrics():
+            set_expression(
+                'sel_nws().reciprocity().plot()  # should be 0 for reciprocal network\n' +
+                'sel_nws().symmetry().plot()     # should be 0 for symmetric network\n' +
+                'sel_nws().passivity().plot()    # should be 0 for passive network\n' +
+                'sel_nws().losslessness().plot() # should be 0 for lossless network'
+            )
             setup_plot(PlotType.Cartesian)
         
         def cascade():
@@ -428,9 +440,12 @@ class MainWindow(MainWindowUi):
             ('Network Analysis', [
                 ('Stability (2-Port Only)', stability),
                 ('Stability Circles (2-Port Only)', stability_circles),
+                (None, None),
                 ('Reciprocity (2-Port or Higher Only)', reciprocity),
+                ('Symmmetry (2-Port or Higher Only)', symmetry),
                 ('Passivity', passivity),
                 ('Losslessness', losslessness),
+                ('All of Above', four_metrics),
             ]),
             ('Operations on Selected Networks', [
                 ('Single-Ended to Mixed-Mode', mixed_mode),
@@ -478,14 +493,12 @@ class MainWindow(MainWindowUi):
         Settings.plot_y2_quantitiy = self._ui_plot_selector.y2Quantity()
 
         self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
-        self.prepare_cursors()
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_params_change(self):
         Settings.plotted_params = self.ui_params
-        self.prepare_cursors()
-        self.update_plot()
+        self.schedule_plot_upate()
     
 
     def on_show_filter(self):
@@ -549,12 +562,16 @@ class MainWindow(MainWindowUi):
 
 
     def get_file_prop_str(self, file: "SParamFile|None") -> str:
-        if file:
-            if file.loaded:
-                return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
-            elif file.error:
-                return '[loading failed]'
-        return '[not loaded]'
+        try:
+            if file:
+                if file.loaded:
+                    return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+                elif file.error:
+                    return '[loading failed]'
+            return '[not loaded]'
+        except:
+            return '[loading failed]'
+
     
 
     def get_selected_files(self) -> "list[SParamFile]":
@@ -710,32 +727,32 @@ class MainWindow(MainWindowUi):
 
     def on_show_legend(self):
         Settings.show_legend = self.ui_show_legend
-        self.update_plot()
+        self.schedule_plot_upate()
     
 
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_shorten_legend(self):
         Settings.shorten_legend_items = self.ui_shorten_legend
-        self.update_plot()
+        self.schedule_plot_upate()
 
     
     def on_mark_datapoints_changed(self):
         Settings.plot_mark_points = self.ui_mark_datapoints
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_logx_changed(self):
         Settings.log_x = self.ui_logx
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_logy_changed(self):
         Settings.log_y = self.ui_logy
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_copy_image(self):
@@ -759,7 +776,7 @@ class MainWindow(MainWindowUi):
         
     
     def on_resize(self):
-        self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESCALE_ID, MainWindow.TIMER_RESCALE_TIMEOUT_S, self.after_resize, retrigger_behavior='postpone')
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESCALE_GUI_ID, MainWindow.TIMER_RESCALE_GUI_TIMEOUT_S, self.after_resize, retrigger_behavior='postpone')
     
 
     def after_resize(self):
@@ -789,13 +806,13 @@ class MainWindow(MainWindowUi):
     def on_xaxis_range_change(self):
         if self.ui_xaxis_range!=MainWindow.UNLOCKED:
             self.plot.plot.set_xlim(*self.ui_xaxis_range)
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_yaxis_range_change(self):
         if self.ui_yaxis_range!=MainWindow.UNLOCKED:
             self.plot.plot.set_ylim(*self.ui_yaxis_range)
-        self.update_plot()
+        self.schedule_plot_upate()
 
 
     def on_update_plot(self):
@@ -803,34 +820,30 @@ class MainWindow(MainWindowUi):
             return
         if self.ui_tab == MainWindowUi.Tab.Expressions:
             self.ui_params = Parameters.Expressions
-        self.update_plot()
+        self.schedule_plot_upate()
 
     
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
         self.ui_params = Parameters.Expressions
-        self.update_plot()
+        self.schedule_plot_upate()
 
     
     def invalidate_axes_lock(self, update: bool = True):
         self.plot_axes_are_valid = False
         if update:
-            self.update_plot()
+            self.schedule_plot_upate()
     
 
     def on_settings_change(self, attributes: list[str]):
         self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWindowUI
         self.ui_wide_layout = Settings.wide_layout
         
-        if set(['paramgrid_min_size','paramgrid_max_size']) & set(attributes):
-            self.ui_params_max_size = Settings.paramgrid_max_size
-            self.update_params_size()
-
         if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
                 'plot_mark_points','color_assignment','treat_all_as_complex']) & set(attributes):
-            self.update_plot()
+            self.schedule_plot_upate()
     
     
     def on_help_button(self):
@@ -927,13 +940,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_filesys_selection_changed(self):
-        self.ui_schedule_oneshot_timer(MainWindow.TIMER_UPDATE_ID, MainWindow.TIMER_UPDATE_TIMEOUT_S, self._on_filesys_selection_changed_timed)
-    
-
-    def _on_filesys_selection_changed_timed(self):
         self.update_params_size()
-        self.update_plot()
-        self.prepare_cursors()
+        self.schedule_plot_upate()
 
 
     def on_cursor_select(self):
@@ -959,7 +967,7 @@ class MainWindow(MainWindowUi):
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         # events are handled slower than they may come in, which leads to lag; queue them, then handle them in bulk
         self.cursor_event_queue.append((left_btn_pressed, left_btn_event, x, y, x2, y2))
-        self.ui_schedule_oneshot_timer(MainWindow.TIMER_CURSORS_ID, MainWindow.TIMER_CURSORS_TIMEOUT_S, self._on_plot_mouse_event_timed)
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_CURSORUPDATE_ID, MainWindow.TIMER_CURSOR_UPDATE_TIMEOUT_S, self._on_plot_mouse_event_timed)
     
 
     def _on_plot_mouse_event_timed(self):
@@ -1121,12 +1129,24 @@ class MainWindow(MainWindowUi):
     
 
     def update_params_size(self):
-        size = Settings.paramgrid_min_size
+        size = 0
         for file in self.get_selected_files():
-            if not file.nw:
-                continue
-            size = max(size, file.nw.number_of_ports)
-        self.ui_params_size = size
+            try:
+                size = max(size, file.nw.number_of_ports)
+            except:
+                pass
+        
+        MIN_SIZE = 2
+        self.ui_params_size = max(MIN_SIZE, size)
+    
+
+    def schedule_plot_upate(self):
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_PLOT_UPDATE_ID, MainWindow.TIMER_PLOT_UPDATE_TIMEOUT_S, self._after_plot_timeout)
+
+
+    def _after_plot_timeout(self):
+        self.prepare_cursors()
+        self.update_plot()
     
 
     def update_plot(self):
@@ -1134,12 +1154,9 @@ class MainWindow(MainWindowUi):
         if not self.ready:
             return
         
-        import traceback
-        callstack_top = traceback.extract_stack()[-3:]
-        callstack_top_str = '->'.join([f'{s.name}()' for s in callstack_top])
-        logging.debug(f'Updating plot; top of callstack: {callstack_top_str}')
+        logging.debug(get_callstack_str(8))
         
-        self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_ID)
+        self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_GUI_ID)
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
@@ -1160,6 +1177,7 @@ class MainWindow(MainWindowUi):
             self.generated_expressions = ''
             self.plot = None
 
+            params = self.ui_params
             # TODO: redirect through MainWIndowUI
             plot_type = self._ui_plot_selector.plotType()
             y_qty = self._ui_plot_selector.yQuantity()
@@ -1316,7 +1334,7 @@ class MainWindow(MainWindowUi):
                     
             selected_files = self.get_selected_files()
 
-            if self.ui_params == Parameters.Expressions:
+            if params == Parameters.Expressions:
 
                 raw_exprs = self.ui_expression
                 Settings.expression = raw_exprs
@@ -1326,7 +1344,7 @@ class MainWindow(MainWindowUi):
             else:
 
                 expression_list = []
-                if self.ui_params == Parameters.Custom:
+                if params == Parameters.Custom:
 
                     # TODO: ensure that the mask shape is sufficiently large for all displayed files
                     
@@ -1337,24 +1355,24 @@ class MainWindow(MainWindowUi):
                                 expression_list.append(f'sel_nws().s({i+1},{j+1}).plot()')
 
                 else:
-                    if self.ui_params == Parameters.ComboAll:
+                    if params == Parameters.ComboAll:
                         expression_list.append('sel_nws().s(il_only=True).plot(style="-")')
                         expression_list.append('sel_nws().s(rl_only=True).plot(style="--")')
                     else:
-                        if self.ui_params & Parameters.S21 and self.ui_params & Parameters.S12:
+                        if params & Parameters.S21 and params & Parameters.S12:
                             expression_list.append('sel_nws().s(il_only=True).plot()')
                         else:
-                            if self.ui_params & Parameters.S21:
+                            if params & Parameters.S21:
                                 expression_list.append('sel_nws().s(fwd_il_only=True).plot()')
-                            if self.ui_params & Parameters.S12:
+                            if params & Parameters.S12:
                                 expression_list.append('sel_nws().s(rev_il_only=True).plot()')
                         
-                        if self.ui_params & Parameters.Sii:
+                        if params & Parameters.Sii:
                             expression_list.append('sel_nws().s(rl_only=True).plot()')
                         else:
-                            if self.ui_params & Parameters.S11:
+                            if params & Parameters.S11:
                                 expression_list.append('sel_nws().s(11).plot()')
-                            if self.ui_params & Parameters.S22:
+                            if params & Parameters.S22:
                                 expression_list.append('sel_nws().s(22).plot()')
                 
                 self.generated_expressions = '\n'.join(expression_list)
@@ -1387,5 +1405,5 @@ class MainWindow(MainWindowUi):
             logging.error(f'Plotting failed: {ex}')
 
         finally:
-            self.ui_schedule_oneshot_timer(MainWindow.TIMER_RESET_LOAD_ID, MainWindow.TIMER_RESET_LOAD_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
+            self.ui_schedule_oneshot_timer(MainWindow.TIMER_CLEAR_LOAD_COUNTER_ID, MainWindow.TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
             self.ready = True

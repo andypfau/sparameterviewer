@@ -254,6 +254,30 @@ class Network:
         return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'reciprocity')
     
 
+    def symmetry(self):
+        if self.nw.nports < 2:
+            raise RuntimeError(f'Network.symmetry(): cannot calculate reciprocity of {self.nw.name} (only valid for 2-port or higher networks)')
+        s = self.nw.s
+        
+        # I define a network as symmetric if it is reciprocal, and additionally Sii=Sjj=Skk..., This function returns, per frequency,
+        #   the highest element of the matrix |S^T-S|, plus the highest difference between any diagonal elements; i.e. if the result
+        #   is zero, the network is symmetric.
+
+        st = np.transpose(s, (0,2,1))
+        diff = st - s
+        absdiff = np.abs(diff)
+        result_metric_ij = np.max(absdiff, axis=(1,2))  # should be zero if reciprocal
+
+        result_metric_ii = np.zeros([len(self.nw.f)], dtype=float)
+        for i in range(self.nw.nports):
+            for j in range(self.nw.nports):
+                result_metric_ii = np.maximum(result_metric_ii, np.abs(s[:,i,i]-s[:,j,j]))
+
+        result_metric = result_metric_ij + result_metric_ii
+
+        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'symmetry')
+    
+
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
         if method=='IEEE370NZC':
             from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
@@ -660,6 +684,10 @@ class Networks:
 
     def reciprocity(self):
         return self._unary_op(Network.reciprocity, SParams)
+    
+
+    def symmetry(self):
+        return self._unary_op(Network.symmetry, SParams)
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Networks":

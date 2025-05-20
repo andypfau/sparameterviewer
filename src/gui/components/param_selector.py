@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
-from lib import AppPaths, PathExt, Parameters
+from lib import AppPaths, PathExt, Parameters, get_callstack_str
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -15,6 +15,7 @@ import os
 import math
 import numpy as np
 import enum
+import dataclasses
 from typing import Callable, Optional, Union
 
 
@@ -25,34 +26,96 @@ class ParamSelector(QWidget):
     paramsChanged = pyqtSignal()
 
 
+    class DefocusScrollArea(QScrollArea):
+
+        focusLost = pyqtSignal()
+
+        def focusOutEvent(self, event: QFocusEvent):
+            self.focusLost.emit()
+
+
     class GraphicWidget(QWidget):
 
         paramClicked = pyqtSignal(int, int, QtCore.Qt.KeyboardModifier)
         overflowClicked = pyqtSignal()
 
+        @dataclasses.dataclass
+        class Geometry:
+            x0: int
+            y0: int
+            cell_size: int
+            cell_border: int
+            all_cells_size: int
+            total_size: int
+            overflow: bool
+
         def __init__(self, parent = ...):
             super().__init__(parent)
             self._data = np.array([[False, False, True], [False, True, True], [True, True, True]], dtype=bool)
             self._use_expressions = False
-            self._overflow = False
-            self._max_size = 4
-            self._x0, self._y0, self._cell_size, self._cell_spacing = 0, 0, 1, 1
+            self._scale_widget_to_contents = False
+            self._current_geometry: ParamSelector.GraphicWidget.Geometry|None = None
+            self._target_size = 64
             self.setContentsMargins(0, 0, 0, 0)
-            self.setMinimumSize(QSize(64,64))
+            self._adjust_widget_size()
+        
+        def get_geometry(self) -> ParamSelector.GraphicWidget.Geometry:
+            if self._current_geometry is None:
+                self._current_geometry = self._calculate_geometry()
+            return self._current_geometry
+    
+        def _calculate_geometry(self) -> ParamSelector.GraphicWidget.Geometry:
+            #logging.debug(f'_calculate_geometry()')
+            grid_size = self.matrix_dimensions
+            MINIMUM_CELL_SIZE, DEFAULT_CELL_SIZE, LARGE_CELL_SIZE, MAXIMUM_CELL_SIZE = 16, 22, 32, 32
+            WIDGET_BORDER, CELL_BORDER = 1, 1
+            
+            if self._scale_widget_to_contents:  # widget size is adjusted, use fixed cell size
+                cell_size = DEFAULT_CELL_SIZE if self.matrix_dimensions<10 else LARGE_CELL_SIZE  # for a large matrix, the text is longer
+                all_cells_size = grid_size * cell_size
+                total_size = 2*WIDGET_BORDER + all_cells_size
+                x0, y0 = WIDGET_BORDER, WIDGET_BORDER
+                return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, CELL_BORDER, all_cells_size, total_size, overflow=False)
+            
+            else:  # widget is fixed size, adjust cell size
+                cell_size = math.floor((self._target_size - 2*WIDGET_BORDER) / grid_size)
+                if cell_size > MAXIMUM_CELL_SIZE:
+                    cell_size = MAXIMUM_CELL_SIZE
+                all_cells_size = grid_size * cell_size
+                total_size = 2*WIDGET_BORDER + all_cells_size
+                x0, y0 = WIDGET_BORDER + (self._target_size- total_size) // 2, WIDGET_BORDER + (self._target_size - total_size) // 2
+                overflow = cell_size < MINIMUM_CELL_SIZE
+                return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, CELL_BORDER, all_cells_size, total_size, overflow)
+        
+        def _adjust_widget_size(self):
+            #logging.debug(f'_adjust_widget_size()')
+            self._current_geometry = None  # invalidate
+            if self._scale_widget_to_contents:  # adjust widget size to required size
+                geometry = self._calculate_geometry()  # use fixed geometry
+                self.resize(geometry.total_size, geometry.total_size)
+            else:  # fixed widget size (contents will be scaled)
+                self.resize(self._target_size, self._target_size)
+        
+        def resizeEvent(self, event: QResizeEvent|None):
+            self._current_geometry = None  # invalidate
     
         def mouseReleaseEvent(self, event: QMouseEvent|None):
             super().mouseReleaseEvent(event)
             if not event or event.button() != Qt.MouseButton.LeftButton:
-                return
-            if self._overflow:
+                return  # no mouse click -> ignore
+            if self._use_expressions:
+                return  # not clickable -> ignore
+            geometry = self.get_geometry()
+
+            if geometry.overflow:
                 self.overflowClicked.emit()
                 return
+            
             keys = QApplication.keyboardModifiers()
-            for i in range(self.grid_size):
-                for j in range(self.grid_size):
-                    x = self._x0 + j*(self._cell_size+self._cell_spacing)
-                    y = self._y0 + i*(self._cell_size+self._cell_spacing)
-                    rect = QRect(x, y, self._cell_size, self._cell_size)
+            grid_size, x0, y0, cell_size = self.matrix_dimensions, geometry.x0, geometry.y0, geometry.cell_size
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    rect = QRect(x0+j*cell_size, y0+i*cell_size, cell_size, cell_size)
                     if rect.contains(event.pos()):
                         self.paramClicked.emit(i, j, keys)
 
@@ -60,31 +123,16 @@ class ParamSelector(QWidget):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-            cell_spacing = 3
-            border = 1
+            geometry = self.get_geometry()
+            grid_size, x0, y0, cell_size, cell_border, all_cells_size, overflow = \
+                self.matrix_dimensions, geometry.x0, geometry.y0, geometry.cell_size, geometry.cell_border, geometry.all_cells_size, geometry.overflow
 
-            short_side = min(self.width(), self.height())
-            cell_size = math.floor((short_side - 2*border - ((self.grid_size - 1) * cell_spacing)) / self.grid_size)
-            total_size = 2*border + (self.grid_size - 1) * cell_spacing + self.grid_size * cell_size
-            x0, y0 = border + (self.width() - total_size) // 2, border + (self.height() - total_size) // 2
-
-            self._x0, self._y0, self._cell_size, self._cell_spacing = x0, y0, cell_size, cell_spacing
-            self._overflow = self.grid_size > self._max_size
-            if self._overflow:
-                painter.setPen(QColorConstants.Gray)
-                painter.drawLine(x0, y0, x0+total_size, y0+total_size)
-                painter.drawLine(x0+total_size, y0, x0, y0+total_size)
+            MIN_CELL_SIZE_FOR_RENDERING = 3
+            if overflow and cell_size < MIN_CELL_SIZE_FOR_RENDERING:
+                # too many elements -> just draw one large rectangle as a placeholder
+                rect = QRect(x0, y0, all_cells_size, all_cells_size)
+                painter.drawRect(rect)
                 return
-
-            if self._use_expressions:
-                if cell_size >= 8:
-                    delta = 4
-                else:
-                    delta = 2
-            else:
-                delta = 0
-            final_cell_size = cell_size - delta
-            show_text = (self.grid_size <= 9) and (final_cell_size >= 12)
 
             palette = QPalette()
             color_base = palette.color(QPalette.ColorRole.Base)
@@ -94,17 +142,15 @@ class ParamSelector(QWidget):
             color_hl = palette.color(QPalette.ColorRole.Highlight)
             color_hl_text = palette.color(QPalette.ColorRole.HighlightedText)
             
-            for i in range(self.grid_size):
-                for j in range(self.grid_size):
-                    x = x0 + j*(cell_size+cell_spacing)
-                    y = y0 + i*(cell_size+cell_spacing)
-
-                    rect = QRect(x+delta//2, y+delta//2, final_cell_size, final_cell_size)
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    rect = QRect(x0+j*cell_size+cell_border, y0+i*cell_size+cell_border, cell_size-2*cell_border, cell_size-2*cell_border)
                     
                     if self._use_expressions:
+                        # using expressions -> draw gray dummies
                         painter.setBrush(color_dark)
                         painter.setPen(Qt.PenStyle.NoPen)
-                        painter.drawRect(rect)
+                        painter.drawRoundedRect(rect, 3, 3)
                     
                     else:
                         enabled = self._data[i,j]
@@ -113,16 +159,20 @@ class ParamSelector(QWidget):
                             painter.setPen(Qt.PenStyle.NoPen)
                         else:
                             painter.setBrush(Qt.BrushStyle.NoBrush)
-                            painter.setPen(Qt.PenStyle.NoPen)
+                            if overflow:
+                                painter.setPen(color_dark)
+                            else:
+                                painter.setPen(Qt.PenStyle.NoPen)
                             
-                        painter.drawRect(rect)
+                        painter.drawRoundedRect(rect, 2, 2)
 
-                        if show_text:
+                        if not overflow:
                             if enabled:
                                 painter.setPen(color_hl_text)
                             else:
-                                painter.setPen(color_dark)
-                            painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, f'{i+1}{j+1}')
+                                painter.setPen(color_text)
+                            text = f'{i+1}{j+1}' if (i+1<10 and j+1<10) else f'{i+1},{j+1}'
+                            painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, text)
 
             painter.end()
     
@@ -131,11 +181,24 @@ class ParamSelector(QWidget):
             return self._data.copy()
         @data.setter
         def data(self, value: np.ndarray):
-            if value.shape == self._data.shape:
-                if np.array_equal(value, self._data):
-                    return
+            size_changed = value.shape != self._data.shape
+            if (not size_changed) and np.array_equal(value, self._data):
+                return
+            #logging.debug(f'Setting size to {value.shape}')
             self._data = value
+            if size_changed:
+                self._adjust_widget_size()
             self.repaint()
+    
+        @property
+        def target_size(self) -> int:
+            return self._target_size
+        @target_size.setter
+        def target_size(self, value: int):
+            if self._target_size == value:
+                return
+            self._target_size = value
+            self._adjust_widget_size()
     
         @property
         def use_expressions(self) -> bool:
@@ -148,22 +211,24 @@ class ParamSelector(QWidget):
             self.repaint()
     
         @property
-        def max_size(self) -> int:
-            return self._max_size
-        @max_size.setter
-        def max_size(self, value: int):
-            if self._max_size == value:
+        def scale_widget_to_contents(self) -> bool:
+            return self._scale_widget_to_contents
+        @scale_widget_to_contents.setter
+        def scale_widget_to_contents(self, value: bool):
+            if self._scale_widget_to_contents == value:
                 return
-            self._max_size = value
-            self.repaint()
+            self._scale_widget_to_contents = value
+            self._adjust_widget_size()
         
         @property
-        def grid_size(self) -> int:
+        def matrix_dimensions(self) -> int:
             return self._data.shape[0]
 
 
     def __init__(self, parent = ...):
         super().__init__(parent)
+
+        INITIAL_SIZE = 64
         
         self._largest_data = np.ndarray([0,0], dtype=bool)
         self._simplified = False
@@ -178,10 +243,15 @@ class ParamSelector(QWidget):
 
         self._ui_grid = ParamSelector.GraphicWidget(self)
         self._ui_grid.setContentsMargins(0, 0, 0, 0)
-        self._ui_grid.setToolTip('Click a parameter to show it; hold Ctrl to toggle')
+        self._ui_grid.setToolTip('Click a parameter to show it; hold Ctrl to toggle, hold Shift to apply to whole diagonal/triangular')
         self._ui_grid.data = np.full([2, 2], False, dtype=bool)
         self._ui_grid.paramClicked.connect(self._on_param_clicked)
         self._ui_grid.overflowClicked.connect(self._on_overflow_clicked)
+        self._ui_grid.target_size = INITIAL_SIZE
+        self._ui_grid_scoll = ParamSelector.DefocusScrollArea()
+        self._ui_grid_scoll.setWidget(self._ui_grid)
+        self._ui_grid_scoll.setMinimumSize(INITIAL_SIZE, INITIAL_SIZE)
+        self._ui_grid_scoll.focusLost.connect(self._on_defocus_scrollable_grid)
         self._ui_sall_button = QtHelper.make_button(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show all terms (e.g. S11, S21, S12, ...); hold ctrl to toggle', toolbar=True)
         self._ui_sii_button = QtHelper.make_button(self, None, self._on_sii, icon='toolbar_sii.svg', tooltip='Show all Sii terms (e.g. S11, S22, S33, ...); hold ctrl to toggle', toolbar=True)
         self._ui_sij_button = QtHelper.make_button(self, None, self._on_sij, icon='toolbar_sij.svg', tooltip='Show all Sij terms (e.g. S21, S12, S31, ...); hold ctrl to toggle', toolbar=True)
@@ -196,7 +266,7 @@ class ParamSelector(QWidget):
                 [self._ui_s12_button, self._ui_sij_button, self._ui_s21_button],
                 [self._ui_s11_button, self._ui_sii_button, self._ui_s22_button],
             ], spacing=1),
-            self._ui_grid,
+            self._ui_grid_scoll,
             spacing=10
         ))
         self.setContentsMargins(0, 0, 0, 0)
@@ -204,6 +274,32 @@ class ParamSelector(QWidget):
         self._ui_advanced.setContentsMargins(0, 0, 0, 0)
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
     
+
+    def autoScaleGridToContents(self) -> bool:
+        return self._ui_grid.scale_widget_to_contents
+    def setAutoScaleGridToContents(self, auto_scale: bool):
+        #logging.debug(get_callstack_str())
+        if self._ui_grid.scale_widget_to_contents == auto_scale:
+            return
+        if auto_scale:
+            #logging.debug(f'Changing to auto size')
+            self._ui_grid_scoll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            self._ui_grid_scoll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+            self._ui_grid.scale_widget_to_contents = True
+        else:
+            #logging.debug(f'Changing to fixed size')
+            self._ui_grid.scale_widget_to_contents = False
+            self._ui_grid_scoll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self._ui_grid_scoll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._ui_grid_scoll.adjustSize()
+    
+    
+    def gridSize(self) -> int:
+        return self._ui_grid_scoll.minimumWidth()
+    def setGridSize(self, size: int):
+        self._ui_grid_scoll.setMinimumSize(size, size)
+        self._ui_grid.target_size = size
+
 
     def simplified(self) -> bool:
         return self._simplified
@@ -213,48 +309,50 @@ class ParamSelector(QWidget):
         self._ui_advanced.setVisible(not self._simplified)
 
         
-    def gridSize(self) -> int:
-        return self._ui_grid.grid_size
-    def setGridSize(self, size: int):
-        assert size >= 1
-        current_size = self.gridSize()
-        if size == current_size:
+    def matrixDimensions(self) -> int:
+        return self._ui_grid.matrix_dimensions
+    def setMatrixDimensions(self, dim: int):
+        assert dim >= 1
+        current_dim = self.matrixDimensions()
+        if dim == current_dim:
             return
         
+        self.setAutoScaleGridToContents(False)  # TODO: remove this debug code
+
         current_pattern = self.params()
 
         if current_pattern == Parameters.Custom:  # try to extend/shrink the matrix
             current_params = self.paramMask()
-            new_params = np.full([size, size], False, dtype=bool)
-            if size > current_size:  # expand
+            new_params = np.full([dim, dim], False, dtype=bool)
+            if dim > current_dim:  # expand
                 for i in range(min(new_params.shape[0],self._largest_data.shape[0])):
                     for j in range(min(new_params.shape[1],self._largest_data.shape[1])):
                         new_params[i,j] = self._largest_data[i,j]
-                for i in range(current_size):
-                    for j in range(current_size):
+                for i in range(current_dim):
+                    for j in range(current_dim):
                         new_params[i,j] = current_params[i,j]
             else:  # shrink or equal
                 if current_params.shape[0] >= self._largest_data.shape[0]:
                     self._largest_data = current_params
-                for i in range(size):
-                    for j in range(size):
+                for i in range(dim):
+                    for j in range(dim):
                         new_params[i,j] = current_params[i,j]
             self._ui_grid.data = new_params
         
         else:  # just re-apply the current pattern to a new matrix
             guessed_pattern = self._guess_params_from_data(self.paramMask())
-            self._ui_grid.data = self._make_mask(guessed_pattern, size)
+            self._ui_grid.data = self._make_mask(guessed_pattern, dim)
 
         self.paramsChanged.emit()
 
-        
-    def maxGridSize(self) -> int:
-        return self._ui_grid.max_size
-    def setMaxGridSize(self, value: int):
-        self._ui_grid.max_size = value
+
+    def _on_defocus_scrollable_grid(self):
+        self.setAutoScaleGridToContents(False)
 
     
     def _guess_params_from_data(self, params: np.ndarray) -> Parameters:
+        #logging.debug(get_callstack_str())
+
         if np.all(params):
             return Parameters.ComboAll
         if not np.any(params):
@@ -276,8 +374,10 @@ class ParamSelector(QWidget):
         # is there any outlier to this pattern?
         result_params = self._make_mask(result)
         if np.array_equal(result_params, self.paramMask()):
+            #logging.debug('_guess_params_from_data() done.')
             return result
         else:
+            #logging.debug('_guess_params_from_data() done.')
             return Parameters.Custom
     
 
@@ -303,24 +403,24 @@ class ParamSelector(QWidget):
         self._ui_grid.data = value
     
 
-    def _make_mask(self, params: Parameters = Parameters.Off, size: int|None = None) -> np.ndarray:
-        size = size or self.gridSize()
-        mask = np.full([size, size], False, dtype=bool)
-        if params & Parameters.S11 and size >= 1:
+    def _make_mask(self, params: Parameters = Parameters.Off, dim: int|None = None) -> np.ndarray:
+        dim = dim or self.matrixDimensions()
+        mask = np.full([dim, dim], False, dtype=bool)
+        if params & Parameters.S11 and dim >= 1:
             mask[0,0] = True
-        if params & Parameters.S22 and size >= 2:
+        if params & Parameters.S22 and dim >= 2:
             mask[1,1] = True
         if params & Parameters.Sii:
-            for i in range(size):
+            for i in range(dim):
                 mask[i,i] = True
         if params & Parameters.S21:
-            for i in range(size):
-                for j in range(size):
+            for i in range(dim):
+                for j in range(dim):
                     if i > j:
                         mask[i,j] = True
         if params & Parameters.S12:
-            for i in range(size):
-                for j in range(size):
+            for i in range(dim):
+                for j in range(dim):
                     if i < j:
                         mask[i,j] = True
         return mask
@@ -380,17 +480,36 @@ class ParamSelector(QWidget):
 
 
     def _on_param_clicked(self, x: int, y: int, keys: QtCore.Qt.KeyboardModifier):
-        if keys & QtCore.Qt.KeyboardModifier.ControlModifier:
+        toggle = not(keys & QtCore.Qt.KeyboardModifier.ControlModifier)
+        apply_to_whole_range = keys & QtCore.Qt.KeyboardModifier.ShiftModifier
+        
+        mask = self.paramMask()
+        if toggle:
             # Ctrl is held -> toggle this
-            mask = self.paramMask()
-            mask[x,y] = not mask[x,y]
+            new_value = not mask[x,y]
         else:
             # set this, un-set all others
             mask = self._make_mask()
-            mask[x,y] = True
+            new_value = True
+        
+        if apply_to_whole_range:
+            dim = self.matrixDimensions()
+            for i in range(dim):
+                for j in range(dim):
+                    if x==y and i==j:
+                        mask[i, j] = new_value
+                    elif x<y and i<j:
+                        mask[i, j] = new_value
+                    elif x>y and i>j:
+                        mask[i, j] = new_value
+        else:
+            mask[x,y] = new_value
+        
         self.setParamMask(mask)
         self.paramsChanged.emit()
 
 
     def _on_overflow_clicked(self):
-        pass  # TODO: show a dialog
+        self.setAutoScaleGridToContents(True)  # TODO: remove this debug code
+        #from ..helpers.simple_dialogs import error_dialog
+        #error_dialog('Not Implemented', 'Not implemented yet...')  # TODO: implement
