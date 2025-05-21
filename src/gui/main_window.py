@@ -143,7 +143,10 @@ class MainWindow(MainWindowUi):
                 self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
                 self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
                 self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
-                self._ui_param_selector.setSimplified(Settings.simplified_param_sel)
+                self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
+                self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
+                self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+                self.ui_show_expressions(not Settings.simplified_no_expressions)
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
@@ -838,7 +841,10 @@ class MainWindow(MainWindowUi):
         self.ui_wide_layout = Settings.wide_layout
         self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
         self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
-        
+        self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
+        self.ui_show_expressions(not Settings.simplified_no_expressions)
+        self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+
         if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
                 'plot_mark_points','color_assignment','treat_all_as_complex']) & set(attributes):
@@ -1427,26 +1433,27 @@ class MainWindow(MainWindowUi):
                                 expression_list.append(f'sel_nws().s({i+1},{j+1}).plot()')
 
                 else:
-                    if params == Parameters.ComboAll:
-                        expression_list.append('sel_nws().s(il_only=True).plot(style="-")')
-                        expression_list.append('sel_nws().s(rl_only=True).plot(style="--")')
+                    any_il = params & Parameters.S21 or params & Parameters.S12
+                    any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
+                    if any_il and any_rl:
+                        style_il, style_rl = 'style="-"', 'style="--"'
                     else:
-                        if params & Parameters.S21 and params & Parameters.S12:
-                            expression_list.append('sel_nws().s(il_only=True).plot()')
-                        else:
-                            if params & Parameters.S21:
-                                expression_list.append('sel_nws().s(fwd_il_only=True).plot()')
-                            if params & Parameters.S12:
-                                expression_list.append('sel_nws().s(rev_il_only=True).plot()')
-                        
-                        if params & Parameters.Sii:
-                            expression_list.append('sel_nws().s(rl_only=True).plot()')
-                        else:
-                            if params & Parameters.S11:
-                                expression_list.append('sel_nws().s(11).plot()')
-                            if params & Parameters.S22:
-                                expression_list.append('sel_nws().s(22).plot()')
+                        style_il, style_rl = '', ''
+
+                    if params & Parameters.S21 and params & Parameters.S12:
+                        expression_list.append(f'sel_nws().s(il_only=True).plot({style_il})')
+                    elif params & Parameters.S21:
+                        expression_list.append(f'sel_nws().s(fwd_il_only=True).plot({style_il})')
+                    elif params & Parameters.S12:
+                        expression_list.append(f'sel_nws().s(rev_il_only=True).plot({style_il})')
                 
+                    if params & Parameters.Sii:
+                        expression_list.append(f'sel_nws().s(rl_only=True).plot({style_rl})')
+                    elif params & Parameters.S11:
+                        expression_list.append(f'sel_nws().s(11).plot({style_rl})')
+                    elif params & Parameters.S22:
+                        expression_list.append(f'sel_nws().s(22).plot({style_rl})')
+            
                 self.generated_expressions = '\n'.join(expression_list)
                 try:
                     ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, add_to_plot)  

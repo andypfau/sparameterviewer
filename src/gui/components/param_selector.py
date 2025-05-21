@@ -28,10 +28,11 @@ class ParamSelector(QWidget):
 
     class Simplified(enum.StrEnum):
         All = 'All Parameters'
-        AllFwd = 'All Parameters (Forward)'
-        IL = 'Insertion Loss'
-        IlFwd = 'Insertion Loss (Forward)'
-        Rl = 'Return Loss'
+        SiiS21 = 'All Parameters (Forward)'
+        Sij = 'Insertion Loss'
+        S21 = 'Insertion Loss (Forward)'
+        S12 = 'Insertion Loss (Reverse)'
+        Sii = 'Return Loss'
         S11 = 'S11'
         S22 = 'S22'
         Expressions = 'Expression-Based'
@@ -259,13 +260,13 @@ class ParamSelector(QWidget):
         self._largest_data = np.ndarray([0,0], dtype=bool)
         self._simplified = False
         self._ignore_simple_change = False
+        self._allow_expressions = False
 
         # TODO: implement simplified parameter selector (only show a combobox)
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
         self._ui_simple_params_combo = QComboBox()
-        for option in ParamSelector.Simplified:
-            self._ui_simple_params_combo.addItem(str(option))
+        self._ui_simple_params_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 40ex; }')
         self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
         self._ui_simple.setLayout(QtHelper.layout_v(
             ...,
@@ -308,7 +309,9 @@ class ParamSelector(QWidget):
         self._ui_simple.setContentsMargins(0, 0, 0, 0)
         self._ui_advanced.setContentsMargins(0, 0, 0, 0)
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
-    
+        
+        self._update_simple_params_combo_elements()
+
 
     def autoScaleGridToContents(self) -> bool:
         return self._ui_grid.scale_widget_to_contents
@@ -334,6 +337,19 @@ class ParamSelector(QWidget):
     def setGridSize(self, size: int):
         self._ui_grid_scoll.setMinimumSize(size, size)
         self._ui_grid.target_size = size
+
+
+    def allowExpressions(self) -> bool:
+        return self._allow_expressions
+    def setAllowExpressions(self, value: bool):
+        if self._allow_expressions == value:
+            return
+        self._update_simple_params_combo_elements()
+        self._allow_expressions = value
+        self._ui_expr_button.setVisible(self._allow_expressions)
+        if not self._allow_expressions:
+            if self._ui_grid.use_expressions:
+                self.setParams(Parameters.ComboAll)
 
 
     def simplified(self) -> bool:
@@ -424,8 +440,9 @@ class ParamSelector(QWidget):
         return self._guess_params_from_data(self.paramMask())
     def setParams(self, value: Parameters):
         if value == Parameters.Expressions:
-            self._ui_grid.use_expressions = True
-            self._ui_expr_button.setChecked(True)
+            if self._allow_expressions:
+                self._ui_grid.use_expressions = True
+                self._ui_expr_button.setChecked(True)
             return
         
         self._ui_expr_button.setChecked(False)
@@ -551,28 +568,39 @@ class ParamSelector(QWidget):
         self.setAutoScaleGridToContents(True)
     
 
+    def _update_simple_params_combo_elements(self):
+        self._ui_simple_params_combo.currentIndexChanged.disconnect(self._on_simple_params_changed)
+        self._ui_simple_params_combo.clear()
+        for option in ParamSelector.Simplified:
+            if (option == ParamSelector.Simplified.Expressions) and (not self._allow_expressions):
+                continue
+            self._ui_simple_params_combo.addItem(str(option))
+        self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
+        self._update_simple_params_from_params(self.params())
+    
+
     def _update_simple_params_from_params(self, params: Parameters):
         try:
             self._ignore_simple_change = True
             match params:
-                case Parameters.ComboAll:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))
-                case Parameters.Sii | Parameters.S21:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.AllFwd))
+                case Parameters.ComboSii21:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.SiiS21))
                 case Parameters.ComboSij:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IL))
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.Sij))
+                case Parameters.Sii:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.Sii))
                 case Parameters.S12:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IL))
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S12))
                 case Parameters.S21:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IlFwd))
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S21))
                 case Parameters.S11:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S11))
-                case Parameters.S12:
+                case Parameters.S22:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S22))
                 case Parameters.Expressions:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.Expressions))
-                case Parameters.Custom:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))
+                case _:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))  # fallback
         finally:
             self._ignore_simple_change = False
     
@@ -584,20 +612,23 @@ class ParamSelector(QWidget):
         match self._ui_simple_params_combo.currentText():
             case str(ParamSelector.Simplified.All):
                 self.setParamMask(self._make_mask(Parameters.ComboAll))
-            case str(ParamSelector.Simplified.AllFwd):
+            case str(ParamSelector.Simplified.SiiS21):
                 self.setParamMask(self._make_mask(Parameters.Sii|Parameters.S21))
-            case str(ParamSelector.Simplified.IL):
+            case str(ParamSelector.Simplified.Sij):
                 self.setParamMask(self._make_mask(Parameters.ComboSij))
-            case str(ParamSelector.Simplified.IlFwd):
+            case str(ParamSelector.Simplified.S21):
                 self.setParamMask(self._make_mask(Parameters.S21))
-            case str(ParamSelector.Simplified.Rl):
+            case str(ParamSelector.Simplified.S12):
+                self.setParamMask(self._make_mask(Parameters.S12))
+            case str(ParamSelector.Simplified.Sii):
                 self.setParamMask(self._make_mask(Parameters.Sii))
             case str(ParamSelector.Simplified.S11):
                 self.setParamMask(self._make_mask(Parameters.S11))
-            case str(ParamSelector.Simplified.S11):
+            case str(ParamSelector.Simplified.S22):
                 self.setParamMask(self._make_mask(Parameters.S22))
             case str(ParamSelector.Simplified.Expressions):
-                self.setParams(Parameters.Expressions)
+                if self._allow_expressions:
+                    self.setParams(Parameters.Expressions)
             case _:
                 return
         

@@ -105,6 +105,8 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_verbose = Settings.verbose
             self.ui_simplified_plot = Settings.simplified_plot_sel
             self.ui_simplified_params = Settings.simplified_param_sel
+            self.ui_simplified_noexpr = Settings.simplified_no_expressions
+            self.ui_simplified_browser = Settings.simplified_browser
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
             self.ui_enable_window_param(window_has_argument(Settings.window_type))
         except Exception as ex:
@@ -258,3 +260,11 @@ class SettingsDialog(SettingsDialogUi):
     
     def on_simple_params_changed(self):
         Settings.simplified_param_sel = self.ui_simplified_params
+
+
+    def on_simple_noexpr_changed(self):
+        Settings.simplified_no_expressions = self.ui_simplified_noexpr
+
+
+    def on_simple_browser_changed(self):
+        Settings.simplified_browser = self.ui_simplified_browser

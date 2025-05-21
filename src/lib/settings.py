@@ -60,6 +60,7 @@ class Parameters(enum.IntFlag):
     S21 = 8  # all Sij with i>j
     S12 = 16  # all Sij with i<j
     ComboSij = 8+16
+    ComboSii21 = 4+8
     ComboAll = 4+8+16
     Custom = 32
     Expressions = 64
@@ -118,7 +119,7 @@ class SParamViewerAppSettings(AppSettings):
     simplified_param_sel: bool = False
     simplified_plot_sel: bool = False
     simplified_browser: bool = False
-    hide_expressions: bool = False
+    simplified_no_expressions: bool = False
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

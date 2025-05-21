@@ -64,16 +64,19 @@ class PlotSelector(QWidget):
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
         self._ui_simple_y_combo = QComboBox()
+        self._ui_simple_y_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         for option in PlotSelector.SimplifiedY:
             self._ui_simple_y_combo.addItem(str(option))
         self._ui_simple_y_combo.currentIndexChanged.connect(self._on_simple_y_changed)
         self._ui_simple_y2_combo = QComboBox()
+        self._ui_simple_y2_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         for option in PlotSelector.SimplifiedY2:
             self._ui_simple_y2_combo.addItem(str(option))
         self._ui_simple_y2_combo.currentIndexChanged.connect(self._on_simple_y2_changed)
         self._ui_simple.setLayout(QtHelper.layout_v(
             ...,
             self._ui_simple_y_combo,
+            3,
             self._ui_simple_y2_combo,
             ..., spacing=default_spacing
         ))

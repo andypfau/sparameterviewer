@@ -38,13 +38,13 @@ class MainWindowUi(QMainWindow):
     def __init__(self):
         self._ui_timers: dict[any,tuple[QTimer,Callable]] = {}
         self._allow_plot_tool = True
+        self._show_expressions = True
 
         super().__init__()
         QtHelper.set_dialog_icon(self)
         
         self._build_main_menu()
 
-        
         self._ui_ribbon = QWidget()
 
         palette = QPalette()
@@ -186,17 +186,17 @@ class MainWindowUi(QMainWindow):
         
         self._ui_tabs = QTabWidget()
         
-        files_tab = QWidget()
-        self._ui_tabs.addTab(files_tab, 'Files')
+        self._ui_files_tab = QWidget()
+        self._ui_tabs.addTab(self._ui_files_tab, 'Files')
         self._ui_filesys_browser = FilesysBrowser()
         self._ui_filesys_browser.doubleClicked.connect(self.on_filesys_doubleclick)
         self._ui_filesys_browser.selectionChanged.connect(self.on_filesys_selection_changed)
         self._ui_filesys_browser.filesChanged.connect(self.on_filesys_files_changed)
         self._ui_filesys_browser.contextMenuRequested.connect(self.on_filesys_contextmenu)
-        files_tab.setLayout(QtHelper.layout_h(self._ui_filesys_browser))
+        self._ui_files_tab.setLayout(QtHelper.layout_h(self._ui_filesys_browser))
         
-        expressions_tab = QWidget()
-        self._ui_tabs.addTab(expressions_tab, 'Expressions')
+        self._ui_expressions_tab = QWidget()
+        self._ui_tabs.addTab(self._ui_expressions_tab, 'Expressions')
         self._ui_update_button = QPushButton('Update (F5)')
         self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
@@ -208,7 +208,7 @@ class MainWindowUi(QMainWindow):
         self._ui_editor.document().setDefaultFont(self._ui_editor_font)
         self._ui_editor.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self._ui_editor_highlighter = PythonSyntaxHighlighter(self._ui_editor.document())
-        expressions_tab.setLayout(QtHelper.layout_h(
+        self._ui_expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_update_button,
                 self._ui_template_button,
@@ -219,8 +219,8 @@ class MainWindowUi(QMainWindow):
             self._ui_editor
         ))
         
-        cursors_tab = QWidget()
-        self._ui_tabs.addTab(cursors_tab, 'Cursors')
+        self._ui_cursors_tab = QWidget()
+        self._ui_tabs.addTab(self._ui_cursors_tab, 'Cursors')
         self._ui_cursor1_radio = QRadioButton('Cursor 1')
         self._ui_cursor1_radio.setChecked(True)
         self._ui_cursor1_radio.toggled.connect(self.on_cursor_select)
@@ -263,7 +263,7 @@ class MainWindowUi(QMainWindow):
         cursor_layout.setColumnStretch(3, 4)
         cursor_layout.setColumnStretch(4, 0)
         cursor_layout.setColumnStretch(5, 4)
-        cursors_tab.setLayout(QtHelper.layout_v(cursor_layout,...))
+        self._ui_cursors_tab.setLayout(QtHelper.layout_v(cursor_layout,...))
 
         self._ui_status_bar = StatusBar()
 
@@ -369,7 +369,7 @@ class MainWindowUi(QMainWindow):
 
     
     @property
-    def ui_param_selector(self) -> PlotSelector:
+    def ui_param_selector(self) -> ParamSelector:
         return self._ui_param_selector
 
     
@@ -379,6 +379,18 @@ class MainWindowUi(QMainWindow):
     @ui_color_assignment.setter
     def ui_color_assignment(self, value: str):
         self._ui_color_combo.setCurrentText(value)
+
+    
+    def ui_show_expressions(self, value: bool):
+        if self._show_expressions == value:
+            return
+        self._show_expressions = value
+        if self._show_expressions:
+            self._ui_tabs.insertTab(1, self._ui_expressions_tab, 'Expressions')
+        else:
+            if self.ui_tab == MainWindowUi.Tab.Expressions:
+                self.ui_tab = MainWindowUi.Tab.Files
+            self._ui_tabs.removeTab(1)
 
     
     @property

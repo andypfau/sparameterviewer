@@ -151,14 +151,20 @@ class SettingsDialogUi(QDialog):
 
         simplifications_widget = QWidget()
         self._ui_tabs.addTab(simplifications_widget, 'Simplifications')
-        self._ui_simple_params_check = QCheckBox('Simplified Parameter Selector')
+        self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')
         self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
-        self._ui_simple_plot_check = QCheckBox('Simplified Plot Selector')
+        self._ui_simple_noexpr_check = QCheckBox('Do Not Use Expressions')
+        self._ui_simple_noexpr_check.toggled.connect(self.on_simple_noexpr_changed)
+        self._ui_simple_plot_check = QCheckBox('Simple Drop-Down Plot Selection')
         self._ui_simple_plot_check.toggled.connect(self.on_simple_plot_changed)
+        self._ui_simple_browser_check = QCheckBox('Simple Single-Directory Browser')
+        self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
         simplifications_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_simple_params_check,
+                self._ui_simple_noexpr_check,
                 self._ui_simple_plot_check,
+                self._ui_simple_browser_check,
                 ...
             )
         )
@@ -199,6 +205,22 @@ class SettingsDialogUi(QDialog):
     @ui_simplified_params.setter
     def ui_simplified_params(self, value: bool):
         self._ui_simple_params_check.setChecked(value)
+
+    
+    @property
+    def ui_simplified_noexpr(self) -> bool:
+        return self._ui_simple_noexpr_check.isChecked()
+    @ui_simplified_noexpr.setter
+    def ui_simplified_noexpr(self, value: bool):
+        self._ui_simple_noexpr_check.setChecked(value)
+
+    
+    @property
+    def ui_simplified_browser(self) -> bool:
+        return self._ui_simple_browser_check.isChecked()
+    @ui_simplified_browser.setter
+    def ui_simplified_browser(self, value: bool):
+        self._ui_simple_browser_check.setChecked(value)
 
     
     @property
@@ -459,4 +481,8 @@ class SettingsDialogUi(QDialog):
     def on_simple_params_changed(self):
         pass
     def on_simple_plot_changed(self):
+        pass
+    def on_simple_noexpr_changed(self):
+        pass
+    def on_simple_browser_changed(self):
         pass
