@@ -8,7 +8,8 @@ from .components.range_edit import RangeEdit
 from .components.param_selector import ParamSelector
 from .components.hv_splitter import HvSplitter
 from .components.plot_selector import PlotSelector
-from lib import AppPaths, PathExt, Parameters
+from .components.sivalue_edit import SiValueEdit
+from lib import AppPaths, PathExt, Parameters, Si
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -94,9 +95,9 @@ class MainWindowUi(QMainWindow):
             frame.setStyleSheet(f'background: {color_dark};')
             frame.setFixedWidth(1)
             return frame
-        self._ui_params = ParamSelector(self)
-        self._ui_params.paramsChanged.connect(self.on_params_change)
-        self._ui_params.setGridSize(100)
+        self._ui_param_selector = ParamSelector(self)
+        self._ui_param_selector.paramsChanged.connect(self.on_params_change)
+        self._ui_param_selector.setGridSize(100)
         self._ui_plot_selector = PlotSelector(self)
         self._ui_plot_selector.valueChanged.connect(self.on_plottype_changed)
         self._ui_filter_button = QtHelper.make_button(self, None, self.on_show_filter, icon='toolbar_filter.svg', toolbar=True, tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
@@ -124,7 +125,7 @@ class MainWindowUi(QMainWindow):
         default_spacing, wide_spacing = 3, 10
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(...,
-                self._ui_params,
+                self._ui_param_selector,
                 ..., spacing=default_spacing,
             ),
             vline(),
@@ -236,12 +237,14 @@ class MainWindowUi(QMainWindow):
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
-        self._ui_cursor_readout_x1 = QLineEdit()
-        self._ui_cursor_readout_x1.setReadOnly(True)
+        self._ui_cursor_edit_x1 = SiValueEdit(require_return_press=True)
+        self._ui_cursor_edit_x1.setReadOnly(True)
+        self._ui_cursor_edit_x1.valueChanged.connect(self.on_cursor_x1_changed)
         self._ui_cursor_readout_y1 = QLineEdit()
         self._ui_cursor_readout_y1.setReadOnly(True)
-        self._ui_cursor_readout_x2 = QLineEdit()
-        self._ui_cursor_readout_x2.setReadOnly(True)
+        self._ui_cursor_edit_x2 = SiValueEdit(require_return_press=True)
+        self._ui_cursor_edit_x2.setReadOnly(True)
+        self._ui_cursor_edit_x2.valueChanged.connect(self.on_cursor_x2_changed)
         self._ui_cursor_readout_y2 = QLineEdit()
         self._ui_cursor_readout_y2.setReadOnly(True)
         self._ui_cursor_readout_dx = QLineEdit()
@@ -249,8 +252,8 @@ class MainWindowUi(QMainWindow):
         self._ui_cursor_readout_dy = QLineEdit()
         self._ui_cursor_readout_dy.setReadOnly(True)
         cursor_layout = QtHelper.layout_grid([
-            [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_readout_x1, 'Y1:', self._ui_cursor_readout_y1],
-            [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_readout_x2, 'Y2:', self._ui_cursor_readout_y2],
+            [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_edit_x1, 'Y1:', self._ui_cursor_readout_y1],
+            [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_edit_x2, 'Y2:', self._ui_cursor_readout_y2],
             [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
             [None, None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
         ])
@@ -353,6 +356,21 @@ class MainWindowUi(QMainWindow):
         for option in options:
             self._ui_color_combo.addItem(option)
         self._ui_color_combo.currentIndexChanged.connect(self.on_color_change)
+
+    
+    @property
+    def ui_filesys_browser(self) -> FilesysBrowser:
+        return self._ui_filesys_browser
+
+    
+    @property
+    def ui_plot_selector(self) -> PlotSelector:
+        return self._ui_plot_selector
+
+    
+    @property
+    def ui_param_selector(self) -> PlotSelector:
+        return self._ui_param_selector
 
     
     @property
@@ -561,34 +579,26 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_params(self) -> Parameters:
-        return self._ui_params.params()
+        return self._ui_param_selector.params()
     @ui_params.setter
     def ui_params(self, params: Parameters):
-        self._ui_params.setParams(params)
+        self._ui_param_selector.setParams(params)
 
 
     @property
     def ui_params_mask(self) -> np.ndarray:
-        return self._ui_params.paramMask()
+        return self._ui_param_selector.paramMask()
     @ui_params_mask.setter
     def ui_params_mask(self, mask: np.ndarray):
-        self._ui_params.setParamMask(mask)
-
-
-    @property
-    def ui_params_max_size(self) -> int:
-        return self._ui_params.maxGridSize()
-    @ui_params_max_size.setter
-    def ui_params_max_size(self, value: int):
-        self._ui_params.setMaxGridSize(value)
+        self._ui_param_selector.setParamMask(mask)
 
 
     @property
     def ui_params_size(self) -> int:
-        return self._ui_params.matrixDimensions()
+        return self._ui_param_selector.matrixDimensions()
     @ui_params_size.setter
     def ui_params_size(self, value: int):
-        self._ui_params.setMatrixDimensions(value)
+        self._ui_param_selector.setMatrixDimensions(value)
 
 
     def ui_set_cursor_trace_list(self, traces: list[str]):
@@ -596,12 +606,24 @@ class MainWindowUi(QMainWindow):
             combo.clear()
             for trace in traces:
                 combo.addItem(trace)
-    
 
-    def ui_set_cursor_readouts(self, x1: str = '', y1: str = '', x2: str = '', y2: str = '', dx: str = '', dy: str = ''):
-        self._ui_cursor_readout_x1.setText(x1)
+
+    @property
+    def ui_cursor_x1(self) -> Si:
+        return self._ui_cursor_edit_x1.value()
+
+    
+    @property
+    def ui_cursor_x2(self) -> Si:
+        return self._ui_cursor_edit_x2.value()
+
+    
+    def ui_set_cursor_readouts(self, x1: Si|None = None, y1: str = '', x2: Si|None = None, y2: str = '', dx: str = '', dy: str = ''):
+        self._ui_cursor_edit_x1.setValue(x1)
+        self._ui_cursor_edit_x1.setReadOnly(x1 is None)
         self._ui_cursor_readout_y1.setText(y1)
-        self._ui_cursor_readout_x2.setText(x2)
+        self._ui_cursor_edit_x2.setValue(x2)
+        self._ui_cursor_edit_x2.setReadOnly(x2 is None)
         self._ui_cursor_readout_y2.setText(y2)
         self._ui_cursor_readout_dx.setText(dx)
         self._ui_cursor_readout_dy.setText(dy)
@@ -732,6 +754,10 @@ class MainWindowUi(QMainWindow):
     def on_tab_change(self):
         pass
     def on_cursor_select(self):
+        pass
+    def on_cursor_x1_changed(self):
+        pass
+    def on_cursor_x2_changed(self):
         pass
     def on_cursor_trace_change(self):
         pass

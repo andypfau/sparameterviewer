@@ -178,6 +178,7 @@ class FilesysBrowser(QWidget):
         FilesysBrowser._ensure_icons_loaded()
         super().__init__()
 
+        self._simplified = False
         self._contextmenu_point: QPoint = None
         self._contextmenu_item: FilesysBrowser.MyFileItem = None
         self._inhibit_triggers = True
@@ -204,6 +205,12 @@ class FilesysBrowser(QWidget):
         self.setLayout(QtHelper.layout_v(self._ui_filesys_view, self._ui_pathbar))
 
         self._inhibit_triggers = False
+
+
+    def simplified(self) -> bool:
+        return self._simplified
+    def setSimplified(self, value: bool):
+        self._simplified = value  # TODO: implement simplified file browser (only allow a single root-item, no pinning)
     
 
     @property
@@ -396,38 +403,62 @@ class FilesysBrowser(QWidget):
         new_item_index = self._ui_filesys_model.indexFromItem(new_item)
         if new_item_index:
             self._ui_filesys_view.expand(new_item_index)
+        
+    
+    def _get_all_selected_items(self) -> list[FilesysBrowser.MyFileItem]:
+        return list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
+        
+    
+    def _find_toplevel_item(self, item: FilesysBrowser.MyFileItem) -> FilesysBrowser.MyFileItem|None:
+        if item is None or not isinstance(item, FilesysBrowser.MyFileItem):
+            return None
+        if item.is_toplevel:
+            return item
+        return self._find_toplevel_item(item.parent())
     
 
     def _on_selection_change(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
-        newly_selected_items = list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in selected.indexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
+        selected_items = self._get_all_selected_items()
         
-        if len(newly_selected_items)==1:
-            selected_item = newly_selected_items[0]
-            if selected_item.type == FilesysBrowserItemType.Dir and selected_item.is_toplevel:
-                # the user selected a top-level directory; update path bar, but do not change selection
-                self._ui_pathbar.path = str(selected_item.path)
+        if len(selected_items)==1:
+            
+            # exactly one item is selected; show its path in the path bar
+            selected_item = selected_items[0]
+            toplevel_item = self._find_toplevel_item(selected_item)
+            if toplevel_item and toplevel_item.type == FilesysBrowserItemType.Dir:
+                self._ui_pathbar.path = str(toplevel_item.path)
                 self._ui_pathbar.setVisible(True)
-                return
-
-            if selected_item.type != FilesysBrowserItemType.File:
-                # the user selected a non-file; do not change selection
+            else:
                 self._ui_pathbar.setVisible(False)
+            
+            if selected_item.type != FilesysBrowserItemType.File:
+                # the user selected a non-file; do not change the checkboxes
                 return
-        
-        self._ui_pathbar.setVisible(False)
+        else:
+            self._ui_pathbar.setVisible(False)
 
         # the user selected or de-selected some files; check them accordingly
-        selected_items = [item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)]
-        def recurse(parent: FilesysBrowser.MyFileItem):
-            if parent is None:
-                return
-            for row_index in range(parent.rowCount()):
-                item = parent.child(row_index, 0)
-                if not isinstance(item, FilesysBrowser.MyFileItem):
-                    continue
-                item.checked = item in selected_items
-                recurse(item)
-        recurse(self._ui_filesys_model.invisibleRootItem())
+        any_changed = False
+        try:
+            self._inhibit_triggers = True
+            def recurse(parent: FilesysBrowser.MyFileItem):
+                nonlocal any_changed
+                if parent is None:
+                    return
+                for row_index in range(parent.rowCount()):
+                    item = parent.child(row_index, 0)
+                    if not isinstance(item, FilesysBrowser.MyFileItem):
+                        continue
+                    do_check = item in selected_items
+                    if item.checked != do_check:
+                        item.checked = do_check
+                        any_changed = True
+                    recurse(item)
+            recurse(self._ui_filesys_model.invisibleRootItem())
+        finally:
+            self._inhibit_triggers = False
+        if any_changed:
+            self.selectionChanged.emit()
 
     
     def _on_files_changed(self):
@@ -491,15 +522,13 @@ class FilesysBrowser(QWidget):
 
 
     def _on_pathbar_change(self, path: str):
-        selected_items = list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
+        selected_items = self._get_all_selected_items()
         if len(selected_items) != 1:
             return
-        item = selected_items[0]
-        if not item.type == FilesysBrowserItemType.Dir:
+        toplevel_item = self._get_top_item(selected_items[0])
+        if not toplevel_item or toplevel_item.type != FilesysBrowserItemType.Dir:
             return
-        if not item.is_toplevel:
-            return
-        self.change_root(item.path, PathExt(path))
+        self.change_root(toplevel_item.path, PathExt(path))
 
 
     @staticmethod

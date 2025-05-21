@@ -5,7 +5,8 @@
 import math
 import os
 import skrf
-import random
+import zipfile
+import tempfile
 import numpy as np
 
 
@@ -20,36 +21,47 @@ IL_PER_DB_SQRT_GHZ = -0.8
 PHASE_PERIOD_HZ = 1.1e9
 NOISE_DB = -60
 
-
-
-for n_ports in range(PORT_RANGE[0], PORT_RANGE[1]+1):
+with tempfile.TemporaryDirectory() as tempdir:
+    print(f'Working inside temporary directory <{tempdir}>...')
     
-    filename = os.path.join(os.path.abspath(DIR), f'dummy_splitter_{n_ports}-port.s{n_ports}p')
-    print(f'Generating <{filename}>...')
+    zip_path = os.path.join(os.path.abspath(DIR), 'dummy_networks.zip')
+    print(f'Creating <{zip_path}>...')
+    with zipfile.ZipFile(zip_path, 'w') as zfp:
 
-    f = np.linspace(*FREQ_RANGE, N_POINTS)
-    
-    s = np.zeros([len(f),n_ports,n_ports], dtype=complex)
-    for ep in range(n_ports):
-        for ip in range(n_ports):
-            phase = np.exp(1j*math.tau*f/PHASE_PERIOD_HZ)
-            if ep==ip:
-                magnitude = 10**(RL_WORST_DB/20)
-                magnitude_ripple = np.cos(math.tau*f/RL_PERIOD_HZ)
-                sij = magnitude * magnitude_ripple * phase
+        for n_ports in range(PORT_RANGE[0], PORT_RANGE[1]+1):
+            
+            if n_ports >= 2:
+                desc = f'{n_ports}-way divider'
+                filename = f'dummy_{n_ports}-way-divider.s{n_ports}p'
             else:
-                assert n_ports >= 2
-                splitting_loss = 1 / (n_ports - 1)  # this ensures passivity
-                cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
-                mismatch_loss = 1 - (10**(RL_WORST_DB/10))
-                sij = splitting_loss * cable_loss * mismatch_loss * phase * 1j  # the 1j is required for passivity
-            s[:,ep,ip] = sij
+                desc = 'termination'
+                filename = f'dummy_termination.s{n_ports}p'
+            file_path = os.path.join(os.path.abspath(tempdir), filename)
+            print(f'Generating <{filename}>...')
 
-    noisefloor = np.random.rayleigh(10**(NOISE_DB/20),s.shape) * np.exp(1j*np.random.uniform(0,math.tau,s.shape))
-    s += noisefloor
+            f = np.linspace(*FREQ_RANGE, N_POINTS)
+            
+            s = np.zeros([len(f),n_ports,n_ports], dtype=complex)
+            for ep in range(n_ports):
+                for ip in range(n_ports):
+                    phase = np.exp(1j*math.tau*f/PHASE_PERIOD_HZ)
+                    if ep==ip:
+                        magnitude = 10**(RL_WORST_DB/20)
+                        magnitude_ripple = np.cos(math.tau*f/RL_PERIOD_HZ)
+                        sij = magnitude * magnitude_ripple * phase
+                    else:
+                        assert n_ports >= 2
+                        splitting_loss = 1 / (n_ports - 1)  # this ensures passivity
+                        cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
+                        mismatch_loss = 1 - (10**(RL_WORST_DB/10))
+                        sij = splitting_loss * cable_loss * mismatch_loss * phase * 1j  # the 1j is required for passivity
+                    s[:,ep,ip] = sij
 
-    nw = skrf.Network(s=s, f=f, f_unit='Hz')
+            noisefloor = np.random.rayleigh(10**(NOISE_DB/20),s.shape) * np.exp(1j*np.random.uniform(0,math.tau,s.shape))
+            s += noisefloor
 
-    nw.write_touchstone(filename)
+            nw = skrf.Network(s=s, f=f, f_unit='Hz', comments=f'Programmatically generated dummy network ({desc}) for testing purposes')
+            nw.write_touchstone(file_path)
+            zfp.write(file_path, filename)
 
 print(f'Done.')

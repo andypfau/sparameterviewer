@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math, cmath, locale
 from dataclasses import dataclass
 from os import stat
@@ -17,33 +19,36 @@ class SiFmt:
 
 class Si:
 
+    PREFIXES = (
+        (1e+18, 'E'),
+        (1e+15, 'P'),
+        (1e+12, 'T'),
+        (1e+9, 'G'),
+        (1e+6, 'M'),
+        (1e+3, 'k'),
+        (1.0, ''),
+        (1e-3, 'm'),
+        (1e-6, 'µ'),
+        (1e-9, 'n'),
+        (1e-12, 'p'),
+        (1e-15, 'f'),
+        (1e-18, 'a'),
+    )
+
+    REX_FLOAT = r'[-+]?(?:\d+\.?|\.\d)\d*(?:[Ee][-+]?\d+)?'
+    REX_SI_FLOAT = REX_FLOAT + r'\s*[fpnuµmkMGTE]?'
+
     @staticmethod
     def get_scale(value: float) -> "tuple[float,str]":
         
         if value==0:
             return 1.0, ''
 
-        PREFIXES = (
-            (1e+18, 'E'),
-            (1e+15, 'P'),
-            (1e+12, 'T'),
-            (1e+9, 'G'),
-            (1e+6, 'M'),
-            (1e+3, 'k'),
-            (1.0, ''),
-            (1e-3, 'm'),
-            (1e-6, 'µ'),
-            (1e-9, 'n'),
-            (1e-12, 'p'),
-            (1e-15, 'f'),
-            (1e-18, 'a'),
-        )
-
-        for f,p in PREFIXES:
+        for f,p in Si.PREFIXES:
             if abs(value)>=f:
                 return f,p
         
-        return PREFIXES[-1][0], PREFIXES[-1][1]
+        return Si.PREFIXES[-1][0], Si.PREFIXES[-1][1]
     
 
     @staticmethod
@@ -55,15 +60,29 @@ class Si:
         return f'{value:.{frac_digits}f}'
 
 
-    def __init__(self, value: float, unit: str = '', significant_digits: int = 3, use_si_prefix: bool = True, remove_trailing_zeros: bool = True, force_sign: bool = False, si_fmt: SiFmt = None):
-        if isinstance(value, complex):
-            if value.imag == 0:
-                value = value.real
-        self.value = value
+    def __init__(self, value: float|str, unit: str = '', significant_digits: int = 3, use_si_prefix: bool = True, remove_trailing_zeros: bool = True, force_sign: bool = False, si_fmt: SiFmt = None):
         if si_fmt is not None:
             self.format = si_fmt
         else:
             self.format = SiFmt(unit, significant_digits, use_si_prefix, remove_trailing_zeros, force_sign)
+
+        self.value: float
+
+        if isinstance(value, complex):
+            if value.imag == 0:
+                self.value = value.real
+            else:
+                self.value = value
+        elif isinstance(value, str):
+            self.parse(value)
+        else:
+            self.value = value
+
+    
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Si):
+            return self.value==other.value and self.format==other.format
+        return super().__eq__(other)
 
 
     def __str__(self):
@@ -93,6 +112,22 @@ class Si:
 
     def __repr__(self):
         return self.__str__()
+    
+
+    def parse(self, s: str):
+        s = s.strip()
+        if self.format.unit and len(s)>len(self.format.unit) and s.endswith(self.format.unit):
+            s = s[:-len(self.format.unit)]
+        
+        factor = 1
+        if len(s) > 1:
+            for prefix_factor, prefix in Si.PREFIXES:
+                if s[-1] == prefix:
+                    s = s[:-1]
+                    factor = prefix_factor
+                    break
+        
+        self.value = float(s) * factor
 
 
 def parse_si_range(s: str, *, wildcard_low=-1e99, wildcard_high=+1e99, allow_both_wildcards=True, allow_individual_wildcards=True) -> tuple[any,any]:

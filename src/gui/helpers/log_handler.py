@@ -45,7 +45,7 @@ class LogHandler(logging.StreamHandler):
     
 
     def get_formatted_messages(self, level=logging.INFO) -> list[str]:
-        return [f'{record.msecs/1e3:5.3f} {str(record.levelname).capitalize()}: {record.msg}' for record in self.get_records(level)]
+        return [f'{str(record.levelname).capitalize()}: {record.msg}' for record in self.get_records(level)]
 
 
     def _notify(self, record: logging.LogRecord|None):

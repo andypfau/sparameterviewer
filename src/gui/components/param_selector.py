@@ -26,6 +26,17 @@ class ParamSelector(QWidget):
     paramsChanged = pyqtSignal()
 
 
+    class Simplified(enum.StrEnum):
+        All = 'All Parameters'
+        AllFwd = 'All Parameters (Forward)'
+        IL = 'Insertion Loss'
+        IlFwd = 'Insertion Loss (Forward)'
+        Rl = 'Return Loss'
+        S11 = 'S11'
+        S22 = 'S22'
+        Expressions = 'Expression-Based'
+
+
     class DefocusScrollArea(QScrollArea):
 
         focusLost = pyqtSignal()
@@ -170,7 +181,10 @@ class ParamSelector(QWidget):
                             else:
                                 painter.setPen(Qt.PenStyle.NoPen)
                             
-                        painter.drawRoundedRect(rect, 2, 2)
+                        if overflow:
+                            painter.drawEllipse(rect)
+                        else:
+                            painter.drawRoundedRect(rect, 2, 2)
 
                         if not overflow:
                             if enabled:
@@ -244,11 +258,20 @@ class ParamSelector(QWidget):
         
         self._largest_data = np.ndarray([0,0], dtype=bool)
         self._simplified = False
-        
+        self._ignore_simple_change = False
+
+        # TODO: implement simplified parameter selector (only show a combobox)
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
-        # TODO: implement simplified UI
-        self._ui_simple.setLayout(QtHelper.layout_v('Simplified plot selector comes here...'))
+        self._ui_simple_params_combo = QComboBox()
+        for option in ParamSelector.Simplified:
+            self._ui_simple_params_combo.addItem(str(option))
+        self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
+        self._ui_simple.setLayout(QtHelper.layout_v(
+            ...,
+            self._ui_simple_params_combo,
+            ..., spacing=10
+        ))
 
         self._ui_advanced = QWidget()
         self._ui_advanced.setVisible(not self._simplified)
@@ -329,7 +352,7 @@ class ParamSelector(QWidget):
         if dim == current_dim:
             return
         
-        self.setAutoScaleGridToContents(False)  # TODO: remove this debug code
+        self.setAutoScaleGridToContents(False)
 
         current_pattern = self.params()
 
@@ -350,10 +373,12 @@ class ParamSelector(QWidget):
                     for j in range(dim):
                         new_params[i,j] = current_params[i,j]
             self._ui_grid.data = new_params
+            self._update_simple_params_from_params(self._guess_params_from_data(new_params))
         
         else:  # just re-apply the current pattern to a new matrix
             guessed_pattern = self._guess_params_from_data(self.paramMask())
             self._ui_grid.data = self._make_mask(guessed_pattern, dim)
+            self._update_simple_params_from_params(guessed_pattern)
 
         self.paramsChanged.emit()
 
@@ -405,6 +430,7 @@ class ParamSelector(QWidget):
         
         self._ui_expr_button.setChecked(False)
         self._ui_grid.data = self._make_mask(value)
+        self._update_simple_params_from_params(value)
 
 
     def paramMask(self) -> np.ndarray:
@@ -413,6 +439,7 @@ class ParamSelector(QWidget):
         self._ui_expr_button.setChecked(False)
         self._ui_grid.use_expressions = False
         self._ui_grid.data = value
+        self._update_simple_params_from_params(self._guess_params_from_data(value))
     
 
     def _make_mask(self, params: Parameters = Parameters.Off, dim: int|None = None) -> np.ndarray:
@@ -455,6 +482,7 @@ class ParamSelector(QWidget):
         self._ui_expr_button.setChecked(False)
         self._ui_grid.use_expressions = False
         self._ui_grid.data = params
+        self._update_simple_params_from_params(self._guess_params_from_data(params))
         self.paramsChanged.emit()
 
     
@@ -520,6 +548,57 @@ class ParamSelector(QWidget):
 
 
     def _on_overflow_clicked(self):
-        self.setAutoScaleGridToContents(True)  # TODO: remove this debug code
-        #from ..helpers.simple_dialogs import error_dialog
-        #error_dialog('Not Implemented', 'Not implemented yet...')  # TODO: implement
+        self.setAutoScaleGridToContents(True)
+    
+
+    def _update_simple_params_from_params(self, params: Parameters):
+        try:
+            self._ignore_simple_change = True
+            match params:
+                case Parameters.ComboAll:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))
+                case Parameters.Sii | Parameters.S21:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.AllFwd))
+                case Parameters.ComboSij:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IL))
+                case Parameters.S12:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IL))
+                case Parameters.S21:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.IlFwd))
+                case Parameters.S11:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S11))
+                case Parameters.S12:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S22))
+                case Parameters.Expressions:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.Expressions))
+                case Parameters.Custom:
+                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))
+        finally:
+            self._ignore_simple_change = False
+    
+
+    def _on_simple_params_changed(self):
+        if not self._simplified or self._ignore_simple_change:
+            return
+        
+        match self._ui_simple_params_combo.currentText():
+            case str(ParamSelector.Simplified.All):
+                self.setParamMask(self._make_mask(Parameters.ComboAll))
+            case str(ParamSelector.Simplified.AllFwd):
+                self.setParamMask(self._make_mask(Parameters.Sii|Parameters.S21))
+            case str(ParamSelector.Simplified.IL):
+                self.setParamMask(self._make_mask(Parameters.ComboSij))
+            case str(ParamSelector.Simplified.IlFwd):
+                self.setParamMask(self._make_mask(Parameters.S21))
+            case str(ParamSelector.Simplified.Rl):
+                self.setParamMask(self._make_mask(Parameters.Sii))
+            case str(ParamSelector.Simplified.S11):
+                self.setParamMask(self._make_mask(Parameters.S11))
+            case str(ParamSelector.Simplified.S11):
+                self.setParamMask(self._make_mask(Parameters.S22))
+            case str(ParamSelector.Simplified.Expressions):
+                self.setParams(Parameters.Expressions)
+            case _:
+                return
+        
+        self.paramsChanged.emit()

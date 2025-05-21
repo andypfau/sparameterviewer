@@ -103,6 +103,8 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_font = Settings.editor_font
             self.ui_all_complex = Settings.treat_all_as_complex
             self.ui_verbose = Settings.verbose
+            self.ui_simplified_plot = Settings.simplified_plot_sel
+            self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
             self.ui_enable_window_param(window_has_argument(Settings.window_type))
         except Exception as ex:
@@ -248,3 +250,11 @@ class SettingsDialog(SettingsDialogUi):
             if name == self.ui_logyneg:
                 Settings.logy_negative_handling = option
                 break
+    
+    
+    def on_simple_plot_changed(self):
+        Settings.simplified_plot_sel = self.ui_simplified_plot
+    
+    
+    def on_simple_params_changed(self):
+        Settings.simplified_param_sel = self.ui_simplified_params

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from ..helpers.qt_helper import QtHelper
+from ..helpers.simple_dialogs import open_directory_dialog
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -64,32 +65,30 @@ class PathBar(QWidget):
         self._enabled = True
         self._default_mode = PathBar.Mode.Breadcrumbs
 
-        self._toggle_button = QPushButton('...')
-        self._toggle_button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self._toggle_button.setFlat(True)
-        self._toggle_button.setContentsMargins(0, 0, 0, 0)
-        self._toggle_button.clicked.connect(self._on_toggle_breadcrumb)
-        self._breadcrumb = PathBar.MyWidget()
-        self._breadcrumb.setContentsMargins(0, 0, 0, 0)
-        self._breadcrumb.setVisible(False)
-        self._breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
-        self._breadcrumb.backClicked.connect(self._on_back_click)
-        self._breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
-        self._breadcrumb_label = QLabel()
-        self._breadcrumb_label.linkActivated.connect(self._on_link_click)
-        self._breadcrumb_label.setContentsMargins(0, 0, 0, 0)
-        self._breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        layout = QtHelper.layout_h(self._breadcrumb_label)
+        self._ui_toggle_breadcrumbs_button = QtHelper.make_button(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg', toolbar=True)
+        self._ui_toggle_text_button = QtHelper.make_button(self, None, self._on_switch_to_text, icon='path_text.svg', toolbar=True)
+        self._ui_dir_select_dialog_button = QtHelper.make_button(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg', toolbar=True)
+        self._ui_breadcrumb = PathBar.MyWidget()
+        self._ui_breadcrumb.setContentsMargins(0, 0, 0, 0)
+        self._ui_breadcrumb.setVisible(False)
+        self._ui_breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
+        self._ui_breadcrumb.backClicked.connect(self._on_back_click)
+        self._ui_breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
+        self._ui_breadcrumb_label = QLabel()
+        self._ui_breadcrumb_label.linkActivated.connect(self._on_link_click)
+        self._ui_breadcrumb_label.setContentsMargins(0, 0, 0, 0)
+        self._ui_breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        layout = QtHelper.layout_h(self._ui_breadcrumb_label)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self._breadcrumb.setLayout(layout)
-        self._text = PathBar.MyLineEdit(self)
-        self._text.setText(str(self._path.absolute()))
-        self._text.setToolTip('Press Enter to accept path / Escape to discard, and show breadcrumb bar')
-        self._text.returnPressed.connect(self._text_press_enter)
-        self._text.escapePressed.connect(self._text_press_escape)
-        self._text.backClicked.connect(self._on_back_click)
-        layout = QtHelper.layout_h(self._breadcrumb, self._text, self._toggle_button)
+        self._ui_breadcrumb.setLayout(layout)
+        self._ui_text = PathBar.MyLineEdit(self)
+        self._ui_text.setText(str(self._path.absolute()))
+        self._ui_text.setToolTip('Press Enter to accept path / Escape to discard, and show breadcrumb bar')
+        self._ui_text.returnPressed.connect(self._text_press_enter)
+        self._ui_text.escapePressed.connect(self._text_press_escape)
+        self._ui_text.backClicked.connect(self._on_back_click)
+        layout = QtHelper.layout_h(self._ui_breadcrumb, self._ui_text, self._ui_toggle_breadcrumbs_button, self._ui_toggle_text_button, self._ui_dir_select_dialog_button)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
@@ -102,7 +101,7 @@ class PathBar(QWidget):
 
     @property
     def mode(self) -> PathBar.Mode:
-        if self._breadcrumb.isVisible():
+        if self._ui_breadcrumb.isVisible():
             return PathBar.Mode.Breadcrumbs
         return PathBar.Mode.Text
 
@@ -151,14 +150,14 @@ class PathBar(QWidget):
     def _text_press_enter(self):
         if not self._enabled:
             return
-        path = pathlib.Path(self._text.text())
+        path = pathlib.Path(self._ui_text.text())
         if not (path.exists() and path.is_dir()):
             return
         
         actually_changed = self._path != path
         self._path = path
-        self._breadcrumb.setVisible(False)
-        self._text.setVisible(True)
+        self._ui_breadcrumb.setVisible(False)
+        self._ui_text.setVisible(True)
         if actually_changed:
             self.pathChanged.emit(str(path.absolute()))
 
@@ -173,15 +172,17 @@ class PathBar(QWidget):
 
 
     def _implement_enabled_state(self):
-        self._toggle_button.setVisible(self._enabled)
-        self._text.setEnabled(self._enabled)
+        self._ui_toggle_text_button.setEnabled(self._enabled)
+        self._ui_toggle_breadcrumbs_button.setEnabled(self._enabled)
+        self._ui_dir_select_dialog_button.setEnabled(self._enabled)
+        self._ui_text.setEnabled(self._enabled)
         if self._enabled:
-            self._text.setPlaceholderText('Enter path...')
+            self._ui_text.setPlaceholderText('Enter path...')
         else:
-            self._text.setText('')
-            self._text.setPlaceholderText('')
-            self._breadcrumb.setVisible(False)
-            self._text.setVisible(True)
+            self._ui_text.setText('')
+            self._ui_text.setPlaceholderText('')
+            self._ui_breadcrumb.setVisible(False)
+            self._ui_text.setVisible(True)
 
 
     def _update_and_show_text(self):
@@ -192,11 +193,13 @@ class PathBar(QWidget):
         if not self._path.exists():
             return
 
-        self._breadcrumb.setVisible(False)
-        self._text.setText(str(self._path.absolute()))
-        self._text.setEnabled(True)
-        self._text.setVisible(True)
-        self._text.setFocus()
+        self._ui_breadcrumb.setVisible(False)
+        self._ui_text.setText(str(self._path.absolute()))
+        self._ui_text.setEnabled(True)
+        self._ui_text.setVisible(True)
+        self._ui_text.setFocus()
+        self._ui_toggle_text_button.setVisible(False)
+        self._ui_toggle_breadcrumbs_button.setVisible(True)
 
 
     def _update_and_show_breadcrumbs(self):
@@ -220,8 +223,8 @@ class PathBar(QWidget):
         while paths[0].parent != paths[0]:
             paths.insert(0, paths[0].parent)
 
-        label_width = self._breadcrumb_label.width()
-        font_metrics = QFontMetrics(self._breadcrumb_label.font())
+        label_width = self._ui_breadcrumb_label.width()
+        font_metrics = QFontMetrics(self._ui_breadcrumb_label.font())
         char_width = font_metrics.averageCharWidth()
         MARGIN_CHARS = 3
         max_chars = label_width // char_width - MARGIN_CHARS
@@ -247,9 +250,11 @@ class PathBar(QWidget):
             self._breadcrumb_paths[identifier] = path
         html = os.sep.join(html_parts)
         
-        self._breadcrumb_label.setText(html)
-        self._text.setVisible(False)
-        self._breadcrumb.setVisible(True)
+        self._ui_breadcrumb_label.setText(html)
+        self._ui_text.setVisible(False)
+        self._ui_breadcrumb.setVisible(True)
+        self._ui_toggle_text_button.setVisible(True)
+        self._ui_toggle_breadcrumbs_button.setVisible(False)
 
 
     def _on_link_click(self, identifier):
@@ -279,16 +284,38 @@ class PathBar(QWidget):
         self._update_and_show_text()
     
 
-    def _on_toggle_breadcrumb(self):
-        if not self._enabled:
-            return
-        if self._breadcrumb.isVisible():
-            self._update_and_show_text()
-        elif self._text.isVisible():
-            self._update_and_show_breadcrumbs()
-
-
     def _on_back_click(self):
         if not self._enabled:
             return
         self.backClicked.emit()
+
+
+    def _on_switch_to_breadcrumbs(self):
+        if not self._enabled:
+            return
+        self._update_and_show_breadcrumbs()
+
+
+    def _on_switch_to_text(self):
+        if not self._enabled:
+            return
+        self._update_and_show_text()
+
+
+    def _on_open_dir_select_dialog(self):
+        if not self._enabled:
+            return
+        
+        current_dir = self.path
+        new_dir = open_directory_dialog(self, title='Select Directory', initial_dir=current_dir)
+        if not new_dir:
+            return
+        
+        new_dir = os.path.abspath(new_dir)
+        if not (os.path.exists(new_dir) and os.path.isdir(new_dir)):
+            return
+        if os.path.samefile(current_dir, new_dir):
+            return
+        
+        self.path = str(new_dir)
+        self.pathChanged.emit(new_dir)

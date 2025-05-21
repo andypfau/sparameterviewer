@@ -29,6 +29,9 @@ class StatusBar(QStatusBar):
             self.setVisible(False)
             return
         
+        if '\n' in message:
+            message = message[:message.index('\n')]
+        
         if level >= logging.ERROR:
             self._ui_icon.setPixmap(self._icon_error)
             self._ui_icon.setVisible(True)

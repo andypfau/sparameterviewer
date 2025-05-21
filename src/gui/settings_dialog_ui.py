@@ -149,6 +149,20 @@ class SettingsDialogUi(QDialog):
             )
         )
 
+        simplifications_widget = QWidget()
+        self._ui_tabs.addTab(simplifications_widget, 'Simplifications')
+        self._ui_simple_params_check = QCheckBox('Simplified Parameter Selector')
+        self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
+        self._ui_simple_plot_check = QCheckBox('Simplified Plot Selector')
+        self._ui_simple_plot_check.toggled.connect(self.on_simple_plot_changed)
+        simplifications_widget.setLayout(
+            QtHelper.layout_v(
+                self._ui_simple_params_check,
+                self._ui_simple_plot_check,
+                ...
+            )
+        )
+
         self.adjustSize()
     
 
@@ -169,6 +183,22 @@ class SettingsDialogUi(QDialog):
             self._ui_rad_radio.setChecked(True)
         else:
             self._ui_deg_radio.setChecked(True)
+
+    
+    @property
+    def ui_simplified_plot(self) -> bool:
+        return self._ui_simple_plot_check.isChecked()
+    @ui_simplified_plot.setter
+    def ui_simplified_plot(self, value: bool):
+        self._ui_simple_plot_check.setChecked(value)
+
+    
+    @property
+    def ui_simplified_params(self) -> bool:
+        return self._ui_simple_params_check.isChecked()
+    @ui_simplified_params.setter
+    def ui_simplified_params(self, value: bool):
+        self._ui_simple_params_check.setChecked(value)
 
     
     @property
@@ -425,4 +455,8 @@ class SettingsDialogUi(QDialog):
     def on_logxneg_changed(self):
         pass
     def on_logyneg_changed(self):
+        pass
+    def on_simple_params_changed(self):
+        pass
+    def on_simple_plot_changed(self):
         pass

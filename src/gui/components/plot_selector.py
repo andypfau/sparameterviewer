@@ -25,6 +25,27 @@ class PlotSelector(QWidget):
     valueChanged = pyqtSignal()
 
 
+    class SimplifiedY(enum.StrEnum):
+        Off = '—'
+        Decibels = 'dB'
+        Magnitude = 'Magnitude'
+        Real = 'Real'
+        Imag = 'Imag.'
+        RealImag = 'Real + Imag.'
+        SmithZ = 'Smith (Z)'
+        SmithY = 'Smith (Y)'
+        Step = 'Step Resp.'
+        Impulse = 'Impulse Resp.'
+
+
+    class SimplifiedY2(enum.StrEnum):
+        Off = '—'
+        Phase = 'Phase'
+        Unwrap = 'Unwrapped'
+        Detrend = 'De-Trend'
+        GroupDelay = 'Group Delay'
+
+
     def __init__(self, parent = None):
         super().__init__(parent)
 
@@ -38,10 +59,24 @@ class PlotSelector(QWidget):
         self._td_z = False
         self._simplified = False
         
+        default_spacing, medium_spacing, wide_spacing = 1, 12, 12
+
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
-        # TODO: implement simplified UI
-        self._ui_simple.setLayout(QtHelper.layout_v('Simplified plot selector comes here...'))
+        self._ui_simple_y_combo = QComboBox()
+        for option in PlotSelector.SimplifiedY:
+            self._ui_simple_y_combo.addItem(str(option))
+        self._ui_simple_y_combo.currentIndexChanged.connect(self._on_simple_y_changed)
+        self._ui_simple_y2_combo = QComboBox()
+        for option in PlotSelector.SimplifiedY2:
+            self._ui_simple_y2_combo.addItem(str(option))
+        self._ui_simple_y2_combo.currentIndexChanged.connect(self._on_simple_y2_changed)
+        self._ui_simple.setLayout(QtHelper.layout_v(
+            ...,
+            self._ui_simple_y_combo,
+            self._ui_simple_y2_combo,
+            ..., spacing=default_spacing
+        ))
 
         self._ui_advanced = QWidget()
         self._ui_advanced.setVisible(not self._simplified)
@@ -63,7 +98,6 @@ class PlotSelector(QWidget):
         self._ui_admittance_button = QtHelper.make_button(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', toolbar=True, checked=False)
         self._ui_degrees_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_degree.svg', tooltip='Plot Phase in Degrees (°) Instad of Radians', toolbar=True, checked=False)
         self._ui_tdz_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_ohms.svg', tooltip='Transform Y-Axis to Impedance', toolbar=True, checked=False)
-        default_spacing, medium_spacing, wide_spacing = 1, 12, 12
         self._ui_advanced.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
                 self._ui_cartesian_button, self._ui_tdr_button, self._ui_smith_button, self._ui_polar_button,
@@ -83,14 +117,17 @@ class PlotSelector(QWidget):
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
 
         self._update_controls()
-    
+
 
     def simplified(self) -> bool:
         return self._simplified
     def setSimplified(self, value: bool):
+        if self._simplified == value:
+            return
         self._simplified = value
         self._ui_simple.setVisible(self._simplified)
         self._ui_advanced.setVisible(not self._simplified)
+        self._update_controls()
     
 
     def plotType(self) -> PlotType:
@@ -161,40 +198,84 @@ class PlotSelector(QWidget):
     
 
     def _update_controls(self):
-        self._ui_cartesian_button.setChecked(self._plot_type == PlotType.Cartesian)
-        self._ui_tdr_button.setChecked(self._plot_type == PlotType.TimeDomain)
-        self._ui_smith_button.setChecked(self._plot_type == PlotType.Smith)
-        self._ui_polar_button.setChecked(self._plot_type == PlotType.Polar)
+        if self._simplified:
+            if self._plot_type == PlotType.Cartesian:
+                if self._y1 == YQuantity.Decibels:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Decibels))
+                elif self._y1 == YQuantity.Magnitude:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Magnitude))
+                elif self._y1 == YQuantity.Real:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Real))
+                elif self._y1 == YQuantity.Imag:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Imag))
+                elif self._y1 == YQuantity.RealImag:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.RealImag))
+                else:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Off))
+                if self._y2 == YQuantity.Phase:
+                    if self._phase_processing == PhaseProcessing.Off:
+                        self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Phase))
+                    elif self._phase_processing == PhaseProcessing.Unwrap:
+                        self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Unwrap))
+                    elif self._phase_processing == PhaseProcessing.UnwrapDetrend:
+                        self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Detrend))
+                    else:
+                        self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+                elif self._y2 == YQuantity.GroupDelay:
+                    self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.GroupDelay))
+                else:
+                    self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+            elif self._plot_type == PlotType.TimeDomain:
+                if self._td_response == TdResponse.ImpulseResponse:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Impulse))
+                else:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Step))
+                self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+            elif self._plot_type == PlotType.Smith:
+                if self._smith_norm == SmithNorm.Admittance:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.SmithY))
+                else:
+                    self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.SmithZ))
+                self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+            else:
+                self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Off))
+                self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
 
-        self._ui_db_button.setChecked(self._y1 == YQuantity.Decibels)
-        self._ui_mag_button.setChecked(self._y1 == YQuantity.Magnitude)
-        self._ui_real_button.setChecked(self._y1 == YQuantity.Real or self._y1 == YQuantity.RealImag)
-        self._ui_imag_button.setChecked(self._y1 == YQuantity.Imag or self._y1 == YQuantity.RealImag)
-        self._ui_phase_button.setChecked(self._y2 == YQuantity.Phase)
-        self._ui_gdelay_button.setChecked(self._y2 == YQuantity.GroupDelay)
-        self._ui_impulse_button.setChecked(self._td_response == TdResponse.ImpulseResponse)
-        self._ui_step_button.setChecked(self._td_response == TdResponse.StepResponse)
-        self._ui_degrees_button.setChecked(self._phase_unit == PhaseUnit.Degrees)
-        self._ui_impeance_button.setChecked(self._smith_norm == SmithNorm.Impedance)
-        self._ui_admittance_button.setChecked(self._smith_norm == SmithNorm.Admittance)
-        self._ui_tdz_button.setChecked(self._td_z)
-        self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
-        self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
+        else:
+            self._ui_cartesian_button.setChecked(self._plot_type == PlotType.Cartesian)
+            self._ui_tdr_button.setChecked(self._plot_type == PlotType.TimeDomain)
+            self._ui_smith_button.setChecked(self._plot_type == PlotType.Smith)
+            self._ui_polar_button.setChecked(self._plot_type == PlotType.Polar)
 
-        self._ui_db_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_mag_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_real_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_imag_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_phase_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_gdelay_button.setVisible(self._plot_type == PlotType.Cartesian)
-        self._ui_unwrap_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_degrees_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
-        self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
-        self._ui_tdz_button.setVisible(self._plot_type == PlotType.TimeDomain)
-        self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
-        self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
+            self._ui_db_button.setChecked(self._y1 == YQuantity.Decibels)
+            self._ui_mag_button.setChecked(self._y1 == YQuantity.Magnitude)
+            self._ui_real_button.setChecked(self._y1 == YQuantity.Real or self._y1 == YQuantity.RealImag)
+            self._ui_imag_button.setChecked(self._y1 == YQuantity.Imag or self._y1 == YQuantity.RealImag)
+            self._ui_phase_button.setChecked(self._y2 == YQuantity.Phase)
+            self._ui_gdelay_button.setChecked(self._y2 == YQuantity.GroupDelay)
+            self._ui_impulse_button.setChecked(self._td_response == TdResponse.ImpulseResponse)
+            self._ui_step_button.setChecked(self._td_response == TdResponse.StepResponse)
+            self._ui_degrees_button.setChecked(self._phase_unit == PhaseUnit.Degrees)
+            self._ui_impeance_button.setChecked(self._smith_norm == SmithNorm.Impedance)
+            self._ui_admittance_button.setChecked(self._smith_norm == SmithNorm.Admittance)
+            self._ui_tdz_button.setChecked(self._td_z)
+            self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
+            self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
+
+            self._ui_db_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_mag_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_real_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_imag_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_phase_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_gdelay_button.setVisible(self._plot_type == PlotType.Cartesian)
+            self._ui_unwrap_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+            self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+            self._ui_degrees_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+            self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
+            self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
+            self._ui_tdz_button.setVisible(self._plot_type == PlotType.TimeDomain)
+            self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
+            self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
     
 
     def _on_select_cartesian(self):
@@ -328,5 +409,90 @@ class PlotSelector(QWidget):
     def _on_select_other(self):
         self._phase_unit = PhaseUnit.Degrees if self._ui_degrees_button.isChecked() else PhaseUnit.Radians
         self._td_z = self._ui_tdz_button.isChecked()
+        self._update_controls()
+        self.valueChanged.emit()
+    
+
+    def _on_simple_y_changed(self):
+        
+        enable_2nd = True
+        match self._ui_simple_y_combo.currentText():
+            case str(PlotSelector.SimplifiedY.Off):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.Off
+            case str(PlotSelector.SimplifiedY.Decibels):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.Decibels
+            case str(PlotSelector.SimplifiedY.Magnitude):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.Magnitude
+            case str(PlotSelector.SimplifiedY.Real):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.Real
+            case str(PlotSelector.SimplifiedY.Imag):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.Imag
+            case str(PlotSelector.SimplifiedY.RealImag):
+                self._plot_type = PlotType.Cartesian
+                self._y1 = YQuantity.RealImag
+            case str(PlotSelector.SimplifiedY.SmithZ):
+                self._plot_type = PlotType.Smith
+                self._smith_norm = SmithNorm.Impedance
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.SmithY):
+                self._plot_type = PlotType.Smith
+                self._smith_norm = SmithNorm.Admittance
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.Impulse):
+                self._plot_type = PlotType.TimeDomain
+                self._td_response = TdResponse.ImpulseResponse
+                self._td_z = False
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.Step):
+                self._plot_type = PlotType.TimeDomain
+                self._td_response = TdResponse.StepResponse
+                self._td_z = False
+                enable_2nd = False
+            case _:
+                return
+        
+        if not enable_2nd:
+            self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+        
+        self._update_controls()
+        self.valueChanged.emit()
+    
+
+    def _on_simple_y2_changed(self):
+        
+        enable_2nd = True
+        match self._ui_simple_y_combo.currentText():
+            case str(PlotSelector.SimplifiedY.SmithZ):
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.SmithY):
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.Impulse):
+                enable_2nd = False
+            case str(PlotSelector.SimplifiedY.Step):
+                enable_2nd = False
+        
+        if enable_2nd:
+            match self._ui_simple_y2_combo.currentText():
+                case str(PlotSelector.SimplifiedY2.Off):
+                    self._y2 = YQuantity.Off
+                case str(PlotSelector.SimplifiedY2.Phase):
+                    self._y2 = YQuantity.Phase
+                    self._phase_processing = PhaseProcessing.Off
+                case str(PlotSelector.SimplifiedY2.Unwrap):
+                    self._y2 = YQuantity.Phase
+                    self._phase_processing = PhaseProcessing.Unwrap
+                case str(PlotSelector.SimplifiedY2.Detrend):
+                    self._y2 = YQuantity.Phase
+                    self._phase_processing = PhaseProcessing.UnwrapDetrend
+                case _:
+                    return
+        else:
+            self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
+        
         self._update_controls()
         self.valueChanged.emit()

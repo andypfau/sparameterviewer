@@ -79,6 +79,7 @@ class MainWindow(MainWindowUi):
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = 0
         self.sparamfile_load_aborted = False
+        self._last_cursor_x = 0
 
         super().__init__()
         
@@ -114,7 +115,9 @@ class MainWindow(MainWindowUi):
                 self._initial_selection.append(path)
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
-            self._ui_filesys_browser.add_toplevel(path)  # TODO: add redirection through MainWindowUI class
+            self.ui_filesys_browser.add_toplevel(path)
+        if len(self._initial_selection) == 0:
+            pass  # TODO: pick first file in first directory
         if len(self._initial_selection) > 0:
             self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIAL_SELECTION_ID, MainWindow.TIMER_INITIAL_SELECTION_TIMEOUT_S, self.select_initial_files)
 
@@ -131,14 +134,16 @@ class MainWindow(MainWindowUi):
         def load_settings():
             try:
                 self.ui_params = Settings.plotted_params
-                self._ui_plot_selector.setPlotType(Settings.plot_type)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setTdResponse(Settings.td_response)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setPhaseUnit(Settings.phase_unit)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setPhaseProcessing(Settings.phase_processing)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setSmithNorm(Settings.smith_norm)  # TODO: redirect through MainWIndowUI
-                self._ui_plot_selector.setTdImpedance(Settings.tdr_impedance)  # TODO: redirect through MainWIndowUI
+                self.ui_plot_selector.setPlotType(Settings.plot_type)
+                self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
+                self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
+                self.ui_plot_selector.setTdResponse(Settings.td_response)
+                self.ui_plot_selector.setPhaseUnit(Settings.phase_unit)
+                self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
+                self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
+                self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
+                self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
+                self._ui_param_selector.setSimplified(Settings.simplified_param_sel)
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
@@ -149,7 +154,7 @@ class MainWindow(MainWindowUi):
                 self.ui_logy = Settings.log_y
                 self.ui_wide_layout = Settings.wide_layout
                 self.ui_wide_layout_option = Settings.wide_layout
-                self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWIndowUI
+                self.ui_filesys_browser.show_archives = Settings.extract_zip
                 return None
             except Exception as ex:
                 return ex
@@ -162,7 +167,7 @@ class MainWindow(MainWindowUi):
 
 
     def select_initial_files(self):
-        self._ui_filesys_browser.selected_files = self._initial_selection  # TODO: add redirection through MainWindowUI class
+        self.ui_filesys_browser.selected_files = self._initial_selection
 
 
     def clear_list_counter(self):
@@ -172,7 +177,7 @@ class MainWindow(MainWindowUi):
 
 
     def clear_load_counter(self):
-        #logging.debug(f'MainWindow.clear_load_counter()')
+        #logging.debug(get_callstack_str())
         self.sparamfile_load_counter = 0
         self.sparamfile_load_next_warning = Settings.warncount_file_load
         self.sparamfile_load_aborted = False
@@ -188,7 +193,7 @@ class MainWindow(MainWindowUi):
                 f'Already loaded {self.sparamfile_load_counter} files, with more to come. Continue?',
                 f'Will ask again after {self.sparamfile_load_next_warning} files.'):
                 self.sparamfile_load_aborted = True
-                self._ui_filesys_browser.selected_files = []  # TODO: add redirection through MainWindowUI class
+                self.ui_filesys_browser.selected_files = []
                 return False
         self.sparamfile_load_counter += 1
         return True
@@ -198,7 +203,7 @@ class MainWindow(MainWindowUi):
         if path not in self.files:
             return
         #logging.debug(f'MainWindow.after_load_sparamfile({path=})')
-        self._ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
+        self.ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
 
     
 
@@ -237,7 +242,7 @@ class MainWindow(MainWindowUi):
                 new += existing_line
             self.ui_expression = new
             self.ui_params = Parameters.Expressions
-            self.schedule_plot_upate()
+            self.schedule_plot_update()
         
         def ensure_selected_file_count(op, n_required):
             n = len(selected_file_names())
@@ -261,9 +266,9 @@ class MainWindow(MainWindowUi):
 
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
             if plot_type:
-                self._ui_plot_selector.setPlotType(plot_type)  # TODO: redirect through MainWindpwUI
+                self.ui_plot_selector.setPlotType(plot_type)
             if quantity:
-                self._ui_plot_selector.setYQuantity(quantity)  # TODO: redirect through MainWindpwUI
+                self.ui_plot_selector.setYQuantity(quantity)
 
         def all_sparams():
             set_expression('sel_nws().s().plot()')
@@ -472,40 +477,32 @@ class MainWindow(MainWindowUi):
             if name == self.ui_color_assignment:
                 Settings.color_assignment = ca
                 return
-
-
-    def on_phase_unit_change(self):
-        # TODO: remove this
-        for pu, name in MainWindow.PHASE_NAMES.items():
-            if name == self.ui_phase_unit:
-                Settings.phase_unit = pu
-                return
     
 
     def on_plottype_changed(self):
-        Settings.plot_type = self._ui_plot_selector.plotType()
-        Settings.phase_unit = self._ui_plot_selector.phaseUnit()
-        Settings.phase_processing = self._ui_plot_selector.phaseProcessing()
-        Settings.td_response = self._ui_plot_selector.tdResponse()
-        Settings.smith_norm = self._ui_plot_selector.smithNorm()
-        Settings.tdr_impedance = self._ui_plot_selector.tdImpedance()
-        Settings.plot_y_quantitiy = self._ui_plot_selector.yQuantity()
-        Settings.plot_y2_quantitiy = self._ui_plot_selector.y2Quantity()
+        Settings.plot_type = self.ui_plot_selector.plotType()
+        Settings.phase_unit = self.ui_plot_selector.phaseUnit()
+        Settings.phase_processing = self.ui_plot_selector.phaseProcessing()
+        Settings.td_response = self.ui_plot_selector.tdResponse()
+        Settings.smith_norm = self.ui_plot_selector.smithNorm()
+        Settings.tdr_impedance = self.ui_plot_selector.tdImpedance()
+        Settings.plot_y_quantitiy = self.ui_plot_selector.yQuantity()
+        Settings.plot_y2_quantitiy = self.ui_plot_selector.y2Quantity()
 
         self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_params_change(self):
         Settings.plotted_params = self.ui_params
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
     
 
     def on_show_filter(self):
         selected_paths = FilterDialog(self).show_modal_dialog(list(sorted(self.files.keys())))
         if not selected_paths:
             return
-        self._ui_filesys_browser.selected_files = selected_paths  # TODO: redirect through MainWiwndowUI
+        self.ui_filesys_browser.selected_files = selected_paths
     
 
     def on_reload_all_files(self):
@@ -521,7 +518,7 @@ class MainWindow(MainWindowUi):
                     self.update_most_recent_paths_menu()  # this will remove stale paths
                     return
                 self.add_to_most_recent_paths(path)
-                self._ui_filesys_browser.add_toplevel(PathExt(path))  # TODO: redirect through MainWiwndowUI
+                self.ui_filesys_browser.add_toplevel(PathExt(path))
             return load
         
         def path_for_display(path: str):
@@ -558,7 +555,7 @@ class MainWindow(MainWindowUi):
         self.clear_list_counter()
         self.files.clear()
         self.update_params_size()
-        self._ui_filesys_browser.refresh()  # TODO: add redirection though MainWindowUI
+        self.ui_filesys_browser.refresh()
 
 
     def get_file_prop_str(self, file: "SParamFile|None") -> str:
@@ -576,7 +573,7 @@ class MainWindow(MainWindowUi):
 
     def get_selected_files(self) -> "list[SParamFile]":
         result = []
-        for path in self._ui_filesys_browser.selected_files:  # TODO: add redirection though MainWindowUI
+        for path in self.ui_filesys_browser.selected_files:
             if path not in self.files:
                 self.files[path] = SParamFile(path)
             result.append(self.files[path])
@@ -727,32 +724,32 @@ class MainWindow(MainWindowUi):
 
     def on_show_legend(self):
         Settings.show_legend = self.ui_show_legend
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
     
 
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_shorten_legend(self):
         Settings.shorten_legend_items = self.ui_shorten_legend
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
     
     def on_mark_datapoints_changed(self):
         Settings.plot_mark_points = self.ui_mark_datapoints
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_logx_changed(self):
         Settings.log_x = self.ui_logx
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_logy_changed(self):
         Settings.log_y = self.ui_logy
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_copy_image(self):
@@ -806,13 +803,13 @@ class MainWindow(MainWindowUi):
     def on_xaxis_range_change(self):
         if self.ui_xaxis_range!=MainWindow.UNLOCKED:
             self.plot.plot.set_xlim(*self.ui_xaxis_range)
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_yaxis_range_change(self):
         if self.ui_yaxis_range!=MainWindow.UNLOCKED:
             self.plot.plot.set_ylim(*self.ui_yaxis_range)
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
 
     def on_update_plot(self):
@@ -820,30 +817,32 @@ class MainWindow(MainWindowUi):
             return
         if self.ui_tab == MainWindowUi.Tab.Expressions:
             self.ui_params = Parameters.Expressions
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
     
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
         self.ui_params = Parameters.Expressions
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
 
     
     def invalidate_axes_lock(self, update: bool = True):
         self.plot_axes_are_valid = False
         if update:
-            self.schedule_plot_upate()
+            self.schedule_plot_update()
     
 
     def on_settings_change(self, attributes: list[str]):
-        self._ui_filesys_browser.show_archives = Settings.extract_zip  # TODO: redirect through MainWindowUI
+        self.ui_filesys_browser.show_archives = Settings.extract_zip
         self.ui_wide_layout = Settings.wide_layout
+        self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
+        self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
         
         if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
                 'plot_mark_points','color_assignment','treat_all_as_complex']) & set(attributes):
-            self.schedule_plot_upate()
+            self.schedule_plot_update()
     
     
     def on_help_button(self):
@@ -855,32 +854,28 @@ class MainWindow(MainWindowUi):
         self.prepare_cursors()
 
 
-    def on_filesys_doubleclick(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
-        pass  # TODO: implement?
-
-
     def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         
         def make_pin(new_path: PathExt):
             def pin():
                 self.add_to_most_recent_paths(str(new_path))
-                self._ui_filesys_browser.add_toplevel(new_path)  # TODO: redirect through MainWindowUI
+                self.ui_filesys_browser.add_toplevel(new_path)
             return pin
         def make_unpin():
             def unpin():
-                self._ui_filesys_browser.remove_toplevel(toplevel_path)  # TODO: redirect through MainWindowUI
+                self.ui_filesys_browser.remove_toplevel(toplevel_path)
             return unpin
         def make_chroot(new_path: PathExt):
             def chroot():
                 self.add_to_most_recent_paths(str(new_path))
-                self._ui_filesys_browser.change_root(toplevel_path, new_path)  # TODO: redirect through MainWindowUI
+                self.ui_filesys_browser.change_root(toplevel_path, new_path)
             return chroot
         def make_selall(file_path: PathExt):
             def selall():
                 files_in_path = [p for p in file_path.parent.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
                 if len(files_in_path) < 1:
                     return
-                self._ui_filesys_browser.selected_files = [*files_in_path, *self._ui_filesys_browser.selected_files]
+                self.ui_filesys_browser.selected_files = [*files_in_path, *self.ui_filesys_browser.selected_files]
             return selall
         def get_parent_dirs_and_names(path: PathExt, n_max: int = 10) -> list[tuple[PathExt,str]]:
             result = []
@@ -923,7 +918,7 @@ class MainWindow(MainWindowUi):
 
     def on_filesys_files_changed(self):
         #logging.debug(f'MainWindow.on_filesys_files_changed()')
-        browser_paths = self._ui_filesys_browser.all_files  # TODO: add rediction though MainWindowUI
+        browser_paths = self.ui_filesys_browser.all_files
 
         # discard the files that are no longer displayed in the filebrowser
         for available_path in list(self.files.keys()):
@@ -936,12 +931,20 @@ class MainWindow(MainWindowUi):
                 # pre-load, so that expressions can find them
                 self.files[browser_path] = SParamFile(browser_path)
                 # show preliminary status
-                self._ui_filesys_browser.update_status(browser_path, self.get_file_prop_str(self.files[browser_path]))  # TODO: add rediction though MainWindowUI
+                self.ui_filesys_browser.update_status(browser_path, self.get_file_prop_str(self.files[browser_path]))
 
 
     def on_filesys_selection_changed(self):
         self.update_params_size()
-        self.schedule_plot_upate()
+        self.schedule_plot_update()
+    
+    
+    def on_cursor_x1_changed(self):
+        self.update_cursor_xvalue(0, self.ui_cursor_x1.value)
+    
+    
+    def on_cursor_x2_changed(self):
+        self.update_cursor_xvalue(1, self.ui_cursor_x2.value)
 
 
     def on_cursor_select(self):
@@ -949,7 +952,27 @@ class MainWindow(MainWindowUi):
 
 
     def on_cursor_trace_change(self):
-        self.update_cursors()
+        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+            return
+
+        try:
+            cursor_index = self.ui_cursor_index
+            if not self.plot.cursors[cursor_index].enabled:
+                return
+
+            cursor = self.plot.cursors[cursor_index]
+            trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
+            plot_width, plot_height = self._get_plot_dimensions()
+            plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x, None, name=trace_name, width=plot_width, height=plot_height)
+            if plot is None:
+                return
+            cursor.set(x, y, z, True, plot.color)
+            self._last_cursor_x = x
+
+            self.update_cursor_readout()
+
+        except Exception as ex:
+            logging.error(f'Cursor error: {ex}')
 
 
     def on_auto_cursor_changed(self):
@@ -961,7 +984,27 @@ class MainWindow(MainWindowUi):
 
 
     def on_cursor_syncx_changed(self):
-        self.update_cursors()
+        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+            return
+
+        try:
+            if not (self.plot.cursors[0].enabled and self.plot.cursors[0].enabled):
+                return
+
+            for cursor_index in [0,1]:
+                cursor = self.plot.cursors[cursor_index]
+                trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
+                plot_width, plot_height = self._get_plot_dimensions()
+                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x, None, name=trace_name, width=plot_width, height=plot_height)
+                if plot is None:
+                    return
+                cursor.set(x, y, z, True, plot.color)
+                self._last_cursor_x = x
+
+            self.update_cursor_readout()
+
+        except Exception as ex:
+            logging.error(f'Cursor error: {ex}')
 
 
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
@@ -991,7 +1034,7 @@ class MainWindow(MainWindowUi):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             self.ui_plot_tool = PlotWidget.Tool.Off
             if self.plot:
-                self.plot.cursors[0].enable(False)
+                self.plot.cursors[0].enable(True)
                 self.plot.cursors[1].enable(False)
             self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
             selected_files = self.get_selected_files()
@@ -1002,6 +1045,39 @@ class MainWindow(MainWindowUi):
                 self.plot.cursors[0].enable(False)
                 self.plot.cursors[1].enable(False)
                 self.ui_plot.draw()
+
+    
+    def _get_plot_dimensions(self) -> tuple[float,float]:
+        if self.plot:
+            try:
+                xlim, ylim = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+                return xlim[1]-xlim[0], ylim[1]-ylim[0]
+            except:
+                pass
+        return 1.0, 1.0
+
+    
+    def update_cursor_xvalue(self, cursor_index: int, value: float):
+        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+            return
+
+        try:
+            if not self.plot.cursors[cursor_index].enabled:
+                return
+
+            cursor = self.plot.cursors[cursor_index]
+            trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
+            plot_width, plot_height = self._get_plot_dimensions()
+            plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height)
+            if plot is None:
+                return
+            cursor.set(x, y, z, True, plot.color)
+            self._last_cursor_x = x
+
+            self.update_cursor_readout()
+
+        except Exception as ex:
+            logging.error(f'Cursor error: {ex}')
 
 
     def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None, x2: float = None, y2: float = None):
@@ -1020,13 +1096,7 @@ class MainWindow(MainWindowUi):
             
             if left_btn_pressed:
 
-                plot_width, plot_height = 1.0, 1.0
-                if self.plot:
-                    try:
-                        xlim, ylim = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
-                        plot_width, plot_height = xlim[1]-xlim[0], ylim[1]-ylim[0]
-                    except:
-                        pass
+                plot_width, plot_height = self._get_plot_dimensions()
 
                 # find out which cursor to move
                 if self.ui_auto_cursor and left_btn_event:
@@ -1041,6 +1111,7 @@ class MainWindow(MainWindowUi):
 
                     if self.ui_auto_cursor_trace:
                         plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, width=plot_width, height=plot_height)
+                        self._last_cursor_x = x
                         if plot is not None:
                             if target_cursor_index==0:
                                 self.ui_cursor1_trace = plot.name
@@ -1050,6 +1121,7 @@ class MainWindow(MainWindowUi):
                         selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
                         if selected_trace_name is not None:
                             plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, name=selected_trace_name, width=plot_width, height=plot_height)
+                            self._last_cursor_x = x
                         else:
                             plot, x, y, z = None, None, None, None
 
@@ -1060,6 +1132,7 @@ class MainWindow(MainWindowUi):
                     if self.ui_cursor_syncx:
                         other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
                         other_plot, x, y, z = self.plot.get_closest_plot_point(x, None, name=other_trace_name, width=plot_width, height=plot_height)
+                        self._last_cursor_x = x
                         if other_plot is not None:
                             other_cursor_index = 1 - target_cursor_index
                             other_cursor = self.plot.cursors[other_cursor_index]
@@ -1075,9 +1148,9 @@ class MainWindow(MainWindowUi):
             self.ui_set_cursor_readouts()
             return
 
-        readout_x1 = ''
+        readout_x1 = Si(0)
         readout_y1 = ''
-        readout_x2 = ''
+        readout_x2 = Si(0)
         readout_y2 = ''
         readout_dx = ''
         readout_dy = ''
@@ -1091,18 +1164,18 @@ class MainWindow(MainWindowUi):
         if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
             if z is not None:
-                readout_x1 = f'{Si(z,si_fmt=zf)}'
+                readout_x1 = Si(z,si_fmt=zf)
                 readout_y1 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
             else:
-                readout_x1 = f'{Si(x,si_fmt=xf)}'
+                readout_x1 = Si(x,si_fmt=xf)
                 readout_y1 = f'{Si(y,si_fmt=yf)}'
         if self.ui_cursor2_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
             if z is not None:
-                readout_x2 = f'{Si(z,si_fmt=zf)}'
+                readout_x2 = Si(z,si_fmt=zf)
                 readout_y2 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
             else:
-                readout_x2 = f'{Si(x,si_fmt=xf)}'
+                readout_x2 = Si(x,si_fmt=xf)
                 readout_y2 = f'{Si(y,si_fmt=yf)}'
             if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
@@ -1140,7 +1213,8 @@ class MainWindow(MainWindowUi):
         self.ui_params_size = max(MIN_SIZE, size)
     
 
-    def schedule_plot_upate(self):
+    def schedule_plot_update(self):
+        #logging.debug(get_callstack_str(10))
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_PLOT_UPDATE_ID, MainWindow.TIMER_PLOT_UPDATE_TIMEOUT_S, self._after_plot_timeout)
 
 
@@ -1154,9 +1228,10 @@ class MainWindow(MainWindowUi):
         if not self.ready:
             return
         
-        logging.debug(get_callstack_str(8))
+        #logging.debug(get_callstack_str(8))
         
         self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_GUI_ID)
+        self.ui_abort_oneshot_timer(MainWindow.TIMER_CLEAR_LOAD_COUNTER_ID)
 
         try:
             self.ready = False  # prevent update when dialog is initializing, and also prevent recursive calls
@@ -1178,15 +1253,14 @@ class MainWindow(MainWindowUi):
             self.plot = None
 
             params = self.ui_params
-            # TODO: redirect through MainWIndowUI
-            plot_type = self._ui_plot_selector.plotType()
-            y_qty = self._ui_plot_selector.yQuantity()
-            y2_qty = self._ui_plot_selector.y2Quantity()
-            tdr_z = Settings.tdr_impedance  # TODO: obtain from toolbar?
-            tdr_resp = self._ui_plot_selector.tdResponse()
-            phase_unit = self._ui_plot_selector.phaseUnit()
-            phase_processing = self._ui_plot_selector.phaseProcessing()
-            smith_norm = self._ui_plot_selector.smithNorm()
+            plot_type = self.ui_plot_selector.plotType()
+            y_qty = self.ui_plot_selector.yQuantity()
+            y2_qty = self.ui_plot_selector.y2Quantity()
+            tdr_z = self.ui_plot_selector.tdImpedance()
+            tdr_resp = self.ui_plot_selector.tdResponse()
+            phase_unit = self.ui_plot_selector.phaseUnit()
+            phase_processing = self.ui_plot_selector.phaseProcessing()
+            smith_norm = self.ui_plot_selector.smithNorm()
             log_x, log_y = self.ui_logx, self.ui_logy
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
@@ -1346,8 +1420,6 @@ class MainWindow(MainWindowUi):
                 expression_list = []
                 if params == Parameters.Custom:
 
-                    # TODO: ensure that the mask shape is sufficiently large for all displayed files
-                    
                     mask = self.ui_params_mask
                     for i in range(mask.shape[0]):
                         for j in range(mask.shape[1]):

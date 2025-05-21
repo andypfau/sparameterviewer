@@ -26,12 +26,10 @@ Roadmap
 
 ### Missing Features
 
-- GUI: a control to select individual parameters when grid is too large.
-- GUI: allow to enter frequency to set cursor position.
 - GUI: allow to re-arrange the three main components (toolbar, plot, files) in a "T".
-- GUI: simplified UI options (dropdowns for parameters and plots; hide expressions; simplified file browser).
+- GUI: more simplified UI options (hide expressions; simplified file browser).
 - GUI: equation file history.
-- Expressions: better interaction with Numpy.
+- Expressions: better interaction with Numpy. How can I use numpy functions with traces? What if I have two different parameters and a binary operation?
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Expressions: log output for equations (so that you can also print some data or status).
 - File type registration script for Windows (using `assoc` and `ftype`).
@@ -39,4 +37,4 @@ Roadmap
 
 ### Known Issues
 
-- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer reason unknown
+- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer; reason unknown.

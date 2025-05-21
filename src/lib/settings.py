@@ -111,12 +111,14 @@ class SParamViewerAppSettings(AppSettings):
     wide_layout: bool = False
     treat_all_as_complex: bool = False
     verbose: bool = False
-    logx_negative_handling: LogNegativeHandling = LogNegativeHandling.Ignore  # TODO: add to settings dialog
-    logy_negative_handling: LogNegativeHandling = LogNegativeHandling.Abs  # TODO: add to settings dialog
-    simplified_param_sel: bool = False  # TODO: implement
-    simplified_plot_sel: bool = False  # TODO: implement
-    simplified_browser: bool = False  # TODO: implement
-    hide_expressions: bool = False  # TODO: implement
+    logx_negative_handling: LogNegativeHandling = LogNegativeHandling.Ignore
+    logy_negative_handling: LogNegativeHandling = LogNegativeHandling.Abs
+    
+    # TODO: implement simplified UI
+    simplified_param_sel: bool = False
+    simplified_plot_sel: bool = False
+    simplified_browser: bool = False
+    hide_expressions: bool = False
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')
