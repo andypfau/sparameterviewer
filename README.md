@@ -26,7 +26,9 @@ Roadmap
 
 ### Missing Features
 
+- GUI: make the back-button work in the fileview browser and the path bar.
 - GUI: expression file history.
+- File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - Expressions: better interaction with Numpy. How can I use numpy functions with traces? What if I have two different parameters and a binary operation?
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Expressions: log output for equations (so that you can also print some data or status).

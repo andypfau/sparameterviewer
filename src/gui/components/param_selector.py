@@ -53,12 +53,12 @@ class ParamSelector(QWidget):
 
         @dataclasses.dataclass
         class Geometry:
-            x0: int
-            y0: int
-            cell_size: int
-            cell_border: int
-            all_cells_size: int
-            total_size: int
+            x0: float
+            y0: float
+            cell_size: float
+            cell_border: float
+            all_cells_size: float
+            total_size: float
             overflow: bool
 
         def __init__(self, parent = ...):
@@ -79,7 +79,7 @@ class ParamSelector(QWidget):
         def _calculate_geometry(self) -> ParamSelector.GraphicWidget.Geometry:
             #logging.debug(f'_calculate_geometry()')
             grid_size = self.matrix_dimensions
-            MINIMUM_CELL_SIZE, DEFAULT_CELL_SIZE, LARGE_CELL_SIZE, MAXIMUM_CELL_SIZE = 16, 22, 32, 32
+            MINIMUM_CELL_SIZE, DEFAULT_CELL_SIZE, LARGE_CELL_SIZE, MAXIMUM_CELL_SIZE = 14, 22, 32, 32
             WIDGET_BORDER, CELL_BORDER = 1, 1
             
             if self._scale_widget_to_contents:  # widget size is adjusted, use fixed cell size
@@ -90,13 +90,13 @@ class ParamSelector(QWidget):
                 return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, CELL_BORDER, all_cells_size, total_size, overflow=False)
             
             else:  # widget is fixed size, adjust cell size
-                cell_size = math.floor((self._target_size - 2*WIDGET_BORDER) / grid_size)
+                cell_size = (self._target_size - 2*WIDGET_BORDER) / grid_size
                 cell_border = CELL_BORDER
                 if cell_size > MAXIMUM_CELL_SIZE:
                     cell_size = MAXIMUM_CELL_SIZE
                 all_cells_size = grid_size * cell_size
                 total_size = 2*WIDGET_BORDER + all_cells_size
-                x0, y0 = WIDGET_BORDER + (self._target_size- total_size) // 2, WIDGET_BORDER + (self._target_size - total_size) // 2
+                x0, y0 = WIDGET_BORDER + (self._target_size- total_size) / 2, WIDGET_BORDER + (self._target_size - total_size) / 2
                 overflow = cell_size < MINIMUM_CELL_SIZE
                 if overflow:
                     cell_border = 0
@@ -130,8 +130,8 @@ class ParamSelector(QWidget):
             grid_size, x0, y0, cell_size = self.matrix_dimensions, geometry.x0, geometry.y0, geometry.cell_size
             for i in range(grid_size):
                 for j in range(grid_size):
-                    rect = QRect(x0+j*cell_size, y0+i*cell_size, cell_size, cell_size)
-                    if rect.contains(event.pos()):
+                    rect = QRectF(x0+j*cell_size, y0+i*cell_size, cell_size, cell_size)
+                    if rect.contains(QPointF(event.pos())):
                         self.paramClicked.emit(i, j, keys)
 
         def paintEvent(self, event):
@@ -145,13 +145,6 @@ class ParamSelector(QWidget):
                 self.matrix_dimensions, geometry.x0, geometry.y0, geometry.cell_size, geometry.cell_border, geometry.all_cells_size, geometry.overflow
             always_use_comma = self.matrix_dimensions >= 10
 
-            MIN_CELL_SIZE_FOR_RENDERING = 3
-            if overflow and cell_size < MIN_CELL_SIZE_FOR_RENDERING:
-                # too many elements -> just draw one large rectangle as a placeholder
-                rect = QRect(x0, y0, all_cells_size, all_cells_size)
-                painter.drawRect(rect)
-                return
-
             palette = QPalette()
             color_base = palette.color(QPalette.ColorRole.Base)
             color_dark = palette.color(QPalette.ColorRole.Dark)
@@ -160,9 +153,21 @@ class ParamSelector(QWidget):
             color_hl = palette.color(QPalette.ColorRole.Highlight)
             color_hl_text = palette.color(QPalette.ColorRole.HighlightedText)
             
+            MIN_CELL_SIZE_FOR_RENDERING = 2.5
+            if overflow and cell_size < MIN_CELL_SIZE_FOR_RENDERING:
+                # too many elements -> just draw one large rectangle as a placeholder
+                rect = QRectF(x0, y0, all_cells_size, all_cells_size)
+                painter.setBrush(color_hl)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawRect(rect)
+                return
+
+            MIN_CELL_SIZE_FOR_LARGE_FONT = 18
+            always_use_small_font = cell_size < MIN_CELL_SIZE_FOR_LARGE_FONT
+
             for i in range(grid_size):
                 for j in range(grid_size):
-                    rect = QRect(x0+j*cell_size+cell_border, y0+i*cell_size+cell_border, cell_size-2*cell_border, cell_size-2*cell_border)
+                    rect = QRectF(x0+j*cell_size+cell_border, y0+i*cell_size+cell_border, cell_size-2*cell_border, cell_size-2*cell_border)
                     
                     if self._use_expressions:
                         # using expressions -> draw gray dummies
@@ -192,13 +197,19 @@ class ParamSelector(QWidget):
                                 painter.setPen(color_hl_text)
                             else:
                                 painter.setPen(color_text)
+                            
                             ep, ip = i+1, j+1
-                            if ep>=10 or ip>=10:
+                            is_long_text = ep>=10 or ip>=10
+                            
+                            if is_long_text or always_use_comma:
                                 text = f'{ep},{ip}'
+                            else:
+                                text = f'{ep}{ip}'
+                            if is_long_text or always_use_small_font:
                                 painter.setFont(small_font)
                             else:
-                                text = f'{ep},{ip}' if always_use_comma else f'{ep}{ip}'
                                 painter.setFont(default_font)
+                            
                             painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, text)
 
             painter.end()
@@ -262,7 +273,6 @@ class ParamSelector(QWidget):
         self._ignore_simple_change = False
         self._allow_expressions = False
 
-        # TODO: implement simplified parameter selector (only show a combobox)
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
         self._ui_simple_params_combo = QComboBox()

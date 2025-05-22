@@ -502,6 +502,14 @@ class MainWindow(MainWindowUi):
         self.ui_filesys_browser.selected_files = selected_paths
     
 
+    def on_load_dir(self):
+        title = 'Change Directory' if self.ui_filesys_browser.simplified() else 'Open Another Directory'
+        dir = open_directory_dialog(self, title=title)
+        if not dir:
+            return
+        self.ui_filesys_browser.add_toplevel(PathExt(dir))
+
+
     def on_reload_all_files(self):
         self.reload_all_files()
 
@@ -896,23 +904,25 @@ class MainWindow(MainWindowUi):
         menu = []
         is_toplevel = path == toplevel_path
         if item_type == FilesysBrowserItemType.File:
-            if not self.ui_filesys_browser.simplified:
+            if not self.ui_filesys_browser.simplified():
                 menu.append(('Pin Directory of This File', make_pin(path.parent)))
                 menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
                 menu.append((None, None))
             menu.append((f'Select All Files From Same Directory', make_selall(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
-            if not self.ui_filesys_browser.simplified:
-                typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
-                if is_toplevel:
+            typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
+            if is_toplevel:
+                if not self.ui_filesys_browser.simplified():
                     for (ppath, pname) in get_parent_dirs_and_names(path):
                         menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
                     menu.append((None, None))
                     menu.append((f'Unpin This {typename}', make_unpin()))
-                else:
-                    menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
+            else:
+                menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
+                if not self.ui_filesys_browser.simplified():
                     menu.append((None, None))
                     menu.append((f'Pin This {typename}', make_pin(path)))
+
         
         if len(menu) > 0:
             self.ui_filesys_show_contextmenu(menu)

@@ -53,9 +53,9 @@ class SettingsDialog(SettingsDialogUi):
     }
 
     LOGNEG_NAMES = {
-        LogNegativeHandling.Abs: 'Take Absoute, Ignore Zeros',
+        LogNegativeHandling.Abs: 'Take Absolute, Ignore Zeros',
         LogNegativeHandling.Ignore: 'Ignore Values ≤0',
-        LogNegativeHandling.Fail: 'Do Not Plot If ≤0',
+        LogNegativeHandling.Fail: 'Ignore Entire Trace If ≤0',
     }
 
     MAINWINLAYOUT_NAMES = {

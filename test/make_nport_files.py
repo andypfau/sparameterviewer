@@ -44,7 +44,7 @@ with tempfile.TemporaryDirectory() as tempdir:
             s = np.zeros([len(f),n_ports,n_ports], dtype=complex)
             for ep in range(n_ports):
                 for ip in range(n_ports):
-                    phase = np.exp(1j*math.tau*f/PHASE_PERIOD_HZ)
+                    phase = np.exp(-1j*math.tau*f/PHASE_PERIOD_HZ)
                     if ep==ip:
                         magnitude = 10**(RL_WORST_DB/20)
                         magnitude_ripple = np.cos(math.tau*f/RL_PERIOD_HZ)

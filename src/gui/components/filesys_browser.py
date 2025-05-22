@@ -331,8 +331,12 @@ class FilesysBrowser(QWidget):
     
 
     def add_toplevel(self, path: PathExt):
-        if self._simplified and len(self._get_toplevel_items()) > 0:
-            return  # only one toplevel allowed
+        if self._simplified:
+            toplevel_items = self._get_toplevel_items()
+            if len(toplevel_items) >= 1:
+                self.change_root(toplevel_items[0].path, path)
+                return
+        
         try:
             self._inhibit_triggers = True
             self._add_toplevel(path, 0)

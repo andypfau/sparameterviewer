@@ -33,7 +33,7 @@ class Network:
             self.original_file = original_file
         elif isinstance(nw, skrf.Network):
             self.nw = nw
-            self.original_file = nw.original_file
+            self.original_file = original_file
         else:
             raise ValueError(f'Invalid type to init Network object (<{nw}>)')
         if name is not None:
@@ -107,6 +107,8 @@ class Network:
     
 
     def _get_param(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None, param_prefix: str) -> list[SParam]:
+
+        # TODO: check nw.port_modes, then automatically use the mixed-mode names
 
         ep_filter, ip_filter, mixed_name = None, None, None
         match (egress_port, ingress_port):

@@ -342,6 +342,7 @@ class MainWindowUi(QMainWindow):
         self._ui_menu_bar.setContentsMargins(0, 0, 0, 0)
         
         self._ui_mainmenu_file = QtHelper.add_submenu(self._ui_menu_bar, '&File')
+        self._ui_menuitem_loaddir_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_load_dir, shortcut='Ctrl+O')
         self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
         self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu_file, 'Recent Directories', visible=False)
         self._ui_menuitem_recent_items = []
@@ -758,6 +759,8 @@ class MainWindowUi(QMainWindow):
     def on_plottype_changed(self):
         pass
     def on_show_filter(self):
+        pass
+    def on_load_dir(self):
         pass
     def on_reload_all_files(self):
         pass

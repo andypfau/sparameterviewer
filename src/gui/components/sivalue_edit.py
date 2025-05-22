@@ -86,6 +86,7 @@ class SiValueEdit(QLineEdit):
                 return
             self._value = new_value
             self.setText(str(self._value))
+            self.selectAll()
             self.valueChanged.emit()
         except:
             self.setText(str(self._value))

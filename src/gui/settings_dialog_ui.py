@@ -1,5 +1,6 @@
 from .helpers.qt_helper import QtHelper
-from lib.utils import get_next_1_10_100, get_next_1_2_5_10
+from .components.sivalue_edit import SiValueEdit
+from lib import get_next_1_10_100, get_next_1_2_5_10, Si
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -102,10 +103,8 @@ class SettingsDialogUi(QDialog):
         self._ui_td_window_param_spinner.setMinimum(-1e3)
         self._ui_td_window_param_spinner.setMaximum(+1e3)
         self._ui_td_minsize_combo = QComboBox()
-        self._ui_td_shift_spinner = QDoubleSpinBox()
-        self._ui_td_shift_spinner.setMinimum(-1e9)
-        self._ui_td_shift_spinner.setMaximum(+1e9)
-        self._ui_td_shift_spinner.valueChanged.connect(self.on_td_shift_changed)
+        self._ui_td_shift_text = SiValueEdit(self, si=Si(0, 's'), require_return_press=True)
+        self._ui_td_shift_text.valueChanged.connect(self.on_td_shift_changed)
         tb_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -113,7 +112,7 @@ class SettingsDialogUi(QDialog):
                         ['Window:', QtHelper.layout_h(self._ui_td_window_combo, ...)],
                         ['Parameter:', QtHelper.layout_h(self._ui_td_window_param_spinner, ...)],
                         ['Min. Length:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
-                        ['Shift:', QtHelper.layout_h(self._ui_td_shift_spinner, 'ps', ...)],
+                        ['Shift:', QtHelper.layout_h(self._ui_td_shift_text, 'ps', ...)],
                     ]), ...
                 ), ...
             )
@@ -270,10 +269,10 @@ class SettingsDialogUi(QDialog):
     
     @property
     def ui_td_shift(self) -> float:
-        return self._ui_td_shift_spinner.value() * 1e-12
+        return self._ui_td_shift_text.value().value
     @ui_td_shift.setter
     def ui_td_shift(self, value: float):
-        self._ui_td_shift_spinner.setValue(value / 1e-12)
+        self._ui_td_shift_text.setValue(Si(value, 's'))
 
 
     def ui_set_td_minsize_options(self, options: list[str]):
