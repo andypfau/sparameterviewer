@@ -3,7 +3,7 @@ from .si import Si, SiFmt, parse_si_range, format_si_range
 from .structs import SParamFile, PlotData, PlotDataQuantity, PathExt
 from .plot import PlotHelper
 from .appsettings import AppSettings
-from .utils import get_unique_short_filename, is_windows, open_file_in_default_viewer, group_delay, v2db, start_process, is_running_from_binary, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10, is_ext_supported, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str
+from .utils import get_unique_short_filename, is_windows, open_file_in_default_viewer, group_delay, v2db, start_process, is_running_from_binary, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10, is_ext_supported, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements
 from .utils import AchiveFileLoader
 from .expressions import ExpressionParser
 from .apppaths import AppPaths
@@ -12,4 +12,4 @@ from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
 from .shortstr import remove_common_prefixes, remove_common_suffixes, remove_common_prefixes_and_suffixes
 from .clipboard import Clipboard
-from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling
+from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout

@@ -18,7 +18,7 @@ import matplotlib.backend_bases
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str
+from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
@@ -116,10 +116,7 @@ class MainWindow(MainWindowUi):
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
             self.ui_filesys_browser.add_toplevel(path)
-        if len(self._initial_selection) == 0:
-            pass  # TODO: pick first file in first directory
-        if len(self._initial_selection) > 0:
-            self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIAL_SELECTION_ID, MainWindow.TIMER_INITIAL_SELECTION_TIMEOUT_S, self.select_initial_files)
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIAL_SELECTION_ID, MainWindow.TIMER_INITIAL_SELECTION_TIMEOUT_S, self.select_initial_files)
 
         self.update_most_recent_paths_menu()
         Settings.attach(self.on_settings_change)
@@ -155,8 +152,7 @@ class MainWindow(MainWindowUi):
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_logx = Settings.log_x
                 self.ui_logy = Settings.log_y
-                self.ui_wide_layout = Settings.wide_layout
-                self.ui_wide_layout_option = Settings.wide_layout
+                self.ui_layout = Settings.mainwindow_layout
                 self.ui_filesys_browser.show_archives = Settings.extract_zip
                 return None
             except Exception as ex:
@@ -170,7 +166,10 @@ class MainWindow(MainWindowUi):
 
 
     def select_initial_files(self):
-        self.ui_filesys_browser.selected_files = self._initial_selection
+        if len(self._initial_selection) > 0:
+            self.ui_filesys_browser.selected_files = self._initial_selection
+        else:
+            self.ui_filesys_browser.select_first_file()
 
 
     def clear_list_counter(self):
@@ -215,16 +214,11 @@ class MainWindow(MainWindowUi):
         if not self._log_dialog:
             self._log_dialog = LogDialog(self)
         return self._log_dialog
-    
-
-    def on_wide_layout_change(self):
-        Settings.wide_layout = self.ui_wide_layout_option
-        self.on_resize()
 
 
-    def on_log_entry(self, record: logging.LogRecord):
-        if record.levelno >= logging.WARNING:
-            self.ui_show_status_message(record.message, record.levelno)
+    def on_log_entry(self, record: LogHandler.Record):
+        if record.level >= logging.WARNING:
+            self.ui_show_status_message(record.message, record.level)
     
 
     def on_template_button(self):
@@ -838,16 +832,16 @@ class MainWindow(MainWindowUi):
 
     def on_settings_change(self, attributes: list[str]):
         self.ui_filesys_browser.show_archives = Settings.extract_zip
-        self.ui_wide_layout = Settings.wide_layout
+        self.ui_layout = Settings.mainwindow_layout
         self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
         self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
         self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
         self.ui_show_expressions(not Settings.simplified_no_expressions)
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
 
-        if set(['show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
+        if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
-                'plot_mark_points','color_assignment','treat_all_as_complex']) & set(attributes):
+                'plot_mark_points','color_assignment','treat_all_as_complex'), attributes):
             self.schedule_plot_update()
     
     
@@ -902,21 +896,23 @@ class MainWindow(MainWindowUi):
         menu = []
         is_toplevel = path == toplevel_path
         if item_type == FilesysBrowserItemType.File:
-            menu.append(('Pin Directory of This File', make_pin(path.parent)))
-            menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
-            menu.append((None, None))
+            if not self.ui_filesys_browser.simplified:
+                menu.append(('Pin Directory of This File', make_pin(path.parent)))
+                menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
+                menu.append((None, None))
             menu.append((f'Select All Files From Same Directory', make_selall(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
-            typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
-            if is_toplevel:
-                for (ppath, pname) in get_parent_dirs_and_names(path):
-                    menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
-                menu.append((None, None))
-                menu.append((f'Unpin This {typename}', make_unpin()))
-            else:
-                menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
-                menu.append((None, None))
-                menu.append((f'Pin This {typename}', make_pin(path)))
+            if not self.ui_filesys_browser.simplified:
+                typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
+                if is_toplevel:
+                    for (ppath, pname) in get_parent_dirs_and_names(path):
+                        menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
+                    menu.append((None, None))
+                    menu.append((f'Unpin This {typename}', make_unpin()))
+                else:
+                    menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
+                    menu.append((None, None))
+                    menu.append((f'Pin This {typename}', make_pin(path)))
         
         if len(menu) > 0:
             self.ui_filesys_show_contextmenu(menu)

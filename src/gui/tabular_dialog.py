@@ -519,7 +519,7 @@ class TabularDialog(TabularDialogUi):
     
 
     def on_settings_change(self, attributes: list[str]):
-        if set(['phase_unit']) & set(attributes):
+        if ['phase_unit'] in attributes:
             self.update_data()
 
 

@@ -4,7 +4,7 @@ from .helpers.help import show_help
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
-from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling
+from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout
 from lib.utils import is_windows, window_has_argument
 import pathlib
 import logging
@@ -58,6 +58,12 @@ class SettingsDialog(SettingsDialogUi):
         LogNegativeHandling.Fail: 'Do Not Plot If ≤0',
     }
 
+    MAINWINLAYOUT_NAMES = {
+        MainWindowLayout.Vertical: 'Vertical',
+        MainWindowLayout.Wide: 'Wide',
+        MainWindowLayout.Ultrawide: 'Ultra-Wide',
+    }
+
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -69,6 +75,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_cursor_snap_options(list(SettingsDialog.CURSOR_SNAP_NAMES.values()))
         self.ui_set_logxneg_options(list(SettingsDialog.LOGNEG_NAMES.values()))
         self.ui_set_logyneg_options(list(SettingsDialog.LOGNEG_NAMES.values()))
+        self.ui_set_mainwinlayout_options(list(SettingsDialog.MAINWINLAYOUT_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -103,6 +110,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_font = Settings.editor_font
             self.ui_all_complex = Settings.treat_all_as_complex
             self.ui_verbose = Settings.verbose
+            self.ui_mainwin_layout = SettingsDialog.MAINWINLAYOUT_NAMES[Settings.mainwindow_layout]
             self.ui_simplified_plot = Settings.simplified_plot_sel
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
@@ -251,6 +259,13 @@ class SettingsDialog(SettingsDialogUi):
         for option, name in SettingsDialog.LOGNEG_NAMES.items():
             if name == self.ui_logyneg:
                 Settings.logy_negative_handling = option
+                break
+
+
+    def on_mainwinlayout_changed(self):
+        for option, name in SettingsDialog.MAINWINLAYOUT_NAMES.items():
+            if name == self.ui_mainwin_layout:
+                Settings.mainwindow_layout = option
                 break
     
     

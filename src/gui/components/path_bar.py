@@ -88,6 +88,12 @@ class PathBar(QWidget):
         self._ui_text.returnPressed.connect(self._text_press_enter)
         self._ui_text.escapePressed.connect(self._text_press_escape)
         self._ui_text.backClicked.connect(self._on_back_click)
+        self._ui_text_completer_model = QFileSystemModel()
+        self._ui_text_completer_model.setRootPath('')
+        self._ui_text_completer = QCompleter(self._ui_text_completer_model)
+        self._ui_text_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self._ui_text_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
+        self._ui_text.setCompleter(self._ui_text_completer)
         layout = QtHelper.layout_h(self._ui_breadcrumb, self._ui_text, self._ui_toggle_breadcrumbs_button, self._ui_toggle_text_button, self._ui_dir_select_dialog_button)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -152,12 +158,16 @@ class PathBar(QWidget):
             return
         path = pathlib.Path(self._ui_text.text())
         if not (path.exists() and path.is_dir()):
+            QtHelper.indicate_error(self._ui_text, True)
             return
+        QtHelper.indicate_error(self._ui_text, False)
         
         actually_changed = self._path != path
         self._path = path
-        self._ui_breadcrumb.setVisible(False)
-        self._ui_text.setVisible(True)
+        if self._default_mode == PathBar.Mode.Breadcrumbs:
+            self._update_and_show_breadcrumbs()
+        else:
+            self._update_and_show_text()
         if actually_changed:
             self.pathChanged.emit(str(path.absolute()))
 
@@ -180,6 +190,7 @@ class PathBar(QWidget):
             self._ui_text.setPlaceholderText('Enter path...')
         else:
             self._ui_text.setText('')
+            QtHelper.indicate_error(self._ui_text, False)
             self._ui_text.setPlaceholderText('')
             self._ui_breadcrumb.setVisible(False)
             self._ui_text.setVisible(True)
@@ -195,6 +206,7 @@ class PathBar(QWidget):
 
         self._ui_breadcrumb.setVisible(False)
         self._ui_text.setText(str(self._path.absolute()))
+        QtHelper.indicate_error(self._ui_text, False)
         self._ui_text.setEnabled(True)
         self._ui_text.setVisible(True)
         self._ui_text.setFocus()

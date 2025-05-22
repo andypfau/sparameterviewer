@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 from typing import override, Callable
-from lib import Settings
 
+import dataclasses
 import logging
+import time
 
 
 
-class LogHandler(logging.StreamHandler):    
+class LogHandler(logging.StreamHandler):
+
+
+    @dataclasses.dataclass
+    class Record:
+        timestamp: float
+        message: str
+        file: str
+        level: int
+        level_name: str
     
 
     _instance: LogHandler|None = None
@@ -15,8 +25,9 @@ class LogHandler(logging.StreamHandler):
 
     def __init__(self):
         assert LogHandler._instance is None
-        self._records: list[logging.LogRecord] = []
-        self._observers: list[Callable[tuple[logging.LogRecord],None]] = []
+        self._records: list[LogHandler.Record] = []
+        self._observers: list[Callable[tuple[LogHandler.Record],None]] = []
+        self._t_start = time.monotonic()
         super().__init__(logging.DEBUG)
     
 
@@ -31,8 +42,9 @@ class LogHandler(logging.StreamHandler):
     @override
     def emit(self, record: logging.LogRecord):
         """ implementation of logging.Handler.emit()"""
-        self._records.append(record)
-        self._notify(record)
+        entry = LogHandler.Record(time.monotonic()-self._t_start, record.msg, record.filename, record.levelno, record.levelname)
+        self._records.append(entry)
+        self._notify(entry)
 
 
     def clear(self):
@@ -40,15 +52,15 @@ class LogHandler(logging.StreamHandler):
         self._notify()
     
 
-    def get_records(self, level=logging.INFO) -> list[logging.LogRecord]:
-        return [record for record in self._records if record.levelno >= level]
+    def get_records(self, level=logging.INFO) -> list[LogHandler.Record]:
+        return [record for record in self._records if record.level >= level]
     
 
     def get_formatted_messages(self, level=logging.INFO) -> list[str]:
-        return [f'{str(record.levelname).capitalize()}: {record.msg}' for record in self.get_records(level)]
+        return [f'{record.timestamp:09.3f}, {str(record.level_name).capitalize()}: {record.message}' for record in self.get_records(level)]
 
 
-    def _notify(self, record: logging.LogRecord|None):
+    def _notify(self, record: LogHandler.Record|None):
         for i in reversed(range(len(self._observers))):
             try:
                 self._observers[i](record)
@@ -56,6 +68,6 @@ class LogHandler(logging.StreamHandler):
                 del self._observers[i]
 
 
-    def attach(self, callback: Callable[tuple[logging.LogRecord|None],None]):
+    def attach(self, callback: Callable[tuple[LogHandler.Record|None],None]):
         """ Attach a log listener """
         self._observers.append(callback)

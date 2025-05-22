@@ -26,9 +26,7 @@ Roadmap
 
 ### Missing Features
 
-- GUI: allow to re-arrange the three main components (toolbar, plot, files) in a "T".
-- GUI: more simplified UI options (hide expressions; simplified file browser).
-- GUI: equation file history.
+- GUI: expression file history.
 - Expressions: better interaction with Numpy. How can I use numpy functions with traces? What if I have two different parameters and a binary operation?
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Expressions: log output for equations (so that you can also print some data or status).

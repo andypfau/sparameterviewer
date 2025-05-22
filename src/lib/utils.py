@@ -258,3 +258,7 @@ def get_callstack_str(depth: int = 5) -> str:
         return 'Call: [empty callstack]'  # should never happen
     callstack_top = list(reversed(callstack[-depth-1:-1]))
     return 'Call: ' + ' < '.join([f'{s.name}()' for s in callstack_top]) + f' ({os.path.split(callstack_top[0].filename)[1]}#{callstack_top[0].lineno})'
+
+
+def any_common_elements(a, b) -> bool:
+    return len(set(a) & set(b)) > 0

@@ -33,7 +33,7 @@ class LogDialog(LogDialogUi):
         super().ui_show()
 
 
-    def on_log_entry(self, entry: logging.LogRecord):
+    def on_log_entry(self, entry: LogHandler.Record):
         self.update_log_text()
     
 

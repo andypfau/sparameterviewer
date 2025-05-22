@@ -6,10 +6,9 @@ from .components.path_bar import PathBar
 from .components.filesys_browser import FilesysBrowser, FilesysBrowserItemType
 from .components.range_edit import RangeEdit
 from .components.param_selector import ParamSelector
-from .components.hv_splitter import HvSplitter
 from .components.plot_selector import PlotSelector
 from .components.sivalue_edit import SiValueEdit
-from lib import AppPaths, PathExt, Parameters, Si
+from lib import AppPaths, PathExt, Parameters, Si, MainWindowLayout
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -29,6 +28,7 @@ from typing import Callable, Optional, Union
 
 class MainWindowUi(QMainWindow):
 
+
     class Tab(enum.Enum):
         Files = enum.auto()
         Expressions = enum.auto()
@@ -39,6 +39,7 @@ class MainWindowUi(QMainWindow):
         self._ui_timers: dict[any,tuple[QTimer,Callable]] = {}
         self._allow_plot_tool = True
         self._show_expressions = True
+        self._layout = MainWindowLayout.Wide
 
         super().__init__()
         QtHelper.set_dialog_icon(self)
@@ -267,10 +268,16 @@ class MainWindowUi(QMainWindow):
 
         self._ui_status_bar = StatusBar()
 
-        self._ui_splitter = HvSplitter(self._ui_plot, self._ui_tabs, HvSplitter.Orientation.Left2Right1, self)
+        self._ui_main_container = QWidget()
+        self._ui_main_container.setLayout(QVBoxLayout())
+        self._ui_splitter = QSplitter()
+        self._ui_splitter.addWidget(QWidget())
+        self._ui_splitter.addWidget(QWidget())
+        self._ui_secondary_container = QWidget()
+        self._ui_secondary_container.setLayout(QVBoxLayout())
+
         self.setCentralWidget(QtHelper.layout_widget_v(
-            self._ui_ribbon,
-            self._ui_splitter,
+            self._ui_main_container,
             self._ui_status_bar,
         ))
         
@@ -278,7 +285,51 @@ class MainWindowUi(QMainWindow):
         self._ui_tabs.currentChanged.connect(self.on_tab_change)
         self._ui_plot.attach(self.on_plot_mouse_event)
         self._ui_status_bar.clicked.connect(self.on_statusbar_click)
+
+        self._update_layout()
     
+
+    def _update_layout(self):
+
+        # erase current layout
+        for i in reversed(range(self._ui_main_container.layout().count())):
+            self._ui_main_container.layout().takeAt(0)
+        for i in reversed(range(self._ui_secondary_container.layout().count())):
+            self._ui_secondary_container.layout().takeAt(0)
+        self._ui_splitter.replaceWidget(0, QWidget())
+        self._ui_splitter.replaceWidget(1, QWidget())
+
+        if self._layout == MainWindowLayout.Wide:
+            self._ui_main_container.layout().addWidget(self._ui_ribbon)
+            self._ui_main_container.layout().addWidget(self._ui_splitter)
+            self._ui_splitter.replaceWidget(0, self._ui_tabs)
+            self._ui_splitter.replaceWidget(1, self._ui_plot)
+            self._ui_splitter.setStretchFactor(0, 1)
+            self._ui_splitter.setStretchFactor(1, 2)
+            self._ui_splitter.setOrientation(QtCore.Qt.Orientation.Horizontal)
+
+        elif self._layout == MainWindowLayout.Vertical:
+            self._ui_main_container.layout().addWidget(self._ui_ribbon)
+            self._ui_main_container.layout().addWidget(self._ui_splitter)
+            self._ui_splitter.replaceWidget(0, self._ui_plot)
+            self._ui_splitter.replaceWidget(1, self._ui_tabs)
+            self._ui_splitter.setStretchFactor(0, 2)
+            self._ui_splitter.setStretchFactor(1, 1)
+            self._ui_splitter.setOrientation(QtCore.Qt.Orientation.Vertical)
+
+        elif self._layout == MainWindowLayout.Ultrawide:
+            self._ui_main_container.layout().addWidget(self._ui_splitter)
+            self._ui_secondary_container.layout().addWidget(self._ui_ribbon)
+            self._ui_secondary_container.layout().addWidget(self._ui_tabs)
+            self._ui_splitter.replaceWidget(0, self._ui_secondary_container)
+            self._ui_splitter.replaceWidget(1, self._ui_plot)
+            self._ui_splitter.setStretchFactor(0, 1)
+            self._ui_splitter.setStretchFactor(1, 2)
+            self._ui_splitter.setOrientation(QtCore.Qt.Orientation.Horizontal)
+
+        else:
+            raise ValueError()
+
 
     def resizeEvent(self, arg):
         result = super().resizeEvent(arg)
@@ -313,8 +364,6 @@ class MainWindowUi(QMainWindow):
         self._ui_mainmenu_view.addSeparator()
         self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
         self._ui_menuitem_view_tabular2 = QtHelper.add_menuitem(self._ui_mainmenu_view, 'View/Copy/Export Tabular Data...', self.on_view_tabular)
-        self._ui_mainmenu_view.addSeparator()
-        self._ui_menuitem_wide = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Wide layout', self.on_wide_layout_change, checkable=True)
 
         self._ui_mainmenu_tools = QtHelper.add_submenu(self._ui_menu_bar, '&Tools')
         self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
@@ -374,6 +423,17 @@ class MainWindowUi(QMainWindow):
 
     
     @property
+    def ui_layout(self) -> MainWindowLayout:
+        return self._layout
+    @ui_layout.setter
+    def ui_layout(self, value: MainWindowLayout):
+        if self._layout == value:
+            return
+        self._layout = value
+        self._update_layout()
+
+    
+    @property
     def ui_color_assignment(self) -> str:
         return self._ui_color_combo.currentText()
     @ui_color_assignment.setter
@@ -391,22 +451,6 @@ class MainWindowUi(QMainWindow):
             if self.ui_tab == MainWindowUi.Tab.Expressions:
                 self.ui_tab = MainWindowUi.Tab.Files
             self._ui_tabs.removeTab(1)
-
-    
-    @property
-    def ui_wide_layout_option(self) -> bool:
-        return self._ui_menuitem_wide.isChecked()
-    @ui_wide_layout_option.setter
-    def ui_wide_layout_option(self, value: bool):
-        self._ui_menuitem_wide.setChecked(value)
-
-    
-    @property
-    def ui_wide_layout(self) -> bool:
-        return self._ui_splitter.orientation() == HvSplitter.Orientation.Left2Right1
-    @ui_wide_layout.setter
-    def ui_wide_layout(self, value: bool):
-        self._ui_splitter.setOrientation(HvSplitter.Orientation.Left2Right1 if value else HvSplitter.Orientation.Top1Bottom2)
 
 
     def ui_show_template_menu(self, items: list[tuple[str,Callable|list]]):
@@ -804,6 +848,4 @@ class MainWindowUi(QMainWindow):
     def on_color_change(self):
         pass
     def on_resize(self):
-        pass
-    def on_wide_layout_change(self):
         pass

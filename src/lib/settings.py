@@ -70,6 +70,11 @@ class LogNegativeHandling(enum.StrEnum):
     Ignore = 'ignore'
     Fail = 'fail'
 
+class MainWindowLayout(enum.StrEnum):
+    Vertical = 'vertical'
+    Wide = 'wide'
+    Ultrawide = 'ultrawide'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -109,13 +114,11 @@ class SParamViewerAppSettings(AppSettings):
     warncount_file_list: int = 1_000
     warncount_file_load: int = 30
     color_assignment: ColorAssignment = ColorAssignment.ByFile
-    wide_layout: bool = False
+    mainwindow_layout: MainWindowLayout = MainWindowLayout.Wide
     treat_all_as_complex: bool = False
     verbose: bool = False
     logx_negative_handling: LogNegativeHandling = LogNegativeHandling.Ignore
     logy_negative_handling: LogNegativeHandling = LogNegativeHandling.Abs
-    
-    # TODO: implement simplified UI
     simplified_param_sel: bool = False
     simplified_plot_sel: bool = False
     simplified_browser: bool = False

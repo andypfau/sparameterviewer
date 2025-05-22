@@ -45,6 +45,28 @@ class SettingsDialogUi(QDialog):
         main_layout.addWidget(self._ui_tabs)
         self.setLayout(main_layout)
 
+        gui_widget = QWidget()
+        self._ui_tabs.addTab(gui_widget, 'GUI')
+        self._ui_mainwinlayout_combo = QComboBox()
+        self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')
+        self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
+        self._ui_simple_noexpr_check = QCheckBox('Do Not Use Expressions')
+        self._ui_simple_noexpr_check.toggled.connect(self.on_simple_noexpr_changed)
+        self._ui_simple_plot_check = QCheckBox('Simple Drop-Down Plot Selection')
+        self._ui_simple_plot_check.toggled.connect(self.on_simple_plot_changed)
+        self._ui_simple_browser_check = QCheckBox('Simple Single-Directory Browser')
+        self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
+        gui_widget.setLayout(
+            QtHelper.layout_v(
+                QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
+                self._ui_simple_params_check,
+                self._ui_simple_noexpr_check,
+                self._ui_simple_plot_check,
+                self._ui_simple_browser_check,
+                ...
+            )
+        )
+
         format_widget = QWidget()
         self._ui_tabs.addTab(format_widget, 'Formats')
         self._ui_deg_radio = QRadioButton('Degrees')
@@ -149,26 +171,6 @@ class SettingsDialogUi(QDialog):
             )
         )
 
-        simplifications_widget = QWidget()
-        self._ui_tabs.addTab(simplifications_widget, 'Simplifications')
-        self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')
-        self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
-        self._ui_simple_noexpr_check = QCheckBox('Do Not Use Expressions')
-        self._ui_simple_noexpr_check.toggled.connect(self.on_simple_noexpr_changed)
-        self._ui_simple_plot_check = QCheckBox('Simple Drop-Down Plot Selection')
-        self._ui_simple_plot_check.toggled.connect(self.on_simple_plot_changed)
-        self._ui_simple_browser_check = QCheckBox('Simple Single-Directory Browser')
-        self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
-        simplifications_widget.setLayout(
-            QtHelper.layout_v(
-                self._ui_simple_params_check,
-                self._ui_simple_noexpr_check,
-                self._ui_simple_plot_check,
-                self._ui_simple_browser_check,
-                ...
-            )
-        )
-
         self.adjustSize()
     
 
@@ -259,6 +261,14 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_mainwin_layout(self) -> str:
+        return self._ui_mainwinlayout_combo.currentText()
+    @ui_mainwin_layout.setter
+    def ui_mainwin_layout(self, value: str):
+        self._ui_mainwinlayout_combo.setCurrentText(value)
+
+    
+    @property
     def ui_td_shift(self) -> float:
         return self._ui_td_shift_spinner.value() * 1e-12
     @ui_td_shift.setter
@@ -301,6 +311,13 @@ class SettingsDialogUi(QDialog):
         for option in options:
             self._ui_logyneg_combo.addItem(option)
         self._ui_logyneg_combo.currentIndexChanged.connect(self.on_logyneg_changed)
+
+
+    def ui_set_mainwinlayout_options(self, options: list[str]):
+        self._ui_mainwinlayout_combo.clear()
+        for option in options:
+            self._ui_mainwinlayout_combo.addItem(option)
+        self._ui_mainwinlayout_combo.currentIndexChanged.connect(self.on_mainwinlayout_changed)
 
     
     @property
@@ -485,4 +502,6 @@ class SettingsDialogUi(QDialog):
     def on_simple_noexpr_changed(self):
         pass
     def on_simple_browser_changed(self):
+        pass
+    def on_mainwinlayout_changed(self):
         pass

@@ -210,7 +210,16 @@ class FilesysBrowser(QWidget):
     def simplified(self) -> bool:
         return self._simplified
     def setSimplified(self, value: bool):
-        self._simplified = value  # TODO: implement simplified file browser (only allow a single root-item, no pinning)
+        if self._simplified == value:
+            return
+        self._simplified = value
+        if self._simplified:
+            toplevel_items = self._get_toplevel_items()
+            if len(toplevel_items) < 1:
+                return  # probably the tree is not fully constructed yet
+            for i in range(1, len(toplevel_items)):
+                self.remove_toplevel(toplevel_items[i].path)
+            self.update_pathbar()
     
 
     @property
@@ -282,6 +291,23 @@ class FilesysBrowser(QWidget):
         self.selectionChanged.emit()
     
 
+    def select_first_file(self):
+        def recurse(parent: FilesysBrowser.MyFileItem) -> bool:
+            if parent is None:
+                return False
+            for row_index in range(parent.rowCount()):
+                item = parent.child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                if item.type == FilesysBrowserItemType.File:
+                    item.checked = True
+                    return True
+                if recurse(item):
+                    return
+            return False
+        recurse(self._ui_filesys_model.invisibleRootItem())
+    
+
     def update_status(self, path: PathExt, status: str):
         #logging.debug(get_callstack_str(8))
         def recurse(parent: FilesysBrowser.MyFileItem):
@@ -305,27 +331,37 @@ class FilesysBrowser(QWidget):
     
 
     def add_toplevel(self, path: PathExt):
-        #logging.debug(get_callstack_str(8))
+        if self._simplified and len(self._get_toplevel_items()) > 0:
+            return  # only one toplevel allowed
         try:
             self._inhibit_triggers = True
             self._add_toplevel(path, 0)
+                
+            if self._simplified:
+                self._ui_pathbar.path = str(path)
+                self._ui_pathbar.setVisible(True)
+        
+            self.update_pathbar()
+
         finally:
             self._inhibit_triggers = False
         self.filesChanged.emit()
 
 
     def remove_toplevel(self, path: PathExt):
-        #logging.debug(get_callstack_str(8))
-        if self._ui_filesys_model.invisibleRootItem().rowCount() <= 1:
+        if len(self._get_toplevel_items()) <= 1:
             return #  only one top-level element left; ignore
         try:
             self._inhibit_triggers = True
+            
             for row_index in reversed(range(self._ui_filesys_model.invisibleRootItem().rowCount())):
                 item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
                 if not isinstance(item, FilesysBrowser.MyFileItem):
                     continue
                 if item.path == path:
                     self._ui_filesys_model.removeRow(row_index)
+            
+            self.update_pathbar()
         finally:
             self._inhibit_triggers = False
         self.filesChanged.emit()
@@ -335,21 +371,24 @@ class FilesysBrowser(QWidget):
         #logging.debug(get_callstack_str(8))
         try:
             self._inhibit_triggers = True
+            
             toplevel_item: FilesysBrowser.MyFileItem = None
-            toplevel_index: int = 0
-            for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
-                item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
-                if not isinstance(item, FilesysBrowser.MyFileItem):
-                    continue
-                if item.path == current_root:
-                    toplevel_item = item
-                    toplevel_index = row_index
-                    break
-            if not isinstance(toplevel_item, FilesysBrowser.MyFileItem):
+            if self._simplified:
+                toplevel_item = self._get_toplevel_items()[0]
+            else:
+                for toplevel_item in self._get_toplevel_items():
+                    if toplevel_item.path == current_root:
+                        break
+            if toplevel_item is None:
                 return
-            self._ui_filesys_model.removeRow(toplevel_index)
-            new_item = self._add_toplevel(new_root, toplevel_index)
+            
+            toplevel_row_index = self._ui_filesys_model.indexFromItem(toplevel_item).row()
+            self._ui_filesys_model.removeRow(toplevel_row_index)
+            new_item = self._add_toplevel(new_root, toplevel_row_index)
             self._ui_filesys_view.expand(self._ui_filesys_model.indexFromItem(new_item))
+            
+            self.update_pathbar()
+
         finally:
             self._inhibit_triggers = False
         self.filesChanged.emit()
@@ -376,10 +415,44 @@ class FilesysBrowser(QWidget):
 
             for i,path in enumerate(toplevel_paths):
                 self._add_toplevel(path, i)
+            
+            self.update_pathbar()
+
         finally:
             self._inhibit_triggers = False
 
         self.filesChanged.emit()
+    
+
+    def _get_toplevel_item_for_pathbar(self) -> FilesysBrowser.MyFileItem|None:
+        if self._simplified:
+            toplevel_items = self._get_toplevel_items()
+            if len(toplevel_items) < 1:
+                return None
+            return toplevel_items[0]
+
+        # is there exactly one top-level item?
+        toplevel_items = self._get_toplevel_items()
+        if len(toplevel_items) == 1:
+            return toplevel_items[0]
+
+        # is there exactly one selected item?
+        selected_items = self._get_all_selected_items()
+        if len(selected_items) == 1:
+            parent = self._find_toplevel_item(selected_items[0])
+            if parent:
+                return parent
+
+        return None
+
+    
+    def update_pathbar(self):
+        toplevel_item = self._get_toplevel_item_for_pathbar()
+        if toplevel_item:
+            self._ui_pathbar.path = toplevel_item.path
+            self._ui_pathbar.setVisible(True)
+        else:
+            self._ui_pathbar.setVisible(False)
 
     
     def _add_toplevel(self, path: PathExt, row_index: int):
@@ -409,35 +482,20 @@ class FilesysBrowser(QWidget):
         return list([item for item in [self._ui_filesys_model.itemFromIndex(index) for index in self._ui_filesys_view.selectedIndexes()] if isinstance(item, FilesysBrowser.MyFileItem)])
         
     
+    def _get_toplevel_items(self) -> list[FilesysBrowser.MyFileItem]:
+        all_toplevel_items = [self._ui_filesys_model.invisibleRootItem().child(i, 0) for i in range(self._ui_filesys_model.invisibleRootItem().rowCount())]
+        return list([item for item in all_toplevel_items if isinstance(item, FilesysBrowser.MyFileItem)])
+
+
     def _find_toplevel_item(self, item: FilesysBrowser.MyFileItem) -> FilesysBrowser.MyFileItem|None:
         if item is None or not isinstance(item, FilesysBrowser.MyFileItem):
             return None
         if item.is_toplevel:
             return item
         return self._find_toplevel_item(item.parent())
-    
 
-    def _on_selection_change(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
-        selected_items = self._get_all_selected_items()
-        
-        if len(selected_items)==1:
-            
-            # exactly one item is selected; show its path in the path bar
-            selected_item = selected_items[0]
-            toplevel_item = self._find_toplevel_item(selected_item)
-            if toplevel_item and toplevel_item.type == FilesysBrowserItemType.Dir:
-                self._ui_pathbar.path = str(toplevel_item.path)
-                self._ui_pathbar.setVisible(True)
-            else:
-                self._ui_pathbar.setVisible(False)
-            
-            if selected_item.type != FilesysBrowserItemType.File:
-                # the user selected a non-file; do not change the checkboxes
-                return
-        else:
-            self._ui_pathbar.setVisible(False)
 
-        # the user selected or de-selected some files; check them accordingly
+    def _check_items(self, items: list[FilesysBrowser.MyFileItem]):
         any_changed = False
         try:
             self._inhibit_triggers = True
@@ -449,7 +507,7 @@ class FilesysBrowser(QWidget):
                     item = parent.child(row_index, 0)
                     if not isinstance(item, FilesysBrowser.MyFileItem):
                         continue
-                    do_check = item in selected_items
+                    do_check = item in items
                     if item.checked != do_check:
                         item.checked = do_check
                         any_changed = True
@@ -459,6 +517,17 @@ class FilesysBrowser(QWidget):
             self._inhibit_triggers = False
         if any_changed:
             self.selectionChanged.emit()
+    
+
+    def _on_selection_change(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
+        
+        self.update_pathbar()
+
+        selected_items = self._get_all_selected_items()
+        if len(selected_items)==1:
+            if selected_items[0].type != FilesysBrowserItemType.File:
+                return  # the user selected a single non-file; do not change the checkboxes
+        self._check_items(selected_items)
 
     
     def _on_files_changed(self):
@@ -476,24 +545,15 @@ class FilesysBrowser(QWidget):
         self.selectionChanged.emit()
 
     
-    def _get_top_item(self, item: FilesysBrowser.MyFileItem) -> FilesysBrowser.MyFileItem:
-        def contains_item(parent: FilesysBrowser.MyFileItem, searched_item: FilesysBrowser.MyFileItem) -> bool:
-            for row_index in range(parent.rowCount()):
-                item = parent.child(row_index, 0)
-                if item == searched_item:
-                    return True
-                if contains_item(item, searched_item):
-                    return True
-            return False
-        def find_top_item(searched_item: FilesysBrowser.MyFileItem) -> FilesysBrowser.MyFileItem:
-            for row_index in range(self._ui_filesys_model.invisibleRootItem().rowCount()):
-                item = self._ui_filesys_model.invisibleRootItem().child(row_index, 0)
-                if item == searched_item:
-                    return item
-                if contains_item(item, searched_item):
-                    return item
-            return None
-        return find_top_item(item)
+    def _find_toplevel_item(self, child_item: FilesysBrowser.MyFileItem) -> FilesysBrowser.MyFileItem:
+        def recurse(item: FilesysBrowser.MyFileItem):
+            if item.is_toplevel:
+                return item
+            parent = item.parent()
+            if not isinstance(parent, FilesysBrowser.MyFileItem):
+                raise RuntimeError(f'Cannot find toplevel item of {child_item}')
+            return recurse(parent)
+        return recurse(child_item)
 
 
     def _on_contextmenu_requested(self, point: QPoint):
@@ -504,7 +564,7 @@ class FilesysBrowser(QWidget):
         item: FilesysBrowser.MyFileItem = self._ui_filesys_model.itemFromIndex(index)
         if not isinstance(item, FilesysBrowser.MyFileItem):
             return
-        top_item = self._get_top_item(item)
+        top_item = self._find_toplevel_item(item)
         if not isinstance(top_item, FilesysBrowser.MyFileItem):
             return
         self._contextmenu_item = item
@@ -515,18 +575,15 @@ class FilesysBrowser(QWidget):
         item: FilesysBrowser.MyFileItem = self._ui_filesys_model.itemFromIndex(index)
         if not isinstance(item, FilesysBrowser.MyFileItem):
             return
-        top_item = self._get_top_item(item)
+        top_item = self._find_toplevel_item(item)
         if not isinstance(top_item, FilesysBrowser.MyFileItem):
             return
         self.doubleClicked.emit(item.path, top_item.path, item.type)
 
 
     def _on_pathbar_change(self, path: str):
-        selected_items = self._get_all_selected_items()
-        if len(selected_items) != 1:
-            return
-        toplevel_item = self._get_top_item(selected_items[0])
-        if not toplevel_item or toplevel_item.type != FilesysBrowserItemType.Dir:
+        toplevel_item = self._get_toplevel_item_for_pathbar()
+        if toplevel_item is None:
             return
         self.change_root(toplevel_item.path, PathExt(path))
 
