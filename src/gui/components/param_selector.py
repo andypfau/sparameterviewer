@@ -64,7 +64,6 @@ class ParamSelector(QWidget):
         def __init__(self, parent = ...):
             super().__init__(parent)
             self._data = np.array([[False, False, True], [False, True, True], [True, True, True]], dtype=bool)
-            self._use_expressions = False
             self._scale_widget_to_contents = False
             self._current_geometry: ParamSelector.GraphicWidget.Geometry|None = None
             self._target_size = 64
@@ -118,8 +117,6 @@ class ParamSelector(QWidget):
             super().mouseReleaseEvent(event)
             if not event or event.button() != Qt.MouseButton.LeftButton:
                 return  # no mouse click -> ignore
-            if self._use_expressions:
-                return  # not clickable -> ignore
             geometry = self.get_geometry()
 
             if geometry.overflow:
@@ -169,48 +166,41 @@ class ParamSelector(QWidget):
                 for j in range(grid_size):
                     rect = QRectF(x0+j*cell_size+cell_border, y0+i*cell_size+cell_border, cell_size-2*cell_border, cell_size-2*cell_border)
                     
-                    if self._use_expressions:
-                        # using expressions -> draw gray dummies
-                        painter.setBrush(color_dark)
+                    enabled = self._data[i,j]
+                    if enabled:
+                        painter.setBrush(color_hl)
                         painter.setPen(Qt.PenStyle.NoPen)
-                        painter.drawRoundedRect(rect, 3, 3)
-                    
                     else:
-                        enabled = self._data[i,j]
-                        if enabled:
-                            painter.setBrush(color_hl)
-                            painter.setPen(Qt.PenStyle.NoPen)
-                        else:
-                            painter.setBrush(Qt.BrushStyle.NoBrush)
-                            if overflow:
-                                painter.setPen(color_dark)
-                            else:
-                                painter.setPen(Qt.PenStyle.NoPen)
-                            
+                        painter.setBrush(Qt.BrushStyle.NoBrush)
                         if overflow:
-                            painter.drawEllipse(rect)
+                            painter.setPen(color_dark)
                         else:
-                            painter.drawRoundedRect(rect, 2, 2)
+                            painter.setPen(Qt.PenStyle.NoPen)
+                        
+                    if overflow:
+                        painter.drawEllipse(rect)
+                    else:
+                        painter.drawRoundedRect(rect, 2, 2)
 
-                        if not overflow:
-                            if enabled:
-                                painter.setPen(color_hl_text)
-                            else:
-                                painter.setPen(color_text)
-                            
-                            ep, ip = i+1, j+1
-                            is_long_text = ep>=10 or ip>=10
-                            
-                            if is_long_text or always_use_comma:
-                                text = f'{ep},{ip}'
-                            else:
-                                text = f'{ep}{ip}'
-                            if is_long_text or always_use_small_font:
-                                painter.setFont(small_font)
-                            else:
-                                painter.setFont(default_font)
-                            
-                            painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, text)
+                    if not overflow:
+                        if enabled:
+                            painter.setPen(color_hl_text)
+                        else:
+                            painter.setPen(color_text)
+                        
+                        ep, ip = i+1, j+1
+                        is_long_text = ep>=10 or ip>=10
+                        
+                        if is_long_text or always_use_comma:
+                            text = f'{ep},{ip}'
+                        else:
+                            text = f'{ep}{ip}'
+                        if is_long_text or always_use_small_font:
+                            painter.setFont(small_font)
+                        else:
+                            painter.setFont(default_font)
+                        
+                        painter.drawText(rect, QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignVCenter, text)
 
             painter.end()
     
@@ -239,16 +229,6 @@ class ParamSelector(QWidget):
             self._adjust_widget_size()
     
         @property
-        def use_expressions(self) -> bool:
-            return self._use_expressions
-        @use_expressions.setter
-        def use_expressions(self, value: bool):
-            if self._use_expressions == value:
-                return
-            self._use_expressions = value
-            self.repaint()
-    
-        @property
         def scale_widget_to_contents(self) -> bool:
             return self._scale_widget_to_contents
         @scale_widget_to_contents.setter
@@ -272,6 +252,7 @@ class ParamSelector(QWidget):
         self._simplified = False
         self._ignore_simple_change = False
         self._allow_expressions = False
+        self._use_expressions = False
 
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
@@ -358,7 +339,7 @@ class ParamSelector(QWidget):
         self._allow_expressions = value
         self._ui_expr_button.setVisible(self._allow_expressions)
         if not self._allow_expressions:
-            if self._ui_grid.use_expressions:
+            if self._use_expressions:
                 self.setParams(Parameters.ComboAll)
 
 
@@ -445,26 +426,24 @@ class ParamSelector(QWidget):
     
 
     def params(self) -> Parameters:
-        if self._ui_grid.use_expressions:
-            return Parameters.Expressions
         return self._guess_params_from_data(self.paramMask())
     def setParams(self, value: Parameters):
-        if value == Parameters.Expressions:
-            if self._allow_expressions:
-                self._ui_grid.use_expressions = True
-                self._ui_expr_button.setChecked(True)
-            return
-        
-        self._ui_expr_button.setChecked(False)
         self._ui_grid.data = self._make_mask(value)
         self._update_simple_params_from_params(value)
+    
+
+    def useExpressions(self) -> bool:
+        return self._use_expressions
+    def setUseExpressions(self, value: bool):
+        if not self._allow_expressions:
+            return
+        self._use_expressions = value
+        self._ui_expr_button.setChecked(value)
 
 
     def paramMask(self) -> np.ndarray:
         return self._ui_grid.data
     def setParamMask(self, value: np.ndarray):
-        self._ui_expr_button.setChecked(False)
-        self._ui_grid.use_expressions = False
         self._ui_grid.data = value
         self._update_simple_params_from_params(self._guess_params_from_data(value))
     
@@ -506,8 +485,6 @@ class ParamSelector(QWidget):
         else:
             # only set these
             params = mask
-        self._ui_expr_button.setChecked(False)
-        self._ui_grid.use_expressions = False
         self._ui_grid.data = params
         self._update_simple_params_from_params(self._guess_params_from_data(params))
         self.paramsChanged.emit()
@@ -542,7 +519,7 @@ class ParamSelector(QWidget):
 
     
     def _on_expr(self):
-        self._ui_grid.use_expressions = self._ui_expr_button.isChecked()
+        self._use_expressions = self._ui_expr_button.isChecked()
         self.paramsChanged.emit()
 
 
@@ -607,8 +584,6 @@ class ParamSelector(QWidget):
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S11))
                 case Parameters.S22:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.S22))
-                case Parameters.Expressions:
-                    self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.Expressions))
                 case _:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.All))  # fallback
         finally:
@@ -636,9 +611,6 @@ class ParamSelector(QWidget):
                 self.setParamMask(self._make_mask(Parameters.S11))
             case str(ParamSelector.Simplified.S22):
                 self.setParamMask(self._make_mask(Parameters.S22))
-            case str(ParamSelector.Simplified.Expressions):
-                if self._allow_expressions:
-                    self.setParams(Parameters.Expressions)
             case _:
                 return
         

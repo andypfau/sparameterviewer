@@ -635,22 +635,6 @@ class MainWindowUi(QMainWindow):
 
 
     @property
-    def ui_params(self) -> Parameters:
-        return self._ui_param_selector.params()
-    @ui_params.setter
-    def ui_params(self, params: Parameters):
-        self._ui_param_selector.setParams(params)
-
-
-    @property
-    def ui_params_mask(self) -> np.ndarray:
-        return self._ui_param_selector.paramMask()
-    @ui_params_mask.setter
-    def ui_params_mask(self, mask: np.ndarray):
-        self._ui_param_selector.setParamMask(mask)
-
-
-    @property
     def ui_params_size(self) -> int:
         return self._ui_param_selector.matrixDimensions()
     @ui_params_size.setter

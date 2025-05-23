@@ -1,7 +1,7 @@
 from ..structs import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
-from ..sparam_helpers import get_sparam_name, parse_quick_param
+from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams
 from .helpers import format_call_signature
 from ..utils import sanitize_filename
@@ -46,7 +46,7 @@ class Network:
     
 
     @staticmethod
-    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple(skrf.Network)":
+    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network]":
         if len(a.nw.f)==len(b.nw.f):
             if all(af==bf for af,bf in zip(a.nw.f, b.nw.f)):
                 return a.nw,b.nw
@@ -108,24 +108,21 @@ class Network:
 
     def _get_param(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None, param_prefix: str) -> list[SParam]:
 
-        # TODO: check nw.port_modes, then automatically use the mixed-mode names
+        result = []
+        if not self.nw:
+            return result
 
-        ep_filter, ip_filter, mixed_name = None, None, None
+        ep_filter, ip_filter = None, None
         match (egress_port, ingress_port):
             case int(), None:
                 (ep_filter, ip_filter) = parse_quick_param(egress_port)
             case str(), None:
-                if m := re.match(r'^([cd])([cd]).+$', egress_port.lower()):
-                    egress_mode, ingress_mode = m.group(1), m.group(2)
-                    (egress_diffport, ingress_diffport) = parse_quick_param(egress_port[2:])
-                    def _get_port(mode, diffport):
-                        assert mode in ('c','d')
-                        port = diffport
-                        if mode == 'c':
-                            port += self.nw.nports // 2
-                        return port
-                    ep_filter, ip_filter = _get_port(egress_mode,egress_diffport), _get_port(ingress_mode,ingress_diffport)
-                    mixed_name = get_sparam_name(egress_diffport, ingress_diffport, prefix=f'{param_prefix}{egress_mode}{ingress_mode}'.upper())
+                if m := re.match(r'^([CDS])([CDS])([0-9])?([0-9])$', egress_port.upper()):
+                    egress_mode, ingress_mode, egress_mixedport, ingress_mixedport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
+                    ep_filter, ip_filter = get_port_index(self.nw,egress_mode,egress_mixedport)+1, get_port_index(self.nw,ingress_mode,ingress_mixedport)+1
+                elif m := re.match(r'^([CDS])([CDS])([0-9]+)[,;]?([0-9]+)$', egress_port.upper()):
+                    egress_mode, ingress_mode, egress_mixedport, ingress_mixedport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
+                    ep_filter, ip_filter = get_port_index(self.nw,egress_mode,egress_mixedport)+1, get_port_index(self.nw,ingress_mode,ingress_mixedport)+1
                 else:
                     (ep_filter, ip_filter) = parse_quick_param(egress_port)
             case int(), int():
@@ -135,11 +132,9 @@ class Network:
             case any, int():
                 ip_filter = ingress_port
 
-        result = []
-        if not self.nw:
-            return result
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
+
                 if ep_filter is not None and ep!=ep_filter:
                     continue
                 if ip_filter is not None and ip!=ip_filter:
@@ -153,17 +148,14 @@ class Network:
                 if rev_il_only and not (ep<ip):
                     continue
                 
-                if mixed_name is not None:
-                    param_name = mixed_name
-                else:
-                    param_name = get_sparam_name(ep, ip, prefix=param_prefix)
-
+                param_name = get_sparam_name(self.nw, ep, ip, prefix=param_prefix)
                 if name is not None:
-                    label = name
+                    param_label = name
                 else:
-                    label = param_name
-                param = self.nw.s[:,ep-1,ip-1].astype(complex)
-                result.append(SParam(f'{self.nw.name} {label}', self.nw.f, param, self.nw.z0[0,ep-1], original_file=self.original_file, param_type=param_name))
+                    param_label = param_name
+                param_value = self.nw.s[:,ep-1,ip-1].astype(complex)
+
+                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_file=self.original_file, param_type=param_name))
         return result
     
 
@@ -452,78 +444,109 @@ class Network:
         for (e,i) in [parse_quick_param(item) for item in items]:
             SParams(self.s(e,i)).plot()
     
-
-    def s2m(self, ports: list = None) -> "Network":
+    
+    def set_modes(self, port_modes: list[str]) -> "Network":
         """
+        Interpret the ports of the network as a mixed-mode network.
+        Argument <port_modes>: list of modes for each port, e.g.
+            ["C","C","D","D"], which means:
+            - objects's port 1 is common mode of network's port 1
+            - objects's port 2 is common mode of network's port 2
+            - objects's port 3 is differential mode of network's port 1
+            - objects's port 4 is differential mode of network's port 2
+        """
+
+        if len(port_modes) != self.nw.number_of_ports:
+            raise ValueError(f'Invalid number of port modes (expected {self.nw.number_of_ports}, got {len(port_modes)})')
+        
+        for i,mode in enumerate(port_modes):
+            mode_uc = mode.upper()
+            if mode_uc not in ['S','C','D']:
+                raise ValueError(f'Invalid port mode: "{mode}" (expected one of "S", "C", "D")')
+            port_modes[i] = mode_uc
+        
+        new_nw = self.nw.copy()
+        new_nw.port_modes = port_modes
+        return Network(new_nw, original_file=self.original_file)
+    
+
+    def s2m(self, ports: list[str]) -> "Network":
+        """
+        Convert a single-ended network into a mixed-mode network.
         Argument <ports>: list of ports of the single-ended input network, e.g.
-            ["p1","p2","n1","n2"], which means:
-            - port 1 is differential-1-positive
-            - port 2 is differential-2-positive
-            - port 3 is differential-1-negative
-            - port 4 is differential-2-negative
+            ["P1","P2","N1","N2"], which means:
+            - objects's port 1 is positive terminal of network's port 1
+            - objects's port 2 is positive terminal of network's port 2
+            - objects's port 3 is negative terminal of network's port 1
+            - objects's port 4 is negative terminal of network's port 2
         """
         new_nw = self.nw.copy()
         
-        if ports is not None:
-            old_indices = []
-            for se_port_str in ports:
-                try:
-                    m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
-                    if not m:
-                        raise ValueError()
-                except:
-                    raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(ports)}')
-                df_port = int(m.group(2))
-                df_index = 2*(df_port-1)
-                if m.group(1) == 'n':
-                    df_index += 1
-                # expected order for a 4-port: pos1, neg1, pos2, neg2, ...
-                if df_index in old_indices:
-                    raise ValueError(f'Duplicate port <{se_port_str}>')
-                old_indices.append(df_index)
-            if len(old_indices) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-            new_indices = np.arange(0, new_nw.nports, step=1)
-            new_nw.renumber(old_indices, new_indices)
+        if len(ports) != self.nw.number_of_ports:
+            raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
+
+        old_indices = []
+        for se_port_str in ports:
+            try:
+                m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
+                if not m:
+                    raise ValueError()
+            except:
+                raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(ports)}')
+            df_port = int(m.group(2))
+            df_index = 2*(df_port-1)
+            if m.group(1) == 'n':
+                df_index += 1
+            # expected order for a 4-port: pos1, neg1, pos2, neg2, ...
+            if df_index in old_indices:
+                raise ValueError(f'Duplicate port <{se_port_str}>')
+            old_indices.append(df_index)
+        if len(old_indices) != new_nw.nports:
+            raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
+        new_indices = np.arange(0, new_nw.nports, step=1)
+        new_nw.renumber(old_indices, new_indices)
 
         new_nw.se2gmm(new_nw.nports // 2)
         assert new_nw.nports % 2 == 0
         return Network(new_nw, original_file=self.original_file)
     
 
-    def m2s(self, ports: list = None) -> "Network":
+    def m2s(self, ports: list[str]) -> "Network":
         """
+        Convert a mixed-mode network into a single-ended network.
         Argument <ports>: list of ports of the differential input network, e.g.
-            ["d1","c1","d2","c2"], which means:
-            - port 1 is differential-1
-            - port 2 is commonmode-1
-            - port 3 is differential-2
-            - port 4 is commonmode-2
+            ["D","C1","D2","C2"], which means:
+            - object's port 1 is differential mode of network's port 1
+            - object's port 2 is common mode of network's port 1
+            - object's port 3 is differential mode of network's port 2
+            - object's port 4 is common mode of network's port 2
         """
 
         new_nw = self.nw.copy()
         
-        if ports is not None:
-            old_indices = []
-            for df_port_str in ports:
-                try:
-                    m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
-                    if not m:
-                        raise ValueError()
-                except:
-                    raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(ports)}')
-                df_port = int(m.group(2))
-                df_index = df_port-1
-                if m.group(1) == 'c':
-                    df_index += new_nw.nports//2
-                # expected order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
-                if df_index in old_indices:
-                    raise ValueError(f'Duplicate port <{df_port_str}>')
-                old_indices.append(df_index)
-            if len(old_indices) != new_nw.nports:
-                raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-            new_indices = np.arange(0, new_nw.nports, step=1)
-            new_nw.renumber(old_indices, new_indices)
+        if len(ports) != self.nw.number_of_ports:
+            raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
+
+        old_indices = []
+        for df_port_str in ports:
+            try:
+                m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
+                if not m:
+                    raise ValueError()
+            except:
+                raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(ports)}')
+            df_port = int(m.group(2))
+            df_index = df_port-1
+            if m.group(1) == 'c':
+                df_index += new_nw.nports//2
+            # expected order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
+            if df_index in old_indices:
+                raise ValueError(f'Duplicate port <{df_port_str}>')
+            old_indices.append(df_index)
+        if len(old_indices) != new_nw.nports:
+            raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
+        new_indices = np.arange(0, new_nw.nports, step=1)
+        new_nw.renumber(old_indices, new_indices)
 
         new_nw.gmm2se(new_nw.nports // 2)
         return Network(new_nw, original_file=self.original_file)
@@ -580,6 +603,8 @@ class Networks:
     
 
     available_networks: "list[skrf.Network]"
+
+    plot_sel_handler: "callable[tupe[Networks],None]"
 
 
     def __init__(self, nws: "list[skrf.Network]|list[Network]" = None):
@@ -740,17 +765,27 @@ class Networks:
 
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)
+
+
+    def plot_sel(self):
+        if not Networks.plot_sel_handler:
+            return
+        Networks.plot_sel_handler(self)
         
     
     def quick(self, *items):
         self._unary_op(Network.quick, None, *items)
         
     
-    def m2s(self, ports: list = None) -> "Networks":
+    def set_modes(self, port_modes: list[str]) -> "Networks":
+        return self._unary_op(Network.set_modes, Networks, port_modes=port_modes)
+        
+    
+    def m2s(self, ports: list[str]) -> "Networks":
         return self._unary_op(Network.m2s, Networks, ports=ports)
         
     
-    def s2m(self, ports: list = None) -> "Networks":
+    def s2m(self, ports: list[str]) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
     
 

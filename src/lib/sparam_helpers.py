@@ -6,11 +6,46 @@ import scipy
 import re
 
 
-def get_sparam_name(egress: int, ingress: int, prefix: str = 'S') -> str:
-    if egress<10 and ingress<10:
-        return f'{prefix}{egress}{ingress}'
+def _get_mixed_port_names(nw: skrf.Network) -> list[tuple[str,int]]:
+    result = []
+    port_numbers = dict()
+    for i in range(nw.number_of_ports):
+        current_mode = nw.port_modes[i]
+        current_number = port_numbers.setdefault(current_mode, 0) + 1
+        port_numbers[current_mode] = current_number
+
+        result.append((current_mode,current_number))
+
+    return result
+
+
+def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = 'S') -> str:
+
+    is_mixed_mode = 'C' in nw.port_modes or 'D' in nw.port_modes
+
+    if is_mixed_mode:
+        names = _get_mixed_port_names(nw)
+        assert egress<=len(names) and ingress<=len(names)
+        (egress_mode,egress_number) = names[egress-1]
+        (ingress_mode,ingress_number) = names[ingress-1]
+        if egress_number<10 and ingress_number<10:
+            return f'{prefix}{egress_mode}{ingress_mode}{egress_number}{ingress_number}'
+        else:
+            return f'{prefix}{egress_mode}{ingress_mode}{egress_number},{ingress_number}'
+    
     else:
-        return f'{prefix}{egress},{ingress}'
+        if egress<10 and ingress<10:
+            return f'{prefix}{egress}{ingress}'
+        else:
+            return f'{prefix}{egress},{ingress}'
+
+
+def get_port_index(nw: skrf.Network, mode: str, number: int) -> int:
+    assert mode in ['S','D','C']
+    for i,(m,n) in enumerate(_get_mixed_port_names(nw)):
+        if m==mode and n==number:
+            return i
+    raise RuntimeError(f'Cannot find port {mode}{number} in network {nw.name}')
 
 
 def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float = 1e-3, max_abs_error = 1.0) -> "tuple(np.ndarray,np.ndarray)":

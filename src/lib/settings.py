@@ -63,7 +63,6 @@ class Parameters(enum.IntFlag):
     ComboSii21 = 4+8
     ComboAll = 4+8+16
     Custom = 32
-    Expressions = 64
 
 class LogNegativeHandling(enum.StrEnum):
     Abs = 'abs'
@@ -90,6 +89,7 @@ class SParamViewerAppSettings(AppSettings):
     shorten_legend_items: bool = True
     log_x: bool = False
     log_y: bool = False
+    use_expressions: bool = False
     expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
     window_arg: float = 35.0

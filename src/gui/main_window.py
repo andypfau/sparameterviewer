@@ -18,7 +18,7 @@ import matplotlib.backend_bases
 from lib.si import SiFmt
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, get_sparam_name, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements
+from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements
 from lib import Si
 from lib import SParamFile
 from lib import PlotHelper
@@ -130,7 +130,8 @@ class MainWindow(MainWindowUi):
     def apply_settings_to_ui(self):
         def load_settings():
             try:
-                self.ui_params = Settings.plotted_params
+                self.ui_param_selector.setParams(Settings.plotted_params)
+                self.ui_param_selector.setUseExpressions(Settings.use_expressions)
                 self.ui_plot_selector.setPlotType(Settings.plot_type)
                 self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
                 self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
@@ -238,7 +239,7 @@ class MainWindow(MainWindowUi):
                     new += '\n'
                 new += existing_line
             self.ui_expression = new
-            self.ui_params = Parameters.Expressions
+            self.ui_param_selector.setUseExpressions(True)
             self.schedule_plot_update()
         
         def ensure_selected_file_count(op, n_required):
@@ -491,7 +492,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_params_change(self):
-        Settings.plotted_params = self.ui_params
+        Settings.plotted_params = self.ui_param_selector.params()
+        Settings.use_expressions = self.ui_param_selector.useExpressions()
         self.schedule_plot_update()
     
 
@@ -821,14 +823,14 @@ class MainWindow(MainWindowUi):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
         if self.ui_tab == MainWindowUi.Tab.Expressions:
-            self.ui_params = Parameters.Expressions
+            self.ui_param_selector.setUseExpressions(True)
         self.schedule_plot_update()
 
     
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        self.ui_params = Parameters.Expressions
+        self.ui_param_selector.setUseExpressions(True)
         self.schedule_plot_update()
 
     
@@ -1264,7 +1266,9 @@ class MainWindow(MainWindowUi):
             self.generated_expressions = ''
             self.plot = None
 
-            params = self.ui_params
+            params = self.ui_param_selector.params()
+            params_mask = self.ui_param_selector.paramMask() if params==Parameters.Custom else None
+            use_expressions = self.ui_param_selector.useExpressions()
             plot_type = self.ui_plot_selector.plotType()
             y_qty = self.ui_plot_selector.yQuantity()
             y2_qty = self.ui_plot_selector.y2Quantity()
@@ -1377,7 +1381,8 @@ class MainWindow(MainWindowUi):
                         self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
                     else:
                         if Settings.verbose:
-                            logging.debug(f'The trace "{name}" is real-valued; omitting from chart')
+                            chart_type_str = 'Smith' if plot_type==PlotType.Smith else 'polar'
+                            logging.debug(f'The trace "{name}" is real-valued; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
                     if treat_as_complex:
                         t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
@@ -1389,7 +1394,7 @@ class MainWindow(MainWindowUi):
                             self.plot.add(t, lev, None, name, style, **kwargs)
                     else:
                         if Settings.verbose:
-                            logging.debug(f'The trace "{name}" is real-valued; omitting from time-domain transformation')
+                            logging.debug(f'The trace "{name}" is real-valued; omitting from time-domain transformed chart')
                 else:
                     if treat_as_complex:
                         if y_qty == YQuantity.Decibels:
@@ -1420,49 +1425,57 @@ class MainWindow(MainWindowUi):
                     
             selected_files = self.get_selected_files()
 
-            if params == Parameters.Expressions:
+            selnws_expression_list = []
+            if params == Parameters.Custom:
+
+                for i in range(params_mask.shape[0]):
+                    for j in range(params_mask.shape[1]):
+                        if params_mask[i,j]:
+                            selnws_expression_list.append(f's({i+1},{j+1}).plot()')
+
+            else:
+                any_il = params & Parameters.S21 or params & Parameters.S12
+                any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
+                if any_il and any_rl:
+                    style_il, style_rl = 'style="-"', 'style="--"'
+                else:
+                    style_il, style_rl = '', ''
+
+                if params & Parameters.S21 and params & Parameters.S12:
+                    selnws_expression_list.append(f's(il_only=True).plot({style_il})')
+                elif params & Parameters.S21:
+                    selnws_expression_list.append(f's(fwd_il_only=True).plot({style_il})')
+                elif params & Parameters.S12:
+                    selnws_expression_list.append(f's(rev_il_only=True).plot({style_il})')
+            
+                if params & Parameters.Sii:
+                    selnws_expression_list.append(f's(rl_only=True).plot({style_rl})')
+                elif params & Parameters.S11:
+                    selnws_expression_list.append(f's(11).plot({style_rl})')
+                elif params & Parameters.S22:
+                    selnws_expression_list.append(f's(22).plot({style_rl})')
+        
+            code_preamble = 'def _plot_sel_handler(nws: "Networks"):\n'
+            if len(selnws_expression_list) > 0:
+                code_preamble += '\n'.join([f'\tnws.{expr}' for expr in selnws_expression_list]) + '\n'
+            else:
+                code_preamble += '\tpass\n'
+            code_preamble += 'Networks.plot_sel_handler = _plot_sel_handler\n'
+            code_preamble += '\n'
+
+            if use_expressions:
 
                 raw_exprs = self.ui_expression
                 Settings.expression = raw_exprs
 
-                ExpressionParser.eval(raw_exprs, self.files.values(), selected_files, add_to_plot)  
+                ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot)  
 
             else:
 
-                expression_list = []
-                if params == Parameters.Custom:
+                self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
 
-                    mask = self.ui_params_mask
-                    for i in range(mask.shape[0]):
-                        for j in range(mask.shape[1]):
-                            if mask[i,j]:
-                                expression_list.append(f'sel_nws().s({i+1},{j+1}).plot()')
-
-                else:
-                    any_il = params & Parameters.S21 or params & Parameters.S12
-                    any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
-                    if any_il and any_rl:
-                        style_il, style_rl = 'style="-"', 'style="--"'
-                    else:
-                        style_il, style_rl = '', ''
-
-                    if params & Parameters.S21 and params & Parameters.S12:
-                        expression_list.append(f'sel_nws().s(il_only=True).plot({style_il})')
-                    elif params & Parameters.S21:
-                        expression_list.append(f'sel_nws().s(fwd_il_only=True).plot({style_il})')
-                    elif params & Parameters.S12:
-                        expression_list.append(f'sel_nws().s(rev_il_only=True).plot({style_il})')
-                
-                    if params & Parameters.Sii:
-                        expression_list.append(f'sel_nws().s(rl_only=True).plot({style_rl})')
-                    elif params & Parameters.S11:
-                        expression_list.append(f'sel_nws().s(11).plot({style_rl})')
-                    elif params & Parameters.S22:
-                        expression_list.append(f'sel_nws().s(22).plot({style_rl})')
-            
-                self.generated_expressions = '\n'.join(expression_list)
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
+                    ExpressionParser.eval(code_preamble+self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()

@@ -1,4 +1,4 @@
-from .sparam_helpers import get_sparam_name, sparam_to_timedomain
+from .sparam_helpers import get_sparam_name, get_port_index, sparam_to_timedomain
 from .si import Si, SiFmt, parse_si_range, format_si_range
 from .structs import SParamFile, PlotData, PlotDataQuantity, PathExt
 from .plot import PlotHelper
