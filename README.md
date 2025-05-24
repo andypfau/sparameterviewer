@@ -3,12 +3,12 @@ S-Parameter Viewer
 
 A cross-platform S-parameter Viewer written in Python.
 
-<img src="./doc/screenshot_mainwin_markers.png" width="250" /> <img src="./doc/screenshot_mainwin_expr.png" width="250" />
+<img src="./doc/screenshot_mainwin.png" width="250" /> <img src="./doc/screenshot_mainwin_expr.png" width="250" />
 
 Main Features
 -------------
 
-- Read touchstone (.s1p, .s2p, ...) and CITI (.cti/.citi) files, including those in .zip-files.
+- Visualize touchstone and Citi files, including those inside of .zip-files.
 - Various flexible ways of displaying S-parameters, e.g. IL (all/reciprocal) only / RL only, linear/dB/Smith-chart/re-im, impulse/step response, Phase (normal/unwrapped), Group Delay.
 - Plotting of Python-based expressions, including functions for stability factors and stability circles, for adding passive elements, checking for passivity/reciprocity/losslessness.
     - to learn more about this feature [see here](./doc/expressions.md).

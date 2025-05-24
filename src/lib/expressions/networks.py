@@ -604,7 +604,7 @@ class Networks:
 
     available_networks: "list[skrf.Network]"
 
-    plot_sel_handler: "callable[tupe[Networks],None]"
+    plot_sel_params_handler: "callable[tupe[Networks],None]"
 
 
     def __init__(self, nws: "list[skrf.Network]|list[Network]" = None):
@@ -767,10 +767,10 @@ class Networks:
         self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)
 
 
-    def plot_sel(self):
-        if not Networks.plot_sel_handler:
+    def plot_sel_params(self):
+        if not Networks.plot_sel_params_handler:
             return
-        Networks.plot_sel_handler(self)
+        Networks.plot_sel_params_handler(self)
         
     
     def quick(self, *items):

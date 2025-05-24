@@ -27,15 +27,14 @@ class ParamSelector(QWidget):
 
 
     class Simplified(enum.StrEnum):
-        All = 'All Parameters'
-        SiiS21 = 'All Parameters (Forward)'
-        Sij = 'Insertion Loss'
-        S21 = 'Insertion Loss (Forward)'
-        S12 = 'Insertion Loss (Reverse)'
-        Sii = 'Return Loss'
+        All = 'All'
+        SiiS21 = 'All (Fwd.)'
+        Sij = 'IL'
+        S21 = 'IL (Fwd.)'
+        S12 = 'IL (Rev.)'
+        Sii = 'RL'
         S11 = 'S11'
         S22 = 'S22'
-        Expressions = 'Expression-Based'
 
 
     class DefocusScrollArea(QScrollArea):
@@ -257,11 +256,15 @@ class ParamSelector(QWidget):
         self._ui_simple = QWidget()
         self._ui_simple.setVisible(self._simplified)
         self._ui_simple_params_combo = QComboBox()
-        self._ui_simple_params_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 40ex; }')
+        self._ui_simple_params_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
+        for option in ParamSelector.Simplified:
+            self._ui_simple_params_combo.addItem(str(option))
         self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
+        self._ui_simple_expr_button = QtHelper.make_button(self, None, self._on_expr_simple, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', toolbar=True, checked=False)
         self._ui_simple.setLayout(QtHelper.layout_v(
             ...,
             self._ui_simple_params_combo,
+            QtHelper.layout_h(..., self._ui_simple_expr_button, ...),
             ..., spacing=10
         ))
 
@@ -289,7 +292,7 @@ class ParamSelector(QWidget):
         self._ui_expr_button = QtHelper.make_button(self, None, self._on_expr, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', toolbar=True, checked=False)
         self._ui_advanced.setLayout(QtHelper.layout_h(
             QtHelper.layout_grid([
-                [self._ui_sall_button, None, self._ui_expr_button],
+                [self._ui_sall_button, QtHelper.CellSpan(QtHelper.layout_h(..., self._ui_expr_button, spacing=0), cols=2)],
                 [self._ui_s12_button, self._ui_sij_button, self._ui_s21_button],
                 [self._ui_s11_button, self._ui_sii_button, self._ui_s22_button],
             ], spacing=1),
@@ -300,8 +303,6 @@ class ParamSelector(QWidget):
         self._ui_simple.setContentsMargins(0, 0, 0, 0)
         self._ui_advanced.setContentsMargins(0, 0, 0, 0)
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
-        
-        self._update_simple_params_combo_elements()
 
 
     def autoScaleGridToContents(self) -> bool:
@@ -335,9 +336,9 @@ class ParamSelector(QWidget):
     def setAllowExpressions(self, value: bool):
         if self._allow_expressions == value:
             return
-        self._update_simple_params_combo_elements()
         self._allow_expressions = value
         self._ui_expr_button.setVisible(self._allow_expressions)
+        self._ui_simple_expr_button.setVisible(self._allow_expressions)
         if not self._allow_expressions:
             if self._use_expressions:
                 self.setParams(Parameters.ComboAll)
@@ -439,6 +440,7 @@ class ParamSelector(QWidget):
             return
         self._use_expressions = value
         self._ui_expr_button.setChecked(value)
+        self._ui_simple_expr_button.setChecked(value)
 
 
     def paramMask(self) -> np.ndarray:
@@ -523,6 +525,11 @@ class ParamSelector(QWidget):
         self.paramsChanged.emit()
 
 
+    def _on_expr_simple(self):
+        self._use_expressions = self._ui_simple_expr_button.isChecked()
+        self.paramsChanged.emit()
+
+
     def _on_param_clicked(self, x: int, y: int, keys: QtCore.Qt.KeyboardModifier):
         toggle = keys & QtCore.Qt.KeyboardModifier.ControlModifier
         apply_to_whole_range = keys & QtCore.Qt.KeyboardModifier.ShiftModifier
@@ -555,20 +562,10 @@ class ParamSelector(QWidget):
         self.setAutoScaleGridToContents(True)
     
 
-    def _update_simple_params_combo_elements(self):
-        self._ui_simple_params_combo.currentIndexChanged.disconnect(self._on_simple_params_changed)
-        self._ui_simple_params_combo.clear()
-        for option in ParamSelector.Simplified:
-            if (option == ParamSelector.Simplified.Expressions) and (not self._allow_expressions):
-                continue
-            self._ui_simple_params_combo.addItem(str(option))
-        self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
-        self._update_simple_params_from_params(self.params())
-    
-
     def _update_simple_params_from_params(self, params: Parameters):
         try:
             self._ignore_simple_change = True
+            self._ui_simple_expr_button.setChecked(self._use_expressions and self._allow_expressions)
             match params:
                 case Parameters.ComboSii21:
                     self._ui_simple_params_combo.setCurrentText(str(ParamSelector.Simplified.SiiS21))

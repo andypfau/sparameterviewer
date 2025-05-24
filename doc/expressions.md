@@ -94,6 +94,15 @@ Note that any operation on the object may, by design, fail silently. For example
 
 #### Methods
 
+
+##### plot_sel_params()
+
+```python
+plot_sel_params()
+```
+
+Plots the parameters of the networks, in the same way it would be plotted if expressions were not used.
+
 ##### s(), z(), y(), abcd(), t()
 
 ```python

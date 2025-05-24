@@ -49,40 +49,55 @@ class MainWindowUi(QMainWindow):
         self._ui_ribbon = QWidget()
 
         palette = QPalette()
-        color_base = palette.color(QPalette.ColorRole.Base).name()
-        color_dark = palette.color(QPalette.ColorRole.Dark).name()
-        color_light = palette.color(QPalette.ColorRole.Light).name()
-        color_hl = palette.color(QPalette.ColorRole.Highlight).name()
-        color_hl_text = palette.color(QPalette.ColorRole.HighlightedText).name()
+        
+        color_bg = palette.color(QPalette.ColorRole.Window).name()
+        color_text = palette.color(QPalette.ColorRole.Text).name()
+        color_border = palette.color(QPalette.ColorRole.Dark).name()
+        
+        color_edit_bg = palette.color(QPalette.ColorRole.Light).name()
+        color_hover_bg = palette.color(QPalette.ColorRole.Window).lighter(150).name()
+        color_active_bg = palette.color(QPalette.ColorRole.Highlight).name()
+        color_active_hover_bg = palette.color(QPalette.ColorRole.Highlight).lighter(150).name()
+        color_active_hover_border = color_active_bg
+        color_disabled_bg = palette.color(QPalette.ColorRole.Window).name()
+        
         combo_arrow_image_url = os.path.join(AppPaths.get_resource_dir(), 'combo_arrow.svg').replace('\\', '/')
         print(combo_arrow_image_url)
         self._ui_ribbon.setStyleSheet(f"""
             QWidget {{
-                background-color: {color_base};
+                background-color: {color_bg};
+                border: none;
                 border-radius: 2px;
             }}
+            QWidget.linesep {{
+                background-color: {color_border};
+            }}
             QToolButton {{
-                background-color: {color_base};
+                background-color: {color_bg};
             }}
             QToolButton:checked {{
-                background-color: {color_hl};
+                background-color: {color_active_bg};
             }}
             QToolButton:hover {{
-                background-color: {color_light};
+                background-color: {color_hover_bg};
+                border: 1px solid {color_border}
+            }}
+            QToolButton:checked:hover {{
+                background-color: {color_active_hover_bg};
+                border: 1px solid {color_active_hover_border}
             }}
             QToolButton:disabled {{
-                background-color: {color_base};
-                border-color: {color_base};
+                background-color: {color_disabled_bg};
             }}
             QComboBox {{
-                border-bottom: 1px solid {color_dark};
+                border-bottom: 1px solid {color_border};
                 border-radius: 0px;
             }}
             QComboBox:editable {{
-                border: 1px solid {color_dark};
+                border: 1px solid {color_border};
             }}
             QComboBox:editable:focus {{
-                background-color: {color_light};
+                background-color: {color_edit_bg};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -93,7 +108,7 @@ class MainWindowUi(QMainWindow):
             """)
         def vline():
             frame = QFrame()
-            frame.setStyleSheet(f'background: {color_dark};')
+            frame.setProperty('class', 'linesep')
             frame.setFixedWidth(1)
             return frame
         self._ui_param_selector = ParamSelector(self)
@@ -198,6 +213,8 @@ class MainWindowUi(QMainWindow):
         
         self._ui_expressions_tab = QWidget()
         self._ui_tabs.addTab(self._ui_expressions_tab, 'Expressions')
+        self._ui_turnonexpr_button = QPushButton('Enable')
+        self._ui_turnonexpr_button.clicked.connect(self.on_turnon_expressions)
         self._ui_update_button = QPushButton('Update (F5)')
         self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
@@ -211,6 +228,7 @@ class MainWindowUi(QMainWindow):
         self._ui_editor_highlighter = PythonSyntaxHighlighter(self._ui_editor.document())
         self._ui_expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
+                self._ui_turnonexpr_button,
                 self._ui_update_button,
                 self._ui_template_button,
                 5,
@@ -440,6 +458,15 @@ class MainWindowUi(QMainWindow):
     @ui_color_assignment.setter
     def ui_color_assignment(self, value: str):
         self._ui_color_combo.setCurrentText(value)
+
+    
+    def ui_enable_expressions(self, enable: bool):
+        self._ui_turnonexpr_button.setVisible(not enable)
+        self._ui_update_button.setEnabled(enable)
+        self._ui_template_button.setEnabled(enable)
+        self._ui_help_button.setEnabled(enable)
+        self._ui_editor.setEnabled(enable)
+
 
     
     def ui_show_expressions(self, value: bool):
@@ -785,6 +812,8 @@ class MainWindowUi(QMainWindow):
     def on_lock_yaxis(self):
         pass
     def on_lock_both_axes(self):
+        pass
+    def on_turnon_expressions(self):
         pass
     def on_update_expressions(self):
         pass

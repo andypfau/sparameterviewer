@@ -2,6 +2,18 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b2 (2025-05-24)
+-------------------
+
+- new: options for simplified UI
+- new: ultra-wide layout
+- new: can move cursor by entering X-position
+- new: enhanced file filtering
+- new: `Networks.plot_sel_params()`
+- change: simplified and unified the functions for reciprocity/stability/symmetry/losslessness
+- bugfix: many UI-related bugfixes and enhancements
+
+
 0.40b1 (2025-05-17)
 -------------------
 

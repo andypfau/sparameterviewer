@@ -7,18 +7,26 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-import pathlib
-import enum
 import logging
-import os
-from typing import Callable, Union
+import enum
 
 
 
 class FilterDialogUi(QDialog):
 
+
+    class Action(enum.Enum):
+        Cancel = enum.auto()
+        Select = enum.auto()
+        Add = enum.auto()
+        Remove = enum.auto()
+        Toggle = enum.auto()
+
+
     def __init__(self, parent):
         super().__init__(parent)
+        self._result = FilterDialogUi.Action.Select
+
         self.setWindowTitle('Filter Files')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
@@ -28,7 +36,6 @@ class FilterDialogUi(QDialog):
         self._ui_search_text.setPlaceholderText('Enter expression, then press Enter')
         self._ui_search_text.setToolTip('Enter your search expression here, then press Enter (or press Escape to abort)')
         self._ui_search_text.textChanged.connect(self.on_search_change)
-        self._ui_search_text.setAcceptDrops(True)
         self._ui_search_text.returnPressed.connect(self.accept)
 
         self._ui_wildcard_radio = QRadioButton('Wildcards')
@@ -43,6 +50,19 @@ class FilterDialogUi(QDialog):
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)
+
+        self.ui_select_button = QPushButton('Select')
+        self.ui_select_button.setToolTip('Only select these files')
+        self.ui_select_button.clicked.connect(self._on_select)
+        self.ui_add_button = QPushButton('+')
+        self.ui_add_button.setToolTip('Additionally select these files')
+        self.ui_add_button.clicked.connect(self._on_add)
+        self.ui_remove_button = QPushButton('-')
+        self.ui_remove_button.setToolTip('Un-select these files')
+        self.ui_remove_button.clicked.connect(self._on_remove)
+        self.ui_toggle_button = QPushButton('~')
+        self.ui_toggle_button.setToolTip('Toggle selection of these files')
+        self.ui_toggle_button.clicked.connect(self._on_toggle)
         
         self.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
@@ -51,10 +71,26 @@ class FilterDialogUi(QDialog):
                 self._ui_regex_radio,
             ),
             self._ui_files_list,
+            QtHelper.layout_h(
+                self.ui_select_button,
+                ...,
+                self.ui_add_button,
+                self.ui_remove_button,
+                self.ui_toggle_button,
+            ),
         ))
 
         self.resize(400, 500)
-    
+        
+
+    def ui_show_modal(self) -> Action:
+        self._ui_search_text.selectAll()
+        self._ui_search_text.focusWidget()
+        self._result = FilterDialogUi.Action.Select
+        if self.exec() == QDialog.DialogCode.Accepted:
+            return self._result
+        return FilterDialogUi.Action.Cancel
+
 
     @property
     def ui_search_text(self) -> str:
@@ -93,12 +129,6 @@ class FilterDialogUi(QDialog):
 
     def ui_indicate_search_error(self, indicate_error: bool = True):
         QtHelper.indicate_error(self._ui_search_text, indicate_error)
-    
-
-    def ui_show_modal(self) -> bool:
-        self._ui_search_text.selectAll()
-        self._ui_search_text.focusWidget()
-        return self.exec() == QDialog.DialogCode.Accepted
 
 
     # to be implemented in derived class
@@ -106,3 +136,23 @@ class FilterDialogUi(QDialog):
         pass
     def on_search_mode_change(self):
         pass
+
+
+    def _on_select(self):
+        self._result = FilterDialogUi.Action.Select
+        self.accept()
+
+
+    def _on_add(self):
+        self._result = FilterDialogUi.Action.Add
+        self.accept()
+
+
+    def _on_remove(self):
+        self._result = FilterDialogUi.Action.Remove
+        self.accept()
+
+
+    def _on_toggle(self):
+        self._result = FilterDialogUi.Action.Toggle
+        self.accept()

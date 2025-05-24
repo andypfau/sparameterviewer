@@ -2,27 +2,33 @@ from .filter_dialog_ui import FilterDialogUi
 from lib import Settings, PathExt
 from typing import Optional
 import re
+import dataclasses
 
 
 class FilterDialog(FilterDialogUi):
 
+
+    @dataclasses.dataclass
+    class Result:
+        action: FilterDialogUi.Action
+        files: list[PathExt]
+
+
     def __init__(self, parent):
         super().__init__(parent)
-        self._files: list[str] = []
-        self._matched_files: list[str] = []
+        self._files: list[PathExt] = []
+        self._matched_files: list[PathExt] = []
     
 
-    def show_modal_dialog(self, files: list[PathExt]) -> Optional[list[PathExt]]:
-        self._files: list[PathExt] = files
-        self._matched_files: list[PathExt] = []
+    def show_modal_dialog(self, files: list[PathExt]) -> Result:
+        self._files = files
+        self._matched_files = []
         
         self._set_displayed_files([], self._files)
         self.ui_regex_mode = Settings.search_regex
         self.ui_search_text = Settings.last_search
-        if super().ui_show_modal():
-            if len(self._matched_files) > 0:
-                return self._matched_files
-        return None
+        
+        return FilterDialog.Result(super().ui_show_modal(), self._matched_files)
 
 
     def _set_displayed_files(self, matched_files: list[PathExt], unmatched_files: list[PathExt]):

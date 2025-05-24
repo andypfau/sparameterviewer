@@ -8,7 +8,7 @@ from .components.filesys_browser import FilesysBrowserItemType
 from .tabular_dialog import TabularDialog
 from .rl_dialog import RlDialog
 from .settings_dialog import SettingsDialog, SettingsTab
-from .filter_dialog import FilterDialog
+from .filter_dialog import FilterDialog, FilterDialogUi
 from .text_dialog import TextDialog
 from .log_dialog import LogDialog
 from .about_dialog import AboutDialog
@@ -144,6 +144,7 @@ class MainWindow(MainWindowUi):
                 self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
                 self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
                 self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+                self.ui_enable_expressions(Settings.use_expressions)
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_expression = Settings.expression
@@ -498,10 +499,17 @@ class MainWindow(MainWindowUi):
     
 
     def on_show_filter(self):
-        selected_paths = FilterDialog(self).show_modal_dialog(list(sorted(self.files.keys())))
-        if not selected_paths:
-            return
-        self.ui_filesys_browser.selected_files = selected_paths
+        result = FilterDialog(self).show_modal_dialog(list(sorted(self.files.keys())))
+        currently_selected = self.ui_filesys_browser.selected_files
+        match result.action:
+            case FilterDialogUi.Action.Select:
+                self.ui_filesys_browser.selected_files = result.files
+            case FilterDialogUi.Action.Add:
+                self.ui_filesys_browser.selected_files = list(set(currently_selected) | set(result.files))
+            case FilterDialogUi.Action.Remove:
+                self.ui_filesys_browser.selected_files = list(set(currently_selected) - set(result.files))
+            case FilterDialogUi.Action.Toggle:
+                self.ui_filesys_browser.selected_files = list(set(currently_selected) ^ set(result.files))
     
 
     def on_load_dir(self):
@@ -827,6 +835,15 @@ class MainWindow(MainWindowUi):
         self.schedule_plot_update()
 
     
+    def on_turnon_expressions(self):
+        if Settings.simplified_no_expressions:
+            return
+        Settings.use_expressions = True
+        self.ui_param_selector.setUseExpressions(True)
+        self.ui_enable_expressions(True)
+        self.schedule_plot_update()
+
+
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
@@ -847,6 +864,7 @@ class MainWindow(MainWindowUi):
         self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
         self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
         self.ui_show_expressions(not Settings.simplified_no_expressions)
+        self.ui_enable_expressions(self.ui_param_selector.useExpressions())
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
@@ -1455,12 +1473,12 @@ class MainWindow(MainWindowUi):
                 elif params & Parameters.S22:
                     selnws_expression_list.append(f's(22).plot({style_rl})')
         
-            code_preamble = 'def _plot_sel_handler(nws: "Networks"):\n'
+            code_preamble = 'def _plot_sel_params_handler(nws: "Networks"):\n'
             if len(selnws_expression_list) > 0:
                 code_preamble += '\n'.join([f'\tnws.{expr}' for expr in selnws_expression_list]) + '\n'
             else:
                 code_preamble += '\tpass\n'
-            code_preamble += 'Networks.plot_sel_handler = _plot_sel_handler\n'
+            code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
             code_preamble += '\n'
 
             if use_expressions:
@@ -1488,6 +1506,25 @@ class MainWindow(MainWindowUi):
                     self.plot.plot.set_xlim(prev_xlim)
                 if self.ui_yaxis_range!=MainWindow.UNLOCKED and prev_ylim is not None:
                     self.plot.plot.set_ylim(prev_ylim)
+            
+            
+            # TODO: smart range for dB
+            # if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels:
+            #     logging.debug(f'Adjusting dB scale...')
+            #     top, base, bottom = -1e99, +1e99, +1e99
+            #     for plot in self.plot.plots:
+            #         top = max(top, np.max(plot.y.values))
+            #         base = min(base, np.quantile(plot.y.values, 0.5))
+            #         bottom = min(bottom, np.min(plot.y.values))
+            #     if top > bottom and top > base:
+            #         full_range = top - bottom
+            #         if full_range < 15:
+            #             # or just use auto-range...
+            #             y0, y1 = bottom-0.2*full_range, top+0.2*full_range
+            #         else:
+            #             # smart choice of default range
+            #             y0, y1 = base-3, top+3
+            #         self.plot.plot.set_ylim((y0, y1))
 
             self.ui_plot.draw()
 
