@@ -1,3 +1,4 @@
+from .structs import PathExt
 import os
 import sys
 import string
@@ -30,14 +31,14 @@ def is_ext_supported(ext: str) -> bool:
     return _rex_filetypes.match(ext) or _rex_archtypes.match(ext)
 
 
-def find_files_in_archive(path: str) -> list[str]:
+def find_files_in_archive(path: str) -> list[PathExt]:
     result = []
     try:
         with zipfile.ZipFile(path, 'r') as zf:
             for internal_name in zf.namelist():
                 ext = os.path.splitext(internal_name)[1]
                 if is_ext_supported_file(ext):
-                    result.append(internal_name)
+                    result.append(PathExt(path, arch_path=internal_name))
     except Exception as ex:
         logging.warning(f'Unable to open zip file <{path}>: {ex}')
     return result
@@ -199,39 +200,80 @@ def natural_sort_key(s):
 
 
 
-def get_next_1_2_5_10(x: int) -> int:
+def get_next_1_2_5_10(x: int, nice_minutes: bool = False) -> int:
     """ Returns the next in the series (1, 2, 5, 10, 20, 50, 100, ...)"""
-    EPSILON = 0.99
-    if x < 1:
-        return 1
-    f, i = math.modf(math.log10(x))
-    if f < math.log10(2) * EPSILON:
-        return 2*int(round(10**i))
-    elif f < math.log10(5) * EPSILON:
-        return 5*int(round(10**i))
+    
+    def _get_next(x: int) -> int:
+        EPSILON = 0.99
+        if x < 1:
+            return 1
+        f, i = math.modf(math.log10(x))
+        if f < math.log10(2) * EPSILON:
+            return 2*int(round(10**i))
+        elif f < math.log10(5) * EPSILON:
+            return 5*int(round(10**i))
+        else:
+            return int(round(10**(i+1)))
+        
+    if nice_minutes:
+        x1 = _get_next(x)
+        if x1 < 100:
+            return x1
+        elif x1 == 100:
+            return 120
+        else:
+            return 60*_get_next(x//60)
     else:
-        return int(round(10**(i+1)))
+        return _get_next(x)
 
 
 
-def get_next_1_3_10(x: int) -> int:
+
+def get_next_1_3_10(x: int, nice_minutes: bool = False) -> int:
     """ Returns the next in the series (1, 3, 10, 30, 100, ...)"""
-    EPSILON = 0.99
-    if x < 1:
-        return 1
-    f, i = math.modf(math.log10(x))
-    if f < math.log10(3) * EPSILON:
-        return 3*int(round(10**i))
+
+    def _get_next(x: int) -> int:
+        EPSILON = 0.99
+        if x < 1:
+            return 1
+        f, i = math.modf(math.log10(x))
+        if f < math.log10(3) * EPSILON:
+            return 3*int(round(10**i))
+        else:
+            return int(round(10**(i+1)))
+
+    if nice_minutes:
+        x1 = _get_next(x)
+        if x1 < 100:
+            return x1
+        elif x1 == 100:
+            return 120
+        else:
+            return 60*_get_next(x//60)
     else:
-        return int(round(10**(i+1)))
+        return _get_next(x)
 
 
 
-def get_next_1_10_100(x: int) -> int:
+def get_next_1_10_100(x: int, nice_minutes: bool = False) -> int:
     """ Returns the next in the series (1, 10, 100, 1000, ...)"""
-    if x < 1:
-        return 1
-    return int(round(10**(math.floor(math.log10(x))+1)))
+
+    def _get_next(x: int) -> int:
+        if x < 1:
+            return 1
+        return int(round(10**(math.floor(math.log10(x))+1)))
+    
+    if nice_minutes:
+        x1 = _get_next(x)
+        if x1 < 100:
+            return x1
+        elif x1 == 100:
+            return 120
+        else:
+            return 60*_get_next(x//60)
+    else:
+        return _get_next(x)
+
 
 
 
@@ -262,3 +304,17 @@ def get_callstack_str(depth: int = 5) -> str:
 
 def any_common_elements(a, b) -> bool:
     return len(set(a) & set(b)) > 0
+
+
+def format_minute_seconds(secs: float) -> str:
+    if isinstance(secs, float):
+        if secs < 1:
+            return f'{secs:.2f} s'
+        if secs < 3:
+            return f'{secs:.1f} s'
+
+    if secs < 60:
+        return f'{secs:.0f} s'
+
+    int_secs = int(secs)
+    return f'{int_secs//60}:{int_secs%60:02}'

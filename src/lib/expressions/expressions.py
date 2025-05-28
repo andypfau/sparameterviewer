@@ -9,9 +9,16 @@ import math
 import numpy as np
 import fnmatch
 import logging
+import dataclasses
 
 
 class ExpressionParser:
+
+    
+    @dataclasses.dataclass
+    class Result:
+        plot_sel_params_handler_used: bool
+
 
     @staticmethod
     def eval(code: str, \
@@ -63,4 +70,8 @@ class ExpressionParser:
             'np': np,
         }
         
+        Networks.plot_sel_params_handler_used = False
         exec(code, vars_global, vars_local)
+        plot_sel_params_handler_used = Networks.plot_sel_params_handler_used
+
+        return ExpressionParser.Result(plot_sel_params_handler_used)

@@ -1,5 +1,5 @@
 from multiprocessing.sharedctypes import Value
-from .si import Si
+from .si import SiValue
 
 import numpy as np
 import math, cmath, skrf
@@ -15,7 +15,7 @@ class StabilityCircle:
         
         f_min, f_max = min(network.f), max(network.f)
         if (frequency_hz < f_min) or (frequency_hz > f_max):
-            raise ValueError(f'The requested frequency is outside of the frequency range of the network ({Si(f_min,"Hz")} to {Si(f_max,"Hz")})')
+            raise ValueError(f'The requested frequency is outside of the frequency range of the network ({SiValue(f_min,"Hz")} to {SiValue(f_max,"Hz")})')
         
         nw = network.interpolate(skrf.Frequency(frequency_hz,frequency_hz,1,unit='hz'))
         s11 = nw.s[0,0,0]

@@ -66,6 +66,7 @@ class ParamSelector(QWidget):
             self._scale_widget_to_contents = False
             self._current_geometry: ParamSelector.GraphicWidget.Geometry|None = None
             self._target_size = 64
+            self._dim_parameters = False
             self.setContentsMargins(0, 0, 0, 0)
             self._adjust_widget_size()
         
@@ -142,18 +143,18 @@ class ParamSelector(QWidget):
             always_use_comma = self.matrix_dimensions >= 10
 
             palette = QPalette()
-            color_base = palette.color(QPalette.ColorRole.Base)
-            color_dark = palette.color(QPalette.ColorRole.Dark)
-            color_light = palette.color(QPalette.ColorRole.Light)
+            color_inactive_bg = palette.color(QPalette.ColorRole.Window).lighter(150)
             color_text = palette.color(QPalette.ColorRole.Text)
-            color_hl = palette.color(QPalette.ColorRole.Highlight)
-            color_hl_text = palette.color(QPalette.ColorRole.HighlightedText)
+            color_active_dim_border = palette.color(QPalette.ColorRole.Dark)
+            color_active_bg = palette.color(QPalette.ColorRole.Highlight)
+            color_active_text = palette.color(QPalette.ColorRole.HighlightedText)
+            color_disabled_bg = palette.color(QPalette.ColorRole.Window).darker(150)
             
             MIN_CELL_SIZE_FOR_RENDERING = 2.5
             if overflow and cell_size < MIN_CELL_SIZE_FOR_RENDERING:
                 # too many elements -> just draw one large rectangle as a placeholder
                 rect = QRectF(x0, y0, all_cells_size, all_cells_size)
-                painter.setBrush(color_hl)
+                painter.setBrush(color_inactive_bg)
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawRect(rect)
                 return
@@ -167,12 +168,16 @@ class ParamSelector(QWidget):
                     
                     enabled = self._data[i,j]
                     if enabled:
-                        painter.setBrush(color_hl)
-                        painter.setPen(Qt.PenStyle.NoPen)
-                    else:
+                        if self._dim_parameters:
+                            painter.setBrush(Qt.BrushStyle.NoBrush)
+                            painter.setPen(color_active_dim_border)
+                        else:
+                            painter.setBrush(color_active_bg)
+                            painter.setPen(Qt.PenStyle.NoPen)
+                    else:  # disabled
                         painter.setBrush(Qt.BrushStyle.NoBrush)
                         if overflow:
-                            painter.setPen(color_dark)
+                            painter.setPen(color_disabled_bg)
                         else:
                             painter.setPen(Qt.PenStyle.NoPen)
                         
@@ -182,8 +187,8 @@ class ParamSelector(QWidget):
                         painter.drawRoundedRect(rect, 2, 2)
 
                     if not overflow:
-                        if enabled:
-                            painter.setPen(color_hl_text)
+                        if enabled and not self._dim_parameters:
+                            painter.setPen(color_active_text)
                         else:
                             painter.setPen(color_text)
                         
@@ -240,6 +245,14 @@ class ParamSelector(QWidget):
         @property
         def matrix_dimensions(self) -> int:
             return self._data.shape[0]
+    
+        @property
+        def dim_parameters(self) -> bool:
+            return self._dim_parameters
+        @dim_parameters.setter
+        def dim_parameters(self, value: bool):
+            self._dim_parameters = value
+            self.repaint()
 
 
     def __init__(self, parent = ...):
@@ -260,12 +273,12 @@ class ParamSelector(QWidget):
         for option in ParamSelector.Simplified:
             self._ui_simple_params_combo.addItem(str(option))
         self._ui_simple_params_combo.currentIndexChanged.connect(self._on_simple_params_changed)
-        self._ui_simple_expr_button = QtHelper.make_button(self, None, self._on_expr_simple, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', toolbar=True, checked=False)
+        self._ui_simple_expr_button = QtHelper.make_toolbutton(self, None, self._on_expr_simple, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', checked=False)
         self._ui_simple.setLayout(QtHelper.layout_v(
             ...,
             self._ui_simple_params_combo,
             QtHelper.layout_h(..., self._ui_simple_expr_button, ...),
-            ..., spacing=10
+            ..., margins=0, spacing=10
         ))
 
         self._ui_advanced = QWidget()
@@ -282,14 +295,14 @@ class ParamSelector(QWidget):
         self._ui_grid_scoll.setWidget(self._ui_grid)
         self._ui_grid_scoll.setMinimumSize(INITIAL_SIZE, INITIAL_SIZE)
         self._ui_grid_scoll.focusLost.connect(self._on_defocus_scrollable_grid)
-        self._ui_sall_button = QtHelper.make_button(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show all terms (e.g. S11, S21, S12, ...); hold ctrl to toggle', toolbar=True)
-        self._ui_sii_button = QtHelper.make_button(self, None, self._on_sii, icon='toolbar_sii.svg', tooltip='Show all Sii terms (e.g. S11, S22, S33, ...); hold ctrl to toggle', toolbar=True)
-        self._ui_sij_button = QtHelper.make_button(self, None, self._on_sij, icon='toolbar_sij.svg', tooltip='Show all Sij terms (e.g. S21, S12, S31, ...); hold ctrl to toggle', toolbar=True)
-        self._ui_s11_button = QtHelper.make_button(self, None, self._on_s11, icon='toolbar_s11.svg', tooltip='Show S11 term; hold Ctrl to toggle', toolbar=True)
-        self._ui_s22_button = QtHelper.make_button(self, None, self._on_s22, icon='toolbar_s22.svg', tooltip='Show S22 term; hold Ctrl to toggle', toolbar=True)
-        self._ui_s21_button = QtHelper.make_button(self, None, self._on_s21, icon='toolbar_s21.svg', tooltip='Show all Sij terms with i>j (e.g. S21, S31, S32, ...); hold ctrl to toggle', toolbar=True)
-        self._ui_s12_button = QtHelper.make_button(self, None, self._on_s12, icon='toolbar_s12.svg', tooltip='Show all Sij terms with i<j(e.g. S12, S13, S23, ...); hold ctrl to toggle', toolbar=True)
-        self._ui_expr_button = QtHelper.make_button(self, None, self._on_expr, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', toolbar=True, checked=False)
+        self._ui_sall_button = QtHelper.make_toolbutton(self, None, self._on_s_all, icon='toolbar_s-all.svg', tooltip='Show all terms (e.g. S11, S21, S12, ...); hold ctrl to toggle')
+        self._ui_sii_button = QtHelper.make_toolbutton(self, None, self._on_sii, icon='toolbar_sii.svg', tooltip='Show all Sii terms (e.g. S11, S22, S33, ...); hold ctrl to toggle')
+        self._ui_sij_button = QtHelper.make_toolbutton(self, None, self._on_sij, icon='toolbar_sij.svg', tooltip='Show all Sij terms (e.g. S21, S12, S31, ...); hold ctrl to toggle')
+        self._ui_s11_button = QtHelper.make_toolbutton(self, None, self._on_s11, icon='toolbar_s11.svg', tooltip='Show S11 term; hold Ctrl to toggle')
+        self._ui_s22_button = QtHelper.make_toolbutton(self, None, self._on_s22, icon='toolbar_s22.svg', tooltip='Show S22 term; hold Ctrl to toggle')
+        self._ui_s21_button = QtHelper.make_toolbutton(self, None, self._on_s21, icon='toolbar_s21.svg', tooltip='Show all Sij terms with i>j (e.g. S21, S31, S32, ...); hold ctrl to toggle')
+        self._ui_s12_button = QtHelper.make_toolbutton(self, None, self._on_s12, icon='toolbar_s12.svg', tooltip='Show all Sij terms with i<j(e.g. S12, S13, S23, ...); hold ctrl to toggle')
+        self._ui_expr_button = QtHelper.make_toolbutton(self, None, self._on_expr, icon='toolbar_s-expr.svg', tooltip='Use expressions for plotting', checked=False)
         self._ui_advanced.setLayout(QtHelper.layout_h(
             QtHelper.layout_grid([
                 [self._ui_sall_button, QtHelper.CellSpan(QtHelper.layout_h(..., self._ui_expr_button, spacing=0), cols=2)],
@@ -297,12 +310,9 @@ class ParamSelector(QWidget):
                 [self._ui_s11_button, self._ui_sii_button, self._ui_s22_button],
             ], spacing=1),
             self._ui_grid_scoll,
-            spacing=10
+            margins=0, spacing=10
         ))
-        self.setContentsMargins(0, 0, 0, 0)
-        self._ui_simple.setContentsMargins(0, 0, 0, 0)
-        self._ui_advanced.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
+        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced, margins=0, spacing=0))
 
 
     def autoScaleGridToContents(self) -> bool:
@@ -329,6 +339,12 @@ class ParamSelector(QWidget):
     def setGridSize(self, size: int):
         self._ui_grid_scoll.setMinimumSize(size, size)
         self._ui_grid.target_size = size
+
+
+    def dimParameters(self) -> bool:
+        return self._ui_grid.dim_parameters
+    def setDimParameters(self, value: bool):
+        self._ui_grid.dim_parameters = value
 
 
     def allowExpressions(self) -> bool:

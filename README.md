@@ -26,7 +26,9 @@ Roadmap
 
 ### Missing Features
 
-- GUI: make the back-button work in the fileview browser and the path bar.
+- General: "TODO"-comments in code.
+- GUI: smart scaling of dB values (e.g. set range to 20%..100% quantile).
+- GUI: do not show excessively long legend (automatically?).
 - GUI: expression file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - Expressions: better interaction with Numpy. How can I use numpy functions with traces? What if I have two different parameters and a binary operation?

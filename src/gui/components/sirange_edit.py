@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from lib import AppPaths
-from lib import SiValue, SiFormat
+from lib import SiFormat, SiRange
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -14,20 +14,31 @@ import enum
 
 
 
-class SiValueEdit(QLineEdit):
+class SiRangeEdit(QComboBox):
 
-    valueChanged = pyqtSignal()
+    rangeChanged = pyqtSignal()
 
-    def __init__(self, parent: QWidget = None, si: SiValue|None = None, require_return_press: bool = False):
+    def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[any,any]], require_return_press: bool = False):
         super().__init__(parent)
-        self.setMinimumWidth(150)
         self._require_return_press = require_return_press
-        self._value = si
         
-        self.setPlaceholderText('Enter value...')
-        self.setValue(self._value)
-        self.setRequireReturnPress(self._require_return_press)
-        self.textChanged.connect(self._on_text_changed)
+        self.setPlaceholderText('Enter range...')
+        self.setMinimumWidth(150)
+        self.setEditable(True)
+        self.currentTextChanged.connect(self._on_text_change)
+
+        self._range = range
+        self._range.attach(self._on_range_changed_externally)
+        
+        self.clear()
+        preset_texts = [self._range.reconstruct(low,high).format() for (low,high) in presets]
+        for text in preset_texts:
+            self.addItem(text)
+        
+        if len(preset_texts) >= 1:
+            self.setCurrentText(preset_texts[0])
+        else:
+            self._update_text_from_value()
     
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):
@@ -45,11 +56,8 @@ class SiValueEdit(QLineEdit):
     
 
     def _update_text_from_value(self):
-        if self._value is None:
-            self.setText('')
-        else:
-            self.setText(str(self._value))
         QtHelper.indicate_error(self, False)
+        self.setCurrentText(self._range.format())
 
 
     def requireReturnPress(self) -> bool:
@@ -60,57 +68,49 @@ class SiValueEdit(QLineEdit):
             self.setPlaceholderText('Enter value, press return...')
         else:
             self.setPlaceholderText('Enter value...')
-
-
-    def value(self) -> SiValue|None:
-        return self._value
-    def setValue(self, value: SiValue|None):
-        if value == self._value:
-            return
-        self._value = value
+            
+    
+    def range(self) -> SiRange:
+        return self._range
+    def setRange(self, value: SiRange):
+        self._range = value
+        self._range.attach(self._on_range_changed_externally)
         self._update_text_from_value()
+        QtHelper.indicate_error(self, False)
 
     
     def _on_escape_pressed(self):
         self._update_text_from_value()
+        QtHelper.indicate_error(self, False)
 
     
     def _on_return_pressed(self):
-        if self.isReadOnly() or self._value is None or not self._require_return_press:
-            return
-        
         try:
             if self._require_return_press:
-                new_value = SiValue(self.text(), spec=self._value.spec)
-                if self._value == new_value:
-                    return
-                self._value = new_value
-                self.setText(str(self._value))
-                self.valueChanged.emit()
+                self._range.parse(self.currentText())
+                self._update_text_from_value()
+                self.rangeChanged.emit()
             else:
                 # was already parsed when text was changed
                 self._update_text_from_value()
-            QtHelper.indicate_error(self, False)
         except:
             QtHelper.indicate_error(self, True)
-        self.selectAll()
+        self.lineEdit().selectAll()
 
     
-    def _on_text_changed(self):
-        if self.isReadOnly() or self._value is None:
-            return
-
+    def _on_text_change(self):
         try:
             if self._require_return_press:
                 # just parse it, so that the error indicator gets updated
-                SiValue(self.text(), spec=self._value.spec)
+                self._range.copy().parse(self.currentText())
                 QtHelper.indicate_error(self, False)
             else:
-                new_value = SiValue(self.text(), spec=self._value.spec)
+                self._range.parse(self.currentText())
                 QtHelper.indicate_error(self, False)
-                if self._value == new_value:
-                    return
-                self._value = new_value
-                self.valueChanged.emit()
+                self.rangeChanged.emit()
         except:
             QtHelper.indicate_error(self, True)
+
+
+    def _on_range_changed_externally(self, *args, **kwargs):
+        self._update_text_from_value()

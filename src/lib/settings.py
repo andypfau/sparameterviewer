@@ -74,6 +74,11 @@ class MainWindowLayout(enum.StrEnum):
     Wide = 'wide'
     Ultrawide = 'ultrawide'
 
+class AxisRangeMode(enum.StrEnum):
+    Auto = 'auto'
+    Smart = 'smart'  # TODO: implement
+    Locked = 'locked'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -87,8 +92,12 @@ class SParamViewerAppSettings(AppSettings):
     show_legend: bool = True
     hide_single_item_legend: bool = True
     shorten_legend_items: bool = True
+    yaxis_range_mode: AxisRangeMode = AxisRangeMode.Auto  # TODO: implement
     log_x: bool = False
     log_y: bool = False
+    plot_semitransparent: bool = False
+    plot_semitransparent_opacity: float = 0.15  # TODO: make editable from GUI
+    max_legend_items: int = -1  # TODO: make editable from GUI
     use_expressions: bool = False
     expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
@@ -111,8 +120,7 @@ class SParamViewerAppSettings(AppSettings):
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
-    warncount_file_list: int = 1_000
-    warncount_file_load: int = 30
+    warn_timeout_s: int = 10
     color_assignment: ColorAssignment = ColorAssignment.ByFile
     mainwindow_layout: MainWindowLayout = MainWindowLayout.Wide
     treat_all_as_complex: bool = False

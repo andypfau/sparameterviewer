@@ -28,6 +28,9 @@ class FilesysBrowserItemType(enum.Enum):
 
 class FilesysBrowser(QWidget):
 
+
+    MAX_HISTORY = 25
+
         
     _icon_file: QIcon = None
     _icon_dir: QIcon = None
@@ -99,16 +102,16 @@ class FilesysBrowser(QWidget):
                 return False
 
             if self._type == FilesysBrowserItemType.Dir:
-                children = list(self._path.iterdir())
+                children = [PathExt(p) for p in self._path.iterdir()]
             elif self._type == FilesysBrowserItemType.Arch:
-                children = find_files_in_archive(str(self._path)) if support_archives else []
+                children = [p for p in find_files_in_archive(str(self._path)) if is_ext_supported_file(p.arch_path_suffix)] if support_archives else []
             else:
                 children = []
             self._has_children = len(children) > 0
 
             if self._type == FilesysBrowserItemType.Arch:
-                for arch_path in children:
-                    super().appendRow((FilesysBrowser.MyFileItem(self._model, PathExt(self._path, arch_path=arch_path), FilesysBrowserItemType.File), QStandardItem('')))
+                for path in children:
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, path, FilesysBrowserItemType.File), QStandardItem('')))
             else:
                 dirs = [p for p in children if p.is_dir()]
                 files = [p for p in children if p.is_file()]
@@ -168,6 +171,16 @@ class FilesysBrowser(QWidget):
                 self.filesChanged.emit()
 
 
+    class MyTreeView(QTreeView):
+
+        backClicked = pyqtSignal()
+
+        def mouseReleaseEvent(self, event: QMouseEvent):
+            if event.button() == Qt.MouseButton.BackButton:
+                self.backClicked.emit()
+            super().mouseReleaseEvent(event)
+
+
     filesChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     doubleClicked = pyqtSignal(PathExt, PathExt, FilesysBrowserItemType)
@@ -183,8 +196,9 @@ class FilesysBrowser(QWidget):
         self._contextmenu_item: FilesysBrowser.MyFileItem = None
         self._inhibit_triggers = True
         self._show_archives = False
+        self._history: list[tuple[PathExt,PathExt]] = []
         
-        self._ui_filesys_view = QTreeView()
+        self._ui_filesys_view = FilesysBrowser.MyTreeView()
         self._ui_filesys_model = FilesysBrowser.MyFileItemModel(self._ui_filesys_view)
         self._ui_filesys_model.setHorizontalHeaderLabels(['File', 'Info'])
         self._ui_filesys_model.checkedChanged.connect(self._on_checked_change)
@@ -198,9 +212,11 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
         self._ui_filesys_view.doubleClicked.connect(self._on_doubleclick)
+        self._ui_filesys_view.backClicked.connect(self._on_navigate_back)
         self._ui_pathbar = PathBar()
         self._ui_pathbar.setVisible(False)
         self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
+        self._ui_pathbar.backClicked.connect(self._on_navigate_back)
         self._ui_pathbar.pathChanged.connect(self._on_pathbar_change)
         self.setLayout(QtHelper.layout_v(self._ui_filesys_view, self._ui_pathbar))
 
@@ -372,6 +388,11 @@ class FilesysBrowser(QWidget):
 
     
     def change_root(self, current_root: PathExt, new_root: PathExt):
+        self._add_to_history(current_root, new_root)
+        self._change_root(current_root, new_root)
+
+
+    def _change_root(self, current_root: PathExt, new_root: PathExt):
         #logging.debug(get_callstack_str(8))
         try:
             self._inhibit_triggers = True
@@ -590,6 +611,14 @@ class FilesysBrowser(QWidget):
         if toplevel_item is None:
             return
         self.change_root(toplevel_item.path, PathExt(path))
+    
+
+    def _on_navigate_back(self):
+        if len(self._history) < 1:
+            return
+        from_path, to_path = self._history.pop()
+        print(f'- {from_path} -> {to_path}')
+        self._change_root(to_path, from_path)
 
 
     @staticmethod
@@ -606,3 +635,10 @@ class FilesysBrowser(QWidget):
         FilesysBrowser._icon_file = ensure_icon_loaded(FilesysBrowser._icon_file, 'filesys_file.svg')
         FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir,  'filesys_directory.svg')
         FilesysBrowser._icon_arch = ensure_icon_loaded(FilesysBrowser._icon_arch, 'filesys_archive.svg')
+
+
+    def _add_to_history(self, from_path: PathExt, to_path: PathExt):
+        print(f'+ {from_path} -> {to_path}')
+        self._history.append((from_path, to_path))
+        while len(self._history) > FilesysBrowser.MAX_HISTORY:
+            del(self._history[0])

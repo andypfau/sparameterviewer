@@ -1,4 +1,4 @@
-from .si import Si, SiFmt
+from .si import SiValue, SiFormat
 from .structs import PlotData, PlotDataQuantity
 from .shortstr import remove_common_prefixes_and_suffixes
 from .utils import natural_sort_key
@@ -107,10 +107,10 @@ class PlotHelper:
                     self._vl.set_visible(False)
     
 
-    def __init__(self, figure: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFmt, x_log: bool,
-        y_qty: "str", y_fmt: SiFmt, y_log: bool, y2_qty: "str", y2_fmt: SiFmt, z_qty: "str" = None, z_fmt: SiFmt = None,
+    def __init__(self, figure: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFormat, x_log: bool,
+        y_qty: "str", y_fmt: SiFormat, y_log: bool, y2_qty: "str", y2_fmt: SiFormat, z_qty: "str" = None, z_fmt: SiFormat = None,
         smith_type: str='z', smith_z=1.0,
-        show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False):
+        show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False, max_legend_items: int = -1):
         
         self.cursors = [
             PlotHelper.Cursor(self, '--'),
@@ -133,6 +133,7 @@ class PlotHelper:
         self._z_qty = z_qty
         self._z_fmt = z_fmt
         self._show_legend = show_legend
+        self._max_legend_items = max_legend_items
         self._hide_single_item_legend = hide_single_item_legend
         self._shorten_legend = shorten_legend
         self._use_two_yaxes = None
@@ -156,22 +157,22 @@ class PlotHelper:
 
 
     @property
-    def x_fmt(self) -> SiFmt:
+    def x_fmt(self) -> SiFormat:
         return self._x_fmt
 
 
     @property
-    def y_fmt(self) -> SiFmt:
+    def y_fmt(self) -> SiFormat:
         return self._y_fmt
 
 
     @property
-    def y2_fmt(self) -> SiFmt:
+    def y2_fmt(self) -> SiFormat:
         return self._y2_fmt
 
 
     @property
-    def y_left_fmt(self) -> SiFmt:
+    def y_left_fmt(self) -> SiFormat:
         if self._axes_swapped:
             return self._y2_fmt
         else:
@@ -179,7 +180,7 @@ class PlotHelper:
 
 
     @property
-    def y_right_fmt(self) -> Optional[SiFmt]:
+    def y_right_fmt(self) -> Optional[SiFormat]:
         if self._use_two_yaxes:
             if self._axes_swapped:
                 return self._y2_fmt
@@ -190,7 +191,7 @@ class PlotHelper:
 
 
     @property
-    def z_fmt(self) -> SiFmt:
+    def z_fmt(self) -> SiFormat:
         return self._z_fmt
     
 
@@ -377,29 +378,29 @@ class PlotHelper:
                     plot = self.plot
                     self.items[item_index].currently_used_axis = 1
             
-                x, y, style, color, width, opacity = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity
+                x, y, style, color, width, opacity, label = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity, item.label
 
                 if np.any(np.iscomplex(x)):
-                    logging.error(f'Trace "{item.label}" will not be plotted (X-values are complex-valued)')
+                    logging.error(f'Trace "{label}" will not be plotted (X-values are complex-valued)')
                     continue
                 if np.any(np.iscomplex(y)):
-                    logging.error(f'Trace "{item.label}" will not be plotted (Y-values are complex-valued)')
+                    logging.error(f'Trace "{label}" will not be plotted (Y-values are complex-valued)')
                     continue
 
                 fix_log_x = self._get_log_data_fn(Settings.logx_negative_handling)
                 fix_log_y = self._get_log_data_fn(Settings.logy_negative_handling)
 
                 # escaping for matplotlib
-                if item.label.startswith('_'):
-                    item.label = ' _' + item.label[1:]
+                if label.startswith('_'):
+                    label = ' _' + label[1:]
                 
                 if self._polar:
                     c = x + 1j*y
-                    new_plt = plot.plot(np.angle(c), np.abs(c), style, label=item.label, color=color, lw=width, alpha=opacity)
+                    new_plt = plot.plot(np.angle(c), np.abs(c), style, label=label, color=color, lw=width, alpha=opacity)
                 elif self._smith:
                     c = x + 1j*y
                     from skrf import plotting
-                    new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=item.label, title=None, color=color, lw=width, alpha=opacity)
+                    new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None, color=color, lw=width, alpha=opacity)
                 else:
                     if self._x_log:
                         x, y = fix_log_x(data=x, other_data=y, name=item.label)
@@ -423,6 +424,8 @@ class PlotHelper:
         show_legend = self._show_legend
         if len(self.items) <= 1 and self._hide_single_item_legend:
             show_legend = False
+        if self._max_legend_items >= 0 and len(self.items) > self._max_legend_items:
+            show_legend = False
         if show_legend:
             self.plot.legend()
         
@@ -444,43 +447,43 @@ class PlotHelper:
         
         if self._x_qty is not None and self.plot is not None:
             x_highest_abs_value = max(abs(self.plot.get_xlim()[0]), abs(self.plot.get_xlim()[1]))
-            if self._x_fmt.use_si_prefix and not self._x_log:
-                x_scale, x_prefix = Si.get_scale(x_highest_abs_value)
+            if self._x_fmt.prefixed and not self._x_log:
+                x_scale, x_prefix = SiFormat.get_scale(x_highest_abs_value)
             else:
                 x_scale, x_prefix = 1, ''
             parts = [s for s in [f'{self._x_qty}', f'{x_prefix}{self._x_fmt.unit}'] if s!='']
             self.plot.set_xlabel(' / '.join(parts))
             @ticker.FuncFormatter
             def x_axis_formatter(value, _):
-                return f'{value/x_scale:.{self._x_fmt.significant_digits}g}'
+                return f'{value/x_scale:.{self._x_fmt.digits}g}'
                 #return str(Si(value, si_fmt=x_format))
             self.plot.xaxis.set_major_formatter(x_axis_formatter)
         
         if y_qty is not None and self.plot is not None:
             y_highest_abs_value = max(abs(self.plot.get_ylim()[0]), abs(self.plot.get_ylim()[1]))
-            if y_fmt.use_si_prefix and not y_log:
-                y_scale, y_prefix = Si.get_scale(y_highest_abs_value)
+            if y_fmt.prefixed and not y_log:
+                y_scale, y_prefix = SiFormat.get_scale(y_highest_abs_value)
             else:
                 y_scale, y_prefix = 1, ''
             parts = [s for s in [f'{y_qty}', f'{y_prefix}{y_fmt.unit}'] if s!='']
             self.plot.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
             def y_axis_formatter(value, _):
-                return f'{value/y_scale:.{y_fmt.significant_digits}g}'
+                return f'{value/y_scale:.{y_fmt.digits}g}'
                 #return str(Si(value, si_fmt=y_format))
             self.plot.yaxis.set_major_formatter(y_axis_formatter)
 
         if y2_qty is not None and self.plot2 is not None:
             y2_highest_abs_value = max(abs(self.plot2.get_ylim()[0]), abs(self.plot2.get_ylim()[1]))
-            if y2_fmt.use_si_prefix:
-                y2_scale, y2_prefix = Si.get_scale(y2_highest_abs_value)
+            if y2_fmt.prefixed:
+                y2_scale, y2_prefix = SiFormat.get_scale(y2_highest_abs_value)
             else:
                 y2_scale, y2_prefix = 1, ''
             parts = [s for s in [f'{y2_qty}', f'{y2_prefix}{y2_fmt.unit}'] if s!='']
             self.plot2.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
             def y2_axis_formatter(value, _):
-                return f'{value/y2_scale:.{y2_fmt.significant_digits}g}'
+                return f'{value/y2_scale:.{y2_fmt.digits}g}'
                 #return str(Si(value, si_fmt=y2_format))
             self.plot2.yaxis.set_major_formatter(y2_axis_formatter)
 

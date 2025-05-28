@@ -2,6 +2,16 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b3 (2025-05-28)
+-------------------
+
+- new: more compact menu and toolbar
+- new: option to plot semi-transparent
+- new: remembering last cursors
+- change: warning when loading takes too long (rather than just counting files)
+- bugfix: many UI-related bugfixes and enhancements
+
+
 0.40b2 (2025-05-24)
 -------------------
 

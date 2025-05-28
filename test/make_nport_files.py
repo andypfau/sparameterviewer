@@ -24,7 +24,7 @@ NOISE_DB = -60
 with tempfile.TemporaryDirectory() as tempdir:
     print(f'Working inside temporary directory <{tempdir}>...')
     
-    zip_path = os.path.join(os.path.abspath(DIR), 'dummy_networks.zip')
+    zip_path = os.path.join(os.path.abspath(DIR), 'dummy_n-ports.zip')
     print(f'Creating <{zip_path}>...')
     with zipfile.ZipFile(zip_path, 'w') as zfp:
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import os
-from .si import Si, SiFmt
+from .si import SiValue, SiFormat
 from .citi import CitiReader
-from .utils import AchiveFileLoader, natural_sort_key
 
 import dataclasses
 import numpy as np
@@ -37,6 +36,7 @@ class PathExt(pathlib.Path):
         return super().__eq__(other)
 
     def __lt__(self, other) -> bool:
+        from .utils import natural_sort_key
         self_path = self.full_path
         if isinstance(other, PathExt):
             other_path = other.full_path
@@ -44,15 +44,24 @@ class PathExt(pathlib.Path):
             other_path = str(super())
         return natural_sort_key(self_path) <= natural_sort_key(other_path)
     
+    def is_in_arch(self) -> bool:
+        return self._arch_path is not None
+    
     @property
     def arch_path(self) -> str|None:
         return self._arch_path
     
     @property
-    def arch_name(self) -> str:
-        if self._arch_path:
-            return pathlib.Path(self._arch_path).name
-        return None
+    def arch_path_name(self) -> str:
+        if not self._arch_path:
+            return None
+        return pathlib.Path(self._arch_path).name
+    
+    @property
+    def arch_path_suffix(self) -> str:
+        if not self._arch_path:
+            return None
+        return pathlib.Path(self._arch_path).suffix
     
     @property
     def full_name(self) -> str:
@@ -94,7 +103,7 @@ class SParamFile:
         self._error = None
 
         if path.arch_path:
-            name_prefix = path.arch_name + '/'
+            name_prefix = path.arch_path_name + '/'
         else:
             name_prefix = ''
         self.name = name if name is not None else name_prefix+self.path.name
@@ -133,6 +142,7 @@ class SParamFile:
                 self._nw = None
         
         if self.is_from_archive:
+            from .utils import AchiveFileLoader
             try:
                 with AchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
                     load(extracted_path)
@@ -231,7 +241,7 @@ class SParamFile:
                 fileinfo += f'File size: unknown\n'
         
         if (self.nw.z0 == self.nw.z0[0,0]).all():
-            z0 = str(Si(self.nw.z0[0,0],'Ohm'))
+            z0 = str(SiValue(self.nw.z0[0,0],'Ohm'))
         else:
             z0 = 'different for each port and/or frequency'
         
@@ -250,7 +260,7 @@ class SParamFile:
         freq_equidistant = np.allclose(freq_steps,freq_steps[0])
         if freq_equidistant:
             freq_step = freq_steps[0]
-            spacing_str =  f'{Si(freq_step,"Hz")} equidistant spacing'
+            spacing_str =  f'{SiValue(freq_step,"Hz")} equidistant spacing'
         else:
             freq_arbitrary = True
             if np.all(self.nw.f != 0):
@@ -259,12 +269,12 @@ class SParamFile:
                     freq_arbitrary = False
                     freq_step = np.mean(freq_steps)
                     freq_ratio = freq_ratios[0]
-                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {Si(freq_step,"Hz")}'
+                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {SiValue(freq_step,"Hz")}'
             if freq_arbitrary:
                 freq_step = np.mean(freq_steps)
-                spacing_str =  f'non-equidistant spacing, average spacing {Si(freq_step,"Hz")}'
+                spacing_str =  f'non-equidistant spacing, average spacing {SiValue(freq_step,"Hz")}'
         
-        info += f'Frequency range: {Si(f0,"Hz")} to {Si(f1,"Hz")}, {n_points_str}, {spacing_str}'
+        info += f'Frequency range: {SiValue(f0,"Hz")} to {SiValue(f1,"Hz")}, {n_points_str}, {spacing_str}'
         info += '\n\n'
 
         info += fileinfo
@@ -277,7 +287,7 @@ class SParamFile:
 @dataclasses.dataclass
 class PlotDataQuantity:
     name: str
-    format: SiFmt
+    format: SiFormat
     values: np.ndarray
 
 

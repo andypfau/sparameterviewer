@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.abspath('../src'))
 
 
-from lib import PlotData, PlotDataQuantity, SiFmt, ExpressionParser
+from lib import PlotData, PlotDataQuantity, SiFormat, ExpressionParser
 from lib import SParamFile
 from lib.expressions.networks import Network, Networks
 from lib.expressions.sparams import SParam, SParams
@@ -30,7 +30,7 @@ class Tempfile:
 def get_dummy_plot_data(n: int) -> "list[PlotData]":
     result = []
     for i in range(n):
-        result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFmt(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFmt(),[i+4,i+5,i+6]),None,'-',None))
+        result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFormat(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFormat(),[i+4,i+5,i+6]),None,'-',None))
     return result
 
 

@@ -15,16 +15,16 @@ from .about_dialog import AboutDialog
 
 import matplotlib.backend_bases
 import matplotlib.backend_bases
-from lib.si import SiFmt
+from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements
-from lib import Si
+from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds
+from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser
 from lib import PathExt
-from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, AxisRangeMode
 from info import Info
 
 import pathlib
@@ -32,7 +32,7 @@ import math
 import copy
 import logging
 import traceback
-import datetime
+import time
 import numpy as np
 import re
 import os
@@ -53,8 +53,6 @@ class MainWindow(MainWindowUi):
     TIMER_CLEAR_LOAD_COUNTER_ID, TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S = get_unique_id(), 0.5
     TIMER_RESCALE_GUI_ID, TIMER_RESCALE_GUI_TIMEOUT_S = get_unique_id(), 0.5
 
-    UNLOCKED = (any,any)
-
     COLOR_ASSIGNMENT_NAMES = {
         ColorAssignment.Default: 'Individual',
         ColorAssignment.ByParam: 'By Parameter',
@@ -73,13 +71,16 @@ class MainWindow(MainWindowUi):
         self._log_dialog: LogDialog|None = None
         self.cursor_event_queue: list[tuple] = []
         self.plot: PlotHelper|None = None
-        self.sparamfile_list_counter = 0
-        self.sparamfile_list_next_warning = 0
+        self.sparamfile_list_t_start: float = -1
+        self.sparamfile_list_next_warning_s: int = 0
         self.sparamfile_list_aborted = False
-        self.sparamfile_load_counter = 0
-        self.sparamfile_load_next_warning = 0
+        self.sparamfile_load_t_start: float = -1
+        self.sparamfile_load_next_warning_s: int = 0
         self.sparamfile_load_aborted = False
-        self._last_cursor_x = 0
+        self._last_cursor_x = [0, 0]
+        self._last_cursor_trace = ['', '']
+        self._xaxis_range_mode = AxisRangeMode.Auto
+        self._yaxis_range_mode = AxisRangeMode.Auto
 
         super().__init__()
         
@@ -147,6 +148,7 @@ class MainWindow(MainWindowUi):
                 self.ui_enable_expressions(Settings.use_expressions)
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
+                self.ui_semitrans_traces = Settings.plot_semitransparent
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
@@ -175,31 +177,35 @@ class MainWindow(MainWindowUi):
 
 
     def clear_list_counter(self):
-        self.sparamfile_list_counter = 0
-        self.sparamfile_list_next_warning = Settings.warncount_file_list
+        # TODO: this is not monitored anywhere!
+        self.sparamfile_list_t_start = -1
+        self.sparamfile_list_next_warning_s = Settings.warn_timeout_s
         self.sparamfile_list_aborted = False
 
 
     def clear_load_counter(self):
-        #logging.debug(get_callstack_str())
-        self.sparamfile_load_counter = 0
-        self.sparamfile_load_next_warning = Settings.warncount_file_load
+        self.sparamfile_load_t_start = -1
+        self.sparamfile_load_next_warning_s = Settings.warn_timeout_s
         self.sparamfile_load_aborted = False
 
 
     def before_load_sparamfile(self, path: PathExt) -> bool:
         if self.sparamfile_load_aborted:
             return False
-        if self.sparamfile_load_counter >= self.sparamfile_load_next_warning:
-            self.sparamfile_load_next_warning = get_next_1_2_5_10(self.sparamfile_load_next_warning)
-            if not yesno_dialog(
-                'Too Many Files',
-                f'Already loaded {self.sparamfile_load_counter} files, with more to come. Continue?',
-                f'Will ask again after {self.sparamfile_load_next_warning} files.'):
-                self.sparamfile_load_aborted = True
-                self.ui_filesys_browser.selected_files = []
-                return False
-        self.sparamfile_load_counter += 1
+        if self.sparamfile_load_t_start < 0:
+            self.sparamfile_load_t_start = time.monotonic()
+        else:
+            t_elapsed = time.monotonic() - self.sparamfile_load_t_start
+            if t_elapsed >= self.sparamfile_load_next_warning_s:
+                self.sparamfile_load_next_warning_s = get_next_1_2_5_10(self.sparamfile_load_next_warning_s, nice_minutes=True)
+                if not yesno_dialog(
+                    'Too Many Files',
+                    f'Loading took {format_minute_seconds(t_elapsed)} so far, with more to come. Continue?',
+                    f'Will ask again after {format_minute_seconds(self.sparamfile_load_next_warning_s)}.'):
+                    self.sparamfile_load_aborted = True
+                    self.ui_filesys_browser.selected_files = []
+                    return False
+                self.sparamfile_load_t_start = time.monotonic()
         return True
     
     
@@ -517,7 +523,9 @@ class MainWindow(MainWindowUi):
         dir = open_directory_dialog(self, title=title)
         if not dir:
             return
-        self.ui_filesys_browser.add_toplevel(PathExt(dir))
+        path = PathExt(dir)
+        self.add_to_most_recent_paths(str(path.absolute()))
+        self.ui_filesys_browser.add_toplevel(path)
 
 
     def on_reload_all_files(self):
@@ -554,14 +562,18 @@ class MainWindow(MainWindowUi):
 
 
     def add_to_most_recent_paths(self, path: str):
-        if path in Settings.path_history:
-            idx = Settings.path_history.index(path)
-            del Settings.path_history[idx]
+        history = Settings.path_history
+
+        if path in history:
+            idx = history.index(path)
+            del history[idx]
         
-        Settings.path_history.insert(0, path)
+        history.insert(0, path)
         
-        while len(Settings.path_history) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
-            del Settings.path_history[-1]
+        while len(history) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
+            del history[-1]
+        
+        Settings.path_history = history
         
         self.update_most_recent_paths_menu()
 
@@ -577,7 +589,7 @@ class MainWindow(MainWindowUi):
         try:
             if file:
                 if file.loaded:
-                    return f'{file.nw.number_of_ports}-port, {Si(min(file.nw.f),"Hz")} to {Si(max(file.nw.f),"Hz")}'
+                    return f'{file.nw.number_of_ports}-port, {SiValue(min(file.nw.f),"Hz")} to {SiValue(max(file.nw.f),"Hz")}'
                 elif file.error:
                     return '[loading failed]'
             return '[not loaded]'
@@ -742,6 +754,11 @@ class MainWindow(MainWindowUi):
         self.schedule_plot_update()
     
 
+    def on_semitrans_changed(self):
+        Settings.plot_semitransparent = self.ui_semitrans_traces
+        self.schedule_plot_update()
+    
+
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
         self.schedule_plot_update()
@@ -777,14 +794,6 @@ class MainWindow(MainWindowUi):
             Clipboard.copy_figure(self.ui_plot.figure)
         except Exception as ex:
             error_dialog('Error', 'Copying plot to clipboard failed.', detailed_text=str(ex))
-    
-
-    def on_lock_xaxis(self):
-        self.ui_plot_tool = PlotWidget.Tool.Off
-        if self.ui_xaxis_range==MainWindow.UNLOCKED:
-            self.ui_xaxis_range = self.plot.plot.get_xlim()
-        else:
-            self.ui_xaxis_range = (any,any)
         
     
     def on_resize(self):
@@ -796,34 +805,37 @@ class MainWindow(MainWindowUi):
             self.ui_plot.draw()
         except:
             pass
+    
+
+    def on_lock_xaxis(self):
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        if self.ui_xaxis_range.both_are_wildcard:
+            (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.plot.get_xlim()
+        else:
+            self.ui_xaxis_range.both_are_wildcard = True
 
     
     def on_lock_yaxis(self):
         self.ui_plot_tool = PlotWidget.Tool.Off
-        if self.ui_yaxis_range==MainWindow.UNLOCKED:
-            self.ui_yaxis_range = self.plot.plot.get_ylim()
+        if self.ui_yaxis_range.both_are_wildcard:
+            (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
         else:
-            self.ui_yaxis_range = (any,any)
+            self.ui_yaxis_range.both_are_wildcard = True
 
 
     def on_lock_both_axes(self):
         self.ui_plot_tool = PlotWidget.Tool.Off
-        if self.ui_xaxis_range==MainWindow.UNLOCKED or self.ui_yaxis_range==MainWindow.UNLOCKED:
-            self.ui_xaxis_range, self.ui_yaxis_range = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+        if self.ui_xaxis_range.both_are_wildcard or self.ui_yaxis_range.both_are_wildcard:
+            (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
         else:
-            self.ui_xaxis_range = (any, any)
-            self.ui_yaxis_range = (any, any)
+            self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
     
     
     def on_xaxis_range_change(self):
-        if self.ui_xaxis_range!=MainWindow.UNLOCKED:
-            self.plot.plot.set_xlim(*self.ui_xaxis_range)
         self.schedule_plot_update()
 
 
     def on_yaxis_range_change(self):
-        if self.ui_yaxis_range!=MainWindow.UNLOCKED:
-            self.plot.plot.set_ylim(*self.ui_yaxis_range)
         self.schedule_plot_update()
 
 
@@ -900,7 +912,10 @@ class MainWindow(MainWindowUi):
             return chroot
         def make_selall(file_path: PathExt):
             def selall():
-                files_in_path = [p for p in file_path.parent.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
+                if file_path.arch_path:
+                    files_in_path = [p for p in find_files_in_archive(str(file_path)) if is_ext_supported_file(p.arch_path_suffix)]
+                else:
+                    files_in_path = [p for p in file_path.parent.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
                 if len(files_in_path) < 1:
                     return
                 self.ui_filesys_browser.selected_files = [*files_in_path, *self.ui_filesys_browser.selected_files]
@@ -994,12 +1009,14 @@ class MainWindow(MainWindowUi):
 
             cursor = self.plot.cursors[cursor_index]
             trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
-            plot_width, plot_height = self._get_plot_dimensions()
-            plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x, None, name=trace_name, width=plot_width, height=plot_height)
-            if plot is None:
-                return
-            cursor.set(x, y, z, True, plot.color)
-            self._last_cursor_x = x
+            if trace_name == MainWindow.CURSOR_OFF_NAME:
+                cursor.enable(False)
+            else:
+                plot_width, plot_height = self._get_plot_dimensions()
+                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
+                if plot is None:
+                    return
+                cursor.set(x, y, z, True, plot.color)
 
             self.update_cursor_readout()
 
@@ -1027,11 +1044,10 @@ class MainWindow(MainWindowUi):
                 cursor = self.plot.cursors[cursor_index]
                 trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
                 plot_width, plot_height = self._get_plot_dimensions()
-                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x, None, name=trace_name, width=plot_width, height=plot_height)
+                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
                 if plot is None:
-                    return
+                    continue
                 cursor.set(x, y, z, True, plot.color)
-                self._last_cursor_x = x
 
             self.update_cursor_readout()
 
@@ -1065,13 +1081,25 @@ class MainWindow(MainWindowUi):
     def prepare_cursors(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             self.ui_plot_tool = PlotWidget.Tool.Off
-            if self.plot:
-                self.plot.cursors[0].enable(True)
-                self.plot.cursors[1].enable(False)
+
             self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
-            selected_files = self.get_selected_files()
-            if len(selected_files) > 0:
-                self.ui_cursor1_trace = selected_files[0].name
+            self.ui_cursor1_trace = self._last_cursor_trace[0]
+            self.ui_cursor2_trace = self._last_cursor_trace[1]
+
+            for cursor_index in [0,1]:
+                cursor = self.plot.cursors[cursor_index]
+                if self._last_cursor_trace[cursor_index] == MainWindow.CURSOR_OFF_NAME:
+                    cursor.enable(False)
+                else:
+                    trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
+                    plot_width, plot_height = self._get_plot_dimensions()
+                    plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
+                    if plot is None:
+                        continue
+                    cursor.set(x, y, z, True, plot.color)
+
+            self.update_cursor_readout()
+
         else:
             if self.plot:
                 self.plot.cursors[0].enable(False)
@@ -1094,17 +1122,16 @@ class MainWindow(MainWindowUi):
             return
 
         try:
-            if not self.plot.cursors[cursor_index].enabled:
-                return
-
             cursor = self.plot.cursors[cursor_index]
             trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
-            plot_width, plot_height = self._get_plot_dimensions()
-            plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height)
-            if plot is None:
-                return
-            cursor.set(x, y, z, True, plot.color)
-            self._last_cursor_x = x
+            if trace_name == MainWindow.CURSOR_OFF_NAME:
+                cursor.enable(False)
+            else:
+                plot_width, plot_height = self._get_plot_dimensions()
+                plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height)
+                if plot is None:
+                    return
+                cursor.set(x, y, z, True, plot.color)
 
             self.update_cursor_readout()
 
@@ -1143,7 +1170,6 @@ class MainWindow(MainWindowUi):
 
                     if self.ui_auto_cursor_trace:
                         plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, width=plot_width, height=plot_height)
-                        self._last_cursor_x = x
                         if plot is not None:
                             if target_cursor_index==0:
                                 self.ui_cursor1_trace = plot.name
@@ -1153,7 +1179,6 @@ class MainWindow(MainWindowUi):
                         selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
                         if selected_trace_name is not None:
                             plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, name=selected_trace_name, width=plot_width, height=plot_height)
-                            self._last_cursor_x = x
                         else:
                             plot, x, y, z = None, None, None, None
 
@@ -1164,11 +1189,11 @@ class MainWindow(MainWindowUi):
                     if self.ui_cursor_syncx:
                         other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
                         other_plot, x, y, z = self.plot.get_closest_plot_point(x, None, name=other_trace_name, width=plot_width, height=plot_height)
-                        self._last_cursor_x = x
                         if other_plot is not None:
                             other_cursor_index = 1 - target_cursor_index
                             other_cursor = self.plot.cursors[other_cursor_index]
                             other_cursor.set(x, y, z, enable=True, color=other_plot.color)
+
             
             self.update_cursor_readout()
         except Exception as ex:
@@ -1180,54 +1205,60 @@ class MainWindow(MainWindowUi):
             self.ui_set_cursor_readouts()
             return
 
-        readout_x1 = Si(0)
+        readout_x1 = SiValue(0)
         readout_y1 = ''
-        readout_x2 = Si(0)
+        readout_x2 = SiValue(0)
         readout_y2 = ''
         readout_dx = ''
         readout_dy = ''
         xf = copy.copy(self.plot.x_fmt)
         yf = copy.copy(self.plot.y_left_fmt)
         zf = copy.copy(self.plot.z_fmt)
-        xf.significant_digits += 3
-        yf.significant_digits += 3
+        xf.digits += 3
+        yf.digits += 3
         if zf is not None:
-            zf.significant_digits += 1
+            zf.digits += 1
         if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[0].x, self.plot.cursors[0].y, self.plot.cursors[0].z
+            self._last_cursor_x[0], self._last_cursor_trace[0] = x, self.ui_cursor1_trace
             if z is not None:
-                readout_x1 = Si(z,si_fmt=zf)
-                readout_y1 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
+                readout_x1 = SiValue(z,spec=zf)
+                readout_y1 = f'{SiValue(x,spec=xf)}, {SiValue(y,spec=yf)}'
             else:
-                readout_x1 = Si(x,si_fmt=xf)
-                readout_y1 = f'{Si(y,si_fmt=yf)}'
+                readout_x1 = SiValue(x,spec=xf)
+                readout_y1 = f'{SiValue(y,spec=yf)}'
+        else:
+            self._last_cursor_trace[0] = ''
         if self.ui_cursor2_trace != MainWindow.CURSOR_OFF_NAME:
             x,y,z = self.plot.cursors[1].x, self.plot.cursors[1].y, self.plot.cursors[1].z
+            self._last_cursor_x[1], self._last_cursor_trace[1] = x, self.ui_cursor2_trace
             if z is not None:
-                readout_x2 = Si(z,si_fmt=zf)
-                readout_y2 = f'{Si(x,si_fmt=xf)}, {Si(y,si_fmt=yf)}'
+                readout_x2 = SiValue(z,spec=zf)
+                readout_y2 = f'{SiValue(x,spec=xf)}, {SiValue(y,spec=yf)}'
             else:
-                readout_x2 = Si(x,si_fmt=xf)
-                readout_y2 = f'{Si(y,si_fmt=yf)}'
+                readout_x2 = SiValue(x,spec=xf)
+                readout_y2 = f'{SiValue(y,spec=yf)}'
             if self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME:
                 dx = self.plot.cursors[1].x - self.plot.cursors[0].x
-                dx_str = str(Si(dx,si_fmt=xf))
+                dx_str = str(SiValue(dx,spec=xf))
                 if xf.unit=='s' and dx!=0:
-                    dx_str += f' = {Si(1/dx,unit='Hz⁻¹')}'
+                    dx_str += f' = {SiValue(1/dx,unit='Hz⁻¹')}'
                 if yf.unit=='dB' or yf.unit=='°':
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
                     readout_dx = f'{dx_str}'
-                    readout_dy = f'{Si(dy,si_fmt=yf)}'
+                    readout_dy = f'{SiValue(dy,spec=yf)}'
                 else:
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    dys = Si.to_significant_digits(dy, 4)
+                    dys = SiValue.to_significant_digits(dy, 4)
                     if self.plot.cursors[0].y==0:
                         rys = 'N/A'
                     else:
                         ry = self.plot.cursors[1].y / self.plot.cursors[0].y
-                        rys = Si.to_significant_digits(ry, 4)
+                        rys = SiValue.to_significant_digits(ry, 4)
                     readout_dx = f'{dx_str}'
                     readout_dy = f'{dys} ({rys})'
+        else:
+            self._last_cursor_trace[1] = ''
         
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
@@ -1271,15 +1302,6 @@ class MainWindow(MainWindowUi):
             log_entries = LogHandler.inst().get_records(logging.WARNING)
             last_log_entry_at_start = log_entries[-1] if log_entries else None
 
-            prev_xlim, prev_ylim = None, None
-            if self.plot is not None:
-                if self.plot.plot is not None:
-                    try:
-                        prev_xlim = self.plot.plot.get_xlim()
-                        prev_ylim = self.plot.plot.get_ylim()
-                    except:
-                        pass
-            
             self.ui_plot.clear()
             self.generated_expressions = ''
             self.plot = None
@@ -1297,46 +1319,46 @@ class MainWindow(MainWindowUi):
             smith_norm = self.ui_plot_selector.smithNorm()
             log_x, log_y = self.ui_logx, self.ui_logy
             
-            common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items)
+            common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items, max_legend_items=Settings.max_legend_items)
 
             # initialize dummy data
-            xq, xf, xl = '', SiFmt(), False
-            yq, yf, yl = '', SiFmt(), False
-            y2q, y2f = '', SiFmt()
+            xq, xf, xl = '', SiFormat(), False
+            yq, yf, yl = '', SiFormat(), False
+            y2q, y2f = '', SiFormat()
 
             if plot_type == PlotType.Polar:
-                self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFmt(), x_log=False, y_qty='Imaginary', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), **common_plot_args)
+                self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFormat(), x_log=False, y_qty='Imaginary', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), **common_plot_args)
             elif plot_type == PlotType.Smith:
                 smith_z = 1.0
                 typ = 'y' if smith_norm==SmithNorm.Admittance else 'z'
-                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFmt(), x_log=False, y_qty='', y_fmt=SiFmt(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFmt(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFormat(), x_log=False, y_qty='', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
             elif plot_type == PlotType.TimeDomain:
                 resp_name = 'Step Response' if tdr_resp==TdResponse.StepResponse else 'Impulse Response'
-                xq,xf,xl = 'Time',SiFmt(unit='s',force_sign=True),False
+                xq,xf,xl = 'Time',SiFormat(unit='s',signed=True),False
                 if tdr_z:
-                    yq,yf,yl = resp_name,SiFmt(unit='Ω', force_sign=True),False
+                    yq,yf,yl = resp_name,SiFormat(unit='Ω', signed=True),False
                 else:
-                    yq,yf,yl = resp_name,SiFmt(force_sign=True),False
+                    yq,yf,yl = resp_name,SiFormat(signed=True),False
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
             else:
                 
-                xq,xf,xl = 'Frequency', SiFmt(unit='Hz'), log_x
+                xq,xf,xl = 'Frequency', SiFormat(unit='Hz'), log_x
                 if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
-                    yq,yf,yl = 'Level',SiFmt(unit='',use_si_prefix=False,force_sign=True),log_y
+                    yq,yf,yl = 'Level',SiFormat(unit='',prefixed=False,signed=True),log_y
                 elif y_qty == YQuantity.Magnitude:
-                    yq,yf,yl = 'Magnitude',SiFmt(unit='',use_si_prefix=False),log_y
+                    yq,yf,yl = 'Magnitude',SiFormat(unit='',prefixed=False),log_y
                 elif y_qty == YQuantity.Decibels:
                     if log_y and Settings.verbose:
                         logging.info(f'Ignoring logarithmic Y-axis because Y-axis is in decibels')
-                    yq,yf,yl = 'Magnitude',SiFmt(unit='dB',use_si_prefix=False,force_sign=True),False
+                    yq,yf,yl = 'Magnitude',SiFormat(unit='dB',prefixed=False,signed=True),False
                 
                 if y2_qty == YQuantity.Phase:
                     if phase_unit == PhaseUnit.Radians:
-                        y2q,y2f = 'Phase',SiFmt(use_si_prefix=False,force_sign=True)
+                        y2q,y2f = 'Phase',SiFormat(prefixed=False,signed=True)
                     else:
-                        y2q,y2f = 'Phase',SiFmt(unit='°',use_si_prefix=False,force_sign=True)
+                        y2q,y2f = 'Phase',SiFormat(unit='°',prefixed=False,signed=True)
                 elif y2_qty == YQuantity.GroupDelay:
-                    y2q,y2f = 'Group Delay',SiFmt(unit='s',force_sign=True)
+                    y2q,y2f = 'Group Delay',SiFormat(unit='s',signed=True)
                 self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
             available_colors = PlotWidget.get_color_cycle()
@@ -1351,6 +1373,9 @@ class MainWindow(MainWindowUi):
 
                 if style is None:
                     style = '-'
+                if opacity is None:
+                    if self.ui_semitrans_traces:
+                        opacity = Settings.plot_semitransparent_opacity
 
                 style2 = '-.'
                 if style=='-':
@@ -1444,34 +1469,38 @@ class MainWindow(MainWindowUi):
             selected_files = self.get_selected_files()
 
             selnws_expression_list = []
+            plot_args = []
+            if self.ui_semitrans_traces:
+                plot_args.append(f'opacity={Settings.plot_semitransparent_opacity}')
             if params == Parameters.Custom:
 
                 for i in range(params_mask.shape[0]):
                     for j in range(params_mask.shape[1]):
                         if params_mask[i,j]:
-                            selnws_expression_list.append(f's({i+1},{j+1}).plot()')
+                            selnws_expression_list.append(f's({i+1},{j+1}).plot({",".join(plot_args)})')
 
             else:
                 any_il = params & Parameters.S21 or params & Parameters.S12
                 any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
+                plot_args_il, plot_args_rl = [*plot_args], [*plot_args]
                 if any_il and any_rl:
-                    style_il, style_rl = 'style="-"', 'style="--"'
-                else:
-                    style_il, style_rl = '', ''
+                    plot_args_il.append('style="-"')
+                    plot_args_rl.append('style="--"')
+                plot_args_il_str, plot_args_rl_str = ', '.join(plot_args_il), ', '.join(plot_args_rl)
 
                 if params & Parameters.S21 and params & Parameters.S12:
-                    selnws_expression_list.append(f's(il_only=True).plot({style_il})')
+                    selnws_expression_list.append(f's(il_only=True).plot({plot_args_il_str})')
                 elif params & Parameters.S21:
-                    selnws_expression_list.append(f's(fwd_il_only=True).plot({style_il})')
+                    selnws_expression_list.append(f's(fwd_il_only=True).plot({plot_args_il_str})')
                 elif params & Parameters.S12:
-                    selnws_expression_list.append(f's(rev_il_only=True).plot({style_il})')
+                    selnws_expression_list.append(f's(rev_il_only=True).plot({plot_args_il_str})')
             
                 if params & Parameters.Sii:
-                    selnws_expression_list.append(f's(rl_only=True).plot({style_rl})')
+                    selnws_expression_list.append(f's(rl_only=True).plot({plot_args_rl_str})')
                 elif params & Parameters.S11:
-                    selnws_expression_list.append(f's(11).plot({style_rl})')
+                    selnws_expression_list.append(f's(11).plot({plot_args_rl_str})')
                 elif params & Parameters.S22:
-                    selnws_expression_list.append(f's(22).plot({style_rl})')
+                    selnws_expression_list.append(f's(22).plot({plot_args_rl_str})')
         
             code_preamble = 'def _plot_sel_params_handler(nws: "Networks"):\n'
             if len(selnws_expression_list) > 0:
@@ -1481,15 +1510,18 @@ class MainWindow(MainWindowUi):
             code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
             code_preamble += '\n'
 
+            param_selector_is_in_use = False
             if use_expressions:
 
                 raw_exprs = self.ui_expression
                 Settings.expression = raw_exprs
 
-                ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot)  
+                result = ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot)  
+                param_selector_is_in_use = result.plot_sel_params_handler_used
 
             else:
 
+                param_selector_is_in_use = True
                 self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
 
                 try:
@@ -1497,15 +1529,17 @@ class MainWindow(MainWindowUi):
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
+            
+            self.ui_param_selector.setDimParameters(not param_selector_is_in_use)
 
             self.update_params_size()
             self.plot.render()
 
             if self.plot_axes_are_valid:
-                if self.ui_xaxis_range!=MainWindow.UNLOCKED and prev_xlim is not None:
-                    self.plot.plot.set_xlim(prev_xlim)
-                if self.ui_yaxis_range!=MainWindow.UNLOCKED and prev_ylim is not None:
-                    self.plot.plot.set_ylim(prev_ylim)
+                if not self.ui_xaxis_range.both_are_wildcard:
+                    self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
+                if not self.ui_yaxis_range.both_are_wildcard:
+                    self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
             
             # TODO: smart range for dB

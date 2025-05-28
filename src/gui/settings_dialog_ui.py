@@ -1,6 +1,6 @@
 from .helpers.qt_helper import QtHelper
 from .components.sivalue_edit import SiValueEdit
-from lib import get_next_1_10_100, get_next_1_2_5_10, Si
+from lib import get_next_1_2_5_10, format_minute_seconds, SiValue
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -31,12 +31,9 @@ class SettingsDialogUi(QDialog):
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
 
-        self._warncount_list_values = [10]
-        while self._warncount_list_values[-1] < 1_000_000:
-            self._warncount_list_values.append(get_next_1_10_100(self._warncount_list_values[-1]))
-        self._warncount_load_values = [5]
-        while self._warncount_load_values[-1] < 1_000_000:
-            self._warncount_load_values.append(get_next_1_2_5_10(self._warncount_load_values[-1]))
+        self._warn_timeout_values = [2]
+        while self._warn_timeout_values[-1] < 100:
+            self._warn_timeout_values.append(get_next_1_2_5_10(self._warn_timeout_values[-1], nice_minutes=True))
 
         help = QShortcut(QKeySequence('F1'), self)
         help.activated.connect(self.on_help)
@@ -74,7 +71,6 @@ class SettingsDialogUi(QDialog):
         self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_rad_radio = QRadioButton('Radians')
         self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
-        self._ui_csvsep_combo = QComboBox()
         self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
         self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
@@ -85,7 +81,6 @@ class SettingsDialogUi(QDialog):
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
                             ['Phase Unit:', QtHelper.layout_h(self._ui_deg_radio, self._ui_rad_radio, ...)],
-                            ['CSV Separator:', QtHelper.layout_h(self._ui_csvsep_combo, ...)],
                             ['Log. Y-Axis:', QtHelper.layout_h(self._ui_logyneg_combo, ...)],
                             ['Log. X-Axis:', QtHelper.layout_h(self._ui_logxneg_combo, ...)],
                     ]), ...
@@ -103,7 +98,7 @@ class SettingsDialogUi(QDialog):
         self._ui_td_window_param_spinner.setMinimum(-1e3)
         self._ui_td_window_param_spinner.setMaximum(+1e3)
         self._ui_td_minsize_combo = QComboBox()
-        self._ui_td_shift_text = SiValueEdit(self, si=Si(0, 's'), require_return_press=True)
+        self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'), require_return_press=True)
         self._ui_td_shift_text.valueChanged.connect(self.on_td_shift_changed)
         tb_widget.setLayout(
             QtHelper.layout_v(
@@ -122,21 +117,17 @@ class SettingsDialogUi(QDialog):
         self._ui_tabs.addTab(files_widget, 'Files')
         self._ui_extract_zip_check = QCheckBox('Extract .zip-Files')
         self._ui_extract_zip_check.toggled.connect(self.on_zip_change)
-        self._ui_warncount_list_combo = QComboBox()
-        for i in self._warncount_list_values:
-            self._ui_warncount_list_combo.addItem(f'{i:,.0f}')
-        self._ui_warncount_list_combo.currentIndexChanged.connect(self._on_warncount_list_changed)
-        self._ui_warncount_list_combo.setCurrentIndex(0)
-        self._ui_warncount_load_combo = QComboBox()
-        for i in self._warncount_load_values:
-            self._ui_warncount_load_combo.addItem(f'{i:,.0f}')
-        self._ui_warncount_load_combo.setCurrentIndex(0)
-        self._ui_warncount_load_combo.currentIndexChanged.connect(self._on_warncount_load_changed)
+        self._ui_warn_timeout_combo = QComboBox()
+        for secs in self._warn_timeout_values:
+            self._ui_warn_timeout_combo.addItem(format_minute_seconds(secs))
+        self._ui_warn_timeout_combo.currentIndexChanged.connect(self._on_warn_timeout_changed)
+        self._ui_warn_timeout_combo.setCurrentIndex(0)
+        self._ui_csvsep_combo = QComboBox()
         files_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_extract_zip_check,
-                QtHelper.layout_h('Warn When Discovering More Than', self._ui_warncount_list_combo, 'Files'),
-                QtHelper.layout_h('Warn When Loading More Than', self._ui_warncount_load_combo, 'Files'),
+                QtHelper.layout_h('Warn When Loading Takes Longer Than', self._ui_warn_timeout_combo, ...),
+                QtHelper.layout_h('CSV Separator:', self._ui_csvsep_combo, ...),
                 ...
             )
         )
@@ -272,7 +263,7 @@ class SettingsDialogUi(QDialog):
         return self._ui_td_shift_text.value().value
     @ui_td_shift.setter
     def ui_td_shift(self, value: float):
-        self._ui_td_shift_text.setValue(Si(value, 's'))
+        self._ui_td_shift_text.setValue(SiValue(value, 's'))
 
 
     def ui_set_td_minsize_options(self, options: list[str]):
@@ -420,30 +411,16 @@ class SettingsDialogUi(QDialog):
 
     
     @property
-    def ui_warncount_list(self) -> int:
+    def ui_warn_timeout(self) -> float:
         try:
-            return self._warncount_list_values[self._ui_warncount_list_combo.currentIndex()]
+            return self._warn_timeout_values[self._ui_warn_timeout_combo.currentIndex()]
         except:
-            return self._warncount_list_values[0]
-    @ui_warncount_list.setter
-    def ui_warncount_list(self, value: int):
+            return self._warn_timeout_values[0]
+    @ui_warn_timeout.setter
+    def ui_warn_timeout(self, value: float):
         try:
-            idx = np.argmin(np.abs(np.array(self._warncount_list_values) - value))
-            self._ui_warncount_list_combo.setCurrentIndex(idx)
-        except: pass
-
-    
-    @property
-    def ui_warncount_load(self) -> int:
-        try:
-            return self._warncount_load_values[self._ui_warncount_load_combo.currentIndex()]
-        except:
-            return self._warncount_load_values[0]
-    @ui_warncount_load.setter
-    def ui_warncount_load(self, value: int):
-        try:
-            idx = np.argmin(np.abs(np.array(self._warncount_load_values) - value))
-            self._ui_warncount_load_combo.setCurrentIndex(idx)
+            idx = np.argmin(np.abs(np.array(self._warn_timeout_values) - value))
+            self._ui_warn_timeout_combo.setCurrentIndex(idx)
         except: pass
 
 
@@ -480,9 +457,7 @@ class SettingsDialogUi(QDialog):
         pass
     def on_cursor_snap_changed(self):
         pass
-    def _on_warncount_list_changed(self):
-        pass
-    def _on_warncount_load_changed(self):
+    def _on_warn_timeout_changed(self):
         pass
     def on_colorassignments_changed(self):
         pass

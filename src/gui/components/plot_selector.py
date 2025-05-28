@@ -78,46 +78,43 @@ class PlotSelector(QWidget):
             self._ui_simple_y_combo,
             3,
             self._ui_simple_y2_combo,
-            ..., spacing=default_spacing
+            ..., margins=0, spacing=default_spacing
         ))
 
         self._ui_advanced = QWidget()
         self._ui_advanced.setVisible(not self._simplified)
-        self._ui_cartesian_button = QtHelper.make_button(self, None, self._on_select_cartesian, icon='plot_cartesian.svg', tooltip='Cartesian Plot', toolbar=True, checked=False)
-        self._ui_tdr_button = QtHelper.make_button(self, None, self._on_select_tdr, icon='plot_tdr.svg', tooltip='Cartesian Plot of Time-Domain Transform', toolbar=True, checked=False)
-        self._ui_smith_button = QtHelper.make_button(self, None, self._on_select_smith, icon='plot_smith.svg', tooltip='Smith Plot', toolbar=True, checked=False)
-        self._ui_polar_button = QtHelper.make_button(self, None, self._on_select_polar, icon='plot_polar.svg', tooltip='Polar Plot', toolbar=True, checked=False)
-        self._ui_db_button = QtHelper.make_button(self, None, self._on_select_db, icon='plot_db.svg', tooltip='Plot Decibels (dB) on Y-Axis', toolbar=True, checked=False)
-        self._ui_mag_button = QtHelper.make_button(self, None, self._on_select_mag, icon='plot_mag.svg', tooltip='Plot Magnitude on Y-Axis', toolbar=True, checked=False)
-        self._ui_real_button = QtHelper.make_button(self, None, self._on_select_re, icon='plot_real.svg', tooltip='Plot Real Part on Y-Axis', toolbar=True, checked=False)
-        self._ui_imag_button = QtHelper.make_button(self, None, self._on_select_im, icon='plot_imag.svg', tooltip='Plot Imaginary Part on Y-Axis', toolbar=True, checked=False)
-        self._ui_phase_button = QtHelper.make_button(self, None, self._on_select_phase, icon='plot_phase.svg', tooltip='Plot Phase on Y-Axis', toolbar=True, checked=False)
-        self._ui_gdelay_button = QtHelper.make_button(self, None, self._on_select_gdelay, icon='plot_gdelay.svg', tooltip='Plot Group Delay on Y-Axis', toolbar=True, checked=False)
-        self._ui_unwrap_button = QtHelper.make_button(self, None, self._on_select_unwrap, icon='plot_phase-unwrap.svg', tooltip='Unwrap Phase', toolbar=True, checked=False)
-        self._ui_detrend_button = QtHelper.make_button(self, None, self._on_select_detrend, icon='plot_phase-detrend.svg', tooltip='Unwrap and De-Trend Phase', toolbar=True, checked=False)
-        self._ui_impulse_button = QtHelper.make_button(self, None, self._on_select_impulse, icon='plot_tdr-impulse.svg', tooltip='Show Impulse Response', toolbar=True, checked=False)
-        self._ui_step_button = QtHelper.make_button(self, None, self._on_select_step, icon='plot_tdr-step.svg', tooltip='Show Step Response', toolbar=True, checked=False)
-        self._ui_impeance_button = QtHelper.make_button(self, None, self._on_select_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', toolbar=True, checked=False)
-        self._ui_admittance_button = QtHelper.make_button(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', toolbar=True, checked=False)
-        self._ui_degrees_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_degree.svg', tooltip='Plot Phase in Degrees (°) Instad of Radians', toolbar=True, checked=False)
-        self._ui_tdz_button = QtHelper.make_button(self, None, self._on_select_other, icon='plot_ohms.svg', tooltip='Transform Y-Axis to Impedance', toolbar=True, checked=False)
+        self._ui_cartesian_button = QtHelper.make_toolbutton(self, None, self._on_select_cartesian, icon='plot_cartesian.svg', tooltip='Cartesian Plot', checked=False)
+        self._ui_tdr_button = QtHelper.make_toolbutton(self, None, self._on_select_tdr, icon='plot_tdr.svg', tooltip='Cartesian Plot of Time-Domain Transform', checked=False)
+        self._ui_smith_button = QtHelper.make_toolbutton(self, None, self._on_select_smith, icon='plot_smith.svg', tooltip='Smith Plot', checked=False)
+        self._ui_polar_button = QtHelper.make_toolbutton(self, None, self._on_select_polar, icon='plot_polar.svg', tooltip='Polar Plot', checked=False)
+        self._ui_db_button = QtHelper.make_toolbutton(self, None, self._on_select_db, icon='plot_db.svg', tooltip='Plot Decibels (dB) on Y-Axis', checked=False)
+        self._ui_mag_button = QtHelper.make_toolbutton(self, None, self._on_select_mag, icon='plot_mag.svg', tooltip='Plot Magnitude on Y-Axis', checked=False)
+        self._ui_real_button = QtHelper.make_toolbutton(self, None, self._on_select_re, icon='plot_real.svg', tooltip='Plot Real Part on Y-Axis', checked=False)
+        self._ui_imag_button = QtHelper.make_toolbutton(self, None, self._on_select_im, icon='plot_imag.svg', tooltip='Plot Imaginary Part on Y-Axis', checked=False)
+        self._ui_phase_button = QtHelper.make_toolbutton(self, None, self._on_select_phase, icon='plot_phase.svg', tooltip='Plot Phase on Y-Axis', checked=False)
+        self._ui_gdelay_button = QtHelper.make_toolbutton(self, None, self._on_select_gdelay, icon='plot_gdelay.svg', tooltip='Plot Group Delay on Y-Axis', checked=False)
+        self._ui_unwrap_button = QtHelper.make_toolbutton(self, None, self._on_select_unwrap, icon='plot_phase-unwrap.svg', tooltip='Unwrap Phase', checked=False)
+        self._ui_detrend_button = QtHelper.make_toolbutton(self, None, self._on_select_detrend, icon='plot_phase-detrend.svg', tooltip='Unwrap and De-Trend Phase', checked=False)
+        self._ui_impulse_button = QtHelper.make_toolbutton(self, None, self._on_select_impulse, icon='plot_tdr-impulse.svg', tooltip='Show Impulse Response', checked=False)
+        self._ui_step_button = QtHelper.make_toolbutton(self, None, self._on_select_step, icon='plot_tdr-step.svg', tooltip='Show Step Response', checked=False)
+        self._ui_impeance_button = QtHelper.make_toolbutton(self, None, self._on_select_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', checked=False)
+        self._ui_admittance_button = QtHelper.make_toolbutton(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', checked=False)
+        self._ui_degrees_button = QtHelper.make_toolbutton(self, None, self._on_select_other, icon='plot_degree.svg', tooltip='Plot Phase in Degrees (°) Instead of Radians', checked=False)
+        self._ui_tdz_button = QtHelper.make_toolbutton(self, None, self._on_select_other, icon='plot_ohms.svg', tooltip='Transform Y-Axis to Impedance', checked=False)
         self._ui_advanced.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
                 self._ui_cartesian_button, self._ui_tdr_button, self._ui_smith_button, self._ui_polar_button,
-            ..., spacing=default_spacing),
+            ..., margins=0, spacing=default_spacing),
             wide_spacing,
             QtHelper.layout_h(
                 self._ui_impeance_button, self._ui_admittance_button, self._ui_db_button, self._ui_mag_button, self._ui_real_button, self._ui_imag_button, self._ui_impulse_button, self._ui_step_button, medium_spacing, self._ui_tdz_button,
-            ..., spacing=default_spacing),
+            ..., margins=0, spacing=default_spacing),
             QtHelper.layout_h(
                 self._ui_phase_button, self._ui_unwrap_button, self._ui_detrend_button, self._ui_degrees_button, self._ui_gdelay_button,
-            ..., spacing=default_spacing),
-            ..., spacing=default_spacing
+            ..., margins=0, spacing=default_spacing),
+            ..., margins=0, spacing=default_spacing
         ))
-        self.setContentsMargins(0, 0, 0, 0)
-        self._ui_simple.setContentsMargins(0, 0, 0, 0)
-        self._ui_advanced.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced))
+        self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced, margins=0, spacing=0))
 
         self._update_controls()
 

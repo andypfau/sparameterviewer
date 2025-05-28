@@ -13,9 +13,9 @@ import logging
 class SettingsDialog(SettingsDialogUi):
 
     CSV_SEPARATOR_NAMES = {
-        CsvSeparator.Tab: 'Tab',
-        CsvSeparator.Comma: 'Comma',
-        CsvSeparator.Semicolon: 'Semicolon',
+        CsvSeparator.Tab: '⇥  Tab',
+        CsvSeparator.Comma: ',  Comma',
+        CsvSeparator.Semicolon: ';  Semicolon',
     }
 
     TD_MINSIZE_NAMES = {
@@ -59,7 +59,7 @@ class SettingsDialog(SettingsDialogUi):
     }
 
     MAINWINLAYOUT_NAMES = {
-        MainWindowLayout.Vertical: 'Vertical',
+        MainWindowLayout.Vertical: 'Stacked',
         MainWindowLayout.Wide: 'Wide',
         MainWindowLayout.Ultrawide: 'Ultra-Wide',
     }
@@ -103,8 +103,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
-            self.ui_warncount_list = Settings.warncount_file_list
-            self.ui_warncount_load = Settings.warncount_file_load
+            self.ui_warn_timeout = Settings.warn_timeout_s
             self.ui_ext_ed = Settings.ext_editor_cmd
             self.ui_plotstyle = Settings.plot_style
             self.ui_font = Settings.editor_font
@@ -232,12 +231,8 @@ class SettingsDialog(SettingsDialogUi):
         Settings.editor_font = self.ui_font
 
 
-    def _on_warncount_list_changed(self):
-        Settings.warncount_file_list = self.ui_warncount_list
-
-
-    def _on_warncount_load_changed(self):
-        Settings.warncount_file_load = self.ui_warncount_load
+    def _on_warn_timeout_changed(self):
+        Settings.warn_timeout_s = self.ui_warn_timeout
     
     
     def on_allcomplex_changed(self):

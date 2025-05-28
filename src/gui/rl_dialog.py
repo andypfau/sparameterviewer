@@ -1,6 +1,6 @@
 from .rl_dialog_ui import RlDialogUi
 from .helpers.help import show_help
-from lib import SParamFile, BodeFano, Si, parse_si_range, format_si_range, v2db
+from lib import SParamFile, BodeFano, SiFormat, SiValue, SiRange, v2db
 
 import logging
 
@@ -8,15 +8,19 @@ import logging
 
 class RlDialog(RlDialogUi):
 
+
+    SI_FORMAT_HZ = SiFormat('Hz')
+
+
     def __init__(self, parent):
         self.files: list[SParamFile] = []
         super().__init__(parent)
         self.ui_intrange_presets([
-            format_si_range(any, any, allow_total_wildcard=True),
-            format_si_range(0, 10e9),
+            str(SiRange(any, any, spec=RlDialog.SI_FORMAT_HZ)),
+            str(SiRange(0, 10e9, spec=RlDialog.SI_FORMAT_HZ)),
         ])
         self.ui_tgtrange_presets([
-            format_si_range(1e9, 2e9),
+            str(SiRange(1e9, 2e9, spec=RlDialog.SI_FORMAT_HZ)),
         ])
     
 
@@ -38,14 +42,16 @@ class RlDialog(RlDialogUi):
             self.ui_inidicate_port_error(not port_ok)
             
             try:
-                (int0, int1) = parse_si_range(self.ui_intrange)
+                r = SiRange(spec=RlDialog.SI_FORMAT_HZ, wildcard_value_low=-1e99, wildcard_value_high=+1e99).parse(self.ui_intrange)
+                int0, int1 = r.low, r.high
                 intrange_ok = True
             except:
                 intrange_ok = False
             self.ui_inidicate_intrange_error(not intrange_ok)
             
             try:
-                (tgt0, tgt1) = parse_si_range(self.ui_tgtrange, wildcard_low=None, wildcard_high=None)
+                t = SiRange(spec=RlDialog.SI_FORMAT_HZ, allow_both_wildcards=False, allow_individual_wildcards=False).parse(self.ui_tgtrange)
+                tgt0, tgt1 = t.low, t.high
                 tgtrange_ok = False
             except:
                 tgtrange_ok = False
@@ -75,9 +81,9 @@ class RlDialog(RlDialogUi):
         int0, int1 = bodefano.f_integration_actual_start_hz, bodefano.f_integration_actual_stop_hz
 
         message = \
-            f'Available: {bodefano.db_available:+.3g} dB ({Si(bodefano.f_integration_actual_start_hz,"Hz")}..{Si(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
-            f'Current: {bodefano.db_current:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})\n' + \
-            f'Achievable: {bodefano.db_achievable:+.3g} dB ({Si(tgt0,"Hz")}..{Si(tgt1,"Hz")})'
+            f'Available: {bodefano.db_available:+.3g} dB ({SiValue(bodefano.f_integration_actual_start_hz,"Hz")}..{SiValue(bodefano.f_integration_actual_stop_hz,"Hz")})\n' + \
+            f'Current: {bodefano.db_current:+.3g} dB ({SiValue(tgt0,"Hz")}..{SiValue(tgt1,"Hz")})\n' + \
+            f'Achievable: {bodefano.db_achievable:+.3g} dB ({SiValue(tgt0,"Hz")}..{SiValue(tgt1,"Hz")})'
         self.ui_set_result(message)
 
         self.ui_plot.clear()

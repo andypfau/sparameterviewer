@@ -50,6 +50,39 @@ class PathBar(QWidget):
             if event.button() == Qt.MouseButton.BackButton:
                 self.backClicked.emit()
             super().mouseReleaseEvent(event)
+    
+
+    class MyLabel(QLabel):
+        
+        blankClicked = pyqtSignal()
+
+        def __init__(self):
+            super().__init__()
+            self.linkActivated.connect(self._on_link)
+            self._timer: QTimer = None
+
+        def mousePressEvent(self, event: QMouseEvent):
+            if self._timer:
+                self._timer.stop()
+            else:
+                self._timer = QTimer()
+                self._timer.timeout.connect(self._on_timeout)
+                self._timer.setSingleShot(True)
+            self._timer.start(100)
+            super().mousePressEvent(event)
+
+        def _on_link(self):
+            if self._timer:
+                self._timer.stop()
+                del self._timer
+                self._timer = None
+
+        def _on_timeout(self):
+            if self._timer:
+                self._timer.stop()
+                del self._timer
+                self._timer = None
+            self.blankClicked.emit()
 
 
     pathChanged = pyqtSignal(str)
@@ -65,19 +98,20 @@ class PathBar(QWidget):
         self._enabled = True
         self._default_mode = PathBar.Mode.Breadcrumbs
 
-        self._ui_toggle_breadcrumbs_button = QtHelper.make_button(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg', toolbar=True)
-        self._ui_toggle_text_button = QtHelper.make_button(self, None, self._on_switch_to_text, icon='path_text.svg', toolbar=True)
-        self._ui_dir_select_dialog_button = QtHelper.make_button(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg', toolbar=True)
+        self._ui_toggle_breadcrumbs_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg')
+        self._ui_toggle_text_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_text, icon='path_text.svg')
+        self._ui_dir_select_dialog_button = QtHelper.make_toolbutton(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg')
         self._ui_breadcrumb = PathBar.MyWidget()
         self._ui_breadcrumb.setContentsMargins(0, 0, 0, 0)
         self._ui_breadcrumb.setVisible(False)
         self._ui_breadcrumb.blankClicked.connect(self._on_outside_breadcrumb_click)
         self._ui_breadcrumb.backClicked.connect(self._on_back_click)
         self._ui_breadcrumb.setToolTip('Click to navigate; click blank area to show text input')
-        self._ui_breadcrumb_label = QLabel()
+        self._ui_breadcrumb_label = PathBar.MyLabel()
         self._ui_breadcrumb_label.linkActivated.connect(self._on_link_click)
+        self._ui_breadcrumb_label.blankClicked.connect(self._on_outside_breadcrumb_click)
         self._ui_breadcrumb_label.setContentsMargins(0, 0, 0, 0)
-        self._ui_breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self._ui_breadcrumb_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         layout = QtHelper.layout_h(self._ui_breadcrumb_label)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

@@ -604,7 +604,8 @@ class Networks:
 
     available_networks: "list[skrf.Network]"
 
-    plot_sel_params_handler: "callable[tupe[Networks],None]"
+    plot_sel_params_handler: "callable[tupe[Networks],None]" = None
+    plot_sel_params_handler_used: bool = False
 
 
     def __init__(self, nws: "list[skrf.Network]|list[Network]" = None):
@@ -770,6 +771,7 @@ class Networks:
     def plot_sel_params(self):
         if not Networks.plot_sel_params_handler:
             return
+        Networks.plot_sel_params_handler_used = True
         Networks.plot_sel_params_handler(self)
         
     

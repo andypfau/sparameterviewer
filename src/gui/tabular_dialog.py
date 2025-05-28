@@ -3,7 +3,7 @@ from .helpers.simple_dialogs import save_file_dialog, error_dialog, exception_di
 from .settings_dialog import SettingsDialog, SettingsTab
 from .helpers.help import show_help
 from .text_dialog import TextDialog
-from lib import SParamFile, PlotData, Si, AppPaths, Clipboard, parse_si_range, format_si_range, start_process, Settings, PhaseUnit, CsvSeparator
+from lib import SParamFile, PlotData, SiValue, SiFormat, AppPaths, Clipboard, SiRange, SiFormat, start_process, Settings, PhaseUnit, CsvSeparator
 import dataclasses
 import io
 import pathlib
@@ -182,8 +182,8 @@ class TabularDialog(TabularDialogUi):
 
         self.ui_set_formats_list([str(fmt) for fmt in TabularDialog.Format])
         self.ui_set_freq_filters_list([
-            format_si_range(any, any, allow_total_wildcard=True),
-            format_si_range(0, 100e9),
+            SiRange(any, any, allow_both_wildcards=True).format(),
+            SiRange(0, 100e9).format(),
         ])
         self.ui_set_param_filters_list([
             '*',
@@ -251,7 +251,7 @@ class TabularDialog(TabularDialogUi):
         ds_fmt = self.format_dataset(self.filter_dataset(dataset), code_safe_names=False)
         headers = [ds_fmt.xcol, *ds_fmt.ycols]
         columns = [
-            [str(Si(x,significant_digits=TabularDialog.DISPLAY_PREC)) for x in ds_fmt.xcol_data],
+            [str(SiValue(x,spec=SiFormat(digits=TabularDialog.DISPLAY_PREC))) for x in ds_fmt.xcol_data],
             *[[f'{y:.{TabularDialog.DISPLAY_PREC}g}' for y in col] for col in ds_fmt.ycol_datas]
         ]
         self.ui_populate_table(headers, columns)
@@ -372,7 +372,8 @@ class TabularDialog(TabularDialogUi):
         ycol_datas = dataset.ycol_datas
 
         try:
-            (filter_x0, filter_x1) = parse_si_range(self.ui_selected_freq_filter)
+            f = SiRange(spec=SiFormat(unit='Hz'), wildcard_value_low=-1e99, wildcard_value_high=+1e99).parse(self.ui_selected_freq_filter)
+            filter_x0, filter_x1 = f.low, f.high
             self.ui_indicate_freq_filter_error(False)
         except:
             self.ui_indicate_freq_filter_error(True)
