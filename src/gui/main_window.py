@@ -844,6 +844,7 @@ class MainWindow(MainWindowUi):
             (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.plot.get_xlim()
         else:
             self.ui_xaxis_range.both_are_wildcard = True
+        self.schedule_plot_update()
 
     
     def on_lock_yaxis(self):
@@ -854,6 +855,7 @@ class MainWindow(MainWindowUi):
             (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
         else:
             self.ui_yaxis_range.both_are_wildcard = True
+        self.schedule_plot_update()
 
 
     def on_lock_both_axes(self):
@@ -864,6 +866,7 @@ class MainWindow(MainWindowUi):
             (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
+        self.schedule_plot_update()
     
     
     def on_smart_db(self):
@@ -1133,7 +1136,7 @@ class MainWindow(MainWindowUi):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             self.ui_plot_tool = PlotWidget.Tool.Off
 
-            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.name for plots in self.plot.plots]])
+            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.data.name for plots in self.plot.plots]])
             self.ui_cursor1_trace = self._last_cursor_trace[0]
             self.ui_cursor2_trace = self._last_cursor_trace[1]
 
@@ -1300,12 +1303,12 @@ class MainWindow(MainWindowUi):
                     readout_dy = f'{SiValue(dy,spec=yf)}'
                 else:
                     dy = self.plot.cursors[1].y - self.plot.cursors[0].y
-                    dys = SiValue.to_significant_digits(dy, 4)
+                    dys = SiFormat.to_significant_digits(dy, 4)
                     if self.plot.cursors[0].y==0:
                         rys = 'N/A'
                     else:
                         ry = self.plot.cursors[1].y / self.plot.cursors[0].y
-                        rys = SiValue.to_significant_digits(ry, 4)
+                        rys = SiFormat.to_significant_digits(ry, 4)
                     readout_dx = f'{dx_str}'
                     readout_dy = f'{dys} ({rys})'
         else:

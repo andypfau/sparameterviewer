@@ -429,14 +429,14 @@ class MainWindowUi(QMainWindow):
         self._ui_opacity_slider.setMinimum(1)
         self._ui_opacity_slider.setMaximum(99)
         self._ui_opacity_slider.valueChanged.connect(self.on_traceopacity_changed)
-        QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
+        self._ui_opacity_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
         self._ui_viewmenu.addSeparator()
         self._ui_max_legend_spin = QSpinBox()
         self._ui_max_legend_spin.setMinimum(1)
         self._ui_max_legend_spin.setMaximum(999)
         self._ui_max_legend_spin.setMinimumWidth(50)
         self._ui_max_legend_spin.valueChanged.connect(self.on_maxlegend_changed)
-        QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Max. Legend Items:', self._ui_max_legend_spin))
+        self._ui_max_legend_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Max. Legend Items:', self._ui_max_legend_spin))
         self._ui_menuitem_hide_single_legend = QtHelper.add_menuitem(self._ui_viewmenu, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
         self._ui_plotmenu_button.setMenu(self._ui_viewmenu)
         self._ui_plotmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -451,8 +451,8 @@ class MainWindowUi(QMainWindow):
     
 
     def _update_enabled(self):
-        self._ui_opacity_slider.setEnabled(self.ui_semitrans_traces)
-        self._ui_max_legend_spin.setEnabled(self.ui_show_legend)
+        self._ui_opacity_menuwidget.setEnabled(self.ui_semitrans_traces)
+        self._ui_max_legend_menuwidget.setEnabled(self.ui_show_legend)
         self._ui_menuitem_hide_single_legend.setEnabled(self.ui_show_legend)
         self._ui_short_legend_button.setVisible(self.ui_show_legend)
 
@@ -790,10 +790,18 @@ class MainWindowUi(QMainWindow):
 
     
     def ui_set_cursor_readouts(self, x1: SiValue|None = None, y1: str = '', x2: SiValue|None = None, y2: str = '', dx: str = '', dy: str = ''):
-        self._ui_cursor_edit_x1.setValue(x1)
+        if x1 is None:
+            self._ui_cursor_edit_x1.setBlank(True)
+        else:
+            self._ui_cursor_edit_x1.setBlank(False)
+            self._ui_cursor_edit_x1.setValue(x1)
         self._ui_cursor_edit_x1.setReadOnly(x1 is None)
         self._ui_cursor_readout_y1.setText(y1)
-        self._ui_cursor_edit_x2.setValue(x2)
+        if x2 is None:
+            self._ui_cursor_edit_x2.setBlank(True)
+        else:
+            self._ui_cursor_edit_x2.setBlank(False)
+            self._ui_cursor_edit_x2.setValue(x2)
         self._ui_cursor_edit_x2.setReadOnly(x2 is None)
         self._ui_cursor_readout_y2.setText(y2)
         self._ui_cursor_readout_dx.setText(dx)

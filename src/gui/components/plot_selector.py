@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from ..components.sivalue_edit import SiValueEdit
-from lib import AppPaths, PathExt, PhaseUnit, PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse, SiRange, SiFormat, SiValue
+from lib import AppPaths, PathExt, PhaseUnit, PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse, SiRange, SiFormat, SiValue, window_has_argument
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -161,33 +161,33 @@ class PlotSelector(QWidget):
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced, margins=0, spacing=0))
 
         self._menu = QMenu()
-        self._ui_degrees_meniutem = QtHelper.add_menuitem(self._menu, 'Phase in Degrees', self._on_phaseunit_change, checkable=True)
+        self._ui_degrees_menuitem = QtHelper.add_menuitem(self._menu, 'Phase in Degrees', self._on_phaseunit_change, checkable=True)
         self._menu.addSeparator()
         self._ui_td_window_combo = QComboBox()
         for name in PlotSelector.WINDOW_NAMES.values():
             self._ui_td_window_combo.addItem(name)
         self._ui_td_window_combo.currentTextChanged.connect(self._on_change_td_window)
-        QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Window:', self._ui_td_window_combo, ...))
-        self._ui_td_window_param_spinner = QDoubleSpinBox()
-        self._ui_td_window_param_spinner.valueChanged.connect(self._on_change_td_window_arg)
-        self._ui_td_window_param_spinner.setMinimum(-1e3)
-        self._ui_td_window_param_spinner.setMaximum(+1e3)
-        QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Window Arg.:', self._ui_td_window_param_spinner, ...))
+        self._ui_td_window_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Window:', self._ui_td_window_combo, ...))
+        self._ui_td_window_arg_spinner = QDoubleSpinBox()
+        self._ui_td_window_arg_spinner.valueChanged.connect(self._on_change_td_window_arg)
+        self._ui_td_window_arg_spinner.setMinimum(-1e3)
+        self._ui_td_window_arg_spinner.setMaximum(+1e3)
+        self._ui_td_window_arg_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Window Arg.:', self._ui_td_window_arg_spinner, ...))
         self._ui_td_minsize_combo = QComboBox()
         for name in PlotSelector.TD_MINSIZE_NAMES.values():
             self._ui_td_minsize_combo.addItem(name)
         self._ui_td_minsize_combo.currentTextChanged.connect(self._on_change_td_minsize)
-        QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Min. Size:', self._ui_td_minsize_combo, ...))
+        self._ui_td_minsize_menuwidget = self._ui_td_minsize_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Min. Size:', self._ui_td_minsize_combo, ...))
         self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'), require_return_press=True)
         self._ui_td_shift_text.valueChanged.connect(self._on_change_td_shift)
-        QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Shift:', self._ui_td_shift_text, ...))
-        self._ui_tdz_meniutem = QtHelper.add_menuitem(self._menu, 'Convert to Impedance', self._on_change_td_z, checkable=True)
+        self._ui_td_shift_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Shift:', self._ui_td_shift_text, ...))
+        self._ui_tdz_menuitem = QtHelper.add_menuitem(self._menu, 'Convert to Impedance', self._on_change_td_z, checkable=True)
         self._ui_simplemenu_button.setMenu(self._menu)
         self._ui_simplemenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._ui_advancedmenu_button.setMenu(self._menu)
         self._ui_advancedmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-        self._update_controls()
+        self._update_control_values()
 
 
     def simplified(self) -> bool:
@@ -198,14 +198,14 @@ class PlotSelector(QWidget):
         self._simplified = value
         self._ui_simple.setVisible(self._simplified)
         self._ui_advanced.setVisible(not self._simplified)
-        self._update_controls()
+        self._update_control_values()
     
 
     def plotType(self) -> PlotType:
         return self._plot_type
     def setPlotType(self, value: PlotType):
         self._plot_type = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def yQuantity(self) -> YQuantity:
@@ -214,7 +214,7 @@ class PlotSelector(QWidget):
         if value in[YQuantity.Phase, YQuantity.GroupDelay]:
             return
         self._y1 = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def y2Quantity(self) -> YQuantity:
@@ -223,70 +223,70 @@ class PlotSelector(QWidget):
         if value in [YQuantity.Decibels, YQuantity.Magnitude, YQuantity.Real, YQuantity.Imag, YQuantity.RealImag]:
             return
         self._y2 = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdr(self) -> bool:
         return self._tdr
     def setTdr(self, value: bool):
         self._tdr = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdResponse(self) -> TdResponse:
         return self._td_response
     def setTdResponse(self, value: TdResponse):
         self._td_response = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdImpedance(self) -> bool:
         return self._td_z
     def setTdImpedance(self, value: bool):
         self._td_z = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdWindow(self) -> str:
         return self._td_window
     def setTdWindow(self, value: str):
         self._td_window = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdWindowArg(self) -> float:
         return self._td_window_arg
     def setTdWindowArg(self, value: float):
         self._td_window_arg = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdShift(self) -> float:
         return self._td_shift
     def setTdShift(self, value: float):
         self._td_shift = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def tdMinisize(self) -> int:
         return self._td_minsize
     def setTdMinsize(self, value: int):
         self._td_minsize = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def smithNorm(self) -> SmithNorm:
         return self._smith_norm
     def setSmithNorm(self, value: SmithNorm):
         self._smith_norm = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def phaseProcessing(self) -> PhaseProcessing:
         return self._phase_processing
     def setPhaseProcessing(self, value: PhaseProcessing):
         self._phase_processing = value
-        self._update_controls()
+        self._update_control_values()
     
 
     def phaseUnit(self) -> PhaseUnit:
@@ -295,10 +295,32 @@ class PlotSelector(QWidget):
         return self._phase_unit
     def setPhaseUnit(self, value: PhaseUnit):
         self._phase_unit = value
-        self._update_controls()
+        self._update_control_values()
     
 
-    def _update_controls(self):
+    def _update_control_enabled(self):
+        self._ui_db_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_mag_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_real_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_imag_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_phase_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_gdelay_button.setVisible(self._plot_type == PlotType.Cartesian)
+        self._ui_unwrap_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
+        self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
+        
+        self._ui_degrees_menuitem.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
+        self._ui_tdz_menuitem.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_window_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_window_arg_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain and window_has_argument(self._td_window))
+        self._ui_td_minsize_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_shift_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+
+
+    def _update_control_values(self):
         if self._simplified:
             if self._plot_type == PlotType.Cartesian:
                 if self._y1 == YQuantity.Decibels:
@@ -361,55 +383,37 @@ class PlotSelector(QWidget):
             self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
             self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
 
-            self._ui_db_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_mag_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_real_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_imag_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_phase_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_gdelay_button.setVisible(self._plot_type == PlotType.Cartesian)
-            self._ui_unwrap_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-            self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-            self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
-            self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
-            self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
-            self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
-        
-        self._ui_degrees_meniutem.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_tdz_meniutem.setEnabled(self._plot_type == PlotType.TimeDomain)
-        self._ui_td_window_combo.setEnabled(self._plot_type == PlotType.TimeDomain)
-        self._ui_td_window_param_spinner.setEnabled(self._plot_type == PlotType.TimeDomain)
-        self._ui_td_minsize_combo.setEnabled(self._plot_type == PlotType.TimeDomain)
-        self._ui_td_shift_text.setEnabled(self._plot_type == PlotType.TimeDomain)
-
-        self._ui_degrees_meniutem.setChecked(self._phase_unit == PhaseUnit.Degrees)
-        self._ui_tdz_meniutem.setChecked(self._td_z)
+        self._ui_degrees_menuitem.setChecked(self._phase_unit == PhaseUnit.Degrees)
+        self._ui_tdz_menuitem.setChecked(self._td_z)
         self._ui_td_window_combo.setCurrentText(PlotSelector.WINDOW_NAMES[self._td_window])
-        self._ui_td_window_param_spinner.setValue(self._td_window_arg)
+        self._ui_td_window_arg_spinner.setValue(self._td_window_arg)
         self._ui_td_minsize_combo.setCurrentText(PlotSelector.TD_MINSIZE_NAMES[self._td_minsize])
         self._ui_td_shift_text.value().value = self._td_shift
+
+        self._update_control_enabled()
 
 
     def _on_select_cartesian(self):
         self._plot_type = PlotType.Cartesian
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
     def _on_select_tdr(self):
         self._plot_type = PlotType.TimeDomain
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_smith(self):
         self._plot_type = PlotType.Smith
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_polar(self):
         self._plot_type = PlotType.Polar
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -418,7 +422,7 @@ class PlotSelector(QWidget):
             self._y1 = YQuantity.Off
         else:
             self._y1 = YQuantity.Decibels
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -427,7 +431,7 @@ class PlotSelector(QWidget):
             self._y1 = YQuantity.Off
         else:
             self._y1 = YQuantity.Magnitude
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -440,7 +444,7 @@ class PlotSelector(QWidget):
             self._y1 = YQuantity.Imag
         else:
             self._y1 = YQuantity.Real
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -453,7 +457,7 @@ class PlotSelector(QWidget):
             self._y1 = YQuantity.Real
         else:
             self._y1 = YQuantity.Imag
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -462,7 +466,7 @@ class PlotSelector(QWidget):
             self._y2 = YQuantity.Off
         else:
             self._y2 = YQuantity.Phase
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -471,31 +475,31 @@ class PlotSelector(QWidget):
             self._y2 = YQuantity.Off
         else:
             self._y2 = YQuantity.GroupDelay
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_impulse(self):
         self._td_response = TdResponse.ImpulseResponse
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_step(self):
         self._td_response = TdResponse.StepResponse
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_z(self):
         self._smith_norm = SmithNorm.Impedance
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_y(self):
         self._smith_norm = SmithNorm.Admittance
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
@@ -504,7 +508,7 @@ class PlotSelector(QWidget):
             self._phase_processing = PhaseProcessing.Off
         else:
             self._phase_processing = PhaseProcessing.Unwrap
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
@@ -513,7 +517,7 @@ class PlotSelector(QWidget):
             self._phase_processing = PhaseProcessing.Off
         else:
             self._phase_processing = PhaseProcessing.UnwrapDetrend
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -563,7 +567,7 @@ class PlotSelector(QWidget):
         if not enable_2nd:
             self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
         
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
     
 
@@ -598,12 +602,12 @@ class PlotSelector(QWidget):
         else:
             self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
         
-        self._update_controls()
+        self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_phaseunit_change(self):
-        self._phase_unit = PhaseUnit.Degrees if self._ui_degrees_meniutem.isChecked() else PhaseUnit.Radians
+        self._phase_unit = PhaseUnit.Degrees if self._ui_degrees_menuitem.isChecked() else PhaseUnit.Radians
         
         if self.plotType() != PlotType.Cartesian or self.y2Quantity() != YQuantity.Phase:
             return
@@ -611,7 +615,7 @@ class PlotSelector(QWidget):
     
 
     def _on_change_td_z(self):
-        self._td_z = self._ui_tdz_meniutem.isChecked()
+        self._td_z = self._ui_tdz_menuitem.isChecked()
         if self.plotType() != PlotType.TimeDomain:
             return
         self.valueChanged.emit()
@@ -622,13 +626,14 @@ class PlotSelector(QWidget):
             if name == self._ui_td_window_combo.currentText():
                 self._td_window = window
                 break
+        self._update_control_enabled()
         if self.plotType() != PlotType.TimeDomain:
             return
         self.valueChanged.emit()
     
 
     def _on_change_td_window_arg(self):
-        self._td_window_arg = self._ui_td_window_param_spinner.value()
+        self._td_window_arg = self._ui_td_window_arg_spinner.value()
         if self.plotType() != PlotType.TimeDomain:
             return
         self.valueChanged.emit()

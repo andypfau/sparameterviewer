@@ -85,8 +85,11 @@ class SiRangeEdit(QComboBox):
     def _on_return_pressed(self):
         try:
             if self._require_return_press:
+                old_low, old_high = self._range.low, self._range.high
                 self._range.parse(self.currentText())
-                self._update_text_from_value()
+                QtHelper.indicate_error(self, False)
+                if self._range.low == old_low and self._range.high == old_high:
+                    return
                 self.rangeChanged.emit()
             else:
                 # was already parsed when text was changed
@@ -103,8 +106,11 @@ class SiRangeEdit(QComboBox):
                 self._range.copy().parse(self.currentText())
                 QtHelper.indicate_error(self, False)
             else:
+                old_low, old_high = self._range.low, self._range.high
                 self._range.parse(self.currentText())
                 QtHelper.indicate_error(self, False)
+                if self._range.low == old_low and self._range.high == old_high:
+                    return
                 self.rangeChanged.emit()
         except:
             QtHelper.indicate_error(self, True)
