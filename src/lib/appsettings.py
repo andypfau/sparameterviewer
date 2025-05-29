@@ -27,9 +27,7 @@ class AppSettings:
 
     def _notify(self, attributes: list[str]):
         if self._inhbit_listeners:
-            #logging.debug(f'Inhibiting notification about setting change ({attributes})')
             return
-        #logging.debug(f'Notifying about setting change ({attributes})')
         for i in reversed(range(len(self._observers))):
             try:
                 self._observers[i](attributes)

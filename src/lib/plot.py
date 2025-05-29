@@ -252,7 +252,8 @@ class PlotHelper:
         self._axes_swapped = None
         assert len(x)==len(y)
         if len(x) < 1:
-            logging.info(f'Ignoring plot "{name}" (contains zero points)')
+            if Settings.verbose:
+                logging.info(f'Ignoring plot "{name}" (contains zero points)')
             return
         
         self.x_range = [min(self.x_range[0],min(x)), max(self.x_range[1],max(x))]

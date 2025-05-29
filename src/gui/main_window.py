@@ -197,7 +197,6 @@ class MainWindow(MainWindowUi):
 
 
     def before_load_sparamfile(self, path: PathExt) -> bool:
-        logging.debug(f'Loading <{path}>...')
         if self.sparamfile_load_aborted:
             return False
         if self.sparamfile_load_t_start < 0:
@@ -220,7 +219,6 @@ class MainWindow(MainWindowUi):
     def after_load_sparamfile(self, path: PathExt):
         if path not in self.files:
             return
-        #logging.debug(f'MainWindow.after_load_sparamfile({path=})')
         self.ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
 
     
@@ -1013,7 +1011,6 @@ class MainWindow(MainWindowUi):
     
 
     def on_filesys_files_changed(self):
-        #logging.debug(f'MainWindow.on_filesys_files_changed()')
         browser_paths = self.ui_filesys_browser.all_files
 
         # discard the files that are no longer displayed in the filebrowser
@@ -1326,7 +1323,6 @@ class MainWindow(MainWindowUi):
     
 
     def schedule_plot_update(self):
-        #logging.debug(get_callstack_str(10))
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_PLOT_UPDATE_ID, MainWindow.TIMER_PLOT_UPDATE_TIMEOUT_S, self._after_plot_timeout)
 
 
@@ -1339,8 +1335,6 @@ class MainWindow(MainWindowUi):
         
         if not self.ready:
             return
-        
-        #logging.debug(get_callstack_str(8))
         
         self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_GUI_ID)
         self.ui_abort_oneshot_timer(MainWindow.TIMER_CLEAR_LOAD_COUNTER_ID)
@@ -1483,7 +1477,7 @@ class MainWindow(MainWindowUi):
                     else:
                         if Settings.verbose:
                             chart_type_str = 'Smith' if plot_type==PlotType.Smith else 'polar'
-                            logging.debug(f'The trace "{name}" is real-valued; omitting from {chart_type_str} chart')
+                            logging.info(f'The trace "{name}" is real-valued; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
                     if treat_as_complex:
                         t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
@@ -1495,7 +1489,7 @@ class MainWindow(MainWindowUi):
                             self.plot.add(t, lev, None, name, style, **kwargs)
                     else:
                         if Settings.verbose:
-                            logging.debug(f'The trace "{name}" is real-valued; omitting from time-domain transformed chart')
+                            logging.info(f'The trace "{name}" is real-valued; omitting from time-domain transformed chart')
                 else:
                     if treat_as_complex:
                         if y_qty == YQuantity.Decibels:
@@ -1521,7 +1515,7 @@ class MainWindow(MainWindowUi):
                             self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
                     else:  # real-valued data
                         if Settings.verbose:
-                            logging.debug(f'The trace "{name}" is real-valued; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
+                            logging.info(f'The trace "{name}" is real-valued; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
                         self.plot.add(f, sp, None, name, style, **kwargs)
                     
             selected_files = self.get_selected_files()

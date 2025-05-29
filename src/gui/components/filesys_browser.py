@@ -165,7 +165,6 @@ class FilesysBrowser(QWidget):
             item: FilesysBrowser.MyFileItem = self.itemFromIndex(index)
             if not item:
                 return
-            #logging.debug(get_callstack_str(8) + f'; item:{item}')
             anything_added = item.add_children_to_tree(self.show_archives)
             if anything_added:
                 self.filesChanged.emit()
@@ -254,7 +253,6 @@ class FilesysBrowser(QWidget):
     
     @property
     def all_files(self) -> list[PathExt]:
-        #logging.debug(f'FilesysBrowser.all_files.getter()')
         result = set()
         def recurse(parent: FilesysBrowser.MyFileItem):
             nonlocal result
@@ -272,7 +270,6 @@ class FilesysBrowser(QWidget):
 
     @property
     def selected_files(self) -> list[PathExt]:
-        #logging.debug(f'FilesysBrowser.selected_files.getter()')
         result = set()
         def recurse(parent: FilesysBrowser.MyFileItem):
             nonlocal result
@@ -289,7 +286,6 @@ class FilesysBrowser(QWidget):
         return list(result)
     @selected_files.setter
     def selected_files(self, selected_paths: list[PathExt]):
-        #logging.debug(get_callstack_str(8))
         def recurse(parent: FilesysBrowser.MyFileItem):
             if parent is None:
                 return
@@ -327,7 +323,6 @@ class FilesysBrowser(QWidget):
     
 
     def update_status(self, path: PathExt, status: str):
-        #logging.debug(get_callstack_str(8))
         def recurse(parent: FilesysBrowser.MyFileItem):
             if parent is None:
                 return
@@ -395,7 +390,6 @@ class FilesysBrowser(QWidget):
 
 
     def _change_root(self, current_root: PathExt, new_root: PathExt):
-        #logging.debug(get_callstack_str(8))
         try:
             self._inhibit_triggers = True
             
@@ -422,13 +416,11 @@ class FilesysBrowser(QWidget):
 
 
     def show_context_menu(self, items: list[tuple[str,Callable|list]]):
-        #logging.debug(f'FilesysBrowser.show_context_menu({items=})')
         point = self._contextmenu_point or QCursor().pos()
         QtHelper.show_popup_menu(self, items, point)
 
 
     def refresh(self):
-        #logging.debug(get_callstack_str(8))
         try:
             self._inhibit_triggers = True
             toplevel_paths: list[PathExt] = []
@@ -562,7 +554,6 @@ class FilesysBrowser(QWidget):
 
     
     def _on_files_changed(self):
-        #logging.debug(f'FilesysBrowser._on_files_changed()')
         if self._inhibit_triggers:
             return
         self._ui_filesys_view.header().resizeSections(QHeaderView.ResizeMode.ResizeToContents)
@@ -570,7 +561,6 @@ class FilesysBrowser(QWidget):
     
 
     def _on_checked_change(self):
-        #logging.debug(f'FilesysBrowser._on_checked_change()')
         if self._inhibit_triggers:
             return
         self.selectionChanged.emit()

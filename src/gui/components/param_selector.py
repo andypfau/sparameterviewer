@@ -76,7 +76,6 @@ class ParamSelector(QWidget):
             return self._current_geometry
     
         def _calculate_geometry(self) -> ParamSelector.GraphicWidget.Geometry:
-            #logging.debug(f'_calculate_geometry()')
             grid_size = self.matrix_dimensions
             MINIMUM_CELL_SIZE, DEFAULT_CELL_SIZE, LARGE_CELL_SIZE, MAXIMUM_CELL_SIZE = 14, 22, 32, 32
             WIDGET_BORDER, CELL_BORDER = 1, 1
@@ -102,7 +101,6 @@ class ParamSelector(QWidget):
                 return ParamSelector.GraphicWidget.Geometry(x0, y0, cell_size, cell_border, all_cells_size, total_size, overflow)
         
         def _adjust_widget_size(self):
-            #logging.debug(f'_adjust_widget_size()')
             self._current_geometry = None  # invalidate
             if self._scale_widget_to_contents:  # adjust widget size to required size
                 geometry = self._calculate_geometry()  # use fixed geometry
@@ -216,7 +214,6 @@ class ParamSelector(QWidget):
             size_changed = value.shape != self._data.shape
             if (not size_changed) and np.array_equal(value, self._data):
                 return
-            #logging.debug(f'Setting size to {value.shape}')
             self._data = value
             if size_changed:
                 self._adjust_widget_size()
@@ -318,16 +315,13 @@ class ParamSelector(QWidget):
     def autoScaleGridToContents(self) -> bool:
         return self._ui_grid.scale_widget_to_contents
     def setAutoScaleGridToContents(self, auto_scale: bool):
-        #logging.debug(get_callstack_str())
         if self._ui_grid.scale_widget_to_contents == auto_scale:
             return
         if auto_scale:
-            #logging.debug(f'Changing to auto size')
             self._ui_grid_scoll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
             self._ui_grid_scoll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
             self._ui_grid.scale_widget_to_contents = True
         else:
-            #logging.debug(f'Changing to fixed size')
             self._ui_grid.scale_widget_to_contents = False
             self._ui_grid_scoll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self._ui_grid_scoll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -412,8 +406,7 @@ class ParamSelector(QWidget):
 
     
     def _guess_params_from_data(self, params: np.ndarray) -> Parameters:
-        #logging.debug(get_callstack_str())
-
+    
         if np.all(params):
             return Parameters.ComboAll
         if not np.any(params):
@@ -435,10 +428,8 @@ class ParamSelector(QWidget):
         # is there any outlier to this pattern?
         result_params = self._make_mask(result)
         if np.array_equal(result_params, self.paramMask()):
-            #logging.debug('_guess_params_from_data() done.')
             return result
         else:
-            #logging.debug('_guess_params_from_data() done.')
             return Parameters.Custom
     
 
