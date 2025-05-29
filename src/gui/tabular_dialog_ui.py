@@ -141,6 +141,10 @@ class TabularDialogUi(QDialog):
         self._ui_format_combo.setEnabled(enable)
     
     
+    def ui_enable_param_filter(self, enable: bool):
+        self._ui_param_filter_edit.setEnabled(enable)
+    
+    
     def ui_set_freq_filters_list(self, filters: list[str], selection: str = None):
         self._ui_f_filter_edit.clear()
         if len(filters) < 1:

@@ -74,25 +74,26 @@ class TabularDataset(TabularDatasetBase):
         return self._is_spar
 
     @staticmethod
-    def create(dataset: any) -> "TabularDataset":
+    def create(dataset: any, display_number: int|None = None) -> "TabularDataset":
         if isinstance(dataset, SParamFile):
-            return TabularDatasetSFile(dataset)
+            return TabularDatasetSFile(dataset, f'{display_number} (File): {dataset.name}')
         elif isinstance(dataset, PlotData):
-            return TabularDatasetPlot(dataset)
+            return TabularDatasetPlot(dataset, f'{display_number} (Trace): {dataset.name}')
         else:
             raise ValueError()
     
 
 
-@dataclasses.dataclass
 class TabularDatasetSFile(TabularDataset):
-    file: SParamFile
+    def __init__(self, file: SParamFile, display_name: str|None = None):
+        self.file = file
+        self._display_name = display_name or file.name
     @property
     def name(self) -> str:
         return self.file.name
     @property
     def display_name(self) -> str:
-        return 'S-Param: ' + self.name
+        return self._display_name
     @property
     def path(self) -> str:
         if self.file.path.arch_path:
@@ -129,15 +130,17 @@ class TabularDatasetSFile(TabularDataset):
     def is_spar(self) -> bool:
         return True
     
-@dataclasses.dataclass
+
 class TabularDatasetPlot(TabularDataset):
-    plot: PlotData
+    def __init__(self, plot: PlotData, display_name: str|None = None):
+        self.plot = plot
+        self._display_name = display_name or plot.name
     @property
     def name(self) -> str:
         return self.plot.name
     @property
     def display_name(self) -> str:
-        return 'Plot: ' + self.name
+        return self._display_name
     @property
     def xcol(self) -> str:
         return self.plot.x.name
@@ -197,7 +200,7 @@ class TabularDialog(TabularDialogUi):
     def show_modal_dialog(self, datasets: list[any], initial_selection: int = None):
         assert len(datasets) > 0
         try:
-            self.datasets = [TabularDataset.create(dataset) for dataset in datasets]
+            self.datasets = [TabularDataset.create(dataset,i+1) for i,dataset in enumerate(datasets)]
             if initial_selection:
                 selected_name = self.datasets[initial_selection].display_name
             else:
@@ -526,8 +529,8 @@ class TabularDialog(TabularDialogUi):
 
     def on_change_dataset(self):
         if self.selected_dataset:
-            can_change_format = self.selected_dataset.is_spar
-            self.ui_enable_format_selection(can_change_format)
+            self.ui_enable_format_selection(self.selected_dataset.is_spar)
+            self.ui_enable_param_filter(self.selected_dataset.is_spar)
         self.update_data()
 
 

@@ -624,7 +624,6 @@ class FilesysBrowser(QWidget):
         if len(self._history) < 1:
             return
         from_path, to_path = self._history.pop()
-        print(f'- {from_path} -> {to_path}')
         self._change_root(to_path, from_path)
 
 
@@ -645,7 +644,6 @@ class FilesysBrowser(QWidget):
 
 
     def _add_to_history(self, from_path: PathExt, to_path: PathExt):
-        print(f'+ {from_path} -> {to_path}')
         self._history.append((from_path, to_path))
         while len(self._history) > FilesysBrowser.MAX_HISTORY:
             del(self._history[0])

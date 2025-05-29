@@ -605,7 +605,7 @@ class PlotSelector(QWidget):
     def _on_phaseunit_change(self):
         self._phase_unit = PhaseUnit.Degrees if self._ui_degrees_meniutem.isChecked() else PhaseUnit.Radians
         
-        if self.plotType() != PlotType.Cartesian or self.y2Quantity != YQuantity.Phase:
+        if self.plotType() != PlotType.Cartesian or self.y2Quantity() != YQuantity.Phase:
             return
         self.valueChanged.emit()
     

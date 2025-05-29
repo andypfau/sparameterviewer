@@ -80,6 +80,7 @@ class MainWindow(MainWindowUi):
         self.sparamfile_load_aborted = False
         self._last_cursor_x = [0, 0]
         self._last_cursor_trace = ['', '']
+        self._smartscale_set_y = False
 
         super().__init__()
         
@@ -697,7 +698,7 @@ class MainWindow(MainWindowUi):
                 initial_selection = i
             datasets.append(file)
         for plot in self.plot.plots:
-            datasets.append(file)
+            datasets.append(plot.data)
         
         TabularDialog(self).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
     
@@ -846,6 +847,8 @@ class MainWindow(MainWindowUi):
 
     
     def on_lock_yaxis(self):
+        self._smartscale_set_y = False
+        self.ui_smart_db = False
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_yaxis_range.both_are_wildcard:
             (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
@@ -854,6 +857,8 @@ class MainWindow(MainWindowUi):
 
 
     def on_lock_both_axes(self):
+        self._smartscale_set_y = False
+        self.ui_smart_db = False
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_xaxis_range.both_are_wildcard or self.ui_yaxis_range.both_are_wildcard:
             (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
@@ -1602,9 +1607,11 @@ class MainWindow(MainWindowUi):
 
                 top, base, bottom = -1e99, +1e99, +1e99
                 for plot in self.plot.plots:
-                    top = max(top, np.max(plot.y.values))
-                    base = min(base, np.quantile(plot.y.values, BASE_QUANTILE_PERCENT/100.0))
-                    bottom = min(bottom, np.min(plot.y.values))
+                    if plot.currently_used_axis != 1:
+                        continue  # ignore 2nd Y-axis
+                    top = max(top, np.max(plot.data.y.values))
+                    base = min(base, np.quantile(plot.data.y.values, BASE_QUANTILE_PERCENT/100.0))
+                    bottom = min(bottom, np.min(plot.data.y.values))
                 if top >= base and base >= bottom:
                     full_range = top - bottom
                     if full_range < MIN_RANGE_DB:  # show the whole range
@@ -1617,6 +1624,13 @@ class MainWindow(MainWindowUi):
                                 y0, y1 = base-LARGE_MARGINS_DB, +LARGE_MARGINS_DB
                     (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (y0, y1)
                     self.plot.plot.set_ylim((y0, y1))
+                    self._smartscale_set_y = True
+            else:
+                if self._smartscale_set_y:
+                    (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
+                    self.plot.plot.set_ylim((None, None))
+                self._smartscale_set_y = False
+
 
             self.ui_plot.draw()
 

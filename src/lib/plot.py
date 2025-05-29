@@ -152,8 +152,8 @@ class PlotHelper:
 
 
     @property
-    def plots(self) -> list[PlotData]:
-        return [item.data for item in self.items]
+    def plots(self) -> list[ItemToPlot]:
+        return [item for item in self.items]
 
 
     @property
@@ -374,6 +374,8 @@ class PlotHelper:
                     use_y2 = True
                     plot = self.plot2
                     self.items[item_index].currently_used_axis = 2
+                    self.items[item_index].data.y.format = self._y2_fmt
+                    self.items[item_index].data.y.name = self._y2_qty
                 else:
                     use_y2 = False
                     plot = self.plot
