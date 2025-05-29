@@ -55,8 +55,8 @@ class SiRangeEdit(QComboBox):
     
 
     def _update_text_from_value(self):
-        QtHelper.indicate_error(self, False)
         self.setCurrentText(self._range.format())
+        QtHelper.indicate_error(self, False)
 
 
     def requireReturnPress(self) -> bool:
@@ -75,7 +75,6 @@ class SiRangeEdit(QComboBox):
         self._range = value
         self._range.attach(self._on_range_changed_externally)
         self._update_text_from_value()
-        QtHelper.indicate_error(self, False)
 
     
     def _on_escape_pressed(self):

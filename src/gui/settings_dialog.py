@@ -18,35 +18,6 @@ class SettingsDialog(SettingsDialogUi):
         CsvSeparator.Semicolon: ';  Semicolon',
     }
 
-    TD_MINSIZE_NAMES = {
-        0: 'No Padding',
-        1024: '1k',
-        1024*2: '2k',
-        1024*4: '4k',
-        1024*8: '8k',
-        1024*16: '16k',
-        1024*32: '32k',
-        1024*64: '64k',
-        1024*128: '128k',
-        1024*256: '256k',
-    }
-
-    WINDOW_NAMES = {
-        'boxcar': 'Rectangular (No Windowing)',
-        'hann': 'Hann',
-        'hamming': 'Hamming',
-        'kaiser': 'Kaiser',
-        'flattop': 'Flat Top',
-        'blackman': 'Blackman',
-        'tukey': 'Tukey',
-    }
-
-    PHASE_UNIT_NAMES = {
-        CsvSeparator.Tab: 'Tab',
-        CsvSeparator.Comma: 'Comma',
-        CsvSeparator.Semicolon: 'Semicolon',
-    }
-
     CURSOR_SNAP_NAMES = {
         CursorSnap.X: 'Closest X-Coordinate',
         CursorSnap.Point: 'Closest Point',
@@ -68,8 +39,6 @@ class SettingsDialog(SettingsDialogUi):
     def __init__(self, parent):
         super().__init__(parent)
         self.ui_set_csvset_options(list(SettingsDialog.CSV_SEPARATOR_NAMES.values()))
-        self.ui_set_td_window_options(list(SettingsDialog.WINDOW_NAMES.values()))
-        self.ui_set_td_minsize_options(list(SettingsDialog.TD_MINSIZE_NAMES.values()))
         self.ui_set_plotstysle_options(PlotWidget.get_plot_styles())
         self.ui_set_font_options(QtHelper.get_all_available_font_families(monospace_only=True))
         self.ui_set_cursor_snap_options(list(SettingsDialog.CURSOR_SNAP_NAMES.values()))
@@ -92,14 +61,10 @@ class SettingsDialog(SettingsDialogUi):
 
     def apply_settings_to_controls(self):
         try:
-            self.ui_radians = Settings.phase_unit == PhaseUnit.Radians
+            self.ui_radians = Settings.export_phase_unit == PhaseUnit.Radians
             self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
             self.ui_logxneg = SettingsDialog.LOGNEG_NAMES[Settings.logx_negative_handling]
             self.ui_logyneg = SettingsDialog.LOGNEG_NAMES[Settings.logy_negative_handling]
-            self.ui_td_window = SettingsDialog.WINDOW_NAMES[Settings.window_type]
-            self.ui_td_window_param = Settings.window_arg
-            self.ui_td_minsize = SettingsDialog.TD_MINSIZE_NAMES[Settings.tdr_minsize]
-            self.ui_td_shift = Settings.tdr_shift
             self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
@@ -115,7 +80,6 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
             self.ui_simplified_browser = Settings.simplified_browser
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
-            self.ui_enable_window_param(window_has_argument(Settings.window_type))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
             logging.exception(ex)
@@ -164,7 +128,7 @@ class SettingsDialog(SettingsDialogUi):
     
 
     def on_phase_unit_change(self):
-        Settings.phase_unit = PhaseUnit.Radians if self.ui_radians else PhaseUnit.Degrees
+        Settings.export_phase_unit = PhaseUnit.Radians if self.ui_radians else PhaseUnit.Degrees
 
 
     def on_csvsep_change(self):
@@ -172,29 +136,6 @@ class SettingsDialog(SettingsDialogUi):
             if name == self.ui_csvsep:
                 Settings.csv_separator = symbol
                 break
-    
-    
-    def on_td_window_changed(self):
-        for window, name in SettingsDialog.WINDOW_NAMES.items():
-            if name == self.ui_td_window:
-                Settings.window_type = window
-                break
-        self.ui_enable_window_param(window_has_argument(Settings.window_type))
-    
-    
-    def on_td_window_param_changed(self):
-        Settings.window_arg = self.ui_td_window_param
-    
-    
-    def on_td_minsize_changed(self):
-        for size, name in SettingsDialog.TD_MINSIZE_NAMES.items():
-            if name == self.ui_td_minsize:
-                Settings.tdr_minsize = size
-                break
-    
-    
-    def on_td_shift_changed(self):
-        Settings.tdr_shift = self.ui_td_shift
 
     
     def on_zip_change(self):

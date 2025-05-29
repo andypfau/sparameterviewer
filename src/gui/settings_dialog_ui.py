@@ -67,10 +67,6 @@ class SettingsDialogUi(QDialog):
 
         format_widget = QWidget()
         self._ui_tabs.addTab(format_widget, 'Formats')
-        self._ui_deg_radio = QRadioButton('Degrees')
-        self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
-        self._ui_rad_radio = QRadioButton('Radians')
-        self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
         self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
@@ -80,36 +76,12 @@ class SettingsDialogUi(QDialog):
             QtHelper.layout_v(
                 QtHelper.layout_h(
                     QtHelper.layout_grid([
-                            ['Phase Unit:', QtHelper.layout_h(self._ui_deg_radio, self._ui_rad_radio, ...)],
                             ['Log. Y-Axis:', QtHelper.layout_h(self._ui_logyneg_combo, ...)],
                             ['Log. X-Axis:', QtHelper.layout_h(self._ui_logxneg_combo, ...)],
                     ]), ...
                 ),
                 self._ui_allcomplex_check,
                 ...
-            )
-        )
-
-        tb_widget = QWidget()
-        self._ui_tabs.addTab(tb_widget, 'Time-Domain')
-        self._ui_td_window_combo = QComboBox()
-        self._ui_td_window_param_spinner = QDoubleSpinBox()
-        self._ui_td_window_param_spinner.valueChanged.connect(self.on_td_window_param_changed)
-        self._ui_td_window_param_spinner.setMinimum(-1e3)
-        self._ui_td_window_param_spinner.setMaximum(+1e3)
-        self._ui_td_minsize_combo = QComboBox()
-        self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'), require_return_press=True)
-        self._ui_td_shift_text.valueChanged.connect(self.on_td_shift_changed)
-        tb_widget.setLayout(
-            QtHelper.layout_v(
-                QtHelper.layout_h(
-                    QtHelper.layout_grid([
-                        ['Window:', QtHelper.layout_h(self._ui_td_window_combo, ...)],
-                        ['Parameter:', QtHelper.layout_h(self._ui_td_window_param_spinner, ...)],
-                        ['Min. Length:', QtHelper.layout_h(self._ui_td_minsize_combo, ...)],
-                        ['Shift:', QtHelper.layout_h(self._ui_td_shift_text, 'ps', ...)],
-                    ]), ...
-                ), ...
             )
         )
 
@@ -123,11 +95,16 @@ class SettingsDialogUi(QDialog):
         self._ui_warn_timeout_combo.currentIndexChanged.connect(self._on_warn_timeout_changed)
         self._ui_warn_timeout_combo.setCurrentIndex(0)
         self._ui_csvsep_combo = QComboBox()
+        self._ui_deg_radio = QRadioButton('Degrees')
+        self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
+        self._ui_rad_radio = QRadioButton('Radians')
+        self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
         files_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_extract_zip_check,
                 QtHelper.layout_h('Warn When Loading Takes Longer Than', self._ui_warn_timeout_combo, ...),
                 QtHelper.layout_h('CSV Separator:', self._ui_csvsep_combo, ...),
+                QtHelper.layout_h('Export Phase Unit:', self._ui_deg_radio, self._ui_rad_radio, ...),
                 ...
             )
         )
@@ -216,61 +193,11 @@ class SettingsDialogUi(QDialog):
 
     
     @property
-    def ui_td_window(self) -> str:
-        return self._ui_td_window_combo.currentText()
-    @ui_td_window.setter
-    def ui_td_window(self, value: str):
-        self._ui_td_window_combo.setCurrentText(value)
-
-
-    def ui_set_td_window_options(self, options: list[str]):
-        self._ui_td_window_combo.clear()
-        for option in options:
-            self._ui_td_window_combo.addItem(option)
-        self._ui_td_window_combo.currentIndexChanged.connect(self.on_td_window_changed)
-
-    
-    @property
-    def ui_td_window_param(self) -> float:
-        return self._ui_td_window_param_spinner.value()
-    @ui_td_window_param.setter
-    def ui_td_window_param(self, value: float):
-        self._ui_td_window_param_spinner.setValue(value)
-
-    
-    def ui_enable_window_param(self, enable: bool = True):
-        self._ui_td_window_param_spinner.setEnabled(enable)
-
-    
-    @property
-    def ui_td_minsize(self) -> str:
-        return self._ui_td_minsize_combo.currentText()
-    @ui_td_minsize.setter
-    def ui_td_minsize(self, value: str):
-        self._ui_td_minsize_combo.setCurrentText(value)
-
-    
-    @property
     def ui_mainwin_layout(self) -> str:
         return self._ui_mainwinlayout_combo.currentText()
     @ui_mainwin_layout.setter
     def ui_mainwin_layout(self, value: str):
         self._ui_mainwinlayout_combo.setCurrentText(value)
-
-    
-    @property
-    def ui_td_shift(self) -> float:
-        return self._ui_td_shift_text.value().value
-    @ui_td_shift.setter
-    def ui_td_shift(self, value: float):
-        self._ui_td_shift_text.setValue(SiValue(value, 's'))
-
-
-    def ui_set_td_minsize_options(self, options: list[str]):
-        self._ui_td_minsize_combo.clear()
-        for option in options:
-            self._ui_td_minsize_combo.addItem(option)
-        self._ui_td_minsize_combo.currentIndexChanged.connect(self.on_td_minsize_changed)
 
     
     @property

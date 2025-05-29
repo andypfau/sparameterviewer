@@ -218,9 +218,9 @@ class QtHelper:
 
 
     @staticmethod
-    def add_menu_action(menu: QMenu, layout: QLayout) -> QWidgetAction:
+    def add_menu_action(menu: QMenu, widget: QWidget) -> QWidgetAction:
         item = QWidgetAction(menu)
-        item.setDefaultWidget(layout)
+        item.setDefaultWidget(widget)
         menu.addAction(item)
         return item
 

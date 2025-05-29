@@ -105,6 +105,7 @@ class SParamViewerAppSettings(AppSettings):
     ext_editor_cmd: str = ''
     plot_style: str = 'bmh'
     phase_unit: PhaseUnit = PhaseUnit.Degrees
+    export_phase_unit: PhaseUnit = PhaseUnit.Degrees
     extract_zip: bool = True
     plot_mark_points: bool = False
     path_history: list[str] = []

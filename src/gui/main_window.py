@@ -49,7 +49,7 @@ class MainWindow(MainWindowUi):
 
     TIMER_CURSORUPDATE_ID, TIMER_CURSOR_UPDATE_TIMEOUT_S = get_unique_id(), 25e-3
     TIMER_PLOT_UPDATE_ID, TIMER_PLOT_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
-    TIMER_INITIAL_SELECTION_ID, TIMER_INITIAL_SELECTION_TIMEOUT_S = get_unique_id(), 0.5
+    TIMER_INITIAL_SELECTION_ID, TIMER_INITIAL_SELECTION_TIMEOUT_S = get_unique_id(), 0.2
     TIMER_CLEAR_LOAD_COUNTER_ID, TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S = get_unique_id(), 0.5
     TIMER_RESCALE_GUI_ID, TIMER_RESCALE_GUI_TIMEOUT_S = get_unique_id(), 0.5
 
@@ -140,6 +140,10 @@ class MainWindow(MainWindowUi):
                 self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
                 self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
                 self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
+                self.ui_plot_selector.setTdWindow(Settings.window_type)
+                self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
+                self.ui_plot_selector.setTdShift(Settings.tdr_shift)
+                self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
                 self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
                 self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
                 self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
@@ -489,10 +493,16 @@ class MainWindow(MainWindowUi):
     
 
     def on_plottype_changed(self):
+        if not self.ready:
+            return
         Settings.plot_type = self.ui_plot_selector.plotType()
         Settings.phase_unit = self.ui_plot_selector.phaseUnit()
         Settings.phase_processing = self.ui_plot_selector.phaseProcessing()
         Settings.td_response = self.ui_plot_selector.tdResponse()
+        Settings.window_type = self.ui_plot_selector.tdWindow()
+        Settings.window_arg = self.ui_plot_selector.tdWindowArg()
+        Settings.tdr_shift = self.ui_plot_selector.tdShift()
+        Settings.tdr_minsize = self.ui_plot_selector.tdMinisize()
         Settings.smith_norm = self.ui_plot_selector.smithNorm()
         Settings.tdr_impedance = self.ui_plot_selector.tdImpedance()
         Settings.plot_y_quantitiy = self.ui_plot_selector.yQuantity()
@@ -1353,6 +1363,10 @@ class MainWindow(MainWindowUi):
             y2_qty = self.ui_plot_selector.y2Quantity()
             tdr_z = self.ui_plot_selector.tdImpedance()
             tdr_resp = self.ui_plot_selector.tdResponse()
+            tdr_shift = self.ui_plot_selector.tdShift()
+            window_type = self.ui_plot_selector.tdWindow()
+            window_arg = self.ui_plot_selector.tdWindowArg()
+            tdr_minsize = self.ui_plot_selector.tdMinisize()
             phase_unit = self.ui_plot_selector.phaseUnit()
             phase_processing = self.ui_plot_selector.phaseProcessing()
             smith_norm = self.ui_plot_selector.smithNorm()
@@ -1472,7 +1486,7 @@ class MainWindow(MainWindowUi):
                             logging.debug(f'The trace "{name}" is real-valued; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
                     if treat_as_complex:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=Settings.tdr_shift, window_type=Settings.window_type, window_arg=Settings.window_arg, min_size=Settings.tdr_minsize)
+                        t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
                         if tdr_z:
                             lev[lev==0] = 1e-20 # avoid division by zero in the next step
                             imp = z0 * (1+lev) / (1-lev) # convert to impedance
@@ -1586,26 +1600,27 @@ class MainWindow(MainWindowUi):
                     self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
             if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling:
-                logging.debug(f'Adjusting dB scale...')
+                BASE_QUANTILE_PERCENT = 25
+                MIN_RANGE_DB = 15
+                SMALL_MARGINS_FACTOR = 0.2
+                LARGE_MARGINS_DB = 3
+                ZERO_EXTENSION_FACTOR = 2.0
+
                 top, base, bottom = -1e99, +1e99, +1e99
                 for plot in self.plot.plots:
                     top = max(top, np.max(plot.y.values))
-                    base = min(base, np.quantile(plot.y.values, 0.25))
+                    base = min(base, np.quantile(plot.y.values, BASE_QUANTILE_PERCENT/100.0))
                     bottom = min(bottom, np.min(plot.y.values))
-                if top > bottom and top > base:
+                if top >= base and base >= bottom:
                     full_range = top - bottom
-                    if full_range < 15:
-                        # show the whole range
-                        y0, y1 = bottom-0.2*full_range, top+0.2*full_range
-                    else:
-                        # focus non the top part
-                        y0, y1 = base-3, top+3
-
+                    if full_range < MIN_RANGE_DB:  # show the whole range
+                        y0, y1 = bottom-SMALL_MARGINS_FACTOR*full_range, top+SMALL_MARGINS_FACTOR*full_range
+                    else:  # focus non the top part
+                        y0, y1 = base-LARGE_MARGINS_DB, top+LARGE_MARGINS_DB
                         if top < 0:
                             base_range, distance_to_zero = top-base, -top
-                            if base_range > distance_to_zero*2:
-                                # include zero
-                                y0, y1 = base-3, +3
+                            if base_range > distance_to_zero*ZERO_EXTENSION_FACTOR:  # include 0 dB
+                                y0, y1 = base-LARGE_MARGINS_DB, +LARGE_MARGINS_DB
                     (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (y0, y1)
                     self.plot.plot.set_ylim((y0, y1))
 

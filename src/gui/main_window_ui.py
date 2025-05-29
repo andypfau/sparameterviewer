@@ -128,7 +128,7 @@ class MainWindowUi(QMainWindow):
         self._ui_refresh_button = QtHelper.make_toolbutton(self, None, self.on_update_plot, icon='toolbar_refresh.svg', tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_toolbutton(self, None, self._on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', checked=False)
         self._ui_short_legend_button = QtHelper.make_toolbutton(self, None, self.on_shorten_legend, icon='toolbar_short_legend.svg', tooltip='Shorten Legend Text', checked=False)
-        self._ui_semitrans_button = QtHelper.make_toolbutton(self, None, self.on_semitrans_changed, icon='toolbar_transparent.svg', tooltip='Semi-Transparent Traces', checked=False)
+        self._ui_semitrans_button = QtHelper.make_toolbutton(self, None, self._on_semitrans_changed, icon='toolbar_transparent.svg', tooltip='Semi-Transparent Traces', checked=False)
         self._ui_logx_button = QtHelper.make_toolbutton(self, None, self.on_logx_changed, icon='toolbar_log-x.svg', tooltip='Logarithmic X-Axis', checked=False)
         self._ui_logy_button = QtHelper.make_toolbutton(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis', checked=False)
         self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale')
@@ -350,6 +350,7 @@ class MainWindowUi(QMainWindow):
 
         self._build_menus()
         self._update_layout()
+        self._update_enabled()
 
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):  # overloaded from QTextEdit
@@ -447,7 +448,13 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_toolmenu, 'Status Log', self.on_show_log, shortcut='Ctrl+L')
         self._ui_toolmenu_button.setMenu(self._ui_toolmenu)
         self._ui_toolmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+    
 
+    def _update_enabled(self):
+        self._ui_opacity_slider.setEnabled(self.ui_semitrans_traces)
+        self._ui_max_legend_spin.setEnabled(self.ui_show_legend)
+        self._ui_menuitem_hide_single_legend.setEnabled(self.ui_show_legend)
+        self._ui_short_legend_button.setVisible(self.ui_show_legend)
 
     
     def _on_plottool_pan(self):
@@ -648,7 +655,7 @@ class MainWindowUi(QMainWindow):
     @ui_show_legend.setter
     def ui_show_legend(self, value: bool):
         self._ui_legend_button.setChecked(value)
-        self._ui_short_legend_button.setVisible(value)
+        self._update_enabled()
 
 
     @property
@@ -657,6 +664,7 @@ class MainWindowUi(QMainWindow):
     @ui_semitrans_traces.setter
     def ui_semitrans_traces(self, value: bool):
         self._ui_semitrans_button.setChecked(value)
+        self._update_enabled()
 
 
     @property
@@ -866,8 +874,13 @@ class MainWindowUi(QMainWindow):
     
 
     def _on_show_legend(self):
-        self._ui_short_legend_button.setVisible(self.ui_show_legend)
+        self._update_enabled()
         self.on_show_legend()
+
+
+    def _on_semitrans_changed(self):
+        self._update_enabled()
+        self.on_semitrans_changed()
 
 
     # to be implemented in derived class

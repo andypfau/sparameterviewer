@@ -22,7 +22,7 @@ class SiValueEdit(QLineEdit):
         super().__init__(parent)
         self.setMinimumWidth(150)
         self._require_return_press = require_return_press
-        self._value = si
+        self._value: SiValue = si
         
         self.setPlaceholderText('Enter value...')
         self.setValue(self._value)
@@ -65,9 +65,9 @@ class SiValueEdit(QLineEdit):
     def value(self) -> SiValue|None:
         return self._value
     def setValue(self, value: SiValue|None):
-        if value == self._value:
-            return
         self._value = value
+        if self._value:
+            self._value.attach(self._on_value_changed_externally)
         self._update_text_from_value()
 
     
@@ -114,3 +114,8 @@ class SiValueEdit(QLineEdit):
                 self.valueChanged.emit()
         except:
             QtHelper.indicate_error(self, True)
+
+
+
+    def _on_value_changed_externally(self, *args, **kwargs):
+        self._update_text_from_value()
