@@ -86,6 +86,8 @@ class PathBar(QWidget):
 
 
     pathChanged = pyqtSignal(str)
+    pathAdded = pyqtSignal(str)
+    pathClosed = pyqtSignal()
     backClicked = pyqtSignal()
 
 
@@ -98,9 +100,13 @@ class PathBar(QWidget):
         self._enabled = True
         self._default_mode = PathBar.Mode.Breadcrumbs
 
-        self._ui_toggle_breadcrumbs_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg')
-        self._ui_toggle_text_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_text, icon='path_text.svg')
-        self._ui_dir_select_dialog_button = QtHelper.make_toolbutton(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg')
+        self._ui_toggle_breadcrumbs_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg', tooltip='Show Breadcrumb Bar')
+        self._ui_toggle_text_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_text, icon='path_text.svg', tooltip='Show Text Editor')
+        self._ui_dir_select_dialog_button = QtHelper.make_toolbutton(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg', tooltip='Navigate to Directory...')
+        self._ui_add_dir_button = QtHelper.make_toolbutton(self, None, self._on_add_dir_select_dialog, icon='path_add.svg', tooltip='Add another Directory...')
+        self._ui_add_dir_button.setVisible(False)
+        self._ui_close_button = QtHelper.make_toolbutton(self, None, self._on_close_dir, icon='path_close.svg')
+        self._ui_close_button.setVisible(False)
         self._ui_breadcrumb = PathBar.MyWidget()
         self._ui_breadcrumb.setContentsMargins(0, 0, 0, 0)
         self._ui_breadcrumb.setVisible(False)
@@ -128,7 +134,20 @@ class PathBar(QWidget):
         self._ui_text_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self._ui_text_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
         self._ui_text.setCompleter(self._ui_text_completer)
-        layout = QtHelper.layout_h(self._ui_breadcrumb, self._ui_text, self._ui_toggle_breadcrumbs_button, self._ui_toggle_text_button, self._ui_dir_select_dialog_button)
+        self._ui_navigation_pane = QtHelper.layout_widget_h(
+            self._ui_breadcrumb,
+            self._ui_text,
+            self._ui_toggle_breadcrumbs_button,
+            self._ui_toggle_text_button,
+            self._ui_dir_select_dialog_button,
+            self._ui_close_button,
+            spacing=0, margins=0
+        )
+        layout = QtHelper.layout_h(
+            self._ui_navigation_pane,
+            self._ui_add_dir_button,
+            spacing=0, margins=0
+        )
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         self.setLayout(layout)
@@ -144,6 +163,30 @@ class PathBar(QWidget):
         if self._ui_breadcrumb.isVisible():
             return PathBar.Mode.Breadcrumbs
         return PathBar.Mode.Text
+
+
+    @property
+    def allow_close(self) -> bool:
+        return self._ui_close_button.isVisible()
+    @allow_close.setter
+    def allow_close(self, value: bool):
+        self._ui_close_button.setVisible(value)
+
+
+    @property
+    def allow_add(self) -> bool:
+        return self._ui_add_dir_button.isVisible()
+    @allow_add.setter
+    def allow_add(self, value: bool):
+        self._ui_add_dir_button.setVisible(value)
+
+
+    @property
+    def show_navigation(self) -> bool:
+        return self._ui_navigation_pane.isVisible()
+    @show_navigation.setter
+    def show_navigation(self, value: bool):
+        self._ui_navigation_pane.setVisible(value)
 
 
     @property
@@ -348,6 +391,25 @@ class PathBar(QWidget):
         self._update_and_show_text()
 
 
+    def _on_add_dir_select_dialog(self):
+        if not self._enabled:
+            return
+        
+        current_dir = self.path
+        new_dir = open_directory_dialog(self, title='Select Directory to Append', initial_dir=current_dir)
+        if not new_dir:
+            return
+        
+        new_dir = os.path.abspath(new_dir)
+        if not (os.path.exists(new_dir) and os.path.isdir(new_dir)):
+            return
+        if os.path.samefile(current_dir, new_dir):
+            return
+        
+        self.path = str(new_dir)
+        self.pathAdded.emit(new_dir)
+
+    
     def _on_open_dir_select_dialog(self):
         if not self._enabled:
             return
@@ -365,3 +427,7 @@ class PathBar(QWidget):
         
         self.path = str(new_dir)
         self.pathChanged.emit(new_dir)
+
+
+    def _on_close_dir(self):
+        self.pathClosed.emit()

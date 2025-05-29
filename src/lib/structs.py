@@ -141,7 +141,7 @@ class SParamFile:
                 self._error = str(ex)
                 self._nw = None
         
-        if self.is_from_archive:
+        if self.path.is_in_arch():
             from .utils import AchiveFileLoader
             try:
                 with AchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
@@ -153,11 +153,6 @@ class SParamFile:
         
         if SParamFile.after_load:
             SParamFile.after_load(self.path)
-
-    
-    @property
-    def is_from_archive(self) -> bool:
-        return self.path.arch_path is not None
 
     
     @property

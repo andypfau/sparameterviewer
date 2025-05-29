@@ -71,17 +71,26 @@ with tempfile.TemporaryDirectory() as tempdir:
                 mesh = np.linspace(0, 1, n_points)
                 return cosine_interpolation(mesh, x, y)
 
-            def make_random_complex(n, mag, σ_mag, pha, Δ_pha, σ_Δ_pha, outlier_chance):
+            def make_random_sii(n, mag, σ_mag, pha, Δ_pha, σ_Δ_pha, outlier_chance):
+                
+                offset = -0.8 * mag
+
                 v_mag = make_random_scalar(n, mag, σ_mag, 5, outlier_chance)
+                v_pha = np.linspace(pha/5,pha/5+Δ_pha/5,n)
+                primary = v_mag * np.exp(1j*v_pha)
+                
+                v_mag = make_random_scalar(n, mag, σ_mag, 12)
                 v_pha = np.linspace(pha,pha+Δ_pha,n) + make_random_scalar(n, 0, σ_Δ_pha, 12, outlier_chance)
-                return v_mag * np.exp(1j*v_pha)
+                secondary = v_mag * np.exp(1j*v_pha)
+                
+                return offset + primary + secondary
             
             f = np.linspace(*FREQ_RANGE, N_POINTS)
             rl_lin = 10**(RL_REF_DB/20)
             cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
-            s11 = -rl_lin*1j + make_random_complex(N_POINTS, rl_lin, rl_lin/10, 0, 5*math.tau, math.tau*0.001, OUTLIER_CHANCE)
-            s22 = -rl_lin*1j + make_random_complex(N_POINTS, rl_lin, rl_lin/10, 0, 8*math.tau, math.tau*0.001, OUTLIER_CHANCE)
-            mismatch = -rl_lin*1j + make_random_complex(N_POINTS, rl_lin, rl_lin/10, 0, 6*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            s11 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 5*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            s22 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 8*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            mismatch = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 6*math.tau, math.tau*0.001, OUTLIER_CHANCE)
             sij = cable_loss * np.sqrt(1 - np.abs(mismatch)**2) * np.exp(-1j*math.tau*f/PHASE_PERIOD_HZ)
             
             

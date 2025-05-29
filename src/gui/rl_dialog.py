@@ -52,7 +52,7 @@ class RlDialog(RlDialogUi):
             try:
                 t = SiRange(spec=RlDialog.SI_FORMAT_HZ, allow_both_wildcards=False, allow_individual_wildcards=False).parse(self.ui_tgtrange)
                 tgt0, tgt1 = t.low, t.high
-                tgtrange_ok = False
+                tgtrange_ok = True
             except:
                 tgtrange_ok = False
             self.ui_inidicate_tgtrange_error(not tgtrange_ok)

@@ -420,6 +420,7 @@ class PlotHelper:
                 # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
                 self.plot.set_xlim((-self._r_smith,+self._r_smith))
                 self.plot.set_ylim((-self._r_smith,+self._r_smith))
+                self.plot.legend()
                 
         show_legend = self._show_legend
         if len(self.items) <= 1 and self._hide_single_item_legend:
@@ -428,6 +429,15 @@ class PlotHelper:
             show_legend = False
         if show_legend:
             self.plot.legend()
+        else:
+            if self.plot:
+                legend = self.plot.get_legend()
+                if legend:
+                    legend.remove()
+            if self.plot2:
+                legend2 = self.plot2.get_legend()
+                if legend2:
+                    legend2.remove()
         
 
     def _fix_axis_labels(self):

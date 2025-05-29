@@ -218,6 +218,14 @@ class QtHelper:
 
 
     @staticmethod
+    def add_menu_action(menu: QMenu, layout: QLayout) -> QWidgetAction:
+        item = QWidgetAction(menu)
+        item.setDefaultWidget(layout)
+        menu.addAction(item)
+        return item
+
+
+    @staticmethod
     def get_monospace_font() -> str:
         try:
             preferred_fonts = ['Fira Code', 'DejaVu Mono', 'Liberation Mono', 'Source Code Pro', 'Consolas', 'Courier New', 'Lucida Sans Typewriter', 'Monospace']
@@ -354,3 +362,16 @@ class QtHelper:
         if margins is not None:
             widget.setContentsMargins(margins, margins, margins, margins)
         return widget
+
+
+    @staticmethod
+    def modify_color(color: QColor, d_hue: float|None = None) -> QColor:
+        result = QColor(color)
+        if d_hue:
+            hue = result.hslHueF() + d_hue
+            while hue > 1.0:
+                hue -= 1.0
+            while hue < 0.0:
+                hue += 1.0
+            result = QColor.fromHslF(hue, result.hslSaturationF(), result.lightnessF(), result.alphaF())
+        return result

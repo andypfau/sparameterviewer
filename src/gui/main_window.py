@@ -24,7 +24,7 @@ from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser
 from lib import PathExt
-from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, AxisRangeMode
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
 from info import Info
 
 import pathlib
@@ -58,6 +58,7 @@ class MainWindow(MainWindowUi):
         ColorAssignment.ByParam: 'By Parameter',
         ColorAssignment.ByFile: 'By File',
         ColorAssignment.ByFileLoc: 'By Location',
+        ColorAssignment.Monochrome: 'Monochrome',
     }
 
 
@@ -79,8 +80,6 @@ class MainWindow(MainWindowUi):
         self.sparamfile_load_aborted = False
         self._last_cursor_x = [0, 0]
         self._last_cursor_trace = ['', '']
-        self._xaxis_range_mode = AxisRangeMode.Auto
-        self._yaxis_range_mode = AxisRangeMode.Auto
 
         super().__init__()
         
@@ -149,6 +148,8 @@ class MainWindow(MainWindowUi):
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
                 self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
                 self.ui_semitrans_traces = Settings.plot_semitransparent
+                self.ui_trace_opacity = Settings.plot_semitransparent_opacity
+                self.ui_maxlegend = Settings.max_legend_items
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
@@ -156,8 +157,10 @@ class MainWindow(MainWindowUi):
                 self.ui_mark_datapoints = Settings.plot_mark_points
                 self.ui_logx = Settings.log_x
                 self.ui_logy = Settings.log_y
+                self.ui_smart_db = Settings.smart_db_scaling
                 self.ui_layout = Settings.mainwindow_layout
                 self.ui_filesys_browser.show_archives = Settings.extract_zip
+                self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
                 return None
             except Exception as ex:
                 return ex
@@ -190,6 +193,7 @@ class MainWindow(MainWindowUi):
 
 
     def before_load_sparamfile(self, path: PathExt) -> bool:
+        logging.debug(f'Loading <{path}>...')
         if self.sparamfile_load_aborted:
             return False
         if self.sparamfile_load_t_start < 0:
@@ -493,6 +497,7 @@ class MainWindow(MainWindowUi):
         Settings.tdr_impedance = self.ui_plot_selector.tdImpedance()
         Settings.plot_y_quantitiy = self.ui_plot_selector.yQuantity()
         Settings.plot_y2_quantitiy = self.ui_plot_selector.y2Quantity()
+        self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
 
         self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
         self.schedule_plot_update()
@@ -579,10 +584,15 @@ class MainWindow(MainWindowUi):
 
 
     def reload_all_files(self):
-        self.clear_list_counter()
-        self.files.clear()
-        self.update_params_size()
-        self.ui_filesys_browser.refresh()
+        try:
+            self.ready = False
+            self.clear_list_counter()
+            self.ui_filesys_browser.refresh()
+            self.files.clear()
+            self.update_params_size()
+        finally:
+            self.ready = True
+            self.schedule_plot_update()
 
 
     def get_file_prop_str(self, file: "SParamFile|None") -> str:
@@ -695,7 +705,7 @@ class MainWindow(MainWindowUi):
         try:
             selected_file = self.get_selected_files()[0]
             title = f'Plaintext Data of <{selected_file.name}>'
-            if selected_file.is_from_archive:
+            if selected_file.path.is_in_arch():
                 TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
             else:
                 TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
@@ -704,19 +714,21 @@ class MainWindow(MainWindowUi):
 
 
     def on_open_externally(self):
-    
+
         if len(self.get_selected_files()) < 1:
-            error_dialog('Error', 'Nothing files selected')
+            error_dialog('Error', 'No files selected')
             return
 
-        selected_files_nonarchive = [selected_file for selected_file in self.get_selected_files() if not selected_file.is_from_archive]
-        
+        selected_files_nonarchive = [selected_file for selected_file in self.get_selected_files() if not selected_file.path.is_in_arch()]
         if len(selected_files_nonarchive) < 1:
             error_dialog('Error', 'All selected paths are archives')
             return
+            
+        if not SettingsDialog.ensure_external_editor_is_set(self):
+            return
         
         try:
-            start_process(Settings.ext_editor_cmd, *[file.file_path for file in selected_files_nonarchive])
+            start_process(Settings.ext_editor_cmd, *[str(file) for file in selected_files_nonarchive])
         except Exception as ex:
             error_dialog('Open File Externally', 'Unable to open file with external editor.', detailed_text=str(ex))
     
@@ -758,6 +770,16 @@ class MainWindow(MainWindowUi):
         Settings.plot_semitransparent = self.ui_semitrans_traces
         self.schedule_plot_update()
     
+    
+    def on_traceopacity_changed(self):
+        Settings.plot_semitransparent_opacity = self.ui_trace_opacity
+        self.schedule_plot_update()
+    
+    
+    def on_maxlegend_changed(self):
+        Settings.max_legend_items = self.ui_maxlegend
+        self.schedule_plot_update()
+
 
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
@@ -830,6 +852,13 @@ class MainWindow(MainWindowUi):
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
     
+    
+    def on_smart_db(self):
+        if not self.ui_smart_db:
+            self.ui_yaxis_range.both_are_wildcard = True  # unlock axis
+        Settings.smart_db_scaling = self.ui_smart_db
+        self.schedule_plot_update()
+
     
     def on_xaxis_range_change(self):
         self.schedule_plot_update()
@@ -912,7 +941,9 @@ class MainWindow(MainWindowUi):
             return chroot
         def make_selall(file_path: PathExt):
             def selall():
-                if file_path.arch_path:
+                if file_path.is_dir():
+                    files_in_path = [p for p in file_path.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
+                elif (file_path.is_file() and not file_path.is_in_arch() and is_ext_supported_archive(path.suffix)) or (file_path.is_in_arch()):
                     files_in_path = [p for p in find_files_in_archive(str(file_path)) if is_ext_supported_file(p.arch_path_suffix)]
                 else:
                     files_in_path = [p for p in file_path.parent.iterdir() if p.is_file() and is_ext_supported_file(p.suffix)]
@@ -940,23 +971,31 @@ class MainWindow(MainWindowUi):
         is_toplevel = path == toplevel_path
         if item_type == FilesysBrowserItemType.File:
             if not self.ui_filesys_browser.simplified():
-                menu.append(('Pin Directory of This File', make_pin(path.parent)))
-                menu.append(('Navigate Down Directory Of This File', make_chroot(path.parent)))
-                menu.append((None, None))
-            menu.append((f'Select All Files From Same Directory', make_selall(path)))
+                if path.is_in_arch():  # file is inside archive
+                    menu.append(('Pin this Archive', make_pin(PathExt(str(path)))))
+                    menu.append(('Navigate to this Archive', make_chroot(PathExt(str(path)))))
+                    menu.append((None, None))
+                else:  # just some file
+                    if toplevel_path != path.parent:
+                        menu.append(('Pin this Directory', make_pin(path.parent)))
+                        menu.append(('Navigate to this Directory', make_chroot(path.parent)))
+                        menu.append((None, None))
+            menu.append((f'Select All Files from Here', make_selall(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
-            if is_toplevel:
-                if not self.ui_filesys_browser.simplified():
-                    for (ppath, pname) in get_parent_dirs_and_names(path):
-                        menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
+            if not self.ui_filesys_browser.simplified():
+                if is_toplevel:
+                        #for (ppath, pname) in get_parent_dirs_and_names(path):
+                        #    menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
+                        #menu.append((None, None))
+                        menu.append((f'Unpin', make_unpin()))
+                        menu.append((None, None))
+                else:
+                    if not self.ui_filesys_browser.simplified():
+                        menu.append((f'Pin this {typename}', make_pin(path)))
+                    menu.append((f'Navigate to this {typename}', make_chroot(path)))
                     menu.append((None, None))
-                    menu.append((f'Unpin This {typename}', make_unpin()))
-            else:
-                menu.append((f'Navigate Down To This {typename}', make_chroot(path)))
-                if not self.ui_filesys_browser.simplified():
-                    menu.append((None, None))
-                    menu.append((f'Pin This {typename}', make_pin(path)))
+            menu.append((f'Select All Files in Here', make_selall(path)))
 
         
         if len(menu) > 0:
@@ -1317,6 +1356,7 @@ class MainWindow(MainWindowUi):
             phase_unit = self.ui_plot_selector.phaseUnit()
             phase_processing = self.ui_plot_selector.phaseProcessing()
             smith_norm = self.ui_plot_selector.smithNorm()
+            smart_db_scaling = self.ui_smart_db
             log_x, log_y = self.ui_logx, self.ui_logy
             
             common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items, max_legend_items=Settings.max_legend_items)
@@ -1393,6 +1433,8 @@ class MainWindow(MainWindowUi):
                 if not color:  # assign a color
                     key: any|None = None
                     match Settings.color_assignment:
+                        case ColorAssignment.Default:
+                            pass
                         case ColorAssignment.ByParam:
                             key = param_kind
                         case ColorAssignment.ByFile:
@@ -1404,7 +1446,9 @@ class MainWindow(MainWindowUi):
                                     key = str(original_file)
                                 else:
                                     key = str(original_file.parent)
-                    if key:
+                        case ColorAssignment.Monochrome:
+                            key = 1
+                    if key is not None:
                         if key not in color_mapping:  # use next color in the list
                             next_color = available_colors[next_color_index % len(available_colors)]
                             next_color_index += 1
@@ -1541,24 +1585,29 @@ class MainWindow(MainWindowUi):
                 if not self.ui_yaxis_range.both_are_wildcard:
                     self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
-            
-            # TODO: smart range for dB
-            # if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels:
-            #     logging.debug(f'Adjusting dB scale...')
-            #     top, base, bottom = -1e99, +1e99, +1e99
-            #     for plot in self.plot.plots:
-            #         top = max(top, np.max(plot.y.values))
-            #         base = min(base, np.quantile(plot.y.values, 0.5))
-            #         bottom = min(bottom, np.min(plot.y.values))
-            #     if top > bottom and top > base:
-            #         full_range = top - bottom
-            #         if full_range < 15:
-            #             # or just use auto-range...
-            #             y0, y1 = bottom-0.2*full_range, top+0.2*full_range
-            #         else:
-            #             # smart choice of default range
-            #             y0, y1 = base-3, top+3
-            #         self.plot.plot.set_ylim((y0, y1))
+            if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling:
+                logging.debug(f'Adjusting dB scale...')
+                top, base, bottom = -1e99, +1e99, +1e99
+                for plot in self.plot.plots:
+                    top = max(top, np.max(plot.y.values))
+                    base = min(base, np.quantile(plot.y.values, 0.25))
+                    bottom = min(bottom, np.min(plot.y.values))
+                if top > bottom and top > base:
+                    full_range = top - bottom
+                    if full_range < 15:
+                        # show the whole range
+                        y0, y1 = bottom-0.2*full_range, top+0.2*full_range
+                    else:
+                        # focus non the top part
+                        y0, y1 = base-3, top+3
+
+                        if top < 0:
+                            base_range, distance_to_zero = top-base, -top
+                            if base_range > distance_to_zero*2:
+                                # include zero
+                                y0, y1 = base-3, +3
+                    (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (y0, y1)
+                    self.plot.plot.set_ylim((y0, y1))
 
             self.ui_plot.draw()
 

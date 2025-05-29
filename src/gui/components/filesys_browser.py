@@ -214,12 +214,14 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.doubleClicked.connect(self._on_doubleclick)
         self._ui_filesys_view.backClicked.connect(self._on_navigate_back)
         self._ui_pathbar = PathBar()
-        self._ui_pathbar.setVisible(False)
         self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
         self._ui_pathbar.backClicked.connect(self._on_navigate_back)
         self._ui_pathbar.pathChanged.connect(self._on_pathbar_change)
+        self._ui_pathbar.pathAdded.connect(self._on_pathbar_add)
+        self._ui_pathbar.pathClosed.connect(self._on_pathbar_close)
         self.setLayout(QtHelper.layout_v(self._ui_filesys_view, self._ui_pathbar))
 
+        self.update_pathbar()
         self._inhibit_triggers = False
 
 
@@ -235,7 +237,7 @@ class FilesysBrowser(QWidget):
                 return  # probably the tree is not fully constructed yet
             for i in range(1, len(toplevel_items)):
                 self.remove_toplevel(toplevel_items[i].path)
-            self.update_pathbar()
+        self.update_pathbar()
     
 
     @property
@@ -359,7 +361,7 @@ class FilesysBrowser(QWidget):
                 
             if self._simplified:
                 self._ui_pathbar.path = str(path)
-                self._ui_pathbar.setVisible(True)
+                self._ui_pathbar.show_navigation = True
         
             self.update_pathbar()
 
@@ -472,12 +474,16 @@ class FilesysBrowser(QWidget):
 
     
     def update_pathbar(self):
-        toplevel_item = self._get_toplevel_item_for_pathbar()
-        if toplevel_item:
-            self._ui_pathbar.path = toplevel_item.path
-            self._ui_pathbar.setVisible(True)
-        else:
-            self._ui_pathbar.setVisible(False)
+        toplevel_item_for_pathbar = self._get_toplevel_item_for_pathbar()
+        if toplevel_item_for_pathbar:
+            all_toplevel_items = self._get_toplevel_items()
+            self._ui_pathbar.path = toplevel_item_for_pathbar.path
+            self._ui_pathbar.show_navigation = True
+            self._ui_pathbar.allow_close = len(all_toplevel_items) > 1
+        else:  # no top-level item found
+            self._ui_pathbar.show_navigation = False
+            self._ui_pathbar.allow_close = False
+        self._ui_pathbar.allow_add = not self._simplified
 
     
     def _add_toplevel(self, path: PathExt, row_index: int):
@@ -611,6 +617,17 @@ class FilesysBrowser(QWidget):
         if toplevel_item is None:
             return
         self.change_root(toplevel_item.path, PathExt(path))
+
+
+    def _on_pathbar_add(self, path: str):
+        self.add_toplevel(PathExt(path))
+
+
+    def _on_pathbar_close(self):
+        toplevel_item = self._get_toplevel_item_for_pathbar()
+        if not toplevel_item:
+            return
+        self.remove_toplevel(toplevel_item.path)
     
 
     def _on_navigate_back(self):

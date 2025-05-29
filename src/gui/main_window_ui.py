@@ -8,7 +8,7 @@ from .components.param_selector import ParamSelector
 from .components.plot_selector import PlotSelector
 from .components.sivalue_edit import SiValueEdit
 from .components.py_editor import PyEditor
-from lib import AppPaths, PathExt, Parameters, SiValue, SiRange, SiFormat, MainWindowLayout
+from lib import AppPaths, PathExt, Parameters, SiValue, SiRange, SiFormat, MainWindowLayout, PlotType, YQuantity
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -123,28 +123,39 @@ class MainWindowUi(QMainWindow):
         self._ui_param_selector.setGridSize(100)
         self._ui_plot_selector = PlotSelector(self)
         self._ui_plot_selector.valueChanged.connect(self.on_plottype_changed)
-        self._ui_menu_button = QtHelper.make_toolbutton(self, None, icon='toolbar_menu.svg', tooltip='Show Main Menu')
+        self._ui_menu_button = QtHelper.make_toolbutton(self, None, icon='toolbar_menu.svg', tooltip='Show Main Menu (Alt)')
         self._ui_filter_button = QtHelper.make_toolbutton(self, None, self.on_show_filter, icon='toolbar_filter.svg', tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
         self._ui_refresh_button = QtHelper.make_toolbutton(self, None, self.on_update_plot, icon='toolbar_refresh.svg', tooltip='Refresh Plot (F5)', shortcut='F5')
-        self._ui_legend_button = QtHelper.make_toolbutton(self, None, self.on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', checked=False)
+        self._ui_legend_button = QtHelper.make_toolbutton(self, None, self._on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', checked=False)
         self._ui_short_legend_button = QtHelper.make_toolbutton(self, None, self.on_shorten_legend, icon='toolbar_short_legend.svg', tooltip='Shorten Legend Text', checked=False)
         self._ui_semitrans_button = QtHelper.make_toolbutton(self, None, self.on_semitrans_changed, icon='toolbar_transparent.svg', tooltip='Semi-Transparent Traces', checked=False)
         self._ui_logx_button = QtHelper.make_toolbutton(self, None, self.on_logx_changed, icon='toolbar_log-x.svg', tooltip='Logarithmic X-Axis', checked=False)
         self._ui_logy_button = QtHelper.make_toolbutton(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis', checked=False)
         self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale')
         self._ui_locky_button = QtHelper.make_toolbutton(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock Y-Axis Scale')
-        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Toggle X- and Y-Axis Scale Lock')
+        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-y.svg', tooltip='Lock both X- and Y-Axis Scales')
+        self._ui_smartdb_button = QtHelper.make_toolbutton(self, None, self.on_smart_db, icon='toolbar_smart-db.svg', tooltip='Attempt Smart Scaling of dB-Values', checked=False)
         self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot', checked=False)
         self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot', checked=False)
         self._ui_mark_button = QtHelper.make_toolbutton(self, None, self.on_mark_datapoints_changed, icon='toolbar_mark-points.svg', tooltip='Mark Data Points', checked=False)
         self._ui_save_image_button = QtHelper.make_toolbutton(self, None, self.on_save_plot_image, icon='toolbar_save-image.svg', tooltip='Save Image to File')
         self._ui_copy_image_button = QtHelper.make_toolbutton(self, None, self.on_copy_image, icon='toolbar_copy-image.svg', tooltip='Copy Image to Clipboard')
-        self._ui_tabular_button = QtHelper.make_toolbutton(self, None, self.on_view_tabular, icon='toolbar_tabular.svg', tooltip='View/Copy/Save Tabular Data (Ctrl+T)')
-        self._ui_plaintext_button = QtHelper.make_toolbutton(self, None, self.on_view_plaintext, icon='toolbar_plaintext.svg', tooltip='View/Copy/Save Plaintext Data (Ctrl+P)')
-        self._ui_fileinfo_button = QtHelper.make_toolbutton(self, None, self.on_file_info, icon='toolbar_fileinfo.svg', tooltip='View Info About File (Ctrl+I)')
+        self._ui_tabular_button = QtHelper.make_toolbutton(self, None, self.on_view_tabular, icon='toolbar_tabular.svg', tooltip='View/Copy/Save Tabular Data (Ctrl+T)', shortcut='Ctrl+T')
+        self._ui_plaintext_button = QtHelper.make_toolbutton(self, None, self.on_view_plaintext, icon='toolbar_plaintext.svg', tooltip='View/Copy/Save Plaintext Data (Ctrl+P)', shortcut='Ctrl+P')
+        self._ui_fileinfo_button = QtHelper.make_toolbutton(self, None, self.on_file_info, icon='toolbar_fileinfo.svg', tooltip='View Info About File (Ctrl+I)', shortcut='Ctrl+I')
+        self._ui_settings_button = QtHelper.make_toolbutton(self, None, self.on_settings, icon='toolbar_settings.svg', tooltip='Open Settings (F4)', shortcut='F4')
+        self._ui_toolmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Tool Menu')
+        self._ui_plotmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
+        self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)')
         self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(0,10e9)])
+        self._ui_xaxis_range.setMinimumWidth(120)
+        self._ui_xaxis_range.setMaximumWidth(120)
+        self._ui_xaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_xaxis_range.rangeChanged.connect(self.on_xaxis_range_change)
         self._ui_yaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(-25,+3),(-25,+25),(-50,+3),(-100,+3)])
+        self._ui_yaxis_range.setMinimumWidth(120)
+        self._ui_yaxis_range.setMaximumWidth(120)
+        self._ui_yaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_yaxis_range.rangeChanged.connect(self.on_yaxis_range_change)
         self._ui_color_combo = QComboBox()
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
@@ -168,11 +179,11 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
-                QtHelper.layout_h(self._ui_lockboth_button, ..., spacing=default_spacing),
+                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
-            QtHelper.layout_v(...,
+            QtHelper.layout_v(
                 QtHelper.layout_h(
                     self._ui_legend_button,
                     self._ui_short_legend_button,
@@ -180,12 +191,15 @@ class MainWindowUi(QMainWindow):
                     self._ui_semitrans_button,
                     self._ui_mark_button,
                     wide_spacing,
-                    self._ui_refresh_button,
-                    ..., margins=margins, spacing=default_spacing
+                    ...,
+                    self._ui_plotmenu_button,
+                    margins=margins, spacing=default_spacing
                 ),
                 QtHelper.layout_h(
                     self._ui_pan_button,
                     self._ui_zoom_button,
+                    wide_spacing,
+                    self._ui_refresh_button,
                     ..., margins=margins, spacing=default_spacing
                 ),
                 QtHelper.layout_h(
@@ -195,10 +209,12 @@ class MainWindowUi(QMainWindow):
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
-            QtHelper.layout_v(...,
+            QtHelper.layout_v(
                 QtHelper.layout_h(
                     self._ui_filter_button,
-                    ..., margins=margins, spacing=default_spacing
+                    ...,
+                    QtHelper.layout_v(self._ui_toolmenu_button, ..., spacing=0),
+                    margins=margins, spacing=default_spacing
                 ),
                 QtHelper.layout_h(
                     self._ui_tabular_button,
@@ -211,6 +227,12 @@ class MainWindowUi(QMainWindow):
                     self._ui_save_image_button,
                     ..., margins=margins, spacing=default_spacing
                 ),
+                ..., margins=margins, spacing=default_spacing
+            ),
+            vline(),
+            QtHelper.layout_v(
+                self._ui_help_button,
+                self._ui_settings_button,
                 ..., margins=margins, spacing=default_spacing
             ),
             ..., margins=margins, spacing=wide_spacing
@@ -326,7 +348,7 @@ class MainWindowUi(QMainWindow):
         self._ui_plot.attach(self.on_plot_mouse_event)
         self._ui_status_bar.clicked.connect(self.on_statusbar_click)
 
-        self._build_main_menu()
+        self._build_menus()
         self._update_layout()
 
 
@@ -384,58 +406,48 @@ class MainWindowUi(QMainWindow):
         return result
 
 
-    def _build_main_menu(self):
+    def _build_menus(self):
         self._ui_mainmenu = QMenu(self)
+        self._ui_menuitem_loaddir_files = QtHelper.add_menuitem(self._ui_mainmenu, 'Open Directory...', self.on_load_dir, shortcut='Ctrl+O')
+        self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
+        self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu, 'Recent Directories', visible=False)
+        self._ui_menuitem_recent_items = []
+        self._ui_mainmenu.addSeparator()
+        self._ui_menuitem_load_expr = QtHelper.add_menuitem(self._ui_mainmenu, 'Load Expressions...', self.on_load_expressions)
+        self._ui_menuitem_save_expr = QtHelper.add_menuitem(self._ui_mainmenu, 'Save Expressions...', self.on_save_expressions)
+        self._ui_mainmenu.addSeparator()
+        self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu, 'About', self.on_about)
+        self._ui_mainmenu.addSeparator()
+        self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu, 'Exit', self.close)
         self._ui_menu_button.setMenu(self._ui_mainmenu)
         self._ui_menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        
-        self._ui_mainmenu_file = QtHelper.add_submenu(self._ui_mainmenu, '&File')
-        self._ui_menuitem_loaddir_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Directory...', self.on_load_dir, shortcut='Ctrl+O')
-        self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
-        self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu_file, 'Recent Directories', visible=False)
-        self._ui_menuitem_recent_items = []
-        self._ui_mainmenu_file.addSeparator()
-        self._ui_menuitem_save_plot_image = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Plot Image...', self.on_save_plot_image)
-        self._ui_mainmenu_file.addSeparator()
-        self._ui_menuitem_file_info = QtHelper.add_menuitem(self._ui_mainmenu_file, 'File Info', self.on_file_info, shortcut='Ctrl+I')
-        self._ui_menuitem_view_tabular = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View/Copy/Export Tabular Data', self.on_view_tabular, shortcut='Ctrl+T')
-        self._ui_menuitem_view_plain = QtHelper.add_menuitem(self._ui_mainmenu_file, 'View Plaintext Data', self.on_view_plaintext, shortcut='Ctrl+P')
-        self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Open Externally', self.on_open_externally, shortcut='Ctrl+E')
-        self._ui_mainmenu_file.addSeparator()
-        self._ui_menuitem_load_expr = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Load Expressions...', self.on_load_expressions)
-        self._ui_menuitem_save_expr = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Save Expressions...', self.on_save_expressions)
-        self._ui_mainmenu_file.addSeparator()
-        self._ui_menuitem_exit = QtHelper.add_menuitem(self._ui_mainmenu_file, 'Exit', self.close)
-        
-        self._ui_mainmenu_view = QtHelper.add_submenu(self._ui_mainmenu, '&View')
 
-        # TODO: menu items that allow to set e.g. maximum number of legend items
-        # self._line_edit = QLineEdit()
-        # self._line_edit.setPlaceholderText("Enter text here...")
-        # widget_action = QWidgetAction(self)
-        # widget_action.setDefaultWidget(QtHelper.layout_widget_h('Max:', self._line_edit))
-        # self._ui_mainmenu_view.addAction(widget_action)
+        self._ui_viewmenu = QMenu()
+        self._ui_opacity_slider = QSlider(QtCore.Qt.Orientation.Horizontal)
+        self._ui_opacity_slider.setMinimumWidth(150)
+        self._ui_opacity_slider.setMinimum(1)
+        self._ui_opacity_slider.setMaximum(99)
+        self._ui_opacity_slider.valueChanged.connect(self.on_traceopacity_changed)
+        QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
+        self._ui_viewmenu.addSeparator()
+        self._ui_max_legend_spin = QSpinBox()
+        self._ui_max_legend_spin.setMinimum(1)
+        self._ui_max_legend_spin.setMaximum(999)
+        self._ui_max_legend_spin.setMinimumWidth(50)
+        self._ui_max_legend_spin.valueChanged.connect(self.on_maxlegend_changed)
+        QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Max. Legend Items:', self._ui_max_legend_spin))
+        self._ui_menuitem_hide_single_legend = QtHelper.add_menuitem(self._ui_viewmenu, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
+        self._ui_plotmenu_button.setMenu(self._ui_viewmenu)
+        self._ui_plotmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-        self._ui_menuitem_hide_single_legend = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
-        self._ui_mainmenu_view.addSeparator()
-        self._ui_menuitem_copy_image = QtHelper.add_menuitem(self._ui_mainmenu_view, 'Copy Image to Clipboard', self.on_copy_image)
-        self._ui_menuitem_view_tabular2 = QtHelper.add_menuitem(self._ui_mainmenu_view, 'View/Copy/Export Tabular Data...', self.on_view_tabular)
+        self._ui_toolmenu = QMenu()
+        self._ui_menuitem_open_ext = QtHelper.add_menuitem(self._ui_toolmenu, 'Open Selected Files Externally', self.on_open_externally, shortcut='Ctrl+E')
+        self._ui_toolmenu.addSeparator()
+        self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_toolmenu, 'Return Loss Integrator...', self.on_rl_calc)
+        self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_toolmenu, 'Status Log', self.on_show_log, shortcut='Ctrl+L')
+        self._ui_toolmenu_button.setMenu(self._ui_toolmenu)
+        self._ui_toolmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-        self._ui_mainmenu_tools = QtHelper.add_submenu(self._ui_mainmenu, '&Tools')
-        self._ui_menuitem_rlcalc = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Return Loss Integrator...', self.on_rl_calc)
-        self._ui_mainmenu_tools.addSeparator()
-        self._ui_menuitem_log = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Status Log', self.on_show_log, shortcut='Ctrl+L')
-        self._ui_mainmenu_tools.addSeparator()
-        self._ui_menuitem_settings = QtHelper.add_menuitem(self._ui_mainmenu_tools, 'Settings...', self.on_settings, shortcut='F4')
-
-        self._ui_mainmenu_help = QtHelper.add_submenu(self._ui_mainmenu, '&Help')
-        self._ui_menuitem_help = QtHelper.add_menuitem(self._ui_mainmenu_help, 'Help', self.on_help, shortcut='F1')
-        self._ui_menuitem_about = QtHelper.add_menuitem(self._ui_mainmenu_help, 'About', self.on_about)
-
-        # self.menuBar().addMenu(self._ui_mainmenu_file)
-        # self.menuBar().addMenu(self._ui_mainmenu_view)
-        # self.menuBar().addMenu(self._ui_mainmenu_tools)
-        # self.menuBar().addMenu(self._ui_mainmenu_help)
 
     
     def _on_plottool_pan(self):
@@ -615,11 +627,28 @@ class MainWindowUi(QMainWindow):
 
 
     @property
+    def ui_smart_db(self) -> bool:
+        return self._ui_smartdb_button.isChecked()
+    @ui_smart_db.setter
+    def ui_smart_db(self, value: bool):
+        self._ui_smartdb_button.setChecked(value)
+
+
+    @property
+    def ui_show_smart_db(self) -> bool:
+        return self._ui_smartdb_button.isVisible()
+    @ui_show_smart_db.setter
+    def ui_show_smart_db(self, value: bool):
+        self._ui_smartdb_button.setVisible(value)
+
+
+    @property
     def ui_show_legend(self) -> bool:
         return self._ui_legend_button.isChecked()
     @ui_show_legend.setter
     def ui_show_legend(self, value: bool):
         self._ui_legend_button.setChecked(value)
+        self._ui_short_legend_button.setVisible(value)
 
 
     @property
@@ -628,6 +657,22 @@ class MainWindowUi(QMainWindow):
     @ui_semitrans_traces.setter
     def ui_semitrans_traces(self, value: bool):
         self._ui_semitrans_button.setChecked(value)
+
+
+    @property
+    def ui_trace_opacity(self) -> float:
+        return self._ui_opacity_slider.value()/100.0
+    @ui_trace_opacity.setter
+    def ui_trace_opacity(self, value: float):
+        self._ui_opacity_slider.setValue(round(value*100))
+
+
+    @property
+    def ui_maxlegend(self) -> int:
+        return self._ui_max_legend_spin.value()
+    @ui_maxlegend.setter
+    def ui_maxlegend(self, value: int):
+        self._ui_max_legend_spin.setValue(value)
 
 
     def ui_filesys_navigate(self, path: str):
@@ -818,6 +863,11 @@ class MainWindowUi(QMainWindow):
             self._ui_menuitem_recent_items.append(new_item)
         
         self._ui_mainmenu_recent.setEnabled(len(self._ui_menuitem_recent_items) > 0)
+    
+
+    def _on_show_legend(self):
+        self._ui_short_legend_button.setVisible(self.ui_show_legend)
+        self.on_show_legend()
 
 
     # to be implemented in derived class
@@ -868,6 +918,8 @@ class MainWindowUi(QMainWindow):
     def on_lock_yaxis(self):
         pass
     def on_lock_both_axes(self):
+        pass
+    def on_smart_db(self):
         pass
     def on_turnon_expressions(self):
         pass
@@ -922,4 +974,8 @@ class MainWindowUi(QMainWindow):
     def on_resize(self):
         pass
     def on_semitrans_changed(self):
+        pass
+    def on_traceopacity_changed(self):
+        pass
+    def on_maxlegend_changed(self):
         pass

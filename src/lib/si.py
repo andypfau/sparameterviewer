@@ -64,7 +64,7 @@ class SiFormat:
             number = '+' + number
 
         if self.remove_trailing_zeros:
-            decimal_point = locale.localeconv()['decimal_point']
+            decimal_point = '.'  # f-strings always use a point
             while decimal_point in number and number.endswith('0'):
                 number = number[:-1]
             if number.endswith(decimal_point):
@@ -319,7 +319,7 @@ class SiRange:
             else:
                 b = self.spec.parse(part_b)
             
-            if a is not None and b is not None and a > b:
+            if a != self.wildcard_value_low and b != self.wildcard_value_high and a > b:
                 self._low, self._high = b, a
             else:
                 self._low, self._high = a, b

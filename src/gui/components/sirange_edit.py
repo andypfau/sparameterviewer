@@ -23,7 +23,6 @@ class SiRangeEdit(QComboBox):
         self._require_return_press = require_return_press
         
         self.setPlaceholderText('Enter range...')
-        self.setMinimumWidth(150)
         self.setEditable(True)
         self.currentTextChanged.connect(self._on_text_change)
 

@@ -1,5 +1,5 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
-from .helpers.simple_dialogs import info_dialog
+from .helpers.simple_dialogs import okcancel_dialog
 from .helpers.help import show_help
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
@@ -123,8 +123,9 @@ class SettingsDialog(SettingsDialogUi):
 
     @staticmethod
     def ensure_external_editor_is_set(parent) -> bool:
-        if (not Settings.ext_editor_cmd) or (not pathlib.Path(Settings.ext_editor_cmd).exists()):
-            info_dialog('External Editor', f'No external editor specified. Please select one.')
+        if not Settings.ext_editor_cmd:
+            if not okcancel_dialog('External Editor', 'No external editor specified. Please select one.', informative_text='A dialog will open where you can select the binary of an external editor of your choice.'):
+                return False
             if not SettingsDialog._let_user_select_ext_editor(parent):
                 return False
         return True
