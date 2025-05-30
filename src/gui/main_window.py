@@ -271,9 +271,6 @@ class MainWindow(MainWindowUi):
             return True
         
         def as_currently_selected():
-            if len(self.generated_expressions) < 1:
-                info_dialog('Invalid operation', 'To use this template, select anything other than Expression-Based.')
-                return
             set_expression(self.generated_expressions)
 
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
@@ -1569,6 +1566,8 @@ class MainWindow(MainWindowUi):
                 code_preamble += '\tpass\n'
             code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
             code_preamble += '\n'
+            
+            self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
 
             param_selector_is_in_use = False
             if use_expressions:
@@ -1582,7 +1581,6 @@ class MainWindow(MainWindowUi):
             else:
 
                 param_selector_is_in_use = True
-                self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
 
                 try:
                     ExpressionParser.eval(code_preamble+self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
