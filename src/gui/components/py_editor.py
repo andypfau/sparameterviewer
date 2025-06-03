@@ -20,6 +20,13 @@ from typing import Callable, Optional, Union
 class PyEditor(QTextEdit):
 
 
+    COLOR_BG = '#fff'
+    COLOR_BG_INACTIVE = '#ddd'
+    COLOR_TEXT = '#000'
+    COLOR_TEXT_INACTIVE = '#222'
+    COLOR_TEXT_COMMENT = '#585'
+
+
     class PythonSyntaxHighlighter(QSyntaxHighlighter):
 
         def highlightBlock(self, line: str):  # overloaded from QSyntaxHighlighter
@@ -51,7 +58,7 @@ class PyEditor(QTextEdit):
             if '#' in line:
                start = line.index('#')
                length = len(line) - start
-               format(start, length, color='gray', italic=True)
+               format(start, length, color=PyEditor.COLOR_TEXT_COMMENT, italic=True)
 
 
     def __init__(self, parent = None):
@@ -60,6 +67,23 @@ class PyEditor(QTextEdit):
         self.document().setDefaultFont(QtHelper.make_font(family=QtHelper.get_monospace_font()))
         self.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self._ui_highlighter = PyEditor.PythonSyntaxHighlighter(self.document())
+        self._inactive = False
+
+        self._update_color_scheme()
+    
+
+    def inactive(self) -> bool:
+        return self._inactive
+    def setInactive(self, inactive: bool):
+        self._inactive = inactive
+        self._update_color_scheme()
+    
+
+    def _update_color_scheme(self):
+        self.setStyleSheet(f'''
+            color: {PyEditor.COLOR_TEXT_INACTIVE if self._inactive else PyEditor.COLOR_TEXT};
+            background-color: {PyEditor.COLOR_BG_INACTIVE if self._inactive else PyEditor.COLOR_BG};
+        ''')
 
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):  # overloaded from QTextEdit

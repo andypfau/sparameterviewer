@@ -160,6 +160,7 @@ class MainWindowUi(QMainWindow):
         self._ui_color_combo = QComboBox()
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
         margins, default_spacing, wide_spacing = 0, 2, 6
+        self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing)
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
@@ -202,10 +203,7 @@ class MainWindowUi(QMainWindow):
                     self._ui_refresh_button,
                     ..., margins=margins, spacing=default_spacing
                 ),
-                QtHelper.layout_h(
-                    'Color', self._ui_color_combo,
-                    ...,spacing=default_spacing
-                ),
+                self._ui_colors_layout,
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
@@ -256,8 +254,6 @@ class MainWindowUi(QMainWindow):
         
         self._ui_expressions_tab = QWidget()
         self._ui_tabs.addTab(self._ui_expressions_tab, 'Expressions')
-        self._ui_turnonexpr_button = QPushButton('Enable')
-        self._ui_turnonexpr_button.clicked.connect(self.on_turnon_expressions)
         self._ui_update_button = QPushButton('Update (F5)')
         self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
@@ -268,7 +264,6 @@ class MainWindowUi(QMainWindow):
         self._ui_editor = PyEditor()
         self._ui_expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
-                self._ui_turnonexpr_button,
                 self._ui_update_button,
                 self._ui_template_button,
                 5,
@@ -296,12 +291,12 @@ class MainWindowUi(QMainWindow):
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
-        self._ui_cursor_edit_x1 = SiValueEdit(require_return_press=True)
+        self._ui_cursor_edit_x1 = SiValueEdit()
         self._ui_cursor_edit_x1.setReadOnly(True)
         self._ui_cursor_edit_x1.valueChanged.connect(self.on_cursor_x1_changed)
         self._ui_cursor_readout_y1 = QLineEdit()
         self._ui_cursor_readout_y1.setReadOnly(True)
-        self._ui_cursor_edit_x2 = SiValueEdit(require_return_press=True)
+        self._ui_cursor_edit_x2 = SiValueEdit()
         self._ui_cursor_edit_x2.setReadOnly(True)
         self._ui_cursor_edit_x2.valueChanged.connect(self.on_cursor_x2_changed)
         self._ui_cursor_readout_y2 = QLineEdit()
@@ -523,11 +518,8 @@ class MainWindowUi(QMainWindow):
 
     
     def ui_enable_expressions(self, enable: bool):
-        self._ui_turnonexpr_button.setVisible(not enable)
-        self._ui_update_button.setEnabled(enable)
-        self._ui_template_button.setEnabled(enable)
-        self._ui_help_button.setEnabled(enable)
-        self._ui_editor.setEnabled(enable)
+        self._ui_update_button.setText('Update (F5)' if enable else 'Turn On\nExpressions\n(F5)')
+        self._ui_editor.setInactive(not enable)
 
 
     
@@ -639,6 +631,14 @@ class MainWindowUi(QMainWindow):
     @ui_smart_db.setter
     def ui_smart_db(self, value: bool):
         self._ui_smartdb_button.setChecked(value)
+
+
+    @property
+    def ui_show_trace_color_selector(self) -> bool:
+        return self._ui_colors_layout.isVisible()
+    @ui_show_trace_color_selector.setter
+    def ui_show_trace_color_selector(self, value: bool):
+        self._ui_colors_layout.setVisible(value)
 
 
     @property

@@ -13,3 +13,4 @@ from .stabcircle import StabilityCircle
 from .shortstr import remove_common_prefixes, remove_common_suffixes, remove_common_prefixes_and_suffixes
 from .clipboard import Clipboard
 from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout
+from .lock import Lock

@@ -72,6 +72,9 @@ class SettingsDialogUi(QDialog):
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
         self._ui_logxneg_combo = QComboBox()
         self._ui_logyneg_combo = QComboBox()
+        self._ui_singletracecolor_check = QCheckBox('Individual Trace Colors When Single File Selected')
+        self._ui_singletracecolor_check.setToolTip('When this option is enabled, the trace colors are set to individual colors when only one single file is selected.')
+        self._ui_singletracecolor_check.toggled.connect(self.on_singletracecolor_changed)
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -81,6 +84,7 @@ class SettingsDialogUi(QDialog):
                     ]), ...
                 ),
                 self._ui_allcomplex_check,
+                self._ui_singletracecolor_check,
                 ...
             )
         )
@@ -166,6 +170,14 @@ class SettingsDialogUi(QDialog):
     @ui_simplified_plot.setter
     def ui_simplified_plot(self, value: bool):
         self._ui_simple_plot_check.setChecked(value)
+
+    
+    @property
+    def ui_singletrace_individualcolor(self) -> bool:
+        return self._ui_singletracecolor_check.isChecked()
+    @ui_singletrace_individualcolor.setter
+    def ui_singletrace_individualcolor(self, value: bool):
+        self._ui_singletracecolor_check.setChecked(value)
 
     
     @property
@@ -405,4 +417,6 @@ class SettingsDialogUi(QDialog):
     def on_simple_browser_changed(self):
         pass
     def on_mainwinlayout_changed(self):
+        pass
+    def on_singletracecolor_changed(self):
         pass

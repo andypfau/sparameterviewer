@@ -73,6 +73,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_plotstyle = Settings.plot_style
             self.ui_font = Settings.editor_font
             self.ui_all_complex = Settings.treat_all_as_complex
+            self.ui_singletrace_individualcolor = Settings.singlefile_individualcolor
             self.ui_verbose = Settings.verbose
             self.ui_mainwin_layout = SettingsDialog.MAINWINLAYOUT_NAMES[Settings.mainwindow_layout]
             self.ui_simplified_plot = Settings.simplified_plot_sel
@@ -220,3 +221,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_simple_browser_changed(self):
         Settings.simplified_browser = self.ui_simplified_browser
+
+
+    def on_singletracecolor_changed(self):
+        Settings.singlefile_individualcolor = self.ui_singletrace_individualcolor

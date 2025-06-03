@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
-from lib import AppPaths
-from lib import SiFormat, SiRange
+from lib import AppPaths, SiFormat, SiRange, Lock
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -18,9 +17,9 @@ class SiRangeEdit(QComboBox):
 
     rangeChanged = pyqtSignal()
 
-    def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[any,any]], require_return_press: bool = False):
+    def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[any,any]]):
         super().__init__(parent)
-        self._require_return_press = require_return_press
+        self._event_lock = Lock(initially_locked=True)
         
         self.setPlaceholderText('Enter range...')
         self.setEditable(True)
@@ -38,6 +37,8 @@ class SiRangeEdit(QComboBox):
             self.setCurrentText(preset_texts[0])
         else:
             self._update_text_from_value()
+        
+        self._event_lock.force_unlock()
     
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):
@@ -55,18 +56,9 @@ class SiRangeEdit(QComboBox):
     
 
     def _update_text_from_value(self):
-        self.setCurrentText(self._range.format())
-        QtHelper.indicate_error(self, False)
-
-
-    def requireReturnPress(self) -> bool:
-        return self._require_return_press
-    def setRequireReturnPress(self, value: bool):
-        self._require_return_press = value
-        if self._require_return_press:
-            self.setPlaceholderText('Enter value, press return...')
-        else:
-            self.setPlaceholderText('Enter value...')
+        with self._event_lock:
+            self.setCurrentText(self._range.format())
+            QtHelper.indicate_error(self, False)
             
     
     def range(self) -> SiRange:
@@ -74,47 +66,35 @@ class SiRangeEdit(QComboBox):
     def setRange(self, value: SiRange):
         self._range = value
         self._range.attach(self._on_range_changed_externally)
+        if self.hasFocus():
+            return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()
 
     
     def _on_escape_pressed(self):
         self._update_text_from_value()
-        QtHelper.indicate_error(self, False)
 
     
     def _on_return_pressed(self):
-        try:
-            if self._require_return_press:
-                old_low, old_high = self._range.low, self._range.high
-                self._range.parse(self.currentText())
-                QtHelper.indicate_error(self, False)
-                if self._range.low == old_low and self._range.high == old_high:
-                    return
-                self.rangeChanged.emit()
-            else:
-                # was already parsed when text was changed
-                self._update_text_from_value()
-        except:
-            QtHelper.indicate_error(self, True)
+        # was already parsed when text was changed
+        self._update_text_from_value()
         self.lineEdit().selectAll()
 
     
     def _on_text_change(self):
         try:
-            if self._require_return_press:
-                # just parse it, so that the error indicator gets updated
-                self._range.copy().parse(self.currentText())
-                QtHelper.indicate_error(self, False)
-            else:
-                old_low, old_high = self._range.low, self._range.high
-                self._range.parse(self.currentText())
-                QtHelper.indicate_error(self, False)
-                if self._range.low == old_low and self._range.high == old_high:
-                    return
+            old_low, old_high = self._range.low, self._range.high
+            self._range.parse(self.currentText())
+            QtHelper.indicate_error(self, False)
+            if self._range.low == old_low and self._range.high == old_high:
+                return
+            if not self._event_lock.locked:
                 self.rangeChanged.emit()
         except:
             QtHelper.indicate_error(self, True)
 
 
     def _on_range_changed_externally(self, *args, **kwargs):
+        if self.hasFocus():
+            return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()

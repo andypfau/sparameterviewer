@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b4 (2025-06-03)
+-------------------
+
+- change: various UI tweaks and fixes
+
+
 0.40b3 (2025-05-28)
 -------------------
 

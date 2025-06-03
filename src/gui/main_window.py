@@ -874,34 +874,35 @@ class MainWindow(MainWindowUi):
 
     
     def on_xaxis_range_change(self):
+        self.ui_smart_db = False
+        self._smartscale_set_y = False
         self.schedule_plot_update()
 
 
     def on_yaxis_range_change(self):
+        self.ui_smart_db = False
+        self._smartscale_set_y = False
         self.schedule_plot_update()
 
 
     def on_update_plot(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
-        if self.ui_tab == MainWindowUi.Tab.Expressions:
+        if self.ui_tab == MainWindowUi.Tab.Expressions and not Settings.simplified_no_expressions:
             self.ui_param_selector.setUseExpressions(True)
-        self.schedule_plot_update()
-
-    
-    def on_turnon_expressions(self):
-        if Settings.simplified_no_expressions:
-            return
-        Settings.use_expressions = True
-        self.ui_param_selector.setUseExpressions(True)
-        self.ui_enable_expressions(True)
+            Settings.use_expressions = True
+            self.ui_enable_expressions(True)
         self.schedule_plot_update()
 
 
     def on_update_expressions(self):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             return
+        if Settings.simplified_no_expressions:
+            return
         self.ui_param_selector.setUseExpressions(True)
+        Settings.use_expressions = True
+        self.ui_enable_expressions(True)
         self.schedule_plot_update()
 
     
@@ -918,12 +919,12 @@ class MainWindow(MainWindowUi):
         self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
         self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
         self.ui_show_expressions(not Settings.simplified_no_expressions)
-        self.ui_enable_expressions(self.ui_param_selector.useExpressions())
+        self.ui_enable_expressions(Settings.use_expressions)
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
-                'plot_mark_points','color_assignment','treat_all_as_complex'), attributes):
+                'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor'), attributes):
             self.schedule_plot_update()
     
     
@@ -1418,8 +1419,86 @@ class MainWindow(MainWindowUi):
             next_color_index = 0
             color_mapping = {}
             
+            all_plot_kwargs = []
+            def add_to_plot_list(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
+                nonlocal all_plot_kwargs
+                all_plot_kwargs.append(dict(f=f, sp=sp, z0=z0, name=name, style=style, color=color, width=width, opacity=opacity, original_file=original_file, param_kind=param_kind))
+                    
+            selected_files = self.get_selected_files()
+
+            selnws_expression_list = []
+            plot_args = []
+            if self.ui_semitrans_traces:
+                plot_args.append(f'opacity={Settings.plot_semitransparent_opacity}')
+            if params == Parameters.Custom:
+
+                for i in range(params_mask.shape[0]):
+                    for j in range(params_mask.shape[1]):
+                        if params_mask[i,j]:
+                            selnws_expression_list.append(f's({i+1},{j+1}).plot({",".join(plot_args)})')
+
+            else:
+                any_il = params & Parameters.S21 or params & Parameters.S12
+                any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
+                plot_args_il, plot_args_rl = [*plot_args], [*plot_args]
+                if any_il and any_rl:
+                    plot_args_il.append('style="-"')
+                    plot_args_rl.append('style="--"')
+                plot_args_il_str, plot_args_rl_str = ', '.join(plot_args_il), ', '.join(plot_args_rl)
+
+                if params & Parameters.S21 and params & Parameters.S12:
+                    selnws_expression_list.append(f's(il_only=True).plot({plot_args_il_str})')
+                elif params & Parameters.S21:
+                    selnws_expression_list.append(f's(fwd_il_only=True).plot({plot_args_il_str})')
+                elif params & Parameters.S12:
+                    selnws_expression_list.append(f's(rev_il_only=True).plot({plot_args_il_str})')
+            
+                if params & Parameters.Sii:
+                    selnws_expression_list.append(f's(rl_only=True).plot({plot_args_rl_str})')
+                elif params & Parameters.S11:
+                    selnws_expression_list.append(f's(11).plot({plot_args_rl_str})')
+                elif params & Parameters.S22:
+                    selnws_expression_list.append(f's(22).plot({plot_args_rl_str})')
+        
+            code_preamble = 'def _plot_sel_params_handler(nws: "Networks"):\n'
+            if len(selnws_expression_list) > 0:
+                code_preamble += '\n'.join([f'\tnws.{expr}' for expr in selnws_expression_list]) + '\n'
+            else:
+                code_preamble += '\tpass\n'
+            code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
+            code_preamble += '\n'
+            
+            self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
+
+            param_selector_is_in_use = False
+            if use_expressions:
+
+                raw_exprs = self.ui_expression
+                Settings.expression = raw_exprs
+
+                result = ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot_list)  
+                param_selector_is_in_use = result.plot_sel_params_handler_used
+
+            else:
+
+                param_selector_is_in_use = True
+
+                try:
+                    ExpressionParser.eval(code_preamble+self.generated_expressions, self.files.values(), selected_files, add_to_plot_list)  
+                except Exception as ex:
+                    logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
+                    self.ui_plot.clear()
+
+            singlefile_colorizing = False
+            if Settings.singlefile_individualcolor:
+                n_individual_files = len(set([kwargs['original_file'] for kwargs in all_plot_kwargs]))
+                if n_individual_files <= 1:
+                    singlefile_colorizing = True
+            color_assignment = ColorAssignment.Default if singlefile_colorizing else Settings.color_assignment
+            self.ui_show_trace_color_selector = not singlefile_colorizing
+
             def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
-                nonlocal available_colors, next_color_index, color_mapping
+                nonlocal color_assignment, available_colors, next_color_index, color_mapping
 
                 if np.all(np.isnan(sp)):
                     return
@@ -1445,7 +1524,7 @@ class MainWindow(MainWindowUi):
 
                 if not color:  # assign a color
                     key: any|None = None
-                    match Settings.color_assignment:
+                    match color_assignment:
                         case ColorAssignment.Default:
                             pass
                         case ColorAssignment.ByParam:
@@ -1522,71 +1601,9 @@ class MainWindow(MainWindowUi):
                         if Settings.verbose:
                             logging.info(f'The trace "{name}" is real-valued; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
                         self.plot.add(f, sp, None, name, style, **kwargs)
-                    
-            selected_files = self.get_selected_files()
 
-            selnws_expression_list = []
-            plot_args = []
-            if self.ui_semitrans_traces:
-                plot_args.append(f'opacity={Settings.plot_semitransparent_opacity}')
-            if params == Parameters.Custom:
-
-                for i in range(params_mask.shape[0]):
-                    for j in range(params_mask.shape[1]):
-                        if params_mask[i,j]:
-                            selnws_expression_list.append(f's({i+1},{j+1}).plot({",".join(plot_args)})')
-
-            else:
-                any_il = params & Parameters.S21 or params & Parameters.S12
-                any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
-                plot_args_il, plot_args_rl = [*plot_args], [*plot_args]
-                if any_il and any_rl:
-                    plot_args_il.append('style="-"')
-                    plot_args_rl.append('style="--"')
-                plot_args_il_str, plot_args_rl_str = ', '.join(plot_args_il), ', '.join(plot_args_rl)
-
-                if params & Parameters.S21 and params & Parameters.S12:
-                    selnws_expression_list.append(f's(il_only=True).plot({plot_args_il_str})')
-                elif params & Parameters.S21:
-                    selnws_expression_list.append(f's(fwd_il_only=True).plot({plot_args_il_str})')
-                elif params & Parameters.S12:
-                    selnws_expression_list.append(f's(rev_il_only=True).plot({plot_args_il_str})')
-            
-                if params & Parameters.Sii:
-                    selnws_expression_list.append(f's(rl_only=True).plot({plot_args_rl_str})')
-                elif params & Parameters.S11:
-                    selnws_expression_list.append(f's(11).plot({plot_args_rl_str})')
-                elif params & Parameters.S22:
-                    selnws_expression_list.append(f's(22).plot({plot_args_rl_str})')
-        
-            code_preamble = 'def _plot_sel_params_handler(nws: "Networks"):\n'
-            if len(selnws_expression_list) > 0:
-                code_preamble += '\n'.join([f'\tnws.{expr}' for expr in selnws_expression_list]) + '\n'
-            else:
-                code_preamble += '\tpass\n'
-            code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
-            code_preamble += '\n'
-            
-            self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
-
-            param_selector_is_in_use = False
-            if use_expressions:
-
-                raw_exprs = self.ui_expression
-                Settings.expression = raw_exprs
-
-                result = ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot)  
-                param_selector_is_in_use = result.plot_sel_params_handler_used
-
-            else:
-
-                param_selector_is_in_use = True
-
-                try:
-                    ExpressionParser.eval(code_preamble+self.generated_expressions, self.files.values(), selected_files, add_to_plot)  
-                except Exception as ex:
-                    logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
-                    self.ui_plot.clear()
+            for kwargs in all_plot_kwargs:
+                add_to_plot(**kwargs)
             
             self.ui_param_selector.setDimParameters(not param_selector_is_in_use)
 

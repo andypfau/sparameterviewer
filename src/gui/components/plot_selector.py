@@ -178,7 +178,7 @@ class PlotSelector(QWidget):
             self._ui_td_minsize_combo.addItem(name)
         self._ui_td_minsize_combo.currentTextChanged.connect(self._on_change_td_minsize)
         self._ui_td_minsize_menuwidget = self._ui_td_minsize_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Min. Size:', self._ui_td_minsize_combo, ...))
-        self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'), require_return_press=True)
+        self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'))
         self._ui_td_shift_text.valueChanged.connect(self._on_change_td_shift)
         self._ui_td_shift_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Shift:', self._ui_td_shift_text, ...))
         self._ui_tdz_menuitem = QtHelper.add_menuitem(self._menu, 'Convert to Impedance', self._on_change_td_z, checkable=True)

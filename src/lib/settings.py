@@ -119,6 +119,7 @@ class SParamViewerAppSettings(AppSettings):
     cursor_snap: CursorSnap = CursorSnap.Point
     warn_timeout_s: int = 10
     color_assignment: ColorAssignment = ColorAssignment.ByFile
+    singlefile_individualcolor: bool = False
     mainwindow_layout: MainWindowLayout = MainWindowLayout.Wide
     treat_all_as_complex: bool = False
     verbose: bool = False
