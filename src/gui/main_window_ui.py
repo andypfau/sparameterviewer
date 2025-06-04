@@ -148,16 +148,19 @@ class MainWindowUi(QMainWindow):
         self._ui_plotmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
         self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)')
         self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(0,10e9)])
+        self._ui_xaxis_range.setToolTip('Set X-axis range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.')
         self._ui_xaxis_range.setMinimumWidth(120)
         self._ui_xaxis_range.setMaximumWidth(120)
         self._ui_xaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_xaxis_range.rangeChanged.connect(self.on_xaxis_range_change)
         self._ui_yaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(-25,+3),(-25,+25),(-50,+3),(-100,+3)])
+        self._ui_yaxis_range.setToolTip('Set Y-axis range, e.g. "-20..5" for -20 to +5 dB, or "*" for auto-scale.')
         self._ui_yaxis_range.setMinimumWidth(120)
         self._ui_yaxis_range.setMaximumWidth(120)
         self._ui_yaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_yaxis_range.rangeChanged.connect(self.on_yaxis_range_change)
         self._ui_color_combo = QComboBox()
+        self._ui_color_combo.setToolTip('Select how trace colors are assigned.')
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
         margins, default_spacing, wide_spacing = 0, 2, 6
         self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing)
@@ -346,6 +349,7 @@ class MainWindowUi(QMainWindow):
         self._build_menus()
         self._update_layout()
         self._update_enabled()
+        self.ui_enable_expressions(True)
 
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):  # overloaded from QTextEdit
@@ -518,6 +522,27 @@ class MainWindowUi(QMainWindow):
 
     
     def ui_enable_expressions(self, enable: bool):
+        if not self._show_expressions:
+            return
+        
+        def make_icon(enable: bool) -> QIcon:
+            SIZE = 16
+            palette = QPalette()
+            if enable:
+                pixmap = QPixmap(SIZE, SIZE)
+            else:
+                pixmap = QPixmap(1, 1)
+            pixmap.fill(QColorConstants.Transparent)
+            if enable:
+                painter = QPainter(pixmap)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                painter.setPen(QColorConstants.Transparent)
+                painter.setBrush(palette.color(QPalette.ColorRole.Highlight))
+                painter.drawEllipse(0, 0, SIZE, SIZE)
+                painter.end()
+            return QIcon(pixmap)
+
+        self._ui_tabs.setTabIcon(1, make_icon(enable))
         self._ui_update_button.setText('Update (F5)' if enable else 'Turn On\nExpressions\n(F5)')
         self._ui_editor.setInactive(not enable)
 

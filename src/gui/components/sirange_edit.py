@@ -20,6 +20,7 @@ class SiRangeEdit(QComboBox):
     def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[any,any]]):
         super().__init__(parent)
         self._event_lock = Lock(initially_locked=True)
+        self._edit_in_progress = False
         
         self.setPlaceholderText('Enter range...')
         self.setEditable(True)
@@ -42,6 +43,7 @@ class SiRangeEdit(QComboBox):
     
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):
+        self._edit_in_progress = True
         if event:
             if event.key() == Qt.Key.Key_Escape:
                 self._on_escape_pressed()
@@ -51,6 +53,7 @@ class SiRangeEdit(QComboBox):
 
     
     def focusOutEvent(self, event: QtGui.QFocusEvent|None):
+        self._edit_in_progress = False
         self._update_text_from_value()
         return super().focusOutEvent(event)
     
@@ -66,17 +69,19 @@ class SiRangeEdit(QComboBox):
     def setRange(self, value: SiRange):
         self._range = value
         self._range.attach(self._on_range_changed_externally)
-        if self.hasFocus():
+        if self.hasFocus() and self._edit_in_progress:
             return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()
 
     
     def _on_escape_pressed(self):
+        self._edit_in_progress = False
         self._update_text_from_value()
 
     
     def _on_return_pressed(self):
         # was already parsed when text was changed
+        self._edit_in_progress = False
         self._update_text_from_value()
         self.lineEdit().selectAll()
 
@@ -95,6 +100,6 @@ class SiRangeEdit(QComboBox):
 
 
     def _on_range_changed_externally(self, *args, **kwargs):
-        if self.hasFocus():
+        if self.hasFocus() and self._edit_in_progress:
             return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()

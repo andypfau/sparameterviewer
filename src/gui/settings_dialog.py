@@ -1,6 +1,5 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
 from .helpers.simple_dialogs import okcancel_dialog
-from .helpers.help import show_help
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
@@ -160,10 +159,6 @@ class SettingsDialog(SettingsDialogUi):
         if is_valid or (not was_valid):
             Settings.ext_editor_cmd = self.ui_ext_ed
         self.ui_indicate_ext_ed_error(not is_valid)
-
-
-    def on_help(self):
-        show_help('settings.md')
 
 
     def on_plotstyle_change(self):

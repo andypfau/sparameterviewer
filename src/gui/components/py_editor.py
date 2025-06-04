@@ -12,7 +12,7 @@ import logging
 import os
 import re
 import numpy as np
-import tokenize
+import tokenize, token
 from typing import Callable, Optional, Union
 
 
@@ -20,18 +20,23 @@ from typing import Callable, Optional, Union
 class PyEditor(QTextEdit):
 
 
-    COLOR_BG = '#fff'
-    COLOR_BG_INACTIVE = '#ddd'
-    COLOR_TEXT = '#000'
-    COLOR_TEXT_INACTIVE = '#222'
-    COLOR_TEXT_COMMENT = '#585'
+    COLOR_BG = QColorConstants.White
+    COLOR_BG_INACTIVE = QColorConstants.LightGray
+    COLOR_TEXT = QColorConstants.Black
+    COLOR_TEXT_INACTIVE = QColorConstants.DarkGray
+    COLOR_TEXT_COMMENT = QColorConstants.Gray
+    COLOR_TEXT_NUMBER = QColorConstants.DarkRed
+    COLOR_TEXT_OPERATOR = QColorConstants.DarkCyan
+    COLOR_TEXT_NAME = QColorConstants.DarkBlue
+    COLOR_TEXT_STR = QColorConstants.Blue
+    COLOR_TEXT_ERROR = QColorConstants.Red
 
 
     class PythonSyntaxHighlighter(QSyntaxHighlighter):
 
         def highlightBlock(self, line: str):  # overloaded from QSyntaxHighlighter
             
-            def format(start, length, *, color: str = None, bold: bool = False, italic: bool = False):
+            def format(start, length, *, color: QColor|str = None, bold: bool = False, italic: bool = False, underline: bool = False):
                 nonlocal self
                 format = QTextCharFormat()
                 if color:
@@ -40,25 +45,35 @@ class PyEditor(QTextEdit):
                     format.setFontWeight(QFont.Weight.Bold)
                 if italic:
                     format.setFontItalic(True)
+                if underline:
+                    format.setFontUnderline(True)
                 self.setFormat(start, length, format)
             
-            # try:
-            #     _line_was_read = False
-            #     def _readline() -> bytes:
-            #         nonlocal _line_was_read
-            #         if _line_was_read:
-            #             return ''
-            #         _line_was_read = True
-            #         return line + '\n'
-            #     for token in tokenize.generate_tokens(_readline):
-            #         print(token)
-            # except Exception as ex:
-            #     return
+            try:
+                lines = list(line.splitlines())
+                def readline() -> bytes:
+                    nonlocal lines
+                    if len(lines) < 1:
+                        return ''
+                    line, lines = lines[0], lines[1:]
+                    return line + '\n'
+                
+                for t in tokenize.generate_tokens(readline):
+                    start, end = t.start[1], t.end[1]
+                    length = end - start
+                    if t.type==token.COMMENT:
+                        format(start, length, color=PyEditor.COLOR_TEXT_COMMENT, italic=True)
+                    elif t.type==token.NAME:
+                        format(start, length, color=PyEditor.COLOR_TEXT_NAME)
+                    elif t.type==token.NUMBER:
+                        format(start, length, color=PyEditor.COLOR_TEXT_NUMBER)
+                    elif t.type==token.OP:
+                        format(start, length, color=PyEditor.COLOR_TEXT_OPERATOR)
+                    elif t.type==token.STRING:
+                        format(start, length, color=PyEditor.COLOR_TEXT_STR)
 
-            if '#' in line:
-               start = line.index('#')
-               length = len(line) - start
-               format(start, length, color=PyEditor.COLOR_TEXT_COMMENT, italic=True)
+            except Exception as ex:
+                format(0, len(line), color=PyEditor.COLOR_TEXT_ERROR)
 
 
     def __init__(self, parent = None):
@@ -81,44 +96,23 @@ class PyEditor(QTextEdit):
 
     def _update_color_scheme(self):
         self.setStyleSheet(f'''
-            color: {PyEditor.COLOR_TEXT_INACTIVE if self._inactive else PyEditor.COLOR_TEXT};
-            background-color: {PyEditor.COLOR_BG_INACTIVE if self._inactive else PyEditor.COLOR_BG};
+            QTextEdit {{
+                color: {PyEditor.COLOR_TEXT_INACTIVE.name() if self._inactive else PyEditor.COLOR_TEXT.name()};
+                background-color: {PyEditor.COLOR_BG_INACTIVE.name() if self._inactive else PyEditor.COLOR_BG.name()};
+            }}
         ''')
 
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):  # overloaded from QTextEdit
-        super().keyPressEvent(event)
         
-        HASH_KEY = Qt.Key.Key_Backslash  # works on my German keyboard, don't understand why
-        if event.key()==HASH_KEY and event.modifiers()==QtCore.Qt.KeyboardModifier.ControlModifier:
+        # CTR+# is reported as CTRL+\ works on German keyboard layout, don't understand why
+        if event.key() in (Qt.Key.Key_Backslash,Qt.Key.Key_NumberSign) and event.modifiers()==QtCore.Qt.KeyboardModifier.ControlModifier:
             self._on_toggle_comment()
+        
+        super().keyPressEvent(event)
 
 
     def _on_toggle_comment(self):
-
-        cursor = self.textCursor()
-
-        def get_sel_range() -> tuple[int,int,int,int]:
-            nonlocal cursor
-            sel_start, sel_end = cursor.selectionStart(), cursor.selectionEnd()
-            cursor.setPosition(sel_start)
-            first_line = cursor.blockNumber()
-            cursor.setPosition(sel_end)
-            last_line = cursor.blockNumber()
-            return first_line, last_line
-
-        def set_text_and_selection(lines: list[str], first_line: int, last_line: int):
-            nonlocal cursor
-            
-            text = '\n'.join(lines)
-            self.setText(text)
-            
-            start_pos = sum(len(line)+1 for line in lines[:first_line])
-            end_pos = sum(len(line)+1 for line in lines[:last_line+1])-1
-            cursor.setPosition(start_pos)
-            cursor.setPosition(end_pos, QTextCursor.MoveMode.KeepAnchor)
-            self.setTextCursor(cursor)
-
 
         def strip_start(s: str, chars: str = None) -> str:
             if chars:
@@ -130,20 +124,40 @@ class PyEditor(QTextEdit):
                     s = s[len(m.group()):]
             return s
 
+        def toggle_comments(s: str) -> str:
+            lines = s.splitlines()
+            n_comments = len([line for line in lines if strip_start(line).startswith('#')])
+            do_comment = n_comments < len(lines) / 2.0
+            for i,line in enumerate(lines):
+                is_commented = strip_start(line).startswith('#')
+                if do_comment:
+                    if not is_commented:  # make comment
+                        lines[i] = '# ' + strip_start(line)
+                else:
+                    if is_commented:  # un-comment
+                        lines[i] = strip_start(strip_start(strip_start(line), '#'))
+            return '\n'.join(lines)
 
-        first_line, last_line = get_sel_range()
-        n_lines = last_line - first_line + 1
+        cursor = self.textCursor()
+        cursor.beginEditBlock()  # ensures undo-history is preserved
+
+        # select whole lines
+        sel_start, sel_end = cursor.selectionStart(), cursor.selectionEnd()
+        cursor.setPosition(sel_start)
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        block_start = cursor.selectionStart()
+        cursor.setPosition(sel_end, QTextCursor.MoveMode.KeepAnchor)
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+
+        sel_text = cursor.selectedText()
+        new_sel_text = toggle_comments(sel_text)
         
-        lines = self.toPlainText().splitlines()
-        n_comments = len([i for i in range(first_line,last_line+1) if strip_start(lines[i]).startswith('#')])
-        do_comment = n_comments < n_lines // 2
-        for i in range(first_line,last_line+1):
-            is_commented = strip_start(lines[i]).startswith('#')
-            if do_comment:
-                if not is_commented:  # make comment
-                    lines[i] = '# ' + strip_start(lines[i])
-            else:
-                if is_commented:  # un-comment
-                    lines[i] = strip_start(strip_start(strip_start(lines[i]), '#'))
+        cursor.removeSelectedText()
+        cursor.insertText(new_sel_text)
 
-        set_text_and_selection(lines, first_line, last_line)
+        # select new whole lines
+        cursor.setPosition(block_start)
+        cursor.setPosition(block_start + len(new_sel_text), QTextCursor.MoveMode.KeepAnchor)
+
+        cursor.endEditBlock()  # ensures undo-history is preserved
+        self.setTextCursor(cursor)

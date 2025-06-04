@@ -131,7 +131,9 @@ class MainWindow(MainWindowUi):
     def apply_settings_to_ui(self):
         def load_settings():
             try:
+                self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
                 self.ui_param_selector.setParams(Settings.plotted_params)
+                self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
                 self.ui_param_selector.setUseExpressions(Settings.use_expressions)
                 self.ui_plot_selector.setPlotType(Settings.plot_type)
                 self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
@@ -146,8 +148,6 @@ class MainWindow(MainWindowUi):
                 self.ui_plot_selector.setTdShift(Settings.tdr_shift)
                 self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
                 self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
-                self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
-                self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
                 self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
                 self.ui_enable_expressions(Settings.use_expressions)
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
@@ -1632,23 +1632,25 @@ class MainWindow(MainWindowUi):
                     bottom = min(bottom, np.min(plot.data.y.values))
                 if top >= base and base >= bottom:
                     full_range = top - bottom
-                    if full_range < MIN_RANGE_DB:  # show the whole range
-                        y0, y1 = bottom-SMALL_MARGINS_FACTOR*full_range, top+SMALL_MARGINS_FACTOR*full_range
+                    if full_range < MIN_RANGE_DB:  # range is so small that we can keep autorange
+                        if self._smartscale_set_y:
+                            (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
+                            self.plot.plot.set_ylim((None, None))
+                        self._smartscale_set_y = False
                     else:  # focus non the top part
                         y0, y1 = base-LARGE_MARGINS_DB, top+LARGE_MARGINS_DB
                         if top < 0:
                             base_range, distance_to_zero = top-base, -top
                             if base_range > distance_to_zero*ZERO_EXTENSION_FACTOR:  # include 0 dB
                                 y0, y1 = base-LARGE_MARGINS_DB, +LARGE_MARGINS_DB
-                    (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (y0, y1)
-                    self.plot.plot.set_ylim((y0, y1))
-                    self._smartscale_set_y = True
+                        (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (math.floor(y0), math.ceil(y1))
+                        self.plot.plot.set_ylim((y0, y1))
+                        self._smartscale_set_y = True
             else:
                 if self._smartscale_set_y:
                     (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
                     self.plot.plot.set_ylim((None, None))
                 self._smartscale_set_y = False
-
 
             self.ui_plot.draw()
 

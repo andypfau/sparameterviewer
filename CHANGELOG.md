@@ -2,6 +2,15 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b5 (2025-06-04)
+-------------------
+
+- change: better syntax highlighting, better comment function in text editor
+- change: highlight of expressions tab when active
+- new: tooltips in settings dialog
+- bugfix: better input handling of text boxes
+
+
 0.40b4 (2025-06-03)
 -------------------
 

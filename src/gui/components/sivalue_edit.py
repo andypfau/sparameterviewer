@@ -23,6 +23,7 @@ class SiValueEdit(QLineEdit):
         self._value: SiValue = si or SiValue(0)
         self._blank = False
         self._event_lock = Lock(initially_locked=True)
+        self._edit_in_progress = False
         
         self.setPlaceholderText('Enter value...')
         
@@ -35,6 +36,7 @@ class SiValueEdit(QLineEdit):
     
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):
+        self._edit_in_progress = True
         if event:
             if event.key() == Qt.Key.Key_Escape:
                 self._on_escape_pressed()
@@ -44,6 +46,7 @@ class SiValueEdit(QLineEdit):
 
     
     def focusOutEvent(self, event: QtGui.QFocusEvent|None):
+        self._edit_in_progress = False
         self._update_text_from_value()
         return super().focusOutEvent(event)
     
@@ -61,7 +64,7 @@ class SiValueEdit(QLineEdit):
         return self._blank
     def setBlank(self, value: bool):
         self._blank = value
-        if self.hasFocus():
+        if self.hasFocus() and self._edit_in_progress:
             return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()
 
@@ -71,17 +74,19 @@ class SiValueEdit(QLineEdit):
     def setValue(self, value: SiValue):
         self._value = value
         self._value.attach(self._on_value_changed_externally)
-        if self.hasFocus():
+        if self.hasFocus() and self._edit_in_progress:
             return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()
 
     
     def _on_escape_pressed(self):
+        self._edit_in_progress = False
         self._update_text_from_value()
 
     
     def _on_return_pressed(self):
-        if self.isReadOnly() or self._blank:
+        self._edit_in_progress = False
+        if self.isReadOnly():
             return
         
         # was already parsed when text was changed
@@ -90,7 +95,7 @@ class SiValueEdit(QLineEdit):
 
     
     def _on_text_changed(self):
-        if self.isReadOnly() or self._blank:
+        if self.isReadOnly():
             return
 
         try:
@@ -107,6 +112,6 @@ class SiValueEdit(QLineEdit):
 
 
     def _on_value_changed_externally(self, *args, **kwargs):
-        if self.hasFocus():
+        if self.hasFocus() and self._edit_in_progress:
             return  # user is entering text -> do not overwrite user-input
         self._update_text_from_value()

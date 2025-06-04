@@ -5,50 +5,45 @@ S-Parameter Viewer Documentation
 Getting Started
 ---------------
 
-1. Start the app (see [readme](howtorun.md)).
-2. Go *File* → *Open Directory*, and open a directory that contains S-parameter files.
-    - Supported format: Touchstone (`.s1p`, `.s2p`...), CITI (`.cti`/`.citi`).
-3. At the bottom of the main window, in the *Files* tab, select one or multiple files (hold *Ctrl* to select multiple).
-4. Select the parameters you want to see, e.g. *Insertion Loss*, and a format, e.g. *dB*.
+Quick start:
+1. Select files you want to plot in the filesystem browser.
+2. Select which parameters to plot, and how to plot them, in the toolbar.
 
-### Files Tab
+### Toolbar
 
-A list of all available files is shown in the *Files* tab at the bottom of the main window. Select a file to plot it, or hold *Ctrl* and click multiple files.
+The toolbar has several sections, from left-to right:
+1. Main menu.
+2. Parameter Selection:
+    - The buttons allow to qickly select the most important parameters. Hold *Ctrl* to toggle.
+    - The matrix allows to select individual parameters. Hold *Ctrl* to toggle, hold *Shift* to select diagonal/triangular.
+3. Plot Selection:
+    - Cartesian (vs. frequency), time-domain, Smith, or polar.
+    - Cartesian allows to use a secondary Y-axis.
+    - The menu provides additional options.
+4. Axis Ranges:
+    - Enter a range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.
+    - Use the lock buttons to toggle between a fixed range, or auto-scale.
+    - You can enable smart dB scaling (only if Y-axis is in dB), which attempts to focus on the upper region of the S-parameters.
+5. Plot Options: legend, trace options, plot tools; additional options in the menu.
+6. Tools: quickly filter files, show/copy/save different representations, copy/save image; additional tools in the menu.
+7. Miscellaneous: help, settings dialog.
 
-You can also filter for files by pressing *Ctrl+F* (or in the main menu, go *View* → *Filter Files...*). Enter your search string, press enter, and all files that match the search string will be selected.
+### Filesystem Browser
 
-To switch to a different directory, or append files from another directory, go *File* → *Open Directory...* or *Append Directory...*. Alternatively, press *Ctrl+B* to show/hide the filesystem browser. Double-clicking a directory in the filesystem browser loads or appends that directory (behavior can be changed in [settings](settings.md)); alternatively, right-click in the filesystem browser to show a popup menu. You can navigate quickly using the breadcrumb bar above the filesystem browser; click a label to navigate, click into the blank area to reveal a textbox; press enter in the textbox to naivgate.
+How to navigate:
+- Use the breadcrumb bar (hidden when multiple/no directories are selected), or the buttons next to it.
+- Use "Open Directory" from the main menu.
+- Right-click a directory (hidden when simplified filesystem browser is enabled in settings).
 
-### Plottable Parameters
+How to select files for plotting:
+- All checked files are plotted.
+- To check a range of files, just select them (hold *Ctrl* to select multiple files, or to select a range).
 
-- *All S-Paramseters*: all terms
-- *Insertion Loss*: only the $S_{i,j}$-terms, e.g. $S_{21}$ or $S_{12}$.
-- *\* (reciprocal)*: include e.g. $S_{21}$, but not $S_{12}$.
-- *Return Loss / Impedance*: only the $S_{i,i}$-terms, e.g. $S_{11}$ or $S_{22}$.
-- *Expression-Based*: use expressions for even more flexibility ([see here](expressions.md)).
+### Cartesian Plot Formats
 
-### Plot Formats
+You can choose between decibels, magnitude, real or imaginary values on the Y-axis. Additionally, the phase or group delay can be plotted on a secondary Y-axis. Phase can be unwrapped, or un-wrapped and de-trended. The latter may be useful to see phase variations on physically long devices.
 
-Primary:
-- *dB*: logarithmic magnitude in decibels (20⋅log10), vs. frequency.
-- *Log Mag*: logarithmic magnitude vs. frequency.
-- *Lin Mag*: linear magnitude vs. frequency; useful to plot some metrics like e.g. VSWR, stability, etc.
-- *Real/Imag*: real and imaginary part vs. frequency.
-- *Real*: same as above, but only real part.
-- *Imag*: same as above, but only imaginary part.
-- *Re/Im Polar*: complex number locus in polar chart (essentially the same as a Smith chart, but with a different grid. visualization)
-- *Smith (Z)*: Smith chart.
-- *Smith (Y)*: same as above, but as admittance instead of impedance.
-- *Impulse Resp.*: impulse response vs. time (i.e. time-domain transformation). See also notes below.
-- *Step Resp.*: same as above, but integrated to get step response.
-
-Secondary:
-- *Phase*: phase vs. frequency.
-- *Unwrapped*: same as above, but phase unwrapped.
-- *Lin. Removed*: same as above, but with the linear part of the phase removed (de-trended); useful to see phase variations on physically long devices.
-- *Group Delay*: group delay vs. frequency.
-
-Primary and secondary format can be shown simultaneously (using a secondary Y-axis).
+When expressions are used, the plotted data may already be purely real-valued data. In that case, the value is plotted directly. In the settings you can override this behavior, so that even real-valued expressions are converted to decibels/magnitude/phase/etc.
 
 #### Time-Domain Transformation
 
@@ -58,15 +53,15 @@ The impulse response is calculated as follows:
 2. Interpolate frequency axis to get equidistant scaling.
     - Interpolation is done in polar domain (i.e. interpolation of magnitude and of unwrapped phase separately).
 3. Apply window function.
-    - Window function can be chosen in [settings](settings.md).
+    - Window function can be chosen in the menu.
     - If you see excess ringing in the time-domain response, you may try to use e.g. a Kaiser window, and increase the parameter.
     - If the time-domain response is too much smoothed-out, you may try to use e.g. a Kaiser window, and decrease the parameter.
 4. Apply zero-padding.
-    - Under [settings](settings.md), a minimum number of samples, to which is zero-padded, can be chosen.
+    - In the menu, a minimum number of samples, to which is zero-padded, can be chosen.
     - Increase this setting to get finer interpolation of the time axis.
 5. Apply inverse FFT.
 6. Shift samples.
-    - The amount of shift can be chosen in [settings](settings.md).
+    - The amount of shift can be chosen in the menu.
     - If this setting is chosen too small, the vertical dimension of the time-domain transformation may be incorrect. Increase this setting until the time-domain signal appears to be "stable".
 
 The step response works the same, except that the result is integrated over time.
@@ -115,9 +110,13 @@ Additional Tools
 [See here](tools.md).
 
 Settings
------------
+--------
 
-[See here](settings.md).
+You can open the settings from the toolbar, or by pressing F4.
+
+Most settings become active immediately.
+
+Use the mouse-over tooltips to learn more about each setting in the settings dialog.
 
 Supported File Formats
 ----------------------
@@ -126,4 +125,4 @@ Supported File Formats
 - CITI files (.cti or .citi): a data format for n-dimensional data. Since there is no hard specification on the variable names, the following names are assumed (case-insensitive):
     - Frequency: `f`, `Freq` or `Frequency`.
     - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
-- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (see [Settings](settings.md)).
+- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (can be configured in the settings dialog).

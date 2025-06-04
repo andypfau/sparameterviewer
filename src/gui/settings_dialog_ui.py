@@ -35,9 +35,6 @@ class SettingsDialogUi(QDialog):
         while self._warn_timeout_values[-1] < 100:
             self._warn_timeout_values.append(get_next_1_2_5_10(self._warn_timeout_values[-1], nice_minutes=True))
 
-        help = QShortcut(QKeySequence('F1'), self)
-        help.activated.connect(self.on_help)
-
         main_layout = QHBoxLayout()
         self._ui_tabs = QTabWidget()
         main_layout.addWidget(self._ui_tabs)
@@ -46,13 +43,18 @@ class SettingsDialogUi(QDialog):
         gui_widget = QWidget()
         self._ui_tabs.addTab(gui_widget, 'GUI')
         self._ui_mainwinlayout_combo = QComboBox()
+        self._ui_mainwinlayout_combo.setToolTip('Layout of the toolbar, filesysem browser, and plot in the main window.')
         self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')
+        self._ui_simple_params_check.setToolTip('Show a simple drop-down to select the plotted parameters, instead of the buttons and the parameter matrix in the main window toolbar.')
         self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
         self._ui_simple_noexpr_check = QCheckBox('Do Not Use Expressions')
+        self._ui_simple_noexpr_check.setToolTip('Disable and hide all expressions-related features.')
         self._ui_simple_noexpr_check.toggled.connect(self.on_simple_noexpr_changed)
         self._ui_simple_plot_check = QCheckBox('Simple Drop-Down Plot Selection')
+        self._ui_simple_plot_check.setToolTip('Show two simple drop-downs (Y1 and Y2) instead of the buttons in the main window toolbar.')
         self._ui_simple_plot_check.toggled.connect(self.on_simple_plot_changed)
-        self._ui_simple_browser_check = QCheckBox('Simple Single-Directory Browser')
+        self._ui_simple_browser_check = QCheckBox('Simplified Filesystem Browser')
+        self._ui_simple_browser_check.setToolTip('Only allows one single root-directory in the filesystem browser (no pinning of additional directories).')
         self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
         gui_widget.setLayout(
             QtHelper.layout_v(
@@ -68,11 +70,14 @@ class SettingsDialogUi(QDialog):
         format_widget = QWidget()
         self._ui_tabs.addTab(format_widget, 'Formats')
         self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
-        self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied')
+        self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied.')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
         self._ui_logxneg_combo = QComboBox()
+        self._ui_logxneg_combo.setToolTip('What to do when there are negative values on a logarithmic X-axis.')
         self._ui_logyneg_combo = QComboBox()
+        self._ui_logyneg_combo.setToolTip('What to do when there are negative values on a logarithmic X-axis.')
         self._ui_singletracecolor_check = QCheckBox('Individual Trace Colors When Single File Selected')
+        self._ui_singletracecolor_check.setToolTip('When enabled, and only one single file is selected, then it is always plotted with individual colors for each trace. Otherwise, the combobox in the main window toolbar can be used to define a color scheme.')
         self._ui_singletracecolor_check.setToolTip('When this option is enabled, the trace colors are set to individual colors when only one single file is selected.')
         self._ui_singletracecolor_check.toggled.connect(self.on_singletracecolor_changed)
         format_widget.setLayout(
@@ -92,16 +97,21 @@ class SettingsDialogUi(QDialog):
         files_widget = QWidget()
         self._ui_tabs.addTab(files_widget, 'Files')
         self._ui_extract_zip_check = QCheckBox('Extract .zip-Files')
+        self._ui_extract_zip_check.setToolTip('Reads .zip-files, and allows to directly plot S-parameter files inside them. If disabled, .zip-files are not shown.')
         self._ui_extract_zip_check.toggled.connect(self.on_zip_change)
         self._ui_warn_timeout_combo = QComboBox()
+        self._ui_warn_timeout_combo.setToolTip('If loading files takes longer than the specified timeout, a warning dialog is shown. The user has then a chance to abort the operation and stop waiting. May be useful for slow network drives.')
         for secs in self._warn_timeout_values:
             self._ui_warn_timeout_combo.addItem(format_minute_seconds(secs))
         self._ui_warn_timeout_combo.currentIndexChanged.connect(self._on_warn_timeout_changed)
         self._ui_warn_timeout_combo.setCurrentIndex(0)
         self._ui_csvsep_combo = QComboBox()
+        self._ui_csvsep_combo.setToolTip('The column separator used when exporting .csv-files.')
         self._ui_deg_radio = QRadioButton('Degrees')
+        self._ui_deg_radio.setToolTip('When exporting data to file, express phase in degrees.')
         self._ui_deg_radio.toggled.connect(self.on_phase_unit_change)
         self._ui_rad_radio = QRadioButton('Radians')
+        self._ui_rad_radio.setToolTip('When exporting data to file, express phase in radians.')
         self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
         files_widget.setLayout(
             QtHelper.layout_v(
@@ -116,17 +126,24 @@ class SettingsDialogUi(QDialog):
         misc_widget = QWidget()
         self._ui_tabs.addTab(misc_widget, 'Misc')
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
+        self._ui_comment_expr_combo.setToolTip('When adding expression templates, comment out all other existing expressions.')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
         self._ui_cursor_snap = QComboBox()
+        self._ui_cursor_snap.setToolTip('How to map the mouse-pointer position to a cursor position (use X-coordinate, or find closest point).')
         self._ui_plot_style_combo = QComboBox()
+        self._ui_plot_style_combo.setToolTip('The matplotlib style for the plot. Requires re-start to take effect.')
         self._ui_plot_style_combo.setMinimumWidth(150)
         self._ui_font_combo = QComboBox()
+        self._ui_font_combo.setToolTip('The font used in all text viewers/editors.')
         self._ui_font_combo.setMinimumWidth(250)
         self._ui_exted_edit = QLineEdit()
+        self._ui_exted_edit.setToolTip('Path to an external editor, which is used by the "open in external editor" command.')
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
         self._ui_exted_btn = QtHelper.make_button(self, '...', self.on_browse_ext_ed)
+        self._ui_exted_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
+        self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to debug expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
         misc_widget.setLayout(
             QtHelper.layout_v(
@@ -387,8 +404,6 @@ class SettingsDialogUi(QDialog):
     def on_ext_ed_change(self):
         pass
     def on_browse_ext_ed(self):
-        pass
-    def on_help(self):
         pass
     def on_plotstyle_change(self):
         pass
