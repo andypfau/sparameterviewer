@@ -4,7 +4,7 @@ from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
 from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout
-from lib.utils import is_windows, window_has_argument
+from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum
 import pathlib
 import logging
 
@@ -61,10 +61,10 @@ class SettingsDialog(SettingsDialogUi):
     def apply_settings_to_controls(self):
         try:
             self.ui_radians = Settings.export_phase_unit == PhaseUnit.Radians
-            self.ui_csvsep = SettingsDialog.CSV_SEPARATOR_NAMES[Settings.csv_separator]
-            self.ui_logxneg = SettingsDialog.LOGNEG_NAMES[Settings.logx_negative_handling]
-            self.ui_logyneg = SettingsDialog.LOGNEG_NAMES[Settings.logy_negative_handling]
-            self.ui_cursor_snap = SettingsDialog.CURSOR_SNAP_NAMES[Settings.cursor_snap]
+            self.ui_csvsep = enum_to_string(Settings.csv_separator, SettingsDialog.CSV_SEPARATOR_NAMES)
+            self.ui_logxneg = enum_to_string(Settings.logx_negative_handling, SettingsDialog.LOGNEG_NAMES)
+            self.ui_logyneg = enum_to_string(Settings.logy_negative_handling, SettingsDialog.LOGNEG_NAMES)
+            self.ui_cursor_snap = enum_to_string(Settings.cursor_snap, SettingsDialog.CURSOR_SNAP_NAMES)
             self.ui_comment_expr = Settings.comment_existing_expr
             self.ui_extract_zip = Settings.extract_zip
             self.ui_warn_timeout = Settings.warn_timeout_s
@@ -74,7 +74,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_all_complex = Settings.treat_all_as_complex
             self.ui_singletrace_individualcolor = Settings.singlefile_individualcolor
             self.ui_verbose = Settings.verbose
-            self.ui_mainwin_layout = SettingsDialog.MAINWINLAYOUT_NAMES[Settings.mainwindow_layout]
+            self.ui_mainwin_layout = enum_to_string(Settings.mainwindow_layout, SettingsDialog.MAINWINLAYOUT_NAMES)
             self.ui_simplified_plot = Settings.simplified_plot_sel
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
@@ -132,10 +132,7 @@ class SettingsDialog(SettingsDialogUi):
 
 
     def on_csvsep_change(self):
-        for symbol, name in SettingsDialog.CSV_SEPARATOR_NAMES.items():
-            if name == self.ui_csvsep:
-                Settings.csv_separator = symbol
-                break
+        Settings.csv_separator = string_to_enum(self.ui_csvsep, SettingsDialog.CSV_SEPARATOR_NAMES)
 
     
     def on_zip_change(self):
@@ -143,10 +140,7 @@ class SettingsDialog(SettingsDialogUi):
 
 
     def on_cursor_snap_changed(self):
-        for snap, name in SettingsDialog.CURSOR_SNAP_NAMES.items():
-            if name == self.ui_cursor_snap:
-                Settings.cursor_snap = snap
-                break
+        Settings.cursor_snap = string_to_enum(self.ui_cursor_snap, SettingsDialog.CURSOR_SNAP_NAMES)
     
     
     def on_comment_change(self):
@@ -182,24 +176,15 @@ class SettingsDialog(SettingsDialogUi):
 
 
     def on_logxneg_changed(self):
-        for option, name in SettingsDialog.LOGNEG_NAMES.items():
-            if name == self.ui_logxneg:
-                Settings.logx_negative_handling = option
-                break
+        Settings.logx_negative_handling = string_to_enum(self.ui_logxneg, SettingsDialog.LOGNEG_NAMES)
 
 
     def on_logyneg_changed(self):
-        for option, name in SettingsDialog.LOGNEG_NAMES.items():
-            if name == self.ui_logyneg:
-                Settings.logy_negative_handling = option
-                break
+        Settings.logy_negative_handling = string_to_enum(self.ui_logyneg, SettingsDialog.LOGNEG_NAMES)
 
 
     def on_mainwinlayout_changed(self):
-        for option, name in SettingsDialog.MAINWINLAYOUT_NAMES.items():
-            if name == self.ui_mainwin_layout:
-                Settings.mainwindow_layout = option
-                break
+        Settings.mainwindow_layout = string_to_enum(self.ui_mainwin_layout, SettingsDialog.MAINWINLAYOUT_NAMES)
     
     
     def on_simple_plot_changed(self):

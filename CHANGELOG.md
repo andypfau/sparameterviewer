@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b6 (2025-06-05)
+-------------------
+
+- change: when loading takes too long, a red button appears in the toolbar (instead of the messagebox)
+- change: template for normalization, better templates for de-embedding, added function to multiply or divide networks
+
+
 0.40b5 (2025-06-04)
 -------------------
 

@@ -147,6 +147,7 @@ class MainWindowUi(QMainWindow):
         self._ui_toolmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Tool Menu')
         self._ui_plotmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
         self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)')
+        self._ui_abort_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_abort.svg', tooltip='Abort Loading')
         self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(0,10e9)])
         self._ui_xaxis_range.setToolTip('Set X-axis range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.')
         self._ui_xaxis_range.setMinimumWidth(120)
@@ -160,10 +161,9 @@ class MainWindowUi(QMainWindow):
         self._ui_yaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_yaxis_range.rangeChanged.connect(self.on_yaxis_range_change)
         self._ui_color_combo = QComboBox()
-        self._ui_color_combo.setToolTip('Select how trace colors are assigned.')
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
         margins, default_spacing, wide_spacing = 0, 2, 6
-        self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing)
+        self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing, margins=0)
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
@@ -234,6 +234,7 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(
                 self._ui_help_button,
                 self._ui_settings_button,
+                self._ui_abort_button,
                 ..., margins=margins, spacing=default_spacing
             ),
             ..., margins=margins, spacing=wide_spacing
@@ -546,7 +547,6 @@ class MainWindowUi(QMainWindow):
         self._ui_update_button.setText('Update (F5)' if enable else 'Turn On\nExpressions\n(F5)')
         self._ui_editor.setInactive(not enable)
 
-
     
     def ui_show_expressions(self, value: bool):
         if self._show_expressions == value:
@@ -558,6 +558,14 @@ class MainWindowUi(QMainWindow):
             if self.ui_tab == MainWindowUi.Tab.Expressions:
                 self.ui_tab = MainWindowUi.Tab.Files
             self._ui_tabs.removeTab(1)
+
+    
+    def ui_show_abort_button(self, value: bool):
+        self._ui_abort_button.setVisible(value)
+
+    
+    def ui_update(self):
+        QApplication.processEvents()
 
 
     def ui_show_template_menu(self, items: list[tuple[str,Callable|list]]):
@@ -659,11 +667,17 @@ class MainWindowUi(QMainWindow):
 
 
     @property
-    def ui_show_trace_color_selector(self) -> bool:
-        return self._ui_colors_layout.isVisible()
-    @ui_show_trace_color_selector.setter
-    def ui_show_trace_color_selector(self, value: bool):
-        self._ui_colors_layout.setVisible(value)
+    def ui_enable_trace_color_selector(self) -> bool:
+        return self._ui_colors_layout.isEnabled()
+    @ui_enable_trace_color_selector.setter
+    def ui_enable_trace_color_selector(self, value: bool):
+        if value:
+            self._ui_colors_layout.setEnabled(True)
+            self._ui_color_combo.setToolTip('Select how trace colors are assigned.')
+        else:
+            self._ui_colors_layout.setEnabled(False)
+            self._ui_color_combo.setToolTip('Trace colors are assigned individually per trace, because only one file is plotted (this behavior can be changed in the Settings dialog).')
+
 
 
     @property

@@ -100,7 +100,7 @@ class SettingsDialogUi(QDialog):
         self._ui_extract_zip_check.setToolTip('Reads .zip-files, and allows to directly plot S-parameter files inside them. If disabled, .zip-files are not shown.')
         self._ui_extract_zip_check.toggled.connect(self.on_zip_change)
         self._ui_warn_timeout_combo = QComboBox()
-        self._ui_warn_timeout_combo.setToolTip('If loading files takes longer than the specified timeout, a warning dialog is shown. The user has then a chance to abort the operation and stop waiting. May be useful for slow network drives.')
+        self._ui_warn_timeout_combo.setToolTip('If loading files takes longer than the specified timeout, an "abort" button is shown in the toolbar. The user has then a chance to abort the operation and stop waiting. May be useful for slow network drives.')
         for secs in self._warn_timeout_values:
             self._ui_warn_timeout_combo.addItem(format_minute_seconds(secs))
         self._ui_warn_timeout_combo.currentIndexChanged.connect(self._on_warn_timeout_changed)

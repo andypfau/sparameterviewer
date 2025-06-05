@@ -318,3 +318,16 @@ def format_minute_seconds(secs: float) -> str:
 
     int_secs = int(secs)
     return f'{int_secs//60}:{int_secs%60:02}'
+
+
+def string_to_enum(s: str, lut: dict):
+    for value, name in lut.items():
+        if name == s:
+            return value
+    raise ValueError(f'String "{s}" not in LUT <{lut}>')
+
+
+def enum_to_string(value, lut: dict):
+    if value not in lut:
+        raise ValueError(f'Value <{value}> not in LUT <{lut}>')
+    return lut[value]

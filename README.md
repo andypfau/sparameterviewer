@@ -26,6 +26,7 @@ Roadmap
 
 ### Missing Features
 
+- GUI: how can I say "plot all these files, normalize the S-parameters to that other file"?
 - General: "TODO"-comments in code.
 - GUI: expression file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.

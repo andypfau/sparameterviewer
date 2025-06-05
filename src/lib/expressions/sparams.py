@@ -256,19 +256,29 @@ class SParams:
 
     def __init__(self, sps: "list[SParam]"):
         self.sps = sps
-
-
-    def _broadcast(self, sp: "SParams") -> "SParams":
-        if isinstance(sp, (int,float,complex,np.ndarray)):
-            return [sp] * len(self.sps)
-        if not isinstance(sp, SParams):
-            raise ValueError('Expected operand of type S-parameters, or numeric')
-        if len(sp.sps) == 1:
-            return [sp.sps[0]] * len(self.sps)
-        elif len(sp.sps) == len(self.sps):
-            return self.sps
-        raise ValueError(f'Argument has dimension {len(sp.sps)}, but must nave 1 or {len(self.sps)}')
     
+    
+    @staticmethod
+    def _broadcast(a, b) -> "tuple[list[SParams],list[SParams]]":
+        
+        assert isinstance(a,SParams) or isinstance(b,SParams)
+        
+        if isinstance(a, (int,float,complex,np.ndarray)):
+            return [a]*len(b.sps), b.sps
+        if isinstance(b, (int,float,complex,np.ndarray)):
+            return a.sps, [a]*len(a.sps)
+        
+        assert isinstance(a,SParams) and isinstance(b,SParams)
+        
+        if len(a.sps) == len(b.sps):
+            return a.sps, b.sps
+        if len(a.sps) == 1:
+            return [a.sps[0]] * len(b.sps), b.sps
+        if len(b.sps) == 1:
+            return a.sps, [b.sps[0]]*len(a.sps)
+
+        raise ValueError(f'Cannot broadcast SParams of size {len(a.sps)} and {len(b.sps)}')
+
 
     def _unary_op(self, fn, return_sps, **kwargs):
         result = []
@@ -285,7 +295,7 @@ class SParams:
 
     def _binary_op(self, fn, others, return_sps, **kwargs):
         result = []
-        for sp,other in zip(self.sps, self._broadcast(others)):
+        for sp,other in zip(*SParams._broadcast(self.sps, others)):
             try:
                 result.append(fn(sp, other, **kwargs))
             except Exception as ex:

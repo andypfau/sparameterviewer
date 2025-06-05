@@ -18,7 +18,7 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds
+from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds, string_to_enum, enum_to_string
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
@@ -73,10 +73,8 @@ class MainWindow(MainWindowUi):
         self.cursor_event_queue: list[tuple] = []
         self.plot: PlotHelper|None = None
         self.sparamfile_list_t_start: float = -1
-        self.sparamfile_list_next_warning_s: int = 0
         self.sparamfile_list_aborted = False
         self.sparamfile_load_t_start: float = -1
-        self.sparamfile_load_next_warning_s: int = 0
         self.sparamfile_load_aborted = False
         self._last_cursor_x = [0, 0]
         self._last_cursor_trace = ['', '']
@@ -151,7 +149,7 @@ class MainWindow(MainWindowUi):
                 self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
                 self.ui_enable_expressions(Settings.use_expressions)
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
-                self.ui_color_assignment = MainWindow.COLOR_ASSIGNMENT_NAMES[Settings.color_assignment]
+                self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
                 self.ui_semitrans_traces = Settings.plot_semitransparent
                 self.ui_trace_opacity = Settings.plot_semitransparent_opacity
                 self.ui_maxlegend = Settings.max_legend_items
@@ -187,13 +185,12 @@ class MainWindow(MainWindowUi):
     def clear_list_counter(self):
         # TODO: this is not monitored anywhere!
         self.sparamfile_list_t_start = -1
-        self.sparamfile_list_next_warning_s = Settings.warn_timeout_s
         self.sparamfile_list_aborted = False
 
 
     def clear_load_counter(self):
+        self.ui_show_abort_button(False)
         self.sparamfile_load_t_start = -1
-        self.sparamfile_load_next_warning_s = Settings.warn_timeout_s
         self.sparamfile_load_aborted = False
 
 
@@ -204,16 +201,9 @@ class MainWindow(MainWindowUi):
             self.sparamfile_load_t_start = time.monotonic()
         else:
             t_elapsed = time.monotonic() - self.sparamfile_load_t_start
-            if t_elapsed >= self.sparamfile_load_next_warning_s:
-                self.sparamfile_load_next_warning_s = get_next_1_2_5_10(self.sparamfile_load_next_warning_s, nice_minutes=True)
-                if not yesno_dialog(
-                    'Too Many Files',
-                    f'Loading took {format_minute_seconds(t_elapsed)} so far, with more to come. Continue?',
-                    f'Will ask again after {format_minute_seconds(self.sparamfile_load_next_warning_s)}.'):
-                    self.sparamfile_load_aborted = True
-                    self.ui_filesys_browser.selected_files = []
-                    return False
-                self.sparamfile_load_t_start = time.monotonic()
+            if t_elapsed >= Settings.warn_timeout_s:
+                self.ui_show_abort_button(True)
+                self.ui_update()
         return True
     
     
@@ -239,14 +229,25 @@ class MainWindow(MainWindowUi):
     def on_template_button(self):
 
         def selected_file_names():
-            return [file.name for file in self.get_selected_files()]
+            result = []
+            for file in self.get_selected_files():
+                if file.path.is_in_arch():
+                    result.append(file.path.arch_path_name)
+                else:
+                    result.append(file.path.name)
+            return result
 
         def set_expression(*expressions):
+            if Settings.simplified_no_expressions:
+                return
             current = self.ui_expression
             new = '\n'.join(expressions)
             for line in current.splitlines():
                 if Settings.comment_existing_expr:
-                    existing_line = '#' + line.strip() if not line.startswith('#') else line.strip()
+                    if not line.strip().startswith('#'):
+                        existing_line = '#' + line.strip() if not line.startswith('#') else line.strip()
+                    else:
+                        existing_line = line
                 else:
                     existing_line = line
                 if len(new)>0:
@@ -254,6 +255,7 @@ class MainWindow(MainWindowUi):
                 new += existing_line
             self.ui_expression = new
             self.ui_param_selector.setUseExpressions(True)
+            self.ui_enable_expressions(True)
             self.schedule_plot_update()
         
         def ensure_selected_file_count(op, n_required):
@@ -355,35 +357,41 @@ class MainWindow(MainWindowUi):
             nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names()])
             set_expression(f'({nws}).s(2,1).plot()')
         
-        def deembed1from2():
-            if not ensure_selected_file_count('==', 2):
+        def normalize():
+            if not ensure_selected_file_count('>=', 2):
                 return
-            [n1, n2] = selected_file_names()
-            set_expression(f"((nw('{n1}').invert()) ** nw('{n2}')).s(2,1).plot()")
+            n1 = selected_file_names()[0]
+            set_expression(f'(sel_nws() / nw("{n1}")).plot_sel_params()')
         
-        def deembed2from1():
-            if not ensure_selected_file_count('==', 2):
+        def deembed1fromothers():
+            if not ensure_selected_file_count('>=', 2):
                 return
-            [n1, n2] = selected_file_names()
-            set_expression(f"(nw('{n1}') ** (nw('{n2}').invert())).s(2,1).plot()")
+            n1 = selected_file_names()[0]
+            set_expression(f'(~nw("{n1}") ** sel_nws()).plot_sel_params()')
         
-        def deembed2from1flipped():
-            if not ensure_selected_file_count('==', 2):
+        def deembed1flippedfromothers():
+            if not ensure_selected_file_count('>=', 2):
                 return
-            [n1, n2] = selected_file_names()
-            set_expression(f"(nw('{n1}') ** (nw('{n2}').flip().invert())).s(2,1).plot()")
+            n1 = selected_file_names()[0]
+            set_expression(f'(~(nw("{n1}").flipped()) ** sel_nws()).plot_sel_params()')
+        
+        def fromothersdeembed1():
+            if not ensure_selected_file_count('>=', 2):
+                return
+            n1 = selected_file_names()[0]
+            set_expression(f'(sel_nws() ** ~nw("{n1}")).plot_sel_params()')
+        
+        def fromothersdeembed1flipped():
+            if not ensure_selected_file_count('>=', 2):
+                return
+            n1 = selected_file_names()[0]
+            set_expression(f'(sel_nws() ** ~(nw("{n1}").flipped)).plot_sel_params()')
         
         def deembed2xthru():
-            if not ensure_selected_file_count('==', 2):
+            if not ensure_selected_file_count('>=', 2):
                 return
-            [n1, n2] = selected_file_names()
-            set_expression(f"((nw('{n1}').half(side=1)) ** nw('{n2}') **(nw('{n1}').half(side=2))).s(2,1).plot()")
-        
-        def ratio_of_two():
-            if not ensure_selected_file_count('==', 2):
-                return
-            [n1, n2] = selected_file_names()
-            set_expression(f"(nw('{n1}').s(2,1)/nw('{n2}').s(2,1)).plot()")
+            n1 = selected_file_names()[0]
+            set_expression(f"(~(nw('{n1}').half(side=1)) ** sel_nws() ** ~(nw('{n1}').half(side=2))).plot_sel_params()")
         
         def mixed_mode():
             if not ensure_selected_file_count('>=', 1):
@@ -394,13 +402,13 @@ class MainWindow(MainWindowUi):
         def z_renorm():
             if not ensure_selected_file_count('>=', 1):
                 return
-            expressions = [f"nw('{n}').renorm([50,75]).s(2,1).plot()" for n in selected_file_names()]
+            expressions = [f"nw('{n}').renorm([50,75]).plot_sel_params()" for n in selected_file_names()]
             set_expression(*expressions)
 
         def add_tline():
             if not ensure_selected_file_count('>=', 1):
                 return
-            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).s(2,1).plot()" for n in selected_file_names()]
+            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()" for n in selected_file_names()]
             set_expression(*expressions)
         
         def z():
@@ -468,24 +476,24 @@ class MainWindow(MainWindowUi):
                 (None, None),
                 ('Just Plot All Selected Files', all_selected),
             ]),
-            ('Operations on Two Selected Networks', [
-                ('De-Embed 1st Network from 2nd', deembed1from2),
-                ('De-Embed 2nd Network from 1st', deembed2from1),
-                ('De-Embed 2nd (Flipped) Network from 1st', deembed2from1flipped),
-                ('Treat 1st as 2xTHRU, De-Embed from 2nd', deembed2xthru),
-                ('Ratio of Two Networks', ratio_of_two),
-            ]),
             ('Operations on Two or More Selected Networks', [
+                ('Normalize to 1st Network', normalize),
+                (None, None),
+                ('De-Embed 1st Network From Others', deembed1fromothers),
+                ('De-Embed 1st Network (Flipped) From Others', deembed1flippedfromothers),
+                ('From Others De-Embed 1st Network', fromothersdeembed1),
+                ('From Others De-Embed 1st Network (Flipped)', fromothersdeembed1flipped),
+                (None, None),
+                ('Treat 1st as 2xTHRU, De-Embed from Others', deembed2xthru),
+                (None, None),
                 ('Cascade Selected Networks', cascade),
             ]),
         ])
 
 
     def on_color_change(self):
-        for ca, name in MainWindow.COLOR_ASSIGNMENT_NAMES.items():
-            if name == self.ui_color_assignment:
-                Settings.color_assignment = ca
-                return
+        if self.ui_enable_trace_color_selector:
+            Settings.color_assignment = string_to_enum(self.ui_color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
     
 
     def on_plottype_changed(self):
@@ -645,7 +653,8 @@ class MainWindow(MainWindowUi):
     
     
     def on_help(self):
-        show_help()
+        self.sparamfile_load_aborted = True
+        #show_help()
     
 
     def on_about(self):
@@ -965,21 +974,17 @@ class MainWindow(MainWindowUi):
                     return
                 self.ui_filesys_browser.selected_files = [*files_in_path, *self.ui_filesys_browser.selected_files]
             return selall
-        def get_parent_dirs_and_names(path: PathExt, n_max: int = 10) -> list[tuple[PathExt,str]]:
-            result = []
-            path_parent = path.parent
-            for i in range(n_max):
-                if path_parent == path:
-                    break
-                name = path_parent.name if path_parent.name else str(path_parent)
-                prefix = os.sep.join(['..']*(i+1))
-                if not name.startswith(os.sep):
-                    prefix += os.sep
-                result.append((path_parent, prefix+name))
-                if path_parent.parent == path_parent:
-                    break
-                path_parent = path_parent.parent
-            return result
+        def make_copy_path(path: PathExt):
+            def copypath():
+                Clipboard.copy_string(str(path))
+            return copypath
+        def make_copy_name(path: PathExt):
+            def copyname():
+                if path.is_in_arch():
+                    Clipboard.copy_string(path.arch_path_name)
+                else:
+                    Clipboard.copy_string(path.name)
+            return copyname
 
         menu = []
         is_toplevel = path == toplevel_path
@@ -995,22 +1000,24 @@ class MainWindow(MainWindowUi):
                         menu.append(('Navigate to this Directory', make_chroot(path.parent)))
                         menu.append((None, None))
             menu.append((f'Select All Files from Here', make_selall(path)))
+            if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
+                menu.append((None, None))
+                menu.append((f'Copy Name', make_copy_name(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
             if not self.ui_filesys_browser.simplified():
                 if is_toplevel:
-                        #for (ppath, pname) in get_parent_dirs_and_names(path):
-                        #    menu.append((f'Navigate Up To {pname}', make_chroot(ppath)))
-                        #menu.append((None, None))
-                        menu.append((f'Unpin', make_unpin()))
-                        menu.append((None, None))
+                    menu.append((f'Unpin', make_unpin()))
+                    menu.append((None, None))
                 else:
                     if not self.ui_filesys_browser.simplified():
                         menu.append((f'Pin this {typename}', make_pin(path)))
                     menu.append((f'Navigate to this {typename}', make_chroot(path)))
                     menu.append((None, None))
             menu.append((f'Select All Files in Here', make_selall(path)))
-
+            if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
+                menu.append((None, None))
+                menu.append((f'Copy Path', make_copy_path(path)))
         
         if len(menu) > 0:
             self.ui_filesys_show_contextmenu(menu)
@@ -1373,7 +1380,7 @@ class MainWindow(MainWindowUi):
             smart_db_scaling = self.ui_smart_db
             log_x, log_y = self.ui_logx, self.ui_logy
             
-            common_plot_args = dict(show_legend=Settings.show_legend, hide_single_item_legend=Settings.hide_single_item_legend, shorten_legend=Settings.shorten_legend_items, max_legend_items=Settings.max_legend_items)
+            common_plot_args = dict(show_legend=self.ui_show_legend, hide_single_item_legend=self.ui_hide_single_item_legend, shorten_legend=self.ui_shorten_legend, max_legend_items=self.ui_maxlegend)
 
             # initialize dummy data
             xq, xf, xl = '', SiFormat(), False
@@ -1494,8 +1501,15 @@ class MainWindow(MainWindowUi):
                 n_individual_files = len(set([kwargs['original_file'] for kwargs in all_plot_kwargs]))
                 if n_individual_files <= 1:
                     singlefile_colorizing = True
-            color_assignment = ColorAssignment.Default if singlefile_colorizing else Settings.color_assignment
-            self.ui_show_trace_color_selector = not singlefile_colorizing
+            if singlefile_colorizing:
+                self.ui_enable_trace_color_selector = False
+                self.ui_color_assignment = enum_to_string(ColorAssignment.Default, MainWindow.COLOR_ASSIGNMENT_NAMES)
+                color_assignment = ColorAssignment.Default
+            else:
+                if not self.ui_enable_trace_color_selector:
+                    self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
+                    self.ui_enable_trace_color_selector = True
+                color_assignment = string_to_enum(self.ui_color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
 
             def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
                 nonlocal color_assignment, available_colors, next_color_index, color_mapping
@@ -1514,7 +1528,7 @@ class MainWindow(MainWindowUi):
                     style2 = '-.'
                 elif style=='-.':
                     style2 = ':'
-                if Settings.plot_mark_points:
+                if self.ui_mark_datapoints:
                     style += 'o'
                     style2 += 'o'
                 if y_qty!=YQuantity.Off and y2_qty!=YQuantity.Off:
@@ -1550,7 +1564,7 @@ class MainWindow(MainWindowUi):
                 kwargs = dict(width=width, color=color, opacity=opacity)
                 
                 def transform_phase(radians):
-                    if Settings.phase_unit==PhaseUnit.Degrees:
+                    if phase_unit==PhaseUnit.Degrees:
                         return radians * 180 / math.pi
                     return radians
 
@@ -1619,7 +1633,6 @@ class MainWindow(MainWindowUi):
             if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling:
                 BASE_QUANTILE_PERCENT = 25
                 MIN_RANGE_DB = 15
-                SMALL_MARGINS_FACTOR = 0.2
                 LARGE_MARGINS_DB = 3
                 ZERO_EXTENSION_FACTOR = 2.0
 

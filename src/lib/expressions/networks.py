@@ -46,19 +46,40 @@ class Network:
     
 
     @staticmethod
-    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network]":
+    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network,skrf.Network]":
         if len(a.nw.f)==len(b.nw.f):
             if all(af==bf for af,bf in zip(a.nw.f, b.nw.f)):
-                return a.nw,b.nw
+                return a.nw.copy(), b.nw.copy()
         f_min = max(min(a.nw.f), min(b.nw.f))
         f_max = min(max(a.nw.f), max(b.nw.f))
         f_new = np.array([f for f in a.nw.f if f_min<=f<=f_max])
         freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
         if freq_new.npoints < 1:
             raise RuntimeError(f'The networks "{a.name}" and "{b.name}" have no overlapping frequency range')
-        a_nw = a.nw.interpolate(freq_new)
-        b_nw = b.nw.interpolate(freq_new)
-        return a_nw,b_nw
+        a_nw = a.nw.copy().interpolate(freq_new)
+        b_nw = b.nw.copy().interpolate(freq_new)
+        return a_nw, b_nw
+
+        
+    def __truediv__(self, other: "Network|float") -> "Network":
+        if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
+            nw = self.nw.copy()
+            nw.s /= other
+            return Network(nw, f'{self.nw.name}/{other}', original_file=self.original_file)
+        elif isinstance(other, Network):
+            if self.nw.number_of_ports != other.nw.number_of_ports:
+                raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
+            nw, nw2 = Network._get_adapted_networks(self, other)
+            nw.s = nw.s / nw2.s
+            return Network(nw, f'{self.nw.name}/{other.nw.name}', original_file=self.original_file)
+        else:
+            raise ValueError(f'Expected operand of type float or Network, got <{other}>')
+
+        
+    def __mul__(self, other: float) -> "Network":
+        nw = self.nw.copy()
+        nw.s *= other
+        return Network(nw, f'{self.nw.name}*{other}', original_file=self.original_file)
 
 
     def __invert__(self) -> "Network":
@@ -612,12 +633,26 @@ class Networks:
         self.nws = [Network(nw) for nw in nws]
 
 
-    def _broadcast(self, n: "Networks") -> "list[Network]":
-        if len(n.nws) == 1:
-            return [n.nws[0]] * len(self.nws)
-        elif len(n.nws) == len(self.nws):
-            return self.nws
-        raise ValueError(f'Argument has dimension {len(n.nws)}, but must nave 1 or {len(self.nws)}')
+    @staticmethod
+    def _broadcast(a, b) -> "tuple[list[Network],list[Network]]":
+        
+        assert isinstance(a,Networks) or isinstance(b,Networks)
+        
+        if isinstance(a, (int,float,complex,np.ndarray)):
+            return [a]*len(b.nws), b.nws
+        if isinstance(b, (int,float,complex,np.ndarray)):
+            return a.nws, [a]*len(a.nws)
+        
+        assert isinstance(a,Networks) and isinstance(b,Networks)
+        
+        if len(a.nws) == len(b.nws):
+            return a.nws, b.nws
+        if len(a.nws) == 1:
+            return [a.nws[0]] * len(b.nws), b.nws
+        if len(b.nws) == 1:
+            return a.nws, [b.nws[0]]*len(a.nws)
+
+        raise ValueError(f'Cannot broadcast Networks of size {len(a.nws)} and {len(b.nws)}')
 
 
     def _unary_op(self, fn, return_type, *args, **kwargs):
@@ -641,7 +676,7 @@ class Networks:
 
     def _binary_op(self, fn, others, return_type, *args, **kwargs):
         result = []
-        for nw,other in zip(self.nws, self._broadcast(others)):
+        for nw,other in zip(*Networks._broadcast(self, others)):
             try:
                 r = fn(nw, other, *args, **kwargs)
                 if hasattr(r, '__len__'):
@@ -656,6 +691,14 @@ class Networks:
             return SParams(sps=result)
         else:
             return result
+
+
+    def __truediv__(self, other: "Networks|float") -> "Networks":
+        return self._binary_op(Network.__truediv__, other, Networks)  # TODO: document
+
+
+    def __mul__(self, other: "float") -> "Networks":
+        return self._binary_op(Network.__mul__, other, Networks)  # TODO: document
 
 
     def __invert__(self) -> "Networks":

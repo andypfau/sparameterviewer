@@ -26,7 +26,9 @@ The toolbar has several sections, from left-to right:
     - You can enable smart dB scaling (only if Y-axis is in dB), which attempts to focus on the upper region of the S-parameters.
 5. Plot Options: legend, trace options, plot tools; additional options in the menu.
 6. Tools: quickly filter files, show/copy/save different representations, copy/save image; additional tools in the menu.
-7. Miscellaneous: help, settings dialog.
+7. Miscellaneous:
+    - Help, settings dialog.
+    - Abort button: only shown when loading files takes too long (timeout can be set in Settings dialog). When clicked, the currently ongoing loading operation is aborted.
 
 ### Filesystem Browser
 
