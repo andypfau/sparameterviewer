@@ -48,7 +48,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def show_modal_dialog(self, tab: SettingsTab = None):
         if tab:
-            self.ui_select_tab(tab)
+            self.ui_select_tab(int(tab))
         self.apply_settings_to_controls()
         Settings.attach(self.on_settings_change)
         super().ui_show_modal()

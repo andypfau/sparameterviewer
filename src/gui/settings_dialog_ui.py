@@ -17,9 +17,10 @@ import numpy as np
 
 
 class SettingsTab(enum.IntEnum):
-    Format = 0
-    TimeDomain = 1
-    Misc = 2
+    Gui = 0
+    Formats = 1
+    Files = 2
+    Misc = 3
 
 
 
@@ -143,7 +144,7 @@ class SettingsDialogUi(QDialog):
         self._ui_exted_btn = QtHelper.make_button(self, '...', self.on_browse_ext_ed)
         self._ui_exted_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
-        self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to debug expressions.')
+        self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to  expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
         misc_widget.setLayout(
             QtHelper.layout_v(

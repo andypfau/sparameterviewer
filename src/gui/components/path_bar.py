@@ -134,6 +134,8 @@ class PathBar(QWidget):
         self._ui_text_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self._ui_text_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
         self._ui_text.setCompleter(self._ui_text_completer)
+        self._ui_empty_pane = QtHelper.layout_widget_h(..., spacing=0, margins=0)
+        self._ui_empty_pane.setVisible(False)
         self._ui_navigation_pane = QtHelper.layout_widget_h(
             self._ui_breadcrumb,
             self._ui_text,
@@ -145,6 +147,7 @@ class PathBar(QWidget):
         )
         layout = QtHelper.layout_h(
             self._ui_navigation_pane,
+            self._ui_empty_pane,
             self._ui_add_dir_button,
             spacing=0, margins=0
         )
@@ -187,6 +190,7 @@ class PathBar(QWidget):
     @show_navigation.setter
     def show_navigation(self, value: bool):
         self._ui_navigation_pane.setVisible(value)
+        self._ui_empty_pane.setVisible(not value)
 
 
     @property

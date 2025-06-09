@@ -155,6 +155,7 @@ class ParamSelector(QWidget):
                 painter.setBrush(color_inactive_bg)
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawRect(rect)
+                painter.end()
                 return
 
             MIN_CELL_SIZE_FOR_LARGE_FONT = 18

@@ -58,11 +58,6 @@ class MainWindowUi(QMainWindow):
         color_disabled_bg = palette.color(QPalette.ColorRole.Window).name()
         
         combo_arrow_image_url = os.path.join(AppPaths.get_resource_dir(), 'combo_arrow.svg').replace('\\', '/')
-        self.setStyleSheet(f"""
-            QWidget {{
-                /* border: 1px solid red; DEBUG */
-            }}
-        """)
         self._ui_ribbon.setStyleSheet(f"""
             QWidget {{
                 background-color: {color_bg};
@@ -107,9 +102,6 @@ class MainWindowUi(QMainWindow):
             }}
             QComboBox::down-arrow {{
                 image: url({combo_arrow_image_url});
-            }}
-            QWidget {{
-                /* border: 1px solid red; DEBUG */
             }}
             """)
         def vline():

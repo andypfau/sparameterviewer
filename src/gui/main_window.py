@@ -240,20 +240,19 @@ class MainWindow(MainWindowUi):
         def set_expression(*expressions):
             if Settings.simplified_no_expressions:
                 return
-            current = self.ui_expression
-            new = '\n'.join(expressions)
-            for line in current.splitlines():
-                if Settings.comment_existing_expr:
-                    if not line.strip().startswith('#'):
-                        existing_line = '#' + line.strip() if not line.startswith('#') else line.strip()
+            def comment_lines(lines: list[str]) -> list[str]:
+                if not Settings.comment_existing_expr:
+                    return lines
+                result = []
+                for line in lines:
+                    line_stripped = line.strip()
+                    if (line_stripped!='') and (not line_stripped.startswith('#')):
+                        result.append('# ' + line_stripped)
                     else:
-                        existing_line = line
-                else:
-                    existing_line = line
-                if len(new)>0:
-                    new += '\n'
-                new += existing_line
-            self.ui_expression = new
+                        result.append(line)
+                return result
+            new_lines = '\n'.join([*expressions, *comment_lines(self.ui_expression.splitlines())])
+            self.ui_expression = new_lines
             self.ui_param_selector.setUseExpressions(True)
             self.ui_enable_expressions(True)
             self.schedule_plot_update()
@@ -1427,9 +1426,9 @@ class MainWindow(MainWindowUi):
             color_mapping = {}
             
             all_plot_kwargs = []
-            def add_to_plot_list(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
+            def add_to_plot_list(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None):
                 nonlocal all_plot_kwargs
-                all_plot_kwargs.append(dict(f=f, sp=sp, z0=z0, name=name, style=style, color=color, width=width, opacity=opacity, original_file=original_file, param_kind=param_kind))
+                all_plot_kwargs.append(dict(f=f, sp=sp, z0=z0, name=name, style=style, color=color, width=width, opacity=opacity, original_files=original_files, param_kind=param_kind))
                     
             selected_files = self.get_selected_files()
 
@@ -1498,8 +1497,9 @@ class MainWindow(MainWindowUi):
 
             singlefile_colorizing = False
             if Settings.singlefile_individualcolor:
-                n_individual_files = len(set([kwargs['original_file'] for kwargs in all_plot_kwargs]))
-                if n_individual_files <= 1:
+                individual_files = ['::'.join([p.full_path for p in kwargs['original_files']]) for kwargs in all_plot_kwargs]
+                n_different_files = len(set(individual_files))
+                if n_different_files <= 1:
                     singlefile_colorizing = True
             if singlefile_colorizing:
                 self.ui_enable_trace_color_selector = False
@@ -1511,7 +1511,7 @@ class MainWindow(MainWindowUi):
                     self.ui_enable_trace_color_selector = True
                 color_assignment = string_to_enum(self.ui_color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
 
-            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_kind: str = None):
+            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None):
                 nonlocal color_assignment, available_colors, next_color_index, color_mapping
 
                 if np.all(np.isnan(sp)):
@@ -1544,14 +1544,16 @@ class MainWindow(MainWindowUi):
                         case ColorAssignment.ByParam:
                             key = param_kind
                         case ColorAssignment.ByFile:
-                            if original_file:
-                                key = original_file.full_path
+                            if original_files and len(original_files) >= 1:
+                                key = '::'.join([p.full_path for p in original_files])
                         case ColorAssignment.ByFileLoc:
-                            if original_file:
-                                if original_file.arch_path:
-                                    key = str(original_file)
-                                else:
-                                    key = str(original_file.parent)
+                            if original_files and len(original_files) >= 1:
+                                def get_path(path: PathExt) -> str:
+                                    if path.arch_path:
+                                        return str(path)
+                                    else:
+                                        return str(path.parent)
+                                key = '::'.join([get_path(p) for p in original_files])
                         case ColorAssignment.Monochrome:
                             key = 1
                     if key is not None:
@@ -1623,48 +1625,61 @@ class MainWindow(MainWindowUi):
 
             self.update_params_size()
             self.plot.render()
-
-            if self.plot_axes_are_valid:
-                if not self.ui_xaxis_range.both_are_wildcard:
-                    self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
-                if not self.ui_yaxis_range.both_are_wildcard:
-                    self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
-            if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling:
+            if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
+                self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
+
+            def nice_range(lo, hi):
+                assert hi > lo
+                range = hi - lo
+                if range > 100:
+                    scale, margin = 10, 1
+                elif range > 50:
+                    scale, margin = 5, 1
+                elif range > 20:
+                    scale, margin = 2, 1
+                else:
+                    scale, margin = 1, 0.5
+                nlo = math.floor(lo / scale) * scale - margin
+                nhi = math.ceil(hi / scale) * scale + margin
+                return nlo, nhi
+            if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plots)>=1:
                 BASE_QUANTILE_PERCENT = 25
                 MIN_RANGE_DB = 15
-                LARGE_MARGINS_DB = 3
                 ZERO_EXTENSION_FACTOR = 2.0
 
-                top, base, bottom = -1e99, +1e99, +1e99
+                did_smart_scaling = False
+                tops, bottoms, bases = [], [], []
                 for plot in self.plot.plots:
                     if plot.currently_used_axis != 1:
                         continue  # ignore 2nd Y-axis
-                    top = max(top, np.max(plot.data.y.values))
-                    base = min(base, np.quantile(plot.data.y.values, BASE_QUANTILE_PERCENT/100.0))
-                    bottom = min(bottom, np.min(plot.data.y.values))
-                if top >= base and base >= bottom:
+                    tops.append(np.max(plot.data.y.values))
+                    bases.append(np.quantile(plot.data.y.values, BASE_QUANTILE_PERCENT/100.0))
+                    bottoms.append(np.min(plot.data.y.values))
+                if len(tops) > 0:
+                    top, base, bottom = np.max(tops), np.median(bases), np.min(bottoms)
                     full_range = top - bottom
-                    if full_range < MIN_RANGE_DB:  # range is so small that we can keep autorange
-                        if self._smartscale_set_y:
-                            (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
-                            self.plot.plot.set_ylim((None, None))
-                        self._smartscale_set_y = False
-                    else:  # focus non the top part
-                        y0, y1 = base-LARGE_MARGINS_DB, top+LARGE_MARGINS_DB
+                    if top >= base and base >= bottom and full_range >= MIN_RANGE_DB:
+                        y0, y1 = base, top
                         if top < 0:
                             base_range, distance_to_zero = top-base, -top
                             if base_range > distance_to_zero*ZERO_EXTENSION_FACTOR:  # include 0 dB
-                                y0, y1 = base-LARGE_MARGINS_DB, +LARGE_MARGINS_DB
-                        (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (math.floor(y0), math.ceil(y1))
-                        self.plot.plot.set_ylim((y0, y1))
+                                full_range = 0 - base
+                                y0, y1 = base, 0
+                        nice_y0, nice_y1 = nice_range(y0, y1)
+                        self.ui_yaxis_range.low, self.ui_yaxis_range.high = nice_y0, nice_y1
+                        self.plot.plot.set_ylim(nice_y0, nice_y1, auto=False)
                         self._smartscale_set_y = True
+                        did_smart_scaling = True
+                if not did_smart_scaling:
+                    if self._smartscale_set_y:
+                        (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
+                        self.plot.plot.set_ylim(auto=True)
+                    self._smartscale_set_y = False
             else:
-                if self._smartscale_set_y:
-                    (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
-                    self.plot.plot.set_ylim((None, None))
-                self._smartscale_set_y = False
-
+                if self.plot_axes_are_valid and not self.ui_yaxis_range.both_are_wildcard:
+                    self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high, auto=False)
+            
             self.ui_plot.draw()
 
             self.plot_axes_are_valid = True

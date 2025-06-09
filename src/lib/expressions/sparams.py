@@ -24,19 +24,19 @@ class SParam:
     _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str], None]
 
 
-    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_file: PathExt|None = None, param_type: str|None=None):
+    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None):
         assert len(f) == len(s)
         self.name, self.f, self.s, self.z0 = name, f, s, z0
-        self.original_file, self.param_type = original_file, param_type
+        self.original_files, self.param_type = original_files or set(), param_type
     
 
-    def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_file: PathExt|None = None, param_type: str|None=None) -> SParam:
+    def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_files: set[PathExt] = None, param_type: str|None=None) -> SParam:
         return SParam(
             name if name is not None else self.name,
             f if f is not None else self.f,
             s if s is not None else self.s,
             z0 if z0 is not None else self.z0,
-            original_file if original_file is not None else self.original_file,
+            original_files if original_files is not None else self.original_files,
             param_type if param_type is not None else self.param_type
         )
     
@@ -58,14 +58,14 @@ class SParam:
     @staticmethod
     def _op(a: "SParam", b: "SParam", op: "Callable") -> "SParam":
         if isinstance(a, (int,float,complex,np.ndarray)):
-            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0)
+            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files)
         if isinstance(b, (int,float,complex,np.ndarray)):
-            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0)
+            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files)
         a_nw, b_nw = SParam._adapt_f(a, b)
         a_s = np.array(np.ndarray.flatten(a_nw.s))
         b_s = np.array(np.ndarray.flatten(b_nw.s))
         c_s = op(a_s, b_s)
-        return a._modified_copy(f=a_nw.f, s=c_s)
+        return a._modified_copy(f=a_nw.f, s=c_s, original_files=a.original_files|b.original_files)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
@@ -149,16 +149,16 @@ class SParam:
 
     
     @staticmethod
-    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_type: str = None):
-        SParam._plot_fn(x, y, z0, label, style, color, width, opacity, original_file, param_type)
+    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None):
+        SParam._plot_fn(x, y, z0, label, style, color, width, opacity, original_files, param_type)
 
     
-    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_file: PathExt = None, param_type: str = None):
+    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None):
         if label is None:
             label = self.name
         else:
             label = label.replace('$NAME', self.name)
-        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_file, param_type)
+        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_files, param_type)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
@@ -373,7 +373,7 @@ class SParams:
     def plot(self, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         for sp in self.sps:
             try:
-                sp.plot(label=label, style=style, color=color, width=width, opacity=opacity, original_file=sp.original_file, param_type=sp.param_type)
+                sp.plot(label=label, style=style, color=color, width=width, opacity=opacity, original_files=sp.original_files, param_type=sp.param_type)
             except Exception as ex:
                 logging.warning(f'Plotting of <{sp.name}> failed ({ex}), ignoring')
     

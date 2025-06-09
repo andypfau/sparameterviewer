@@ -616,7 +616,7 @@ class TabularDialog(TabularDialogUi):
 
 
     def on_settings(self):
-       SettingsDialog(self).show_modal_dialog(SettingsTab.Format)
+       SettingsDialog(self).show_modal_dialog(SettingsTab.Files)
 
 
     def on_help(self):

@@ -22,18 +22,17 @@ from typing import overload
 class Network:
 
     
-    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None, name: str = None, original_file: PathExt = None):
+    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None, name: str = None, original_files: "set[PathExt]" = None):
         self.nw: skrf.Network
-        self.original_file: PathExt|None
+        self.original_files: set[PathExt] = original_files or set()
         if isinstance(nw, SParamFile):
             self.nw = nw.nw
-            self.original_file = nw.path
+            self.original_files.add(nw.path)
         elif isinstance(nw, Network):
             self.nw = nw.nw
-            self.original_file = original_file
+            self.original_files |= nw.original_files
         elif isinstance(nw, skrf.Network):
             self.nw = nw
-            self.original_file = original_file
         else:
             raise ValueError(f'Invalid type to init Network object (<{nw}>)')
         if name is not None:
@@ -65,13 +64,13 @@ class Network:
         if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
             nw = self.nw.copy()
             nw.s /= other
-            return Network(nw, f'{self.nw.name}/{other}', original_file=self.original_file)
+            return Network(nw, f'{self.nw.name}/{other}', original_files=self.original_files)
         elif isinstance(other, Network):
             if self.nw.number_of_ports != other.nw.number_of_ports:
                 raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
             nw, nw2 = Network._get_adapted_networks(self, other)
             nw.s = nw.s / nw2.s
-            return Network(nw, f'{self.nw.name}/{other.nw.name}', original_file=self.original_file)
+            return Network(nw, f'{self.nw.name}/{other.nw.name}', original_files=self.original_files|other.original_files)
         else:
             raise ValueError(f'Expected operand of type float or Network, got <{other}>')
 
@@ -79,7 +78,7 @@ class Network:
     def __mul__(self, other: float) -> "Network":
         nw = self.nw.copy()
         nw.s *= other
-        return Network(nw, f'{self.nw.name}*{other}', original_file=self.original_file)
+        return Network(nw, f'{self.nw.name}*{other}', original_files=self.original_files)
 
 
     def __invert__(self) -> "Network":
@@ -88,7 +87,7 @@ class Network:
 
     def __pow__(self, other: "Network") -> "Network":
         a_nw,b_nw = Network._get_adapted_networks(self, other)
-        return Network(a_nw**b_nw, a_nw.name+'+'+b_nw.name, original_file=self.original_file)
+        return Network(a_nw**b_nw, a_nw.name+'+'+b_nw.name, original_files=self.original_files|other.original_files)
     
 
     def __repr__(self):
@@ -102,28 +101,28 @@ class Network:
     def z(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
         nw_transformed = self.nw.copy()
         nw_transformed.s = self.nw.z
-        obj_transformed = Network(nw_transformed, self.name, original_file=self.original_file)
+        obj_transformed = Network(nw_transformed, self.name, original_files=self.original_files)
         return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='Z')
     
 
     def y(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
         nw_transformed = self.nw.copy()
         nw_transformed.s = self.nw.y
-        obj_transformed = Network(nw_transformed, self.name, original_file=self.original_file)
+        obj_transformed = Network(nw_transformed, self.name, original_files=self.original_files)
         return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='Y')
     
 
     def abcd(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
         nw_transformed = self.nw.copy()
         nw_transformed.s = self.nw.a
-        obj_transformed = Network(nw_transformed, self.name, original_file=self.original_file)
+        obj_transformed = Network(nw_transformed, self.name, original_files=self.original_files)
         return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='ABCD')
     
 
     def t(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
         nw_transformed = self.nw.copy()
         nw_transformed.s = self.nw.t
-        obj_transformed = Network(nw_transformed, self.name, original_file=self.original_file)
+        obj_transformed = Network(nw_transformed, self.name, original_files=self.original_files)
         return obj_transformed._get_param(egress_port, ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name, param_prefix='T')
     
 
@@ -176,7 +175,7 @@ class Network:
                     param_label = param_name
                 param_value = self.nw.s[:,ep-1,ip-1].astype(complex)
 
-                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_file=self.original_file, param_type=param_name))
+                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_files=self.original_files, param_type=param_name))
         return result
     
 
@@ -195,13 +194,13 @@ class Network:
         new_f = self.nw.f[idx0:idx1+1]
         new_s = self.nw.s[idx0:idx1+1,:,:]
         new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
-        return Network(new_nw, original_file=self.original_file)
+        return Network(new_nw, original_files=self.original_files)
     
 
     def k(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_file=self.original_file, param_type='k')
+        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k')
     
 
     def mu(self, mu: int = 1):
@@ -216,7 +215,7 @@ class Network:
             p1,p2 = 1,0
         delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
         stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
-        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_file=self.original_file, param_type=f'µ{mu}')
+        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}')
     
 
     def losslessness(self):
@@ -232,7 +231,7 @@ class Network:
         errors = np.abs(prod - target)
         result_metric = np.max(errors, axis=(1,2))  # should be zero if lossless
         
-        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'losslessness')
+        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'losslessness')
     
 
     def passivity(self):
@@ -252,7 +251,7 @@ class Network:
             worst_error = np.max(passivity_error)
             result_metric[idx] = worst_error
         
-        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'passivity')
+        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'passivity')
     
 
     def reciprocity(self):
@@ -268,7 +267,7 @@ class Network:
         absdiff = np.abs(diff)
         result_metric = np.max(absdiff, axis=(1,2))  # should be zero if reciprocal
 
-        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'reciprocity')
+        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'reciprocity')
     
 
     def symmetry(self):
@@ -292,7 +291,7 @@ class Network:
 
         result_metric = result_metric_ij + result_metric_ii
 
-        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_file=self.original_file, param_type=f'symmetry')
+        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'symmetry')
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
@@ -300,23 +299,23 @@ class Network:
             from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
             deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw)
             if side==1:
-                return Network(deembed.s_side1, name=self.name+'_side1', original_file=self.original_file)
+                return Network(deembed.s_side1, name=self.name+'_side1', original_files=self.original_files)
             elif side==2:
-                return Network(deembed.s_side2.flipped(), name=self.name+'_side2', original_file=self.original_file)
+                return Network(deembed.s_side2.flipped(), name=self.name+'_side2', original_files=self.original_files)
             else:
                 raise ValueError(f'half(): Invalid side, must be 1 or 2')
         elif method=='ChopInHalf':
-            return Network(skrf.network.chopinhalf(self.nw), original_file=self.original_file)
+            return Network(skrf.network.chopinhalf(self.nw), original_files=self.original_files)
         else:
             raise ValueError(f'half(): Invalid method, must be <IEEE370NZC> or <ChopInHalf>')
     
 
     def flip(self) -> "Network":
-        return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name, original_file=self.original_file)
+        return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name, original_files=self.original_files)
     
 
     def invert(self) -> "Network":
-        return Network(self.nw.inv, name='!'+self.name, original_file=self.original_file)
+        return Network(self.nw.inv, name='!'+self.name, original_files=self.original_files)
 
 
     def _get_added_2port(self, s_matrix: np.ndarray, port: int) -> "Network":
@@ -333,7 +332,7 @@ class Network:
             s11_self = self.nw.s[:,0,0]
             delta = 1 - s22 * s11_self
             s_new[:,0,0] = (s11*delta + s21*s11_self*s12) / delta
-            return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=s_new, f_unit='Hz'), original_file=self.original_file)
+            return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=s_new, f_unit='Hz'), original_files=self.original_files)
 
         elif self.nw.number_of_ports==2:
             other_nw = skrf.Network(name=self.nw.name, f=self.nw.f, s=s_matrix, f_unit='Hz')
@@ -343,7 +342,7 @@ class Network:
                 new_nw = self.nw ** other_nw
             else:
                 raise ValueError()
-            return Network(new_nw, original_file=self.original_file)
+            return Network(new_nw, original_files=self.original_files)
         else:
             raise RuntimeError('Impedance adding is only supported for 1-port and 2-port networks')
     
@@ -458,7 +457,7 @@ class Network:
         freq = np.full([n_points], frequency_hz)
         label = label if label is not None else self.nw.name
         label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
-        SParam.plot_xy(freq, data, self.nw.z0, label, style, color, width, opacity, self.original_file, 'stability')
+        SParam.plot_xy(freq, data, self.nw.z0, label, style, color, width, opacity, self.original_files, 'stability')
         
     
     def quick(self, *items):
@@ -488,7 +487,7 @@ class Network:
         
         new_nw = self.nw.copy()
         new_nw.port_modes = port_modes
-        return Network(new_nw, original_file=self.original_file)
+        return Network(new_nw, original_files=self.original_files)
     
 
     def s2m(self, ports: list[str]) -> "Network":
@@ -529,7 +528,7 @@ class Network:
 
         new_nw.se2gmm(new_nw.nports // 2)
         assert new_nw.nports % 2 == 0
-        return Network(new_nw, original_file=self.original_file)
+        return Network(new_nw, original_files=self.original_files)
     
 
     def m2s(self, ports: list[str]) -> "Network":
@@ -570,13 +569,13 @@ class Network:
         new_nw.renumber(old_indices, new_indices)
 
         new_nw.gmm2se(new_nw.nports // 2)
-        return Network(new_nw, original_file=self.original_file)
+        return Network(new_nw, original_files=self.original_files)
 
 
     def renorm(self, z: "complex|list[complex]") -> "Network":
         nw = self.nw.copy()
         nw.renormalize(z)
-        return Network(nw, original_file=self.original_file)
+        return Network(nw, original_files=self.original_files)
 
 
     def rewire(self, ports: list[int]) -> "Network":
@@ -588,7 +587,7 @@ class Network:
             old_indices = [i for i in range(len(ports))]
             new_indices = [p-1 for p in ports]
             nw_renumbered = nw.renumbered(old_indices, new_indices)
-        return Network(nw_renumbered, original_file=self.original_file)
+        return Network(nw_renumbered, original_files=self.original_files)
 
 
     def save(self, filename: str):
