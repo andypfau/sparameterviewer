@@ -1,6 +1,6 @@
 from .helpers.qt_helper import QtHelper
 from info import Info
-from lib import AppPaths
+from lib import AppPaths, PathExt
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -21,6 +21,15 @@ class FilterDialogUi(QDialog):
         Add = enum.auto()
         Remove = enum.auto()
         Toggle = enum.auto()
+
+    
+
+    class PathItem(QStandardItem):
+
+        def __init__(self, path: PathExt):
+            super().__init__()
+            self.path = path
+            self.setText(path.final_name)
 
 
     def __init__(self, parent):
@@ -47,22 +56,31 @@ class FilterDialogUi(QDialog):
         self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
 
         self._ui_files_list = QListView()
+        self._ui_files_list.setToolTip('Files that match your search are selected here. You may manually change the selection.')
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)
+        self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        
+        # set more vibrant colors (by default, the selection cannot be distinguished clearly from non-selection)
+        palette = QPalette()
+        color_text = palette.color(QPalette.ColorRole.HighlightedText).name()
+        color_bg = palette.color(QPalette.ColorRole.Highlight).name()
+        self._ui_files_list.setStyleSheet(f"""
+            QListView::item:selected {{
+                background-color: {color_bg};
+                color: {color_text};
+            }}
+        """)
 
-        self.ui_select_button = QPushButton('Select')
-        self.ui_select_button.setToolTip('Only select these files')
-        self.ui_select_button.clicked.connect(self._on_select)
-        self.ui_add_button = QPushButton('+')
-        self.ui_add_button.setToolTip('Additionally select these files')
-        self.ui_add_button.clicked.connect(self._on_add)
-        self.ui_remove_button = QPushButton('-')
-        self.ui_remove_button.setToolTip('Un-select these files')
-        self.ui_remove_button.clicked.connect(self._on_remove)
-        self.ui_toggle_button = QPushButton('~')
-        self.ui_toggle_button.setToolTip('Toggle selection of these files')
-        self.ui_toggle_button.clicked.connect(self._on_toggle)
+        self.ui_select_button = QtHelper.make_button(self, '', self._on_select, icon='filter_select.svg')
+        self.ui_select_button.setToolTip('Only plot selected files')
+        self.ui_add_button = QtHelper.make_button(self, '', self._on_add, icon='filter_add.svg')
+        self.ui_add_button.setToolTip('Additionally plot selected files')
+        self.ui_remove_button = QtHelper.make_button(self, '', self._on_remove, icon='filter_subtract.svg')
+        self.ui_remove_button.setToolTip('Don\'t plot selected files')
+        self.ui_toggle_button = QtHelper.make_button(self, '', self._on_toggle, icon='filter_toggle.svg')
+        self.ui_toggle_button.setToolTip('Toggle plotting of selected files files')
         
         self.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
@@ -73,10 +91,11 @@ class FilterDialogUi(QDialog):
             self._ui_files_list,
             QtHelper.layout_h(
                 self.ui_select_button,
-                ...,
+                15,
                 self.ui_add_button,
                 self.ui_remove_button,
                 self.ui_toggle_button,
+                ...,
             ),
         ))
 
@@ -111,20 +130,25 @@ class FilterDialogUi(QDialog):
             self._ui_wildcard_radio.setChecked(True)
     
 
-    def ui_set_files(self, files: list[str], other_files: list[str]):
+    def ui_set_files(self, selected_files: list[PathExt], other_files: list[PathExt]):
         self._ui_files_model.clear()
-        for file in files:
-            item = QtGui.QStandardItem(file)
-            #item.setForeground(QPalette().color(QPalette.ColorRole.HighlightedText))
-            #item.setBackground(QPalette().color(QPalette.ColorRole.Highlight))
+        for file in [*selected_files, *other_files]:
+            item = FilterDialogUi.PathItem(file)
             self._ui_files_model.appendRow(item)
-        font = None            
-        for other_file in other_files:
-            item = QtGui.QStandardItem(other_file)
-            item.setForeground(QPalette().color(QPalette.ColorRole.PlaceholderText))
-            font = font or QtHelper.make_font(base=item.font(), strikethru=True)
-            item.setFont(font)
-            self._ui_files_model.appendRow(item)
+        
+        selection = QItemSelection(
+            self._ui_files_model.index(0, 0),
+            self._ui_files_model.index(len(selected_files)-1, 0),
+        )
+        self._ui_files_list.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select)
+    
+
+    def ui_get_selected_files(self) -> list[PathExt]:
+        result = []
+        for index in self._ui_files_list.selectionModel().selectedRows(0):
+            item: FilterDialogUi.PathItem = self._ui_files_model.itemFromIndex(index)
+            result.append(item.path)
+        return result
     
 
     def ui_indicate_search_error(self, indicate_error: bool = True):

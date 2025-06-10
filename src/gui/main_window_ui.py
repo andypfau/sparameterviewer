@@ -125,7 +125,7 @@ class MainWindowUi(QMainWindow):
         self._ui_logy_button = QtHelper.make_toolbutton(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis', checked=False)
         self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale')
         self._ui_locky_button = QtHelper.make_toolbutton(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock Y-Axis Scale')
-        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-y.svg', tooltip='Lock both X- and Y-Axis Scales')
+        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Lock both X- and Y-Axis Scales')
         self._ui_smartdb_button = QtHelper.make_toolbutton(self, None, self.on_smart_db, icon='toolbar_smart-db.svg', tooltip='Attempt Smart Scaling of dB-Values', checked=False)
         self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot', checked=False)
         self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot', checked=False)
@@ -307,12 +307,12 @@ class MainWindowUi(QMainWindow):
             [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
             [None, None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
         ])
-        cursor_layout.setColumnStretch(0, 1)
-        cursor_layout.setColumnStretch(1, 4)
+        cursor_layout.setColumnStretch(0, 0)
+        cursor_layout.setColumnStretch(1, 2)
         cursor_layout.setColumnStretch(2, 0)
-        cursor_layout.setColumnStretch(3, 4)
+        cursor_layout.setColumnStretch(3, 1)
         cursor_layout.setColumnStretch(4, 0)
-        cursor_layout.setColumnStretch(5, 4)
+        cursor_layout.setColumnStretch(5, 1)
         self._ui_cursors_tab.setLayout(QtHelper.layout_v(cursor_layout,...))
 
         self._ui_status_bar = StatusBar()
@@ -391,6 +391,9 @@ class MainWindowUi(QMainWindow):
 
         else:
             raise ValueError()
+
+        self._ui_splitter.setCollapsible(0, False)
+        self._ui_splitter.setCollapsible(1, False)
 
 
     def resizeEvent(self, arg):

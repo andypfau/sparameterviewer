@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b8 (2025-06-10)
+-------------------
+
+- change: can now manually override selection in the filter dialog
+- bugfix: various small fixes
+
+
 0.40b7 (2025-06-09)
 -------------------
 

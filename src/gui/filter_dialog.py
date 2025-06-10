@@ -1,5 +1,5 @@
 from .filter_dialog_ui import FilterDialogUi
-from lib import Settings, PathExt
+from lib import Settings, PathExt, natural_sort_key
 from typing import Optional
 import re
 import dataclasses
@@ -28,11 +28,13 @@ class FilterDialog(FilterDialogUi):
         self.ui_regex_mode = Settings.search_regex
         self.ui_search_text = Settings.last_search
         
-        return FilterDialog.Result(super().ui_show_modal(), self._matched_files)
+        return FilterDialog.Result(super().ui_show_modal(), self.ui_get_selected_files())
 
 
     def _set_displayed_files(self, matched_files: list[PathExt], unmatched_files: list[PathExt]):
-        self.ui_set_files([file.final_name for file in matched_files], [file.final_name for file in unmatched_files])
+        matched_files = sorted(matched_files, key=lambda item: natural_sort_key(item.final_name))
+        unmatched_files = sorted(unmatched_files, key=lambda item: natural_sort_key(item.final_name))
+        self.ui_set_files([file for file in matched_files], [file for file in unmatched_files])
     
 
     def do_filtering(self):
