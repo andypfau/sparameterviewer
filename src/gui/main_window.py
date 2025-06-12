@@ -43,8 +43,6 @@ from typing import Optional, Callable
 
 class MainWindow(MainWindowUi):
 
-    MAX_DIRECTORY_HISTORY_SIZE = 10
-
     CURSOR_OFF_NAME = '—'
 
     TIMER_CURSORUPDATE_ID, TIMER_CURSOR_UPDATE_TIMEOUT_S = get_unique_id(), 25e-3
@@ -588,7 +586,7 @@ class MainWindow(MainWindowUi):
         
         history.insert(0, path)
         
-        while len(history) > MainWindow.MAX_DIRECTORY_HISTORY_SIZE:
+        while len(history) > Settings.path_history_maxsize:
             del history[-1]
         
         Settings.path_history = history
@@ -929,6 +927,13 @@ class MainWindow(MainWindowUi):
         self.ui_show_expressions(not Settings.simplified_no_expressions)
         self.ui_enable_expressions(Settings.use_expressions)
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+
+        if 'path_history_maxsize' in attributes:
+            history = Settings.path_history
+            while len(history) > Settings.path_history_maxsize:
+                del history[-1]
+            Settings.path_history = history
+            self.update_most_recent_paths_menu()
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',

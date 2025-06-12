@@ -34,7 +34,7 @@ class FilterDialog(FilterDialogUi):
     def _set_displayed_files(self, matched_files: list[PathExt], unmatched_files: list[PathExt]):
         matched_files = sorted(matched_files, key=lambda item: natural_sort_key(item.final_name))
         unmatched_files = sorted(unmatched_files, key=lambda item: natural_sort_key(item.final_name))
-        self.ui_set_files([file for file in matched_files], [file for file in unmatched_files])
+        self.ui_set_files_and_selection([file for file in matched_files], [file for file in unmatched_files])
     
 
     def do_filtering(self):

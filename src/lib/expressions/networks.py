@@ -46,18 +46,38 @@ class Network:
 
     @staticmethod
     def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network,skrf.Network]":
-        if len(a.nw.f)==len(b.nw.f):
-            if all(af==bf for af,bf in zip(a.nw.f, b.nw.f)):
-                return a.nw.copy(), b.nw.copy()
-        f_min = max(min(a.nw.f), min(b.nw.f))
-        f_max = min(max(a.nw.f), max(b.nw.f))
-        f_new = np.array([f for f in a.nw.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
-        if freq_new.npoints < 1:
-            raise RuntimeError(f'The networks "{a.name}" and "{b.name}" have no overlapping frequency range')
-        a_nw = a.nw.copy().interpolate(freq_new)
-        b_nw = b.nw.copy().interpolate(freq_new)
-        return a_nw, b_nw
+        
+        def crop_ports(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
+            max_ports = max(a.number_of_ports, b.number_of_ports)
+            a.s, b.s = a.s[:,0:max_ports,0:max_ports], b.s[:,0:max_ports,0:max_ports]
+            return a, b
+
+        def interpolate_f(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
+            def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
+                current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
+                interp_mag = np.interp(new_f, current_f, current_mag)
+                interp_pha = np.interp(new_f, current_f, current_pha)
+                return interp_mag * np.exp(1j*interp_pha)
+            all_freqs = np.array(sorted(list(set([*a.f, *b.f]))))
+            f_new = skrf.Frequency.from_f(all_freqs, unit='Hz')
+            assert a.number_of_ports == b.number_of_ports
+            a_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
+            b_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
+            for ep in range(a.number_of_ports):
+                for ip in range(a.number_of_ports):
+                    a_s_new[:,ep,ip] = interpolate_param(a.s[:,ep,ip], np.array(a.f), all_freqs)
+                    b_s_new[:,ep,ip] = interpolate_param(b.s[:,ep,ip], np.array(b.f), all_freqs)
+            a_new, b_new = skrf.Network(), skrf.Network()
+            a_new.frequency, a_new.s, a_new.z0, a_new.name = f_new, a_s_new, a.z0[0,:a.number_of_ports], a.name
+            b_new.frequency, b_new.s, a_new.z0, b_new.name = f_new, b_s_new, a.z0[0,:b.number_of_ports], b.name
+            return a_new, b_new
+
+        nw_a, nw_b = a.nw.copy(), b.nw.copy()
+        if nw_a.number_of_ports != nw_b.number_of_ports:
+            nw_a, nw_b = crop_ports(nw_a, nw_b)
+        if not np.array_equal(nw_a.f, nw_b.f):
+            nw_a, nw_b = interpolate_f(nw_a, nw_b)
+        return nw_a, nw_b
 
         
     def __truediv__(self, other: "Network|float") -> "Network":
@@ -193,6 +213,14 @@ class Network:
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
         new_s = self.nw.s[idx0:idx1+1,:,:]
+        new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
+        return Network(new_nw, original_files=self.original_files)
+    
+
+    def at_f(self, f: float) -> "Network":
+        idx = np.argmin(np.abs(f - self.nw.f))
+        new_f = self.nw.f[idx]
+        new_s = self.nw.s[idx,:,:]
         new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
         return Network(new_nw, original_files=self.original_files)
     
@@ -736,6 +764,10 @@ class Networks:
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks":
         return self._unary_op(Network.crop_f, Networks, f_start=f_start, f_end=f_end)
+    
+
+    def at_f(self, f: float) -> "Networks":
+        return self._unary_op(Network.at_f, Networks, f=f)
     
 
     def k(self):

@@ -70,8 +70,8 @@ class SettingsDialogUi(QDialog):
 
         format_widget = QWidget()
         self._ui_tabs.addTab(format_widget, 'Formats')
-        self._ui_allcomplex_check = QCheckBox('Treat All Traces Like Complex Data')
-        self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied.')
+        self._ui_allcomplex_check = QCheckBox('Process All Traces As Complex Data')
+        self._ui_allcomplex_check.setToolTip('If enabled, real-values traces can be time-domain transformed, plotted in Smith or polar plots, and dB/mag/real/imag/phase/group delay is applied. If disabled, real-valued data is plotted as-is.')
         self._ui_allcomplex_check.toggled.connect(self.on_allcomplex_changed)
         self._ui_logxneg_combo = QComboBox()
         self._ui_logxneg_combo.setToolTip('What to do when there are negative values on a logarithmic X-axis.')
@@ -114,12 +114,18 @@ class SettingsDialogUi(QDialog):
         self._ui_rad_radio = QRadioButton('Radians')
         self._ui_rad_radio.setToolTip('When exporting data to file, express phase in radians.')
         self._ui_rad_radio.toggled.connect(self.on_phase_unit_change)
+        self._ui_maxhist_spin = QSpinBox()
+        self._ui_maxhist_spin.setMinimum(1)
+        self._ui_maxhist_spin.setMaximum(30)
+        self._ui_maxhist_spin.setToolTip('Maximum number of directories in file history (in main window main menu)')
+        self._ui_maxhist_spin.valueChanged.connect(self.on_maxhist_change)
         files_widget.setLayout(
             QtHelper.layout_v(
                 self._ui_extract_zip_check,
                 QtHelper.layout_h('Warn When Loading Takes Longer Than', self._ui_warn_timeout_combo, ...),
                 QtHelper.layout_h('CSV Separator:', self._ui_csvsep_combo, ...),
                 QtHelper.layout_h('Export Phase Unit:', self._ui_deg_radio, self._ui_rad_radio, ...),
+                QtHelper.layout_h('Max. History Size:', self._ui_maxhist_spin, ...),
                 ...
             )
         )
@@ -273,6 +279,14 @@ class SettingsDialogUi(QDialog):
     @ui_verbose.setter
     def ui_verbose(self, value: bool):
         self._ui_verbose_check.setChecked(value)
+
+    
+    @property
+    def ui_maxhist(self) -> int:
+        return self._ui_maxhist_spin.value()
+    @ui_maxhist.setter
+    def ui_maxhist(self, value: bool):
+        self._ui_maxhist_spin.setValue(value)
 
     
     @property
@@ -435,4 +449,6 @@ class SettingsDialogUi(QDialog):
     def on_mainwinlayout_changed(self):
         pass
     def on_singletracecolor_changed(self):
+        pass
+    def on_maxhist_change(self):
         pass

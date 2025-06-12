@@ -109,6 +109,7 @@ class SParamViewerAppSettings(AppSettings):
     extract_zip: bool = True
     plot_mark_points: bool = False
     path_history: list[str] = []
+    path_history_maxsize: int = 10
     comment_existing_expr: bool = True
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon

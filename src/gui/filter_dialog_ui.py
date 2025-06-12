@@ -75,6 +75,8 @@ class FilterDialogUi(QDialog):
 
         self.ui_select_button = QtHelper.make_button(self, '', self._on_select, icon='filter_select.svg')
         self.ui_select_button.setToolTip('Only plot selected files')
+        self.ui_select_button.setMinimumWidth(50)
+        self.ui_select_button.setDefault(True)
         self.ui_add_button = QtHelper.make_button(self, '', self._on_add, icon='filter_add.svg')
         self.ui_add_button.setToolTip('Additionally plot selected files')
         self.ui_remove_button = QtHelper.make_button(self, '', self._on_remove, icon='filter_subtract.svg')
@@ -130,7 +132,7 @@ class FilterDialogUi(QDialog):
             self._ui_wildcard_radio.setChecked(True)
     
 
-    def ui_set_files(self, selected_files: list[PathExt], other_files: list[PathExt]):
+    def ui_set_files_and_selection(self, selected_files: list[PathExt], other_files: list[PathExt]):
         self._ui_files_model.clear()
         for file in [*selected_files, *other_files]:
             item = FilterDialogUi.PathItem(file)
@@ -141,6 +143,8 @@ class FilterDialogUi(QDialog):
             self._ui_files_model.index(len(selected_files)-1, 0),
         )
         self._ui_files_list.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select)
+        
+        self._ui_files_list.scrollToTop()
     
 
     def ui_get_selected_files(self) -> list[PathExt]:

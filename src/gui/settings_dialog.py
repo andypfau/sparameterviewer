@@ -79,6 +79,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
             self.ui_simplified_browser = Settings.simplified_browser
+            self.ui_maxhist = Settings.path_history_maxsize
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
@@ -205,3 +206,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_singletracecolor_changed(self):
         Settings.singlefile_individualcolor = self.ui_singletrace_individualcolor
+
+
+    def on_maxhist_change(self):
+        Settings.path_history_maxsize = self.ui_maxhist
