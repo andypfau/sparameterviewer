@@ -1,6 +1,6 @@
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
-from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog
+from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog, custom_buttons_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
 from .components.plot_widget import PlotWidget
@@ -18,11 +18,11 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds, string_to_enum, enum_to_string
+from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds, string_to_enum, enum_to_string, is_running_from_binary
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
-from lib import ExpressionParser
+from lib import ExpressionParser, DefaultAction
 from lib import PathExt
 from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
 from info import Info
@@ -45,9 +45,9 @@ class MainWindow(MainWindowUi):
 
     CURSOR_OFF_NAME = '—'
 
+    TIMER_INITIALIZATION_ID, TIMER_INITIALIZATION_TIMEOUT_S = get_unique_id(), 0.2
     TIMER_CURSORUPDATE_ID, TIMER_CURSOR_UPDATE_TIMEOUT_S = get_unique_id(), 25e-3
     TIMER_PLOT_UPDATE_ID, TIMER_PLOT_UPDATE_TIMEOUT_S = get_unique_id(), 10e-3
-    TIMER_INITIAL_SELECTION_ID, TIMER_INITIAL_SELECTION_TIMEOUT_S = get_unique_id(), 0.2
     TIMER_CLEAR_LOAD_COUNTER_ID, TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S = get_unique_id(), 0.5
     TIMER_RESCALE_GUI_ID, TIMER_RESCALE_GUI_TIMEOUT_S = get_unique_id(), 0.5
 
@@ -77,6 +77,7 @@ class MainWindow(MainWindowUi):
         self._last_cursor_x = [0, 0]
         self._last_cursor_trace = ['', '']
         self._smartscale_set_y = False
+        self._saved_nw_name_for_template: str|None = None
 
         super().__init__()
         
@@ -113,7 +114,7 @@ class MainWindow(MainWindowUi):
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
             self.ui_filesys_browser.add_toplevel(path)
-        self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIAL_SELECTION_ID, MainWindow.TIMER_INITIAL_SELECTION_TIMEOUT_S, self.select_initial_files)
+        self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIALIZATION_ID, MainWindow.TIMER_INITIALIZATION_TIMEOUT_S, self.finish_initialization)
 
         self.update_most_recent_paths_menu()
         Settings.attach(self.on_settings_change)
@@ -173,7 +174,26 @@ class MainWindow(MainWindowUi):
             logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
 
 
-    def select_initial_files(self):
+    def finish_initialization(self):
+
+        if is_running_from_binary():
+            try:
+                import pyi_splash
+                pyi_splash.close()
+
+                # attempt to fix the bug that under Windows, the main dialog goes to the background once
+                #   the splash screen is closed
+                try:
+                    self._raise()
+                except:
+                    pass
+                try:
+                    self.activateWindow()
+                except:
+                    pass
+            except:
+                pass
+
         if len(self._initial_selection) > 0:
             self.ui_filesys_browser.selected_files = self._initial_selection
         else:
@@ -224,16 +244,29 @@ class MainWindow(MainWindowUi):
             self.ui_show_status_message(record.message, record.level)
     
 
+    def get_nw_name_for_template(self, path: PathExt) -> str:
+        if path.is_in_arch():
+            return path.arch_path_name
+        else:
+            return path.name
+    
+    
     def on_template_button(self):
 
         def selected_file_names():
-            result = []
-            for file in self.get_selected_files():
-                if file.path.is_in_arch():
-                    result.append(file.path.arch_path_name)
-                else:
-                    result.append(file.path.name)
-            return result
+            return [self.get_nw_name_for_template(file.path) for file in self.get_selected_files()]
+        
+        def get_reference_file_for_multifile_op() -> str|None:
+            if self._saved_nw_name_for_template is None:
+                info_dialog('Error', 'No reference network selected.', informative_text='Right-click a network in te fileview browser, and click "Save for Template". Then use this template again.')
+                return None
+            option = custom_buttons_dialog('Reference', 'How do you want to link to the reference network?',
+                informative_text='Constant: insert name of reference network as constant literal.\nDynamic: use the `saved_nw()` function to refer to the currently saved network.',
+                buttons=['Constant', 'Dynamic'])
+            match option:
+                case 0: return f'nw("{self._saved_nw_name_for_template}")'
+                case 1: return f'saved_nw()'
+            raise RuntimeError()
 
         def set_expression(*expressions):
             if Settings.simplified_no_expressions:
@@ -354,41 +387,32 @@ class MainWindow(MainWindowUi):
             nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names()])
             set_expression(f'({nws}).s(2,1).plot()')
         
-        def normalize():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f'(sel_nws() / nw("{n1}")).plot_sel_params()')
+        def normalize_to_ref():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()')
         
-        def deembed1fromothers():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f'(~nw("{n1}") ** sel_nws()).plot_sel_params()')
+        def normalize_to_f():
+            set_expression(f'sel_nws().sel_params().norm(at_f=10e9).plot()')
         
-        def deembed1flippedfromothers():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f'(~(nw("{n1}").flipped()) ** sel_nws()).plot_sel_params()')
+        def deembed_ref_from_others():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'((~{ref_nw}) ** sel_nws()).plot_sel_params()')
         
-        def fromothersdeembed1():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f'(sel_nws() ** ~nw("{n1}")).plot_sel_params()')
+        def deembed_ref_flipped_from_others():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'(~({ref_nw}.flipped()) ** sel_nws()).plot_sel_params()')
         
-        def fromothersdeembed1flipped():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f'(sel_nws() ** ~(nw("{n1}").flipped)).plot_sel_params()')
+        def from_others_deembed_ref():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'(sel_nws() ** (~"{ref_nw}).plot_sel_params()')
         
-        def deembed2xthru():
-            if not ensure_selected_file_count('>=', 2):
-                return
-            n1 = selected_file_names()[0]
-            set_expression(f"(~(nw('{n1}').half(side=1)) ** sel_nws() ** ~(nw('{n1}').half(side=2))).plot_sel_params()")
+        def from_others_deembed_ref_flipped():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'(sel_nws() ** (~{ref_nw}).flipped)).plot_sel_params()')
+        
+        def deembed_ref_as_2xthru():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f"((~{ref_nw}).half(side=1)) ** sel_nws() ** (~{ref_nw}).half(side=2))).plot_sel_params()")
         
         def mixed_mode():
             if not ensure_selected_file_count('>=', 1):
@@ -466,24 +490,28 @@ class MainWindow(MainWindowUi):
                 ('Losslessness', losslessness),
                 ('All of Above', four_metrics),
             ]),
-            ('Operations on Selected Networks', [
+            ('Operations on Individual Networks', [
+                ('Normalize at Given Frequency', normalize_to_f),
+                (None, None),
                 ('Single-Ended to Mixed-Mode', mixed_mode),
                 ('Impedance Renormalization', z_renorm),
+                (None, None),
                 ('Add Line To Network', add_tline),
                 (None, None),
                 ('Just Plot All Selected Files', all_selected),
             ]),
-            ('Operations on Two or More Selected Networks', [
-                ('Normalize to 1st Network', normalize),
-                (None, None),
-                ('De-Embed 1st Network From Others', deembed1fromothers),
-                ('De-Embed 1st Network (Flipped) From Others', deembed1flippedfromothers),
-                ('From Others De-Embed 1st Network', fromothersdeembed1),
-                ('From Others De-Embed 1st Network (Flipped)', fromothersdeembed1flipped),
-                (None, None),
-                ('Treat 1st as 2xTHRU, De-Embed from Others', deembed2xthru),
-                (None, None),
+            ('Operations On Multiple Networks', [
                 ('Cascade Selected Networks', cascade),
+            ]),
+            ('Operations With a Reference Network', [
+                ('Normalize to Reference Network', normalize_to_ref),
+                (None, None),
+                ('De-Embed Reference Network From Others', deembed_ref_from_others),
+                ('De-Embed Reference Network (Flipped) From Others', deembed_ref_flipped_from_others),
+                ('From Others De-Embed Reference Network', from_others_deembed_ref),
+                ('From Others De-Embed Reference Network (Flipped)', from_others_deembed_ref_flipped),
+                (None, None),
+                ('Treat Reference as 2xTHRU, De-Embed from Others', deembed_ref_as_2xthru),
             ]),
         ])
 
@@ -989,6 +1017,12 @@ class MainWindow(MainWindowUi):
                 else:
                     Clipboard.copy_string(path.name)
             return copyname
+        def make_save_for_template(path: PathExt):
+            def savefortemplate():
+                self._saved_nw_name_for_template = self.get_nw_name_for_template(path)
+                if self.ui_param_selector.useExpressions():
+                    self.schedule_plot_update()
+            return savefortemplate
 
         menu = []
         is_toplevel = path == toplevel_path
@@ -1004,9 +1038,10 @@ class MainWindow(MainWindowUi):
                         menu.append(('Navigate to this Directory', make_chroot(path.parent)))
                         menu.append((None, None))
             menu.append((f'Select All Files from Here', make_selall(path)))
-            if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
+            if not Settings.simplified_no_expressions:
                 menu.append((None, None))
                 menu.append((f'Copy Name', make_copy_name(path)))
+                menu.append((f'Save for Template', make_save_for_template(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
             if not self.ui_filesys_browser.simplified():
@@ -1437,65 +1472,81 @@ class MainWindow(MainWindowUi):
                     
             selected_files = self.get_selected_files()
 
-            selnws_expression_list = []
-            plot_args = []
+            plot_kwargs_rl, plot_kwargs_il = {}, {}
             if self.ui_semitrans_traces:
-                plot_args.append(f'opacity={Settings.plot_semitransparent_opacity}')
+                plot_kwargs_rl['opacity'] = Settings.plot_semitransparent_opacity
+                plot_kwargs_il['opacity'] = Settings.plot_semitransparent_opacity
+
+            def make_args_str(*args, **kwargs):
+                def fmt(x):
+                    if isinstance(x, str):
+                        return f'"{x}"'
+                    return f'{x}'
+                return ', '.join([
+                    *[f'{fmt(a)}' for a in args],
+                    *[f'{n}={fmt(a)}' for n,a in kwargs.items()]
+                ])
+            
+            actions: list[DefaultAction] = []
+            
             if params == Parameters.Custom:
 
+                any_il, any_rl = False, False
+                for i in range(params_mask.shape[0]):
+                    for j in range(params_mask.shape[1]):
+                        if i==j:
+                            any_rl = True
+                        else:
+                            any_il = True
+                if any_il and any_rl:
+                    plot_kwargs_il['style'] = '-'
+                    plot_kwargs_rl['style'] = '--'
+                
                 for i in range(params_mask.shape[0]):
                     for j in range(params_mask.shape[1]):
                         if params_mask[i,j]:
-                            selnws_expression_list.append(f's({i+1},{j+1}).plot({",".join(plot_args)})')
+                            if i==j:
+                                plot_kwargs = plot_kwargs_rl
+                            else:
+                                plot_kwargs = plot_kwargs_il
+                            actions.append(DefaultAction([i+1,j+1], dict(), [], plot_kwargs))
 
             else:
+
                 any_il = params & Parameters.S21 or params & Parameters.S12
                 any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
-                plot_args_il, plot_args_rl = [*plot_args], [*plot_args]
                 if any_il and any_rl:
-                    plot_args_il.append('style="-"')
-                    plot_args_rl.append('style="--"')
-                plot_args_il_str, plot_args_rl_str = ', '.join(plot_args_il), ', '.join(plot_args_rl)
+                    plot_kwargs_il['style'] = '-'
+                    plot_kwargs_rl['style'] = '--'
 
                 if params & Parameters.S21 and params & Parameters.S12:
-                    selnws_expression_list.append(f's(il_only=True).plot({plot_args_il_str})')
+                    actions.append(DefaultAction([], dict(il_only=True), [], plot_kwargs_il))
                 elif params & Parameters.S21:
-                    selnws_expression_list.append(f's(fwd_il_only=True).plot({plot_args_il_str})')
+                    actions.append(DefaultAction([], dict(fwd_il_only=True), [], plot_kwargs_il))
                 elif params & Parameters.S12:
-                    selnws_expression_list.append(f's(rev_il_only=True).plot({plot_args_il_str})')
+                    actions.append(DefaultAction([], dict(rev_il_only=True), [], plot_kwargs_il))
             
                 if params & Parameters.Sii:
-                    selnws_expression_list.append(f's(rl_only=True).plot({plot_args_rl_str})')
+                    actions.append(DefaultAction([], dict(rl_only=True), [], plot_kwargs_rl))
                 elif params & Parameters.S11:
-                    selnws_expression_list.append(f's(11).plot({plot_args_rl_str})')
+                    actions.append(DefaultAction([11], dict(), [], plot_kwargs_rl))
                 elif params & Parameters.S22:
-                    selnws_expression_list.append(f's(22).plot({plot_args_rl_str})')
-        
-            code_preamble = 'def _plot_sel_params_handler(nws: "Networks"):\n'
-            if len(selnws_expression_list) > 0:
-                code_preamble += '\n'.join([f'\tnws.{expr}' for expr in selnws_expression_list]) + '\n'
-            else:
-                code_preamble += '\tpass\n'
-            code_preamble += 'Networks.plot_sel_params_handler = _plot_sel_params_handler\n'
-            code_preamble += '\n'
+                    actions.append(DefaultAction([22], dict(), [], plot_kwargs_rl))
             
-            self.generated_expressions = '\n'.join([f'sel_nws().{expr}' for expr in selnws_expression_list])
+            generated_lines = [f'sel_nws().s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
+            self.generated_expressions = '\n'.join(generated_lines)
 
-            param_selector_is_in_use = False
+            param_selector_is_in_use = True
             if use_expressions:
 
-                raw_exprs = self.ui_expression
-                Settings.expression = raw_exprs
-
-                result = ExpressionParser.eval(code_preamble+raw_exprs, self.files.values(), selected_files, add_to_plot_list)  
-                param_selector_is_in_use = result.plot_sel_params_handler_used
+                Settings.expression = self.ui_expression
+                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self._saved_nw_name_for_template, add_to_plot_list)  
+                param_selector_is_in_use = result.default_actions_used
 
             else:
 
-                param_selector_is_in_use = True
-
                 try:
-                    ExpressionParser.eval(code_preamble+self.generated_expressions, self.files.values(), selected_files, add_to_plot_list)  
+                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self._saved_nw_name_for_template, add_to_plot_list)  
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()

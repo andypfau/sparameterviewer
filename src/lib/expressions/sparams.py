@@ -56,84 +56,85 @@ class SParam:
     
 
     @staticmethod
-    def _op(a: "SParam", b: "SParam", op: "Callable") -> "SParam":
+    def _op(a: "SParam", b: "SParam", op: "Callable", op_type_str: str = '.op.') -> "SParam":
         if isinstance(a, (int,float,complex,np.ndarray)):
-            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files)
+            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files, param_type='const')
         if isinstance(b, (int,float,complex,np.ndarray)):
-            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files)
+            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files, param_type='const')
         a_nw, b_nw = SParam._adapt_f(a, b)
         a_s = np.array(np.ndarray.flatten(a_nw.s))
         b_s = np.array(np.ndarray.flatten(b_nw.s))
         c_s = op(a_s, b_s)
-        return a._modified_copy(f=a_nw.f, s=c_s, original_files=a.original_files|b.original_files)
+        c_t = a.param_type + op_type_str + b.param_type
+        return a._modified_copy(f=a_nw.f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a/b)
+        return SParam._op(self, other, lambda a,b: a/b, op_type_str='/')
 
 
     def __rtruediv__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a/b)
+        return SParam._op(other, self, lambda a,b: a/b, op_type_str='/')
 
         
     def __mul__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a*b)
+        return SParam._op(self, other, lambda a,b: a*b, op_type_str='*')
 
 
     def __rmul__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a*b)
+        return SParam._op(other, self, lambda a,b: a*b, op_type_str='*')
 
         
     def __pow__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a**b)
+        return SParam._op(self, other, lambda a,b: a**b, op_type_str='^')
 
 
     def __rpow__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a**b)
+        return SParam._op(other, self, lambda a,b: a**b, op_type_str='^')
 
         
     def __add__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a+b)
+        return SParam._op(self, other, lambda a,b: a+b, op_type_str='+')
 
 
     def __radd__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(other, self, lambda a,b: a+b)
+        return SParam._op(other, self, lambda a,b: a+b, op_type_str='+')
 
         
     def __sub__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: a-b)
+        return SParam._op(self, other, lambda a,b: a-b, op_type_str='-')
 
 
     def __rsub__(self, other: "SParam|float") -> "SParam":
-        return SParam._op(self, other, lambda a,b: b-a)
+        return SParam._op(self, other, lambda a,b: b-a, op_type_str='-')
 
 
     def __invert__(self) -> "SParam":
-        return self._modified_copy(s=1/self.s)
+        return self._modified_copy(s=1/self.s, param_type=self.param_type+'.inv')
 
     
     def abs(self) -> "SParam":
-        return self._modified_copy(s=np.abs(self.s))
+        return self._modified_copy(s=np.abs(self.s), param_type=self.param_type+'.abs')
 
     
     def db(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))))
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))), param_type=self.param_type+'.db')
 
     
     def db10(self) -> "SParam":
-        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))))
+        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))), param_type=self.param_type+'.db')
 
     
     def db20(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))))
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))), param_type=self.param_type+'.db')
 
     
     def ml(self) -> "SParam":
-        return self._modified_copy(name=self.name+' ML', s=1-(np.abs(self.s)**2))
+        return self._modified_copy(name=self.name+' ML', s=1-(np.abs(self.s)**2), param_type=self.param_type+'.ml')
 
     
     def vswr(self) -> "SParam":
-        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)))
+        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)), param_type=self.param_type+'.vswr')
 
     
     def phase(self, processing: "str|None" = None) -> "SParam":
@@ -145,7 +146,20 @@ class SParam:
             s = np.unwrap(s)
         elif s is not None:
             raise ValueError(f'Invalid processing option "{processing}"')
-        return self._modified_copy(s=s)
+        return self._modified_copy(s=s, param_type=self.param_type+'.pha')
+
+
+    def norm(self, at_f: float, method='div') -> "SParam":
+        idx = np.argmin(np.abs(self.f - at_f))
+        ref = self.s[idx]
+        s = self.s.copy()
+        if method == 'div':
+            s = s / ref
+        elif method == 'sub':
+            s = s - ref
+        else:
+            raise ValueError(f'Expected method to be "div" or "sub", got "{method}"')
+        return self._modified_copy(s=s, name=f'{self.name} norm.', param_type=self.param_type+'.norm')
 
     
     @staticmethod
@@ -192,7 +206,7 @@ class SParam:
 
         f = np.array([f_target_start, f_target_end])
         s = np.array([s11_linear, s11_linear])
-        return self._modified_copy(f=f, s=s)
+        return self._modified_copy(f=f, s=s, param_type=self.param_type+'.rlavg')
     
         
 
@@ -200,7 +214,7 @@ class SParam:
         s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
-        return self._modified_copy(s=s)
+        return self._modified_copy(s=s, param_type=self.param_type+'.map')
     
     
     def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
@@ -368,8 +382,12 @@ class SParams:
     
     def phase(self, processing: "str|None" = None) -> "SParams":
         return self._unary_op(SParam.phase, True, processing=processing)
-    
 
+
+    def norm(self, at_f: float, method='div') -> "SParams":
+        return self._unary_op(SParam.norm, True, at_f=at_f, method=method)
+
+    
     def plot(self, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         for sp in self.sps:
             try:
@@ -417,25 +435,25 @@ class SParams:
         return self.interpolate_lin(f_start, f_stop, n)
 
 
-    def _interpolated_fn(self, name, fn, min_size=1):
+    def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp'):
         sps = self.interpolate().sps
         if len(sps) < min_size:
             return []
         f = sps[0].f
         s = fn([sp.s for sp in sps])
-        return SParams(sps=[SParam(name, f, s, math.nan)])
+        return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str)])
 
 
     def mean(self):
-        return self._interpolated_fn('Mean', lambda s: np.mean(s,axis=0))
+        return self._interpolated_fn('Mean', lambda s: np.mean(s,axis=0), type_str='.mean')
 
 
     def median(self):
-        return self._interpolated_fn('Median', lambda s: np.median(s,axis=0))
+        return self._interpolated_fn('Median', lambda s: np.median(s,axis=0), type_str='.median')
 
 
     def sdev(self, ddof=1):
-        return self._interpolated_fn('StdDev', lambda s: np.std(s,axis=0,ddof=ddof), min_size=2)
+        return self._interpolated_fn('StdDev', lambda s: np.std(s,axis=0,ddof=ddof), min_size=2, type_str='.sdev')
     
 
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":

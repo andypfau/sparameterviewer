@@ -61,6 +61,21 @@ def yesno_dialog(title: str, text: str, informative_text: str|None = None, detai
     return result==QMessageBox.StandardButton.Yes
 
 
+def custom_buttons_dialog(title: str, text: str, buttons: list[str], informative_text: str|None = None, detailed_text: str|None = None) -> int:
+    assert 1<=len(buttons)<=3
+    dlg = _make_dialog(title, text, informative_text, detailed_text, None, None, QMessageBox.Icon.Question)
+    dialog_buttons = {}
+    for i,text in enumerate(buttons):
+        obj = dlg.addButton(text, QMessageBox.ButtonRole.NoRole)
+        dialog_buttons[obj] = i
+    dlg.exec()
+    btn = dlg.clickedButton()
+    if btn in dialog_buttons:
+        return dialog_buttons[btn]
+    else:
+        return 0
+
+
 def _format_filters(filetypes: list[tuple[str,str]]) -> list[str]:
     result = []
     for (name,filter) in filetypes:

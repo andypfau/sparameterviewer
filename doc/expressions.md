@@ -77,6 +77,15 @@ nw(pattern=None)
 Same as `nws()`, except that it is intended to select exactly one network. Throws an error if zero or more than one network is matched.
 
 
+### saved_nw()
+
+```python
+saved_nw()
+```
+
+Returns the network that was saved in the filesystem browser.
+
+
 Classes
 -------
 
@@ -101,7 +110,17 @@ Note that any operation on the object may, by design, fail silently. For example
 plot_sel_params()
 ```
 
-Plots the parameters of the networks, in the same way it would be plotted if expressions were not used.
+Plots the parameters of the networks, according to the parameter selector in the main window.
+
+
+##### sel_params()
+
+```python
+sel_params()
+```
+
+Returns the S-parameters (an `SParams` object) of a network, according to the parameter selector in the main window.
+
 
 ##### s(), z(), y(), abcd(), t()
 
@@ -537,6 +556,17 @@ crop_f(f_start=-inf, f_end=+inf) → SParams.
 ```
 
 Returns the same S-Param, but with a reduced frequency range.
+
+
+##### norm()
+
+```python
+norm(at_f: float, method='div') → SParams
+```
+
+Normalizes the parameter to its value at the given frequency.
+
+When `method='div'` (the default), all other frequencies are normalized by dividing their value by the value at the given frequency. When `method='sub"`, all other frequencies are normalized by subtracting their value from the value at the given frequency.
 
 
 ##### mean()

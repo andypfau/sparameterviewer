@@ -4,6 +4,7 @@ from ..stabcircle import StabilityCircle
 from ..sparam_helpers import parse_quick_param
 from .networks import Networks
 from .sparams import SParam, SParams
+from .helpers import DefaultAction
 
 import math
 import numpy as np
@@ -17,16 +18,19 @@ class ExpressionParser:
     
     @dataclasses.dataclass
     class Result:
-        plot_sel_params_handler_used: bool
+        default_actions_used: bool
 
 
     @staticmethod
-    def eval(code: str, \
-        available_networks: "list[SParamFile]", \
-        selected_networks: "list[SParamFile]", \
+    def eval(code: str,
+        available_networks: "list[SParamFile]",
+        selected_networks: "list[SParamFile]",
+        default_actions: "list[DefaultAction]",
+        ref_nw_name: "str|None",
         plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str]"):
-        
+
         SParam._plot_fn = plot_fn
+        Networks.default_actions = default_actions
 
         def select_networks(network_list: "list[SParamFile]", pattern: str, single: bool):
             nws = []
@@ -51,6 +55,12 @@ class ExpressionParser:
         def nw(pattern: str) -> Networks:
             return select_networks(available_networks, pattern, single=True)
 
+        def saved_nw() -> Networks:
+            if ref_nw_name is None:
+                logging.warning(f'saved_nw(): no network was saved for this purpose; returning empty object')
+                return Networks([]) 
+            return select_networks(available_networks, ref_nw_name, single=True)
+
         def quick(*items):
             for (e,i) in [parse_quick_param(item) for item in items]:
                 try:
@@ -63,6 +73,7 @@ class ExpressionParser:
             'Networks': Networks,
             'SParams': SParams,
             'nw': nw,
+            'saved_nw': saved_nw,
             'nws': nws,
             'sel_nws': sel_nws,
             'quick': quick,
@@ -70,8 +81,7 @@ class ExpressionParser:
             'np': np,
         }
         
-        Networks.plot_sel_params_handler_used = False
+        Networks.default_actions_used = False
         exec(code, vars_global, vars_local)
-        plot_sel_params_handler_used = Networks.plot_sel_params_handler_used
 
-        return ExpressionParser.Result(plot_sel_params_handler_used)
+        return ExpressionParser.Result(Networks.default_actions_used)

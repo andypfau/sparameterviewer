@@ -36,14 +36,6 @@ if __name__ == '__main__':
     except Exception as ex:
         pass # ignore
 
-    # splashscreen (pyinstaller only)
-    if is_running_from_binary():
-        try:
-            import pyi_splash
-            pyi_splash.close()
-        except Exception as ex:
-            pass # not started from pyinstaller, ignore
-
     try:
         app = QtWidgets.QApplication(sys.argv)
         filenames = sys.argv[1:]

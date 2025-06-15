@@ -3,7 +3,7 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams
-from .helpers import format_call_signature
+from .helpers import format_call_signature, DefaultAction
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
 from info import Info
@@ -95,10 +95,19 @@ class Network:
             raise ValueError(f'Expected operand of type float or Network, got <{other}>')
 
         
-    def __mul__(self, other: float) -> "Network":
-        nw = self.nw.copy()
-        nw.s *= other
-        return Network(nw, f'{self.nw.name}*{other}', original_files=self.original_files)
+    def __mul__(self, other: "Network|float") -> "Network":
+        if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
+            nw = self.nw.copy()
+            nw.s *= other
+            return Network(nw, f'{self.nw.name}*{other}', original_files=self.original_files)
+        elif isinstance(other, Network):
+            if self.nw.number_of_ports != other.nw.number_of_ports:
+                raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
+            nw, nw2 = Network._get_adapted_networks(self, other)
+            nw.s = nw.s * nw2.s
+            return Network(nw, f'{self.nw.name}*{other.nw.name}', original_files=self.original_files|other.original_files)
+        else:
+            raise ValueError(f'Expected operand of type float or Network, got <{other}>')
 
 
     def __invert__(self) -> "Network":
@@ -106,12 +115,26 @@ class Network:
 
 
     def __pow__(self, other: "Network") -> "Network":
+        # TODO: I have no idea what I was thinking here... why the "+" in the name? Why take the power of two networks?
+        # I think I should make this the same way as the implementation of __mul__ and __truediv__, and perhaps add __add__ and __sub__
         a_nw,b_nw = Network._get_adapted_networks(self, other)
         return Network(a_nw**b_nw, a_nw.name+'+'+b_nw.name, original_files=self.original_files|other.original_files)
     
 
     def __repr__(self):
         return f'<Network({self.nw})>'
+
+
+    def sel_params(self) -> list[SParam]:
+        Networks.default_actions_used = True
+        params: list[SParam] = []
+        unique_param_names = set()
+        for action in Networks.default_actions:
+            for param in self.s(*action.s_args, **action.s_kwargs):
+                if param.param_type not in unique_param_names:
+                    params.append(param)
+                    unique_param_names.add(param.param_type)
+        return params
 
 
     def s(self, egress_port = None, ingress_port = None, *, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> list[SParam]:
@@ -213,6 +236,14 @@ class Network:
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
         new_s = self.nw.s[idx0:idx1+1,:,:]
+        new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
+        return Network(new_nw, original_files=self.original_files)
+    
+
+    def at_f(self, f: float) -> "Network":
+        idx = np.argmin(np.abs(f - self.nw.f))
+        new_f = self.nw.f[idx]
+        new_s = self.nw.s[idx,:,:]
         new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
         return Network(new_nw, original_files=self.original_files)
     
@@ -652,8 +683,8 @@ class Networks:
 
     available_networks: "list[skrf.Network]"
 
-    plot_sel_params_handler: "callable[tupe[Networks],None]" = None
-    plot_sel_params_handler_used: bool = False
+    default_actions: "list[DefaultAction]" = []
+    default_actions_used: bool = False
 
 
     def __init__(self, nws: "list[skrf.Network]|list[Network]" = None):
@@ -740,6 +771,10 @@ class Networks:
         if len(self.nws) == 1:
             return f'<Networks({self.nws[0]})>'
         return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
+    
+
+    def sel_params(self) -> SParams:
+        return self._unary_op(Network.sel_params, SParams)
     
 
     def s(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
@@ -842,14 +877,13 @@ class Networks:
         self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)
 
 
-    def plot_sel_params(self):
-        if not Networks.plot_sel_params_handler:
-            return
-        Networks.plot_sel_params_handler_used = True
-        Networks.plot_sel_params_handler(self)
-        
-    
-    def quick(self, *items):
+    def plot_sel_params(self) -> None:
+        Networks.default_actions_used = True
+        for action in Networks.default_actions:
+            self.s(*action.s_args, **action.s_kwargs).plot(*action.plot_args, **action.plot_kwargs)
+
+
+    def quick(self, *items) -> None:
         self._unary_op(Network.quick, None, *items)
         
     

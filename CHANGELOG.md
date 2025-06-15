@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b9 (2025-06-15)
+-------------------
+
+- new: `Networks.sel_params()` and `SParams.norm()` methods
+- new: by right-clicking a file in the filesystem browser, it can now be saved to be used in templates
+- bugfix: various small fixes
+
+
 0.40b8 (2025-06-10)
 -------------------
 
