@@ -421,8 +421,8 @@ class MainWindowUi(QMainWindow):
         self._ui_viewmenu = QMenu()
         self._ui_opacity_slider = QSlider(QtCore.Qt.Orientation.Horizontal)
         self._ui_opacity_slider.setMinimumWidth(150)
-        self._ui_opacity_slider.setMinimum(1)
-        self._ui_opacity_slider.setMaximum(99)
+        self._ui_opacity_slider.setMinimum(0)
+        self._ui_opacity_slider.setMaximum(1000)
         self._ui_opacity_slider.valueChanged.connect(self.on_traceopacity_changed)
         self._ui_opacity_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
         self._ui_viewmenu.addSeparator()
@@ -703,10 +703,10 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_trace_opacity(self) -> float:
-        return self._ui_opacity_slider.value()/100.0
+        return self._ui_opacity_slider.value()/1000.0
     @ui_trace_opacity.setter
     def ui_trace_opacity(self, value: float):
-        self._ui_opacity_slider.setValue(round(value*100))
+        self._ui_opacity_slider.setValue(round(value*1000))
 
 
     @property

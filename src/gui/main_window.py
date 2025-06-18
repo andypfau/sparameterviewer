@@ -1401,6 +1401,9 @@ class MainWindow(MainWindowUi):
             self.generated_expressions = ''
             self.plot = None
 
+            def map_opacity(x):
+                return max(1e-3, min(1, x**2))  # tjis mapping makes adjustment of small values easier
+
             params = self.ui_param_selector.params()
             params_mask = self.ui_param_selector.paramMask() if params==Parameters.Custom else None
             use_expressions = self.ui_param_selector.useExpressions()
@@ -1418,6 +1421,7 @@ class MainWindow(MainWindowUi):
             smith_norm = self.ui_plot_selector.smithNorm()
             smart_db_scaling = self.ui_smart_db
             log_x, log_y = self.ui_logx, self.ui_logy
+            default_trace_opacity = map_opacity(self.ui_trace_opacity)
             
             common_plot_args = dict(show_legend=self.ui_show_legend, hide_single_item_legend=self.ui_hide_single_item_legend, shorten_legend=self.ui_shorten_legend, max_legend_items=self.ui_maxlegend)
 
@@ -1474,8 +1478,8 @@ class MainWindow(MainWindowUi):
 
             plot_kwargs_rl, plot_kwargs_il = {}, {}
             if self.ui_semitrans_traces:
-                plot_kwargs_rl['opacity'] = Settings.plot_semitransparent_opacity
-                plot_kwargs_il['opacity'] = Settings.plot_semitransparent_opacity
+                plot_kwargs_rl['opacity'] = default_trace_opacity
+                plot_kwargs_il['opacity'] = default_trace_opacity
 
             def make_args_str(*args, **kwargs):
                 def fmt(x):
@@ -1577,7 +1581,7 @@ class MainWindow(MainWindowUi):
                     style = '-'
                 if opacity is None:
                     if self.ui_semitrans_traces:
-                        opacity = Settings.plot_semitransparent_opacity
+                        opacity = default_trace_opacity
 
                 style2 = '-.'
                 if style=='-':
