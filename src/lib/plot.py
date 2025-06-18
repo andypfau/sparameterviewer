@@ -1,6 +1,6 @@
 from .si import SiValue, SiFormat
 from .structs import PlotData, PlotDataQuantity
-from .shortstr import remove_common_prefixes_and_suffixes
+from .shortstr import shorten_string_list
 from .utils import natural_sort_key
 from .settings import Settings, LogNegativeHandling
 
@@ -356,13 +356,19 @@ class PlotHelper:
             
 
     def _add_traces_to_plots(self):
-        self.any_legend = False
-
+        
         for item in self.items:
             item.label = item.data.name
-        if self._shorten_legend:
+
+        show_legend = self._show_legend
+        if len(self.items) <= 1 and self._hide_single_item_legend:
+            show_legend = False
+        if self._max_legend_items >= 0 and len(self.items) > self._max_legend_items:
+            show_legend = False
+
+        if self._shorten_legend and show_legend:
             labels = [item.label for item in self.items]
-            labels = remove_common_prefixes_and_suffixes(labels)
+            labels = shorten_string_list(labels)
             for label,item in zip(labels,self.items):
                 item.label = label
         
@@ -425,11 +431,6 @@ class PlotHelper:
                 self.plot.set_ylim((-self._r_smith,+self._r_smith))
                 self.plot.legend()
                 
-        show_legend = self._show_legend
-        if len(self.items) <= 1 and self._hide_single_item_legend:
-            show_legend = False
-        if self._max_legend_items >= 0 and len(self.items) > self._max_legend_items:
-            show_legend = False
         if show_legend:
             self.plot.legend()
         else:
