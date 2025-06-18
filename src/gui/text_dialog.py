@@ -20,7 +20,7 @@ class TextDialog(TextDialogUi):
         self.filetypes = save_filetypes
         
         if file_path:
-            assert text is None
+            assert text is None, f'Expected not text, got "{text}"'
             try:
                 # TODO: support archives. My idea is that PathExt offers a helper method to obtain the file contents.
                 with open(str(file_path), 'r') as fp:
@@ -28,7 +28,7 @@ class TextDialog(TextDialogUi):
             except Exception as ex:
                 error_dialog('Error', 'Unable to read file contents', detailed_text=str(ex))
         else:
-            assert file_path is None
+            assert file_path is None, f'Expected no file path, got <{file_path}>'
             self.text = text
         
         self.ui_set_title(title)

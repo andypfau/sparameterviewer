@@ -25,7 +25,7 @@ class SParam:
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None):
-        assert len(f) == len(s), f'Expected frequency and S vecors to have same length'
+        assert len(f) == len(s), f'Expected frequency and S vecors to have same length, got {len(f)} and {len(s)}'
         self.name, self.f, self.s, self.z0 = name, f, s, z0
         self.original_files, self.param_type = original_files or set(), param_type
     
@@ -414,15 +414,15 @@ class SParams:
 
 
     def interpolate_lin(self, f_start: float, f_end: float, n: int):
-        assert f_start <= f_end, f'Expected f_start <= f_end'
-        assert n >= 1
+        assert f_start <= f_end, f'Expected f_start <= f_end, got {f_start} and {f_end}'
+        assert n >= 1, f'Expected n >= 1, got {n}'
         return self._interpolate(np.linspace(f_start, f_end, n))
 
 
     def interpolate_log(self, f_start: float, f_end: float, n: int):
-        assert f_start > 0, f'Expected f_start > 0'
-        assert f_start <= f_end, f'Expected f_start <= f_end'
-        assert n >= 1, f'Expected n >= 1'
+        assert f_start > 0, f'Expected f_start > 0, got {f_start}'
+        assert f_start <= f_end, f'Expected f_start <= f_end, got {f_start} and {f_end}'
+        assert n >= 1, f'Expected n >= 1, got {n}'
         return self._interpolate(np.geomspace(f_start, f_end, n))
 
 
@@ -468,19 +468,27 @@ class SParams:
         return self._unary_op(SParam.rename, True, name=name, prefix=prefix, suffix=suffix, pattern=pattern, subs=subs)
     
 
-    def save(self, filename: str):
-        WILDCARD = '$$'
-        
-        if len(self.sps) > 1:
-            if WILDCARD not in filename:
-                raise RuntimeError(f'Please add a wildcard ("{WILDCARD}") to the filename if you want to save multiple parameters.')
-        
-        for sp in self.sps:
-            [directory, name] = os.path.split(filename)
+    def save(self, filename: str):  # TODO: document this command
+        WILDCARD_NUM = '$num$'
+        WILDCARD_NAME = '$name$'
+
+        paths = []
+        for i,sp in enumerate(self.sps):
+            [dir, name] = os.path.split(filename)
             [name, ext] = os.path.splitext(name)
-            name = sanitize_filename(name.replace(WILDCARD, sp.name))
-            path = os.path.join(directory, name+ext)
-            sp.save(path)
+            name = name.replace(WILDCARD_NUM, str(i+1))
+            name = name.replace(WILDCARD_NUM, sp.name)
+            name = sanitize_filename(name)
+            path = os.path.abspath(os.path.join(dir, name+ext))
+            paths.append(path)
+        if (len(paths) > 1) and (len(paths) > len(set(paths))):
+            raise RuntimeError(f'Filenames are not nunique; please use wildcards ("{WILDCARD_NAME}" or "{WILDCARD_NUM}) in the filename.')
+        
+        for sp,path in zip(self.sps, path):
+            try:
+                sp.save(path)
+            except Exception as ex:
+                logging.error(f'Saving parameter "{sp.name}" to <{path}> failed ({ex})')
     
 
     def __repr__(self):

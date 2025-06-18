@@ -250,7 +250,7 @@ class PlotHelper:
     def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, color: str, width: float, opacity: float, prefer_2nd_yaxis: bool = False):
         self._use_two_yaxes = None
         self._axes_swapped = None
-        assert len(x)==len(y)
+        assert len(x)==len(y), f'Expected x and y of same length, got {len(x)} and {len(y)}'
         if len(x) < 1:
             if Settings.verbose:
                 logging.info(f'Ignoring plot "{name}" (contains zero points)')
@@ -418,7 +418,7 @@ class PlotHelper:
                 logging.error(f'Unable to plot item ({ex})')
         
         if self._smith:
-            assert self._r_smith is not None
+            assert self._r_smith is not None, 'Expected Smith radius to be set'
             if self._r_smith!=1:
                 # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
                 self.plot.set_xlim((-self._r_smith,+self._r_smith))

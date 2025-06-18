@@ -366,7 +366,7 @@ class ParamSelector(QWidget):
     def matrixDimensions(self) -> int:
         return self._ui_grid.matrix_dimensions
     def setMatrixDimensions(self, dim: int):
-        assert dim >= 1
+        assert dim >= 1, 'Expected matrix size to be at least 1'
         current_dim = self.matrixDimensions()
         if dim == current_dim:
             return

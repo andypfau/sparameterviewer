@@ -25,7 +25,7 @@ def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = '
 
     if is_mixed_mode:
         names = _get_mixed_port_names(nw)
-        assert egress<=len(names) and ingress<=len(names), f'Expected egress and ingress port to be within the range of names'
+        assert egress<=len(names) and ingress<=len(names), f'Expected egress and ingress port to be within the range of names, got {egress}/{ingress} and names {names}'
         (egress_mode,egress_number) = names[egress-1]
         (ingress_mode,ingress_number) = names[ingress-1]
         if egress_number<10 and ingress_number<10:
@@ -41,7 +41,7 @@ def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = '
 
 
 def get_port_index(nw: skrf.Network, mode: str, number: int) -> int:
-    assert mode in ['S','D','C']
+    assert mode in ['S','D','C'], f'Expected mode to be one of "S", "D", "C", got "{mode}"'
     for i,(m,n) in enumerate(_get_mixed_port_names(nw)):
         if m==mode and n==number:
             return i

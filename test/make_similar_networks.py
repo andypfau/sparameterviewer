@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory() as tempdir:
             print(f'Generating <{filename}>...')
 
             def make_random_scalar(n_points, center, sigma, n_frequency, outlier_chance=0):
-                assert n_frequency >= 3
+                assert n_frequency >= 3, f'Expected at least 3 frequencies, got {n_frequency}'
                 x = np.linspace(0, 1, n_frequency)
                 x[1:-1] += np.random.uniform(-0.25/(n_frequency-1), +0.25/(n_frequency-1), n_frequency-2)
                 y = np.random.normal(center, sigma, n_frequency)
@@ -56,7 +56,7 @@ with tempfile.TemporaryDirectory() as tempdir:
                 def cosine_interpolation(x, xp, yp):
                     def cosine_part(x):
                         return 0.5 - math.cos(x*math.pi) / 2
-                    assert len(xp) >= 2 and len(xp) == len(yp)
+                    assert len(xp) >= 2 and len(xp) == len(yp), f'Expected length of points to be equal and >= 2, got {len(xp)} and {len(yp)}'
                     result = []
                     i = 0
                     for x in x:

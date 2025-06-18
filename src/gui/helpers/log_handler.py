@@ -24,7 +24,7 @@ class LogHandler(logging.StreamHandler):
 
 
     def __init__(self):
-        assert LogHandler._instance is None
+        assert LogHandler._instance is None, f'Expected log handler instance to be unset, got {LogHandler._instance}'
         self._records: list[LogHandler.Record] = []
         self._observers: list[Callable[tuple[LogHandler.Record],None]] = []
         self._t_start = time.monotonic()

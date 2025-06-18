@@ -198,7 +198,7 @@ class TabularDialog(TabularDialogUi):
     
 
     def show_modal_dialog(self, datasets: list[any], initial_selection: int = None):
-        assert len(datasets) > 0
+        assert len(datasets) > 0, 'Expected at least one dataset'
         try:
             self.datasets = [TabularDataset.create(dataset,i+1) for i,dataset in enumerate(datasets)]
             if initial_selection:
@@ -572,7 +572,7 @@ class TabularDialog(TabularDialogUi):
 
 
     def on_save_all(self):
-        assert len(self.datasets) > 0
+        assert len(self.datasets) > 0, 'Expected at least one dataset'
 
         filename: str = save_file_dialog(
             self,

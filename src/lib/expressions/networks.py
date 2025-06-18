@@ -231,7 +231,7 @@ class Network:
                 idx0 = min(idx,idx0)
             if f<=f_end:
                 idx1 = max(idx,idx1)
-        assert 0<=idx0<len(self.nw.f) and 0<=idx1<len(self.nw.f), f'Expected indices to be within range of network'
+        assert 0<=idx0<len(self.nw.f) and 0<=idx1<len(self.nw.f), f'Expected indices to be within range of network, got {idx0}/{idx1} and length {len(self.nw.f)}'
         if idx0<0 or idx1>=len(self.nw.f):
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
@@ -586,7 +586,7 @@ class Network:
         new_nw.renumber(old_indices, new_indices)
 
         new_nw.se2gmm(new_nw.nports // 2)
-        assert new_nw.nports % 2 == 0, f'Expected number of ports to be an even number'
+        assert new_nw.nports % 2 == 0, f'Expected number of ports to be an even number, got {new_nw.nports}'
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -907,19 +907,27 @@ class Networks:
         return self._unary_op(Network.rewire, Networks, ports=ports)
 
 
-    def save(self, filename: str):
-        WILDCARD = '$$'
-        
-        if len(self.nws) > 1:
-            if WILDCARD not in filename:
-                raise RuntimeError(f'Please add a wildcard ("{WILDCARD}") to the filename if you want to save multiple files.')
-        
-        for nw in self.nws:
-            [directory, name] = os.path.split(filename)
+    def save(self, filename: str):  # TODO: document this command
+        WILDCARD_NUM = '$num$'
+        WILDCARD_NAME = '$name$'
+
+        paths = []
+        for i,nw in enumerate(self.nws):
+            [dir, name] = os.path.split(filename)
             [name, ext] = os.path.splitext(name)
-            name = sanitize_filename(name.replace(WILDCARD, nw.name))
-            path = os.path.join(directory, name+ext)
-            nw.save(path)
+            name = name.replace(WILDCARD_NUM, str(i+1))
+            name = name.replace(WILDCARD_NUM, nw.name)
+            name = sanitize_filename(name)
+            path = os.path.abspath(os.path.join(dir, name+ext))
+            paths.append(path)
+        if (len(paths) > 1) and (len(paths) > len(set(paths))):
+            raise RuntimeError(f'Filenames are not nunique; please use wildcards ("{WILDCARD_NAME}" or "{WILDCARD_NUM}) in the filename.')
+        
+        for nw,path in zip(self.nws, path):
+            try:
+                nw.save(path)
+            except Exception as ex:
+                logging.error(f'Saving network "{nw.name}" to <{path}> failed ({ex})')
 
 
     def _count(self) -> int:

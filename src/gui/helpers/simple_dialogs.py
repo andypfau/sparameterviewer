@@ -62,7 +62,7 @@ def yesno_dialog(title: str, text: str, informative_text: str|None = None, detai
 
 
 def custom_buttons_dialog(title: str, text: str, buttons: list[str], informative_text: str|None = None, detailed_text: str|None = None) -> int:
-    assert 1<=len(buttons)<=3
+    assert 1<=len(buttons)<=3, f'Expected 1..3 buttons, got {buttons}'
     dlg = _make_dialog(title, text, informative_text, detailed_text, None, None, QMessageBox.Icon.Question)
     dialog_buttons = {}
     for i,text in enumerate(buttons):
@@ -82,7 +82,7 @@ def _format_filters(filetypes: list[tuple[str,str]]) -> list[str]:
         if filter=='*':
             type_str = '*'
         else:
-            assert filter.startswith('.')
+            assert filter.startswith('.'), f'Expected filter to start with ".", got "{filter}"'
             type_str = f'*{filter}'
         result.append(f'{name} ({type_str})')
     return result
