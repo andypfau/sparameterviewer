@@ -18,7 +18,7 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import open_file_in_default_viewer, sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_2_5_10, is_ext_supported_archive, is_ext_supported, is_ext_supported_file, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds, string_to_enum, enum_to_string, is_running_from_binary
+from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
@@ -1685,49 +1685,13 @@ class MainWindow(MainWindowUi):
             if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
                 self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
 
-            def nice_range(lo, hi):
-                assert hi > lo
-                range = hi - lo
-                if range > 100:
-                    scale, margin = 10, 1
-                elif range > 50:
-                    scale, margin = 5, 1
-                elif range > 20:
-                    scale, margin = 2, 1
-                else:
-                    scale, margin = 1, 0.5
-                nlo = math.floor(lo / scale) * scale - margin
-                nhi = math.ceil(hi / scale) * scale + margin
-                return nlo, nhi
             if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plots)>=1:
-                BASE_QUANTILE_PERCENT = 25
-                MIN_RANGE_DB = 15
-                ZERO_EXTENSION_FACTOR = 2.0
-
-                did_smart_scaling = False
-                tops, bottoms, bases = [], [], []
-                for plot in self.plot.plots:
-                    if plot.currently_used_axis != 1:
-                        continue  # ignore 2nd Y-axis
-                    tops.append(np.max(plot.data.y.values))
-                    bases.append(np.quantile(plot.data.y.values, BASE_QUANTILE_PERCENT/100.0))
-                    bottoms.append(np.min(plot.data.y.values))
-                if len(tops) > 0:
-                    top, base, bottom = np.max(tops), np.median(bases), np.min(bottoms)
-                    full_range = top - bottom
-                    if top >= base and base >= bottom and full_range >= MIN_RANGE_DB:
-                        y0, y1 = base, top
-                        if top < 0:
-                            base_range, distance_to_zero = top-base, -top
-                            if base_range > distance_to_zero*ZERO_EXTENSION_FACTOR:  # include 0 dB
-                                full_range = 0 - base
-                                y0, y1 = base, 0
-                        nice_y0, nice_y1 = nice_range(y0, y1)
-                        self.ui_yaxis_range.low, self.ui_yaxis_range.high = nice_y0, nice_y1
-                        self.plot.plot.set_ylim(nice_y0, nice_y1, auto=False)
-                        self._smartscale_set_y = True
-                        did_smart_scaling = True
-                if not did_smart_scaling:
+                do_smart_scaling, smart_y0, smart_y = choose_smart_db_scale([plot.data.y.values for plot in self.plot.plots if plot.currently_used_axis==1])
+                if do_smart_scaling:
+                    self.ui_yaxis_range.low, self.ui_yaxis_range.high = smart_y0, smart_y
+                    self.plot.plot.set_ylim(smart_y0, smart_y, auto=False)
+                    self._smartscale_set_y = True
+                else:
                     if self._smartscale_set_y:
                         (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
                         self.plot.plot.set_ylim(auto=True)
