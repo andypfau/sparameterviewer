@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b10 (2025-06-??)
+--------------------
+
+- bugfix: binary operators on `SParams` work again (e.g. `(nw("a.s2p").s(2,1) / nw("b.s2p").s(2,1)).plot()`)
+
+
 0.40b9 (2025-06-15)
 -------------------
 

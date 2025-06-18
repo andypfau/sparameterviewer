@@ -25,7 +25,7 @@ class SParam:
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None):
-        assert len(f) == len(s)
+        assert len(f) == len(s), f'Expected frequency and S vecors to have same length'
         self.name, self.f, self.s, self.z0 = name, f, s, z0
         self.original_files, self.param_type = original_files or set(), param_type
     
@@ -275,14 +275,14 @@ class SParams:
     @staticmethod
     def _broadcast(a, b) -> "tuple[list[SParams],list[SParams]]":
         
-        assert isinstance(a,SParams) or isinstance(b,SParams)
+        assert isinstance(a,SParams) or isinstance(b,SParams), f'Unexpected objects for broadcasting: <{type(a)}> and <{type(b)}> (expected at least one to be SParams)'
         
         if isinstance(a, (int,float,complex,np.ndarray)):
             return [a]*len(b.sps), b.sps
         if isinstance(b, (int,float,complex,np.ndarray)):
             return a.sps, [a]*len(a.sps)
         
-        assert isinstance(a,SParams) and isinstance(b,SParams)
+        assert isinstance(a,SParams) and isinstance(b,SParams), f'Unexpected objects for broadcasting: <{type(a)}> and <{type(b)}> (expected both to be SParams)'
         
         if len(a.sps) == len(b.sps):
             return a.sps, b.sps
@@ -309,7 +309,7 @@ class SParams:
 
     def _binary_op(self, fn, others, return_sps, **kwargs):
         result = []
-        for sp,other in zip(*SParams._broadcast(self.sps, others)):
+        for sp,other in zip(*SParams._broadcast(self, others)):
             try:
                 result.append(fn(sp, other, **kwargs))
             except Exception as ex:
@@ -414,15 +414,15 @@ class SParams:
 
 
     def interpolate_lin(self, f_start: float, f_end: float, n: int):
-        assert f_start <= f_end
+        assert f_start <= f_end, f'Expected f_start <= f_end'
         assert n >= 1
         return self._interpolate(np.linspace(f_start, f_end, n))
 
 
     def interpolate_log(self, f_start: float, f_end: float, n: int):
-        assert f_start > 0
-        assert f_start <= f_end
-        assert n >= 1
+        assert f_start > 0, f'Expected f_start > 0'
+        assert f_start <= f_end, f'Expected f_start <= f_end'
+        assert n >= 1, f'Expected n >= 1'
         return self._interpolate(np.geomspace(f_start, f_end, n))
 
 

@@ -60,7 +60,7 @@ class Network:
                 return interp_mag * np.exp(1j*interp_pha)
             all_freqs = np.array(sorted(list(set([*a.f, *b.f]))))
             f_new = skrf.Frequency.from_f(all_freqs, unit='Hz')
-            assert a.number_of_ports == b.number_of_ports
+            assert a.number_of_ports == b.number_of_ports, f'Expected both networks to have the same number of ports during interpolation step, got {a.number_of_ports} and {b.number_of_ports}'
             a_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
             b_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
             for ep in range(a.number_of_ports):
@@ -231,7 +231,7 @@ class Network:
                 idx0 = min(idx,idx0)
             if f<=f_end:
                 idx1 = max(idx,idx1)
-        assert 0<=idx0<len(self.nw.f) and 0<=idx1<len(self.nw.f)
+        assert 0<=idx0<len(self.nw.f) and 0<=idx1<len(self.nw.f), f'Expected indices to be within range of network'
         if idx0<0 or idx1>=len(self.nw.f):
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
@@ -586,7 +586,7 @@ class Network:
         new_nw.renumber(old_indices, new_indices)
 
         new_nw.se2gmm(new_nw.nports // 2)
-        assert new_nw.nports % 2 == 0
+        assert new_nw.nports % 2 == 0, f'Expected number of ports to be an even number'
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -694,14 +694,14 @@ class Networks:
     @staticmethod
     def _broadcast(a, b) -> "tuple[list[Network],list[Network]]":
         
-        assert isinstance(a,Networks) or isinstance(b,Networks)
+        assert isinstance(a,Networks) or isinstance(b,Networks), f'Unexpected objects for broadcasting: <{type(a)}> and <{type(b)}> (expected at least one to be Networks)'
         
         if isinstance(a, (int,float,complex,np.ndarray)):
             return [a]*len(b.nws), b.nws
         if isinstance(b, (int,float,complex,np.ndarray)):
             return a.nws, [a]*len(a.nws)
         
-        assert isinstance(a,Networks) and isinstance(b,Networks)
+        assert isinstance(a,Networks) and isinstance(b,Networks), f'Unexpected objects for broadcasting: <{type(a)}> and <{type(b)}> (expected both to be Networks)'
         
         if len(a.nws) == len(b.nws):
             return a.nws, b.nws

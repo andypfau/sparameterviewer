@@ -8,3 +8,4 @@ share
 .vscode
 src/gui/*_pygubu.py
 src/env/Pipfile.lock
+*.patch

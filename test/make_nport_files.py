@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory() as tempdir:
                         magnitude_ripple = np.cos(math.tau*f/RL_PERIOD_HZ)
                         sij = magnitude * magnitude_ripple * phase
                     else:
-                        assert n_ports >= 2
+                        assert n_ports >= 2, f'Expected number of ports to be >= 2'
                         splitting_loss = 1 / (n_ports - 1)  # this ensures passivity
                         cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
                         mismatch_loss = 1 - (10**(RL_WORST_DB/10))

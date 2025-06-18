@@ -25,7 +25,7 @@ def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = '
 
     if is_mixed_mode:
         names = _get_mixed_port_names(nw)
-        assert egress<=len(names) and ingress<=len(names)
+        assert egress<=len(names) and ingress<=len(names), f'Expected egress and ingress port to be within the range of names'
         (egress_mode,egress_number) = names[egress-1]
         (ingress_mode,ingress_number) = names[ingress-1]
         if egress_number<10 and ingress_number<10:

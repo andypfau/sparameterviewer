@@ -26,6 +26,7 @@ Roadmap
 
 ### Missing Features
 
+- General: add error messages to assertions
 - GUI: in the filter dialog, allow the user to re-fine the selection by selecting items with the mouse.
 - GUI: how can I say "plot all these files, normalize the S-parameters to that other file"?
 - General: "TODO"-comments in code.
