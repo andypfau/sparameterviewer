@@ -133,8 +133,20 @@ class SParamFile:
                 if ext in ['.cti', '.citi']:
                     citi = CitiReader(path)
                     nw = citi.get_network(None, {}, select_default=True)
+                
                 else:
                     nw = skrf.network.Network(path)
+
+                    # I think there is a bug in skrf; I only get the 1st comment line
+                    # As a workaround, read the comments manually
+                    comments_lines = []
+                    with open(path, 'r') as fp:
+                        for line in fp.readlines():
+                            if line.startswith('!'):
+                                comments_lines.append(line[1:].strip())
+                    if len(comments_lines) > 0:
+                        nw.comments = '\n'.join(comments_lines)
+                    
                 self._nw = nw
             except Exception as ex:
                 logging.exception(f'Unable to load network from "{path}" ({ex})')

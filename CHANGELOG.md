@@ -10,6 +10,7 @@ S-Parameter Viewer Changelog
 - bugfix: binary operators on `SParams` work again (e.g. `(nw("a.s2p").s(2,1) / nw("b.s2p").s(2,1)).plot()` crashed before)
 - bugfix: fixed `SParams.ml()` (didn't take square root, which resulted in wrong level when using dB scale)
 - bugfix: the help-button and the F1-shortcut work again
+- bugfix: showing all comment lines of a file
 
 
 0.40b9 (2025-06-15)
