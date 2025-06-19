@@ -214,7 +214,7 @@ class SParam:
         s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
-        return self._modified_copy(s=s, param_type=self.param_type+'.map')
+        return self._modified_copy(name=f'map({self.name})', s=s, param_type=self.param_type+'.map')
     
     
     def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
@@ -401,6 +401,8 @@ class SParams:
 
 
     def _interpolate(self, f: np.ndarray):
+        if len(self.sps) < 1:
+            return SParams(sps=[])
         result = []
         for sp in self.sps:
             try:
@@ -413,26 +415,47 @@ class SParams:
         return SParams(sps=result)
 
 
-    def interpolate_lin(self, f_start: float, f_end: float, n: int):
+    def interpolate_lin(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None) -> SParams:
+        f_start, f_end, n = self._fill_interpolation_params(f_start, f_end, n)
         assert f_start <= f_end, f'Expected f_start <= f_end, got {f_start} and {f_end}'
         assert n >= 1, f'Expected n >= 1, got {n}'
         return self._interpolate(np.linspace(f_start, f_end, n))
 
 
-    def interpolate_log(self, f_start: float, f_end: float, n: int):
+    def interpolate_log(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None) -> SParams:
+        f_start, f_end, n = self._fill_interpolation_params(f_start, f_end, n)
         assert f_start > 0, f'Expected f_start > 0, got {f_start}'
         assert f_start <= f_end, f'Expected f_start <= f_end, got {f_start} and {f_end}'
         assert n >= 1, f'Expected n >= 1, got {n}'
         return self._interpolate(np.geomspace(f_start, f_end, n))
 
 
-    def interpolate(self, n: int = None):
-        all_f = [sp.f for sp in self.sps]
-        f_start = np.min(all_f)
-        f_stop = np.max(all_f)
+    def interpolate(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None) -> SParams:
+        return self.interpolate_lin(f_start, f_end, n)
+
+
+    def _fill_interpolation_params(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None):
+        
+        if f_start is None or f_end is None:
+            all_f = [sp.f for sp in self.sps]
+            if f_start is None:
+                if len(self.sps)>0:
+                    f_start = np.min([np.min(f) for f in all_f])
+                else:
+                    f_start = 0
+            if f_end is None:
+                if len(self.sps)>0:
+                    f_end = np.max([np.max(f) for f in all_f])
+                else:
+                    f_end = 0
+        
         if n is None:
-            n = max(3, int(round(np.mean([len(f) for f in all_f]))))
-        return self.interpolate_lin(f_start, f_stop, n)
+            if len(self.sps)>0:
+                n = max(3, int(round(np.mean([len(f) for f in all_f]))))
+            else:
+                n = 3
+        
+        return f_start, f_end, n
 
 
     def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp'):
