@@ -9,6 +9,7 @@ Shows the data as a table.
 In the main window go *File* → *View Tabular Data*.
 
 You may select:
+
 - Which file to display, and 
 - How to display the data, e.g. as real/imaginary, db/degrees, etc.
 
@@ -16,6 +17,7 @@ You may select:
 ### Filters
 
 You can also apply filters:
+
 - *X*: filter X-values (typically the frequency):
     - E.g. "1e9-10e9" to filter from 1 GHz to 10 GHz.
     - E.g. "1e9-*" to filter from 1 GHz, and anything above.
@@ -31,6 +33,7 @@ You can also apply filters:
 ### Exporting
 
 From the menu, you can:
+
 - Export as .csv (tab-separated) or as .xlsx (spreadsheet).
 - Create code or data structures that cna be copied to clipboard or saved, e.g. as CSV-data, JSON, or as Python code which can be used with [NumPy](https://numpy.org/) or with [Pandas](https://pandas.pydata.org/).
 - Filters (see earlier section) are applied to saved/copied data (see above).
@@ -56,11 +59,13 @@ You have a load with a series inductance, e.g. a wire-bonded termination. The bo
 ### How to Use
 
 To analyze such circuit, you would do the following:
+
 1. Select the circuit; if it is a multi-port, select the appropriate *port*.
 2. Integrate over all frequencies, by setting the *Integration* range to "*" (or e.g "0 - 100 GHz").
 3. Enter the *Target* range, in which you want to achieve best match, e.g. "1G - 2G" (the wildcard "*" is *not* allowed here).
 
 This will display the following values, and also plot them:
+
 - *Available*: the average return loss over the *integration* range.
 - *Current*: the average return loss over the *tartget* range.
 - *Achievable*: the theoretical average return loss over the *target* range, *if* an optimum reactive matching network were used.

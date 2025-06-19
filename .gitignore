@@ -9,3 +9,4 @@ share
 src/gui/*_pygubu.py
 src/env/Pipfile.lock
 *.patch
+doc/html/*

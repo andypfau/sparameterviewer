@@ -10,6 +10,8 @@ Prerequisites
 - Python packet dependencies:
     - Mandatory: `PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
     - Optional: `pyinstaller`: to compile a binary.
+    - Optional: `markdown`: to convert Markdown docs to HTML (using `doc/make_html_docs.py`).
+
 
 Execution
 ---------
@@ -20,6 +22,7 @@ Then just run `python sparameterviewer.py`.
 
 Optionally, compile it, see next section.
 
+
 Compiling
 ---------
 
@@ -28,14 +31,17 @@ Compiling is **optional**. You can just as well run the Python script.
 Make sure the dependencies, including `pyinstaller`, are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
 
 Compiling was successfully tested under Windows 10 and under Fedora 37 with the following command:
+
 - `cd src`
 - `pyinstaller pyinstaller.spec`
     - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean pyinstaller.spec`
+
 
 File Type Association
 ---------------------
 
 If you want to set up the app such that supported files are automatically opened with it...
+
 
 ### Linux
 
@@ -43,6 +49,7 @@ To register S-parameter files with this application under Linux:
 
 1. Register a mime-type for S-parameter files using `res/application-x-scatteringparameter.xml` (for instructions, see e.g. <https://help.gnome.org/admin/system-admin-guide/stable/mime-types-custom-user.html>).
 2. Double-click any .s#p-file, and select the script `src/sparamviewer.py` (or the binary, if you compiled it) as the application.
+
 
 ### Windows
 
@@ -55,6 +62,7 @@ To register S-parameter files with this application under Windows:
     3. Double-click any .s#p-file, and select the batch-file `res/sparamviewer.bat` as the application .
 
 Uou have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...
+
 
 Development
 -----------

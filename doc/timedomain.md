@@ -2,6 +2,7 @@ Time-Domain Transformation
 ==========================
 
 The impulse response is calculated as follows:
+
 1. Extrapolate frequency axis to DC.
     - The algorithm from [IEEE370](https://standards.ieee.org/ieee/370/6165/), Annex T is used.
 2. Interpolate frequency axis to get equidistant scaling.
