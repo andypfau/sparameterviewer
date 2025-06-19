@@ -409,7 +409,7 @@ class SParams:
                 mag, pha = np.abs(sp.s), np.unwrap(np.angle(sp.s))
                 mag_int, pha_int = np.interp(f, sp.f, mag), np.interp(f, sp.f, pha)
                 s_int = mag_int * np.exp(1j*pha_int)
-                result.append(SParam(sp.name, f, s_int, sp.z0))
+                result.append(sp._modified_copy(f=f, s=s_int))
             except Exception as ex:
                 logging.warning(f'Interpolating <{sp.name}> failed ({ex}), ignoring')
         return SParams(sps=result)
