@@ -334,7 +334,7 @@ def enum_to_string(value, lut: dict):
 
 
 def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,float]:
-    BASE_QUANTILE_PERCENT = 25
+    BASE_QUANTILE_PERCENT = 25  # attempt to show 75% of the data
     MIN_RANGE_DB = 15
     ZERO_EXTENSION_FACTOR = 2.0
 
@@ -356,14 +356,15 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
     tops, bottoms, bases = [], [], []
     for db_values in all_db_values:
         top = np.max(db_values)
+        base = np.quantile(db_values, BASE_QUANTILE_PERCENT/100.0)
         bottom = np.min(db_values)
         tops.append(top)
         bottoms.append(bottom)
-        
-        # does this look more like an IL trace, or RL/isolation trace?
-        looks_like_il = top >= -5
-        if not looks_like_il:
-            base = np.quantile(db_values, BASE_QUANTILE_PERCENT/100.0),
+
+        # if we can show the majority of the data' distribution in 25% of the range,
+        #   the user is likely inclined to zoom to crop off the lower end anyway
+        has_long_tail = (top - (top-bottom)*0.25) < (top - base)
+        if has_long_tail:
             bases.append(base)
     
     if len(tops)<1 or len(bases)<1 or len(bottoms)<1:
@@ -381,8 +382,9 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
     
     y0, y1 = base, top
     if top <= 0:
-        base_range, distance_to_zero = top-base, -top
-        if base_range > distance_to_zero*ZERO_EXTENSION_FACTOR:  # include 0 dB as well
+        y_range = y1 - y0
+        y_range_with_zero = 0 - y0
+        if y_range_with_zero <= ZERO_EXTENSION_FACTOR*y_range:
             y1 = 0
 
     nice_y0, nice_y1 = nice_range(y0, y1)

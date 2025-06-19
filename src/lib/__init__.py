@@ -10,7 +10,7 @@ from .apppaths import AppPaths
 from .spreadsheet import SpreadsheetGen
 from .bodefano import BodeFano
 from .stabcircle import StabilityCircle
-from .shortstr import remove_common_prefixes_and_suffixes
+from .shortstr import shorten_string_list
 from .clipboard import Clipboard
 from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout
 from .lock import Lock
