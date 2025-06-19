@@ -130,7 +130,7 @@ class SParam:
 
     
     def ml(self) -> "SParam":
-        return self._modified_copy(name=self.name+' ML', s=1-(np.abs(self.s)**2), param_type=self.param_type+'.ml')
+        return self._modified_copy(name=self.name+' ML', s=np.sqrt(1-(np.abs(self.s)**2)), param_type=self.param_type+'.ml')
 
     
     def vswr(self) -> "SParam":
@@ -469,8 +469,8 @@ class SParams:
     
 
     def save(self, filename: str):  # TODO: document this command
-        WILDCARD_NUM = '$num$'
-        WILDCARD_NAME = '$name$'
+        WILDCARD_NUM = '$NUM'
+        WILDCARD_NAME = '$NAME'
 
         paths = []
         for i,sp in enumerate(self.sps):

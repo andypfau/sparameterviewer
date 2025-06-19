@@ -549,7 +549,7 @@ class Network:
         return Network(new_nw, original_files=self.original_files)
     
 
-    def s2m(self, ports: list[str]) -> "Network":
+    def s2m(self, ports: list[str]|str) -> "Network":
         """
         Convert a single-ended network into a mixed-mode network.
         Argument <ports>: list of ports of the single-ended input network, e.g.
@@ -561,6 +561,8 @@ class Network:
         """
         new_nw = self.nw.copy()
         
+        if isinstance(ports, str):
+            ports = [s.strip() for s in ports.split(',')]
         if len(ports) != self.nw.number_of_ports:
             raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
 
@@ -590,7 +592,7 @@ class Network:
         return Network(new_nw, original_files=self.original_files)
     
 
-    def m2s(self, ports: list[str]) -> "Network":
+    def m2s(self, ports: list[str]|str) -> "Network":
         """
         Convert a mixed-mode network into a single-ended network.
         Argument <ports>: list of ports of the differential input network, e.g.
@@ -603,6 +605,8 @@ class Network:
 
         new_nw = self.nw.copy()
         
+        if isinstance(ports, str):
+            ports = [s.strip() for s in ports.split(',')]
         if len(ports) != self.nw.number_of_ports:
             raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
 
@@ -891,11 +895,11 @@ class Networks:
         return self._unary_op(Network.set_modes, Networks, port_modes=port_modes)
         
     
-    def m2s(self, ports: list[str]) -> "Networks":
+    def m2s(self, ports: list[str]|str) -> "Networks":
         return self._unary_op(Network.m2s, Networks, ports=ports)
         
     
-    def s2m(self, ports: list[str]) -> "Networks":
+    def s2m(self, ports: list[str]|str) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
     
 
@@ -908,8 +912,8 @@ class Networks:
 
 
     def save(self, filename: str):  # TODO: document this command
-        WILDCARD_NUM = '$num$'
-        WILDCARD_NAME = '$name$'
+        WILDCARD_NUM = '$NUM'
+        WILDCARD_NAME = '$NAME'
 
         paths = []
         for i,nw in enumerate(self.nws):
