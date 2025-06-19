@@ -367,7 +367,7 @@ class TabularDialog(TabularDialogUi):
             s = s.strip()
             if s=='*':
                 return any
-            parts = [p for p in re.split(r'\s+', s) if p!='']
+            parts = [p for p in re.split(r'\s+|\s*,\s*|\s*;\s*', s) if p!='']
             return parts
 
         ycols = dataset.ycols
@@ -399,8 +399,10 @@ class TabularDialog(TabularDialogUi):
                         ycol_datas_filtered.append(coldata)
                         break
                 if not found:
+                    self.ui_indicate_param_filter_error(True)
                     return TabularDataset('', '', [''], np.zeros([0]), [np.zeros([0])], False)
             ycols, ycol_datas = ycols_filtered, ycol_datas_filtered
+        self.ui_indicate_param_filter_error(False)
         
         mask = (xcol_data >= filter_x0) & (xcol_data <= filter_x1)
         xcol_data = xcol_data[mask]

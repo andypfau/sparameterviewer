@@ -159,6 +159,10 @@ class TabularDialogUi(QDialog):
     def ui_indicate_freq_filter_error(self, inidicate_error: bool = True):
         QtHelper.indicate_error(self._ui_f_filter_edit, inidicate_error)
     
+
+    def ui_indicate_param_filter_error(self, inidicate_error: bool = True):
+        QtHelper.indicate_error(self._ui_param_filter_edit, inidicate_error)
+    
     
     def ui_set_param_filters_list(self, filters: list[str], selection: str = None):
         self._ui_param_filter_edit.clear()
