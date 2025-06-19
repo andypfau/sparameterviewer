@@ -678,8 +678,11 @@ class MainWindow(MainWindowUi):
     
     
     def on_help(self):
+        show_help()
+    
+    
+    def on_abort(self):
         self.sparamfile_load_aborted = True
-        #show_help()
     
 
     def on_about(self):

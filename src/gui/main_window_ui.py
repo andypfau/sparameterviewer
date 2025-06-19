@@ -138,8 +138,8 @@ class MainWindowUi(QMainWindow):
         self._ui_settings_button = QtHelper.make_toolbutton(self, None, self.on_settings, icon='toolbar_settings.svg', tooltip='Open Settings (F4)', shortcut='F4')
         self._ui_toolmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Tool Menu')
         self._ui_plotmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
-        self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)')
-        self._ui_abort_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_abort.svg', tooltip='Abort Loading')
+        self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)', shortcut='F1')
+        self._ui_abort_button = QtHelper.make_toolbutton(self, None, self.on_abort, icon='toolbar_abort.svg', tooltip='Abort Loading')
         self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(0,10e9)])
         self._ui_xaxis_range.setToolTip('Set X-axis range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.')
         self._ui_xaxis_range.setMinimumWidth(120)
@@ -943,6 +943,8 @@ class MainWindowUi(QMainWindow):
     def on_settings(self):
         pass
     def on_help(self):
+        pass
+    def on_abort(self):
         pass
     def on_about(self):
         pass
