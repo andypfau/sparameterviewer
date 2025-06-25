@@ -1,4 +1,4 @@
-from ..structs import SParamFile, PathExt
+from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param

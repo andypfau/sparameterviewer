@@ -1,4 +1,4 @@
-from .structs import PathExt
+from .sparam_file import PathExt
 import os
 import sys
 import string
@@ -50,10 +50,10 @@ def load_file_from_archive(archive_path: str, path_in_archive: str, target_path:
         return zf.extract(path_in_archive, target_path)
 
 
-class AchiveFileLoader:
+class ArchiveFileLoader:
     """
     Usage:
-        with AchiveFileLoader('/path/arch.zip', 'file.ext') as extracted_path:
+        with ArchiveFileLoader('/path/arch.zip', 'file.ext') as extracted_path:
             # The extracted file is at <extracted_path>, in a temporary directory.
             # The directory will be deleted when you exit the context manager.
             ...

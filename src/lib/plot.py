@@ -1,5 +1,5 @@
 from .si import SiValue, SiFormat
-from .structs import PlotData, PlotDataQuantity
+from .plot_data import PlotData, PlotDataQuantity
 from .shortstr import shorten_string_list
 from .utils import natural_sort_key
 from .settings import Settings, LogNegativeHandling

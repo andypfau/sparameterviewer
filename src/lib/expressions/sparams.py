@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..structs import SParamFile, PathExt
+from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..utils import sanitize_filename
