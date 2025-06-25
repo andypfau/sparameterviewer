@@ -118,23 +118,23 @@ class SParam:
 
     
     def db(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))), param_type=self.param_type+'.db')
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
 
     
     def db10(self) -> "SParam":
-        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))), param_type=self.param_type+'.db')
+        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
 
     
     def db20(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))), param_type=self.param_type+'.db')
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
 
     
     def ml(self) -> "SParam":
-        return self._modified_copy(name=self.name+' ML', s=np.sqrt(1-(np.abs(self.s)**2)), param_type=self.param_type+'.ml')
+        return self._modified_copy(name=self.name+' ML', s=np.sqrt(1-(np.abs(self.s)**2)).astype(complex), param_type=self.param_type+'.ml')
 
     
     def vswr(self) -> "SParam":
-        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)), param_type=self.param_type+'.vswr')
+        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)).astype(float), param_type=self.param_type+'.vswr')
 
     
     def phase(self, processing: "str|None" = None) -> "SParam":
@@ -146,7 +146,7 @@ class SParam:
             s = np.unwrap(s)
         elif s is not None:
             raise ValueError(f'Invalid processing option "{processing}"')
-        return self._modified_copy(s=s, param_type=self.param_type+'.pha')
+        return self._modified_copy(s=s.astype(float), param_type=self.param_type+'.pha')
 
 
     def norm(self, at_f: float, method='div') -> "SParam":

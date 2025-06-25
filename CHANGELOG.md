@@ -2,11 +2,17 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.40b10 (2025-06-??)
+0.40b11 (2025-06-25)
 --------------------
 
-- change: better dB scaling (now tries to distinguish insertion loss parameters, which are fully shown, from reutrn loss / isolation parameters, which are scaled)
-- change: better string shortening (can no elide multiple segments of the name)
+- enhancement: better handling of manual zooming/panning
+
+
+0.40b10 (2025-06-19)
+--------------------
+
+- enhancement: better dB scaling (now tries to distinguish insertion loss parameters, which are fully shown, from reutrn loss / isolation parameters, which are scaled)
+- enhancement: better string shortening (can no elide multiple segments of the name)
 - bugfix: binary operators on `SParams` work again (e.g. `(nw("a.s2p").s(2,1) / nw("b.s2p").s(2,1)).plot()` crashed before)
 - bugfix: fixed `SParams.ml()` (didn't take square root, which resulted in wrong level when using dB scale)
 - bugfix: the help-button and the F1-shortcut work again
@@ -24,7 +30,7 @@ S-Parameter Viewer Changelog
 0.40b8 (2025-06-10)
 -------------------
 
-- change: can now manually override selection in the filter dialog
+- enhancement: can now manually override selection in the filter dialog
 - bugfix: various small fixes
 
 
@@ -38,13 +44,13 @@ S-Parameter Viewer Changelog
 -------------------
 
 - change: when loading takes too long, a red button appears in the toolbar (instead of the messagebox)
-- change: template for normalization, better templates for de-embedding, added function to multiply or divide networks
+- enhancement: template for normalization, better templates for de-embedding, added function to multiply or divide networks
 
 
 0.40b5 (2025-06-04)
 -------------------
 
-- change: better syntax highlighting, better comment function in text editor
+- enhancement: better syntax highlighting, better comment function in text editor
 - change: highlight of expressions tab when active
 - new: tooltips in settings dialog
 - bugfix: better input handling of text boxes

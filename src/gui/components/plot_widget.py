@@ -48,8 +48,7 @@ class PlotWidget(QWidget):
 
         self._figure = Figure()
         self._canvas = FigureCanvasQTAgg(self._figure)
-        #self._toolbar = PlotWidget.MyNavigationToolbar(self._canvas, self)
-        self._toolbar = matplotlib.backend_bases.NavigationToolbar2(self._canvas)
+        self._toolbar = NavigationToolbar2QT(self._canvas)
         
         layout = QVBoxLayout()
         layout.addWidget(self._canvas)
@@ -98,7 +97,7 @@ class PlotWidget(QWidget):
     
 
     def tool(self) -> PlotWidget.Tool:
-        match self._canvas.toolbar.mode:
+        match self._toolbar.mode:
             case matplotlib.backend_bases._Mode.PAN:
                 return PlotWidget.Tool.Pan
             case matplotlib.backend_bases._Mode.ZOOM:
@@ -107,11 +106,11 @@ class PlotWidget(QWidget):
     def setTool(self, tool: PlotWidget.Tool):
         match tool:
             case PlotWidget.Tool.Pan:
-                self._canvas.toolbar.mode = matplotlib.backend_bases._Mode.PAN
+                self._toolbar.mode = matplotlib.backend_bases._Mode.PAN
             case PlotWidget.Tool.Zoom:
-                self._canvas.toolbar.mode = matplotlib.backend_bases._Mode.ZOOM
+                self._toolbar.mode = matplotlib.backend_bases._Mode.ZOOM
             case _:
-                self._canvas.toolbar.mode = matplotlib.backend_bases._Mode.NONE
+                self._toolbar.mode = matplotlib.backend_bases._Mode.NONE
 
     
     @staticmethod

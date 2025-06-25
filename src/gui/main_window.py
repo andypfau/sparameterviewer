@@ -1,3 +1,4 @@
+import matplotlib.axes
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog, custom_buttons_dialog
@@ -887,6 +888,7 @@ class MainWindow(MainWindowUi):
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_yaxis_range.both_are_wildcard:
             (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
+            self.ui_smart_db = False
         else:
             self.ui_yaxis_range.both_are_wildcard = True
         self.schedule_plot_update()
@@ -898,9 +900,27 @@ class MainWindow(MainWindowUi):
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_xaxis_range.both_are_wildcard or self.ui_yaxis_range.both_are_wildcard:
             (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+            self.ui_smart_db = False
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
         self.schedule_plot_update()
+    
+
+    def on_user_change_xaxis(self, axes: matplotlib.axes._axes.Axes):
+        (lo, hi) = axes.get_xlim()
+        if lo is None or hi is None:
+            self.ui_xaxis_range.both_are_wildcard = True
+        else:
+            self.ui_xaxis_range.low, self.ui_xaxis_range.high = lo, hi
+    
+
+    def on_user_change_yaxis(self, axes: matplotlib.axes._axes.Axes):
+        (lo, hi) = axes.get_ylim()
+        if lo is None or hi is None:
+            self.ui_yaxis_range.both_are_wildcard = True
+        else:
+            self.ui_yaxis_range.low, self.ui_yaxis_range.high = lo, hi
+            self.ui_smart_db = False
     
     
     def on_smart_db(self):
@@ -1707,6 +1727,9 @@ class MainWindow(MainWindowUi):
                 if self.plot_axes_are_valid and not self.ui_yaxis_range.both_are_wildcard:
                     self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high, auto=False)
             
+            self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
+            self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
+
             self.ui_plot.draw()
 
             self.plot_axes_are_valid = True
