@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b12 (2025-07-02)
+--------------------
+
+- new: setting to select between static and dynamic references in templates
+- enhancement: workaround for some non-standard touchstone file formats
+
+
 0.40b11 (2025-06-25)
 --------------------
 

@@ -254,20 +254,23 @@ class MainWindow(MainWindowUi):
     
     def on_template_button(self):
 
-        def selected_file_names():
-            return [self.get_nw_name_for_template(file.path) for file in self.get_selected_files()]
+        def const_selected_files():
+            return [f'nw(\'{self.get_nw_name_for_template(file.path)}\')' for file in self.get_selected_files()]
+        
+        def dynamic_selected_files():
+            if Settings.dynamic_template_references:
+                return ['sel_nws()']
+            else:
+                return const_selected_files()
         
         def get_reference_file_for_multifile_op() -> str|None:
             if self._saved_nw_name_for_template is None:
                 info_dialog('Error', 'No reference network selected.', informative_text='Right-click a network in te fileview browser, and click "Save for Template". Then use this template again.')
                 return None
-            option = custom_buttons_dialog('Reference', 'How do you want to link to the reference network?',
-                informative_text='Constant: insert name of reference network as constant literal.\nDynamic: use the `saved_nw()` function to refer to the currently saved network.',
-                buttons=['Constant', 'Dynamic'])
-            match option:
-                case 0: return f'nw("{self._saved_nw_name_for_template}")'
-                case 1: return f'saved_nw()'
-            raise RuntimeError()
+            if Settings.dynamic_template_references:
+                return 'saved_nw()'
+            else:
+                return f'nw("{self._saved_nw_name_for_template}")'
 
         def set_expression(*expressions):
             if Settings.simplified_no_expressions:
@@ -288,20 +291,6 @@ class MainWindow(MainWindowUi):
             self.ui_param_selector.setUseExpressions(True)
             self.ui_enable_expressions(True)
             self.schedule_plot_update()
-        
-        def ensure_selected_file_count(op, n_required):
-            n = len(selected_file_names())
-            if op == '>=':
-                if n < n_required:
-                    error_dialog('Invalid operation', f'To use this template, select at least {n_required} file{"s" if n_required!=1 else ""}.')
-                    return False
-            elif op == '==':
-                if n != n_required:
-                    error_dialog('Invalid operation', f'To use this template, select exactly {n_required} file{"s" if n_required!=1 else ""}.')
-                    return False
-            else:
-                raise ValueError()
-            return True
         
         def as_currently_selected():
             set_expression(self.generated_expressions)
@@ -383,17 +372,16 @@ class MainWindow(MainWindowUi):
             setup_plot(PlotType.Cartesian)
         
         def cascade():
-            if not ensure_selected_file_count('>=', 2):
+            selected_files = const_selected_files()
+            if len(selected_files) < 2:
+                error_dialog('Multiple Networks Required', f'Please select at least two networks before using this tempate.')
                 return
-            nws = ' ** '.join([f'nw(\'{n}\')' for n in selected_file_names()])
+            nws = ' ** '.join([selected_files])
             set_expression(f'({nws}).s(2,1).plot()')
         
         def normalize_to_ref():
             if ref_nw := get_reference_file_for_multifile_op():
                 set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()')
-        
-        def normalize_to_f():
-            set_expression(f'sel_nws().sel_params().norm(at_f=10e9).plot()')
         
         def deembed_ref_from_others():
             if ref_nw := get_reference_file_for_multifile_op():
@@ -415,22 +403,44 @@ class MainWindow(MainWindowUi):
             if ref_nw := get_reference_file_for_multifile_op():
                 set_expression(f"((~{ref_nw}).half(side=1)) ** sel_nws() ** (~{ref_nw}).half(side=2))).plot_sel_params()")
         
-        def mixed_mode():
-            if not ensure_selected_file_count('>=', 1):
+        def normalize_to_f():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f"nw('{n}').s2m(['p1','p2','n1','n2']).s('dd21').plot()" for n in selected_file_names()]
+            expressions = [f'{nw}.sel_params().norm(at_f=10e9).plot()' for nw in selected_files]
+            set_expression(*expressions)
+        
+        def mixed_mode():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f"{nw}.s2m(['p1','p2','n1','n2']).s('dd21').plot()" for nw in selected_files]
             set_expression(*expressions)
 
         def z_renorm():
-            if not ensure_selected_file_count('>=', 1):
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f"nw('{n}').renorm([50,75]).plot_sel_params()" for n in selected_file_names()]
+            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()' for nw in selected_files]
             set_expression(*expressions)
 
         def add_tline():
-            if not ensure_selected_file_count('>=', 1):
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f"nw('{n}').add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()" for n in selected_file_names()]
+            expressions = [f'{nw}.add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()' for nw in selected_files]
+            set_expression(*expressions)
+
+        def all_selected():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f'{nw}.s().plot()' for nw in selected_files]
             set_expression(*expressions)
         
         def z():
@@ -452,12 +462,6 @@ class MainWindow(MainWindowUi):
         def stability_circles():
             set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)')
             setup_plot(PlotType.Smith)
-
-        def all_selected():
-            if not ensure_selected_file_count('>=', 1):
-                return
-            expressions = [f"nw('{n}').s().plot()" for n in selected_file_names()]
-            set_expression(*expressions)
         
         self.ui_show_template_menu([
             ('As Currently Selected', as_currently_selected),

@@ -130,11 +130,27 @@ class SettingsDialogUi(QDialog):
             )
         )
 
-        misc_widget = QWidget()
-        self._ui_tabs.addTab(misc_widget, 'Misc')
+        expr_widget = QWidget()
+        self._ui_tabs.addTab(expr_widget, 'Expressions')
         self._ui_comment_expr_combo = QCheckBox('Commend-Out Existing Expressions')
         self._ui_comment_expr_combo.setToolTip('When adding expression templates, comment out all other existing expressions.')
         self._ui_comment_expr_combo.toggled.connect(self.on_comment_change)
+        self._ui_static_template_radio = QRadioButton('Static')
+        self._ui_static_template_radio.setToolTip('Templates that operate on specific networks use `nw("name")` to statically refer to the network.')
+        self._ui_static_template_radio.toggled.connect(self.on_template_ref_changed)
+        self._ui_dynamic_template_radio = QRadioButton('Dynamic')
+        self._ui_dynamic_template_radio.setToolTip('Templates that operate on specific networks use `sel_nws()` to dynamically refer to any selected network.')
+        self._ui_dynamic_template_radio.toggled.connect(self.on_template_ref_changed)
+        expr_widget.setLayout(
+            QtHelper.layout_v(
+                self._ui_comment_expr_combo,
+                QtHelper.layout_h('Template References', self._ui_static_template_radio, self._ui_dynamic_template_radio, ...),
+                ...
+            )
+        )
+
+        misc_widget = QWidget()
+        self._ui_tabs.addTab(misc_widget, 'Misc')
         self._ui_cursor_snap = QComboBox()
         self._ui_cursor_snap.setToolTip('How to map the mouse-pointer position to a cursor position (use X-coordinate, or find closest point).')
         self._ui_plot_style_combo = QComboBox()
@@ -154,7 +170,6 @@ class SettingsDialogUi(QDialog):
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
         misc_widget.setLayout(
             QtHelper.layout_v(
-                self._ui_comment_expr_combo,
                 QtHelper.layout_grid([
                         ['Cursor Snap:', QtHelper.layout_h(self._ui_cursor_snap, ...)],
                         ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
@@ -350,6 +365,17 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_dynamic_template_ref(self) -> bool:
+        return self._ui_dynamic_template_radio.isChecked()
+    @ui_dynamic_template_ref.setter
+    def ui_dynamic_template_ref(self, value: bool):
+        if value:
+            self._ui_dynamic_template_radio.setChecked(True)
+        else:
+            self._ui_static_template_radio.setChecked(True)
+
+    
+    @property
     def ui_extract_zip(self) -> bool:
         return self._ui_extract_zip_check.isChecked()
     @ui_extract_zip.setter
@@ -415,6 +441,8 @@ class SettingsDialogUi(QDialog):
     def on_zip_change(self):
         pass
     def on_comment_change(self):
+        pass
+    def on_template_ref_changed(self):
         pass
     def on_ext_ed_change(self):
         pass

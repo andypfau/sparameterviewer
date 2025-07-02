@@ -66,6 +66,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_logyneg = enum_to_string(Settings.logy_negative_handling, SettingsDialog.LOGNEG_NAMES)
             self.ui_cursor_snap = enum_to_string(Settings.cursor_snap, SettingsDialog.CURSOR_SNAP_NAMES)
             self.ui_comment_expr = Settings.comment_existing_expr
+            self.ui_dynamic_template_ref = Settings.dynamic_template_references
             self.ui_extract_zip = Settings.extract_zip
             self.ui_warn_timeout = Settings.warn_timeout_s
             self.ui_ext_ed = Settings.ext_editor_cmd
@@ -148,6 +149,10 @@ class SettingsDialog(SettingsDialogUi):
         Settings.comment_existing_expr = self.ui_comment_expr
     
     
+    def on_template_ref_changed(self):
+        Settings.dynamic_template_references = self.ui_dynamic_template_ref
+
+
     def on_ext_ed_change(self):
         is_valid = self.is_ext_ed_valid(self.ui_ext_ed)
         was_valid = self.is_ext_ed_valid(Settings.ext_editor_cmd)

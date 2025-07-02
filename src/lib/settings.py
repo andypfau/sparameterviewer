@@ -130,6 +130,7 @@ class SParamViewerAppSettings(AppSettings):
     simplified_plot_sel: bool = False
     simplified_browser: bool = False
     simplified_no_expressions: bool = False
+    dynamic_template_references: bool = False
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

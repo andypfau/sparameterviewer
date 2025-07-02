@@ -26,8 +26,7 @@ Roadmap
 
 ### Missing Features
 
-- GUI: in the filter dialog, allow the user to re-fine the selection by selecting items with the mouse.
-- GUI: how can I say "plot all these files, normalize the S-parameters to that other file"?
+- GUI: pre-defined fixed size for saved/copied plots.
 - General: "TODO"-comments in code.
 - GUI: expression file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
