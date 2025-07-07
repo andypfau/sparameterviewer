@@ -280,7 +280,7 @@ class SParams:
         if isinstance(a, (int,float,complex,np.ndarray)):
             return [a]*len(b.sps), b.sps
         if isinstance(b, (int,float,complex,np.ndarray)):
-            return a.sps, [a]*len(a.sps)
+            return a.sps, [b]*len(a.sps)
         
         assert isinstance(a,SParams) and isinstance(b,SParams), f'Unexpected objects for broadcasting: <{type(a)}> and <{type(b)}> (expected both to be SParams)'
         

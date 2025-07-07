@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b13 (2025-07-07)
+--------------------
+
+- bugfix: fixed expressions of format `SParams / const`, e.g. `(sel_nws().s(2,1) / 2).plot()`
+
+
 0.40b12 (2025-07-02)
 --------------------
 
