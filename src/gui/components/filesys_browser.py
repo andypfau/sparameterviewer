@@ -294,7 +294,11 @@ class FilesysBrowser(QWidget):
                 if not isinstance(item, FilesysBrowser.MyFileItem):
                     continue
                 if item.type == FilesysBrowserItemType.File:
-                    item.checked = item.path in selected_paths
+                    do_select = item.path in selected_paths
+                    item.checked = do_select
+                    if not do_select:
+                        # de-select, otherwise the next multi-selection that the user does might behave in an unexpected way
+                        self._ui_filesys_view.selectionModel().select(item.index(), QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
                 else:
                     recurse(item)
         try:

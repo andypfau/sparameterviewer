@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b14 (2025-07-09)
+--------------------
+
+- bugfix: de-selecting items that are un-checked, to prevent unexpected behavior
+
+
 0.40b13 (2025-07-07)
 --------------------
 
