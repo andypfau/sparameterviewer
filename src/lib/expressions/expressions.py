@@ -44,6 +44,10 @@ class ExpressionParser:
                 if len(nws) != 1:
                     logging.warning(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
                     nws = []
+            else:
+                if pattern is not None:
+                    if len(nws) == 0:
+                        logging.info(f'The pattern "{pattern}" didn\'t match any networks; returning empty Networks object)')
             return Networks(nws)
         
         def sel_nws(pattern: str = None) -> Networks:

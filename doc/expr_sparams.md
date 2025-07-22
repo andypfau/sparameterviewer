@@ -187,6 +187,36 @@ sel_nws().sel_params().norm(1e9).plot()  # normalize all traces to the 1 GHz-poi
 
 
 
+### min()
+
+```python
+min() → SParams.
+```
+
+Returns the minimum value (per frequency) of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid. If the input data has complex data type, the absolute is taken first.
+
+Example:
+```python
+sel_nws().sel_params().abs().min().plot()
+```
+
+
+
+### max()
+
+```python
+max() → SParams.
+```
+
+Returns the maximum value (per frequency) of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid. If the input data has complex data type, the absolute is taken first.
+
+Example:
+```python
+sel_nws().sel_params().abs().max().plot()
+```
+
+
+
 ### mean()
 
 ```python
@@ -228,6 +258,26 @@ Returns the standard deviation of multiple S-parameters. The paraemter `ddof` is
 Example:
 ```python
 sel_nws().sel_params().sdev().plot()
+```
+
+
+
+### rsdev()
+
+```python
+rsdev(quantiles=50) → SParams.
+```
+
+Returns the robust standard deviation of multiple S-parameters, by calculating the inter-quantile range (IQR), and comparing it to the IQR of a normal distribution. If the input data has complex data type, the absolute is taken first. Applies `interpolate()` first, to get a common frequency grid.
+
+The parameter `quantiles` can be:
+
+* A tuple of percentages, e.g. `(25,75)` to get the 25%..75% IQR.
+* A single percentages, e.g. `50` to get the 25%..75% IQR.
+
+Example:
+```python
+sel_nws().sel_params().abs().rsdev().plot()
 ```
 
 

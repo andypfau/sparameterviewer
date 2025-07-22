@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b15 (2025-07-22)
+--------------------
+
+- new: `SParams` methods `min()`, `max()` and `rsdev()`
+- new: creating a meaningful log message when `nws()` does not match any network
+- bugfix: creating a proper `SParams` object from empty input dataset
+
+
 0.40b14 (2025-07-09)
 --------------------
 

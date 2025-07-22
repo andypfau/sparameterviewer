@@ -5,13 +5,14 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
+from ..settings import Settings
 from .helpers import format_call_signature
 
 import skrf, math, os
 import numpy as np
 import fnmatch
 import logging
-import scipy.signal
+import scipy.signal, scipy.stats
 import os
 import re
 from typing import Callable
@@ -458,12 +459,23 @@ class SParams:
         return f_start, f_end, n
 
 
-    def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp'):
+    def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp', enforce_real: bool=False):
         sps = self.interpolate().sps
         if len(sps) < min_size:
-            return []
+            return SParams(sps=[])
         f = sps[0].f
-        s = fn([sp.s for sp in sps])
+        
+        s_input = []
+        list_of_abs = []
+        for sp in sps:
+            if enforce_real and np.iscomplexobj(sp.s):
+                s_input.append(np.abs(sp.s).astype(float))
+                list_of_abs.append(sp.name)
+            else:
+                s_input.append(sp.s)
+        if list_of_abs and Settings.verbose:
+            logging.debug(f'Took absolute of S-parameters {list_of_abs}')
+        s = fn([s for s in s_input])
         return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str)])
 
 
@@ -477,6 +489,27 @@ class SParams:
 
     def sdev(self, ddof=1):
         return self._interpolated_fn('StdDev', lambda s: np.std(s,axis=0,ddof=ddof), min_size=2, type_str='.sdev')
+
+
+    def rsdev(self, quantiles=50):
+        if isinstance(quantiles,(int,float)):
+            assert 0<quantiles<100, f'Expected quantile to be in the exlcusive range 0..100%, got {quantiles}'
+            q1, q2 = 0.5-(quantiles/100/2), 0.5+(quantiles/100/2)
+        elif hasattr(quantiles,'__len__'):
+            [qp1, qp2] = quantiles
+            assert isinstance(qp1,(int,float)) and isinstance(qp2,(int,float)), f'Expected quantiles to be tuple of percentages'
+            assert 0<qp1<100 and 0<qp2<100 and qp1<qp2, f'Expected quantiles to be ascending, and in the exlcusive range 0..100%, got {qp1} and {qp2}'
+            q1, q2 = qp1/100, qp2/200
+        norm_iqr = scipy.stats.norm.ppf(q2) - scipy.stats.norm.ppf(q1)
+        return self._interpolated_fn('RStdDev', lambda s: (np.quantile(s,q2,axis=0)-np.quantile(s,q1,axis=0))/norm_iqr, min_size=2, type_str='.rsdev', enforce_real=True)
+
+
+    def min(self):
+        return self._interpolated_fn('Min', lambda s: np.min(s,axis=0), min_size=1, type_str='.min', enforce_real=True)
+
+
+    def max(self):
+        return self._interpolated_fn('Max', lambda s: np.max(s,axis=0), min_size=1, type_str='.max', enforce_real=True)
     
 
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":
