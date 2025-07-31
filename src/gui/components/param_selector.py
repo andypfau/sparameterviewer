@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
-from lib import AppPaths, PathExt, Parameters, get_callstack_str
+from lib import AppPaths, PathExt, Parameters, get_callstack_str, Settings, LargeMatrixBehavior
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -112,12 +112,13 @@ class ParamSelector(QWidget):
             self._current_geometry = None  # invalidate
     
         def mouseReleaseEvent(self, event: QMouseEvent|None):
-            super().mouseReleaseEvent(event)
             if not event or event.button() != Qt.MouseButton.LeftButton:
+                super().mouseReleaseEvent(event)
                 return  # no mouse click -> ignore
+            
             geometry = self.get_geometry()
-
-            if geometry.overflow:
+            
+            if geometry.overflow and Settings.large_matrix_behavior==LargeMatrixBehavior.Scrollable:
                 self.overflowClicked.emit()
                 return
             
@@ -128,6 +129,21 @@ class ParamSelector(QWidget):
                     rect = QRectF(x0+j*cell_size, y0+i*cell_size, cell_size, cell_size)
                     if rect.contains(QPointF(event.pos())):
                         self.paramClicked.emit(i, j, keys)
+                        return
+            
+            super().mouseReleaseEvent(event)
+        
+        def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent|None):
+            if not event or event.button() != Qt.MouseButton.LeftButton:
+                super().mouseDoubleClickEvent(event)
+                return  # no mouse click -> ignore
+            geometry = self.get_geometry()
+
+            if geometry.overflow and Settings.large_matrix_behavior==LargeMatrixBehavior.Clickable:
+                self.overflowClicked.emit()
+                return
+            
+            super().mouseDoubleClickEvent(event)
 
         def paintEvent(self, event):
             painter = QPainter(self)

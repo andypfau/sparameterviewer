@@ -75,6 +75,10 @@ class MainWindowLayout(enum.StrEnum):
     Wide = 'wide'
     Ultrawide = 'ultrawide'
 
+class LargeMatrixBehavior(enum.StrEnum):
+    Clickable = 'clickable'
+    Scrollable = 'scrollable'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -131,6 +135,8 @@ class SParamViewerAppSettings(AppSettings):
     simplified_browser: bool = False
     simplified_no_expressions: bool = False
     dynamic_template_references: bool = False
+    large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.Clickable
+
 
 
 Settings = SParamViewerAppSettings(format_version_str='0.15')

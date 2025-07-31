@@ -547,6 +547,9 @@ class FilesysBrowser(QWidget):
     
 
     def _on_selection_change(self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection):
+
+        if self._inhibit_triggers:
+            return
         
         self.update_pathbar()
 

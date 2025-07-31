@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b16 (2025-07-31)
+--------------------
+
+- new: option to make the parameter selector still clickable when there are too many elements; double-click to expand
+
+
 0.40b15 (2025-07-22)
 --------------------
 

@@ -57,6 +57,8 @@ class SettingsDialogUi(QDialog):
         self._ui_simple_browser_check = QCheckBox('Simplified Filesystem Browser')
         self._ui_simple_browser_check.setToolTip('Only allows one single root-directory in the filesystem browser (no pinning of additional directories).')
         self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
+        self._ui_largematrix_combo = QComboBox()
+        self._ui_largematrix_combo.setToolTip('How the S-parameter matrix behaves when there are too many parameters to be displayed.')
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
@@ -64,6 +66,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_simple_noexpr_check,
                 self._ui_simple_plot_check,
                 self._ui_simple_browser_check,
+                QtHelper.layout_h('Large S-Param Matrix:', self._ui_largematrix_combo,...),
                 ...
             )
         )
@@ -252,6 +255,14 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_largematrix_layout(self) -> str:
+        return self._ui_largematrix_combo.currentText()
+    @ui_largematrix_layout.setter
+    def ui_largematrix_layout(self, value: str):
+        self._ui_largematrix_combo.setCurrentText(value)
+
+    
+    @property
     def ui_logxneg(self) -> str:
         return self._ui_logxneg_combo.currentText()
     @ui_logxneg.setter
@@ -286,6 +297,13 @@ class SettingsDialogUi(QDialog):
         for option in options:
             self._ui_mainwinlayout_combo.addItem(option)
         self._ui_mainwinlayout_combo.currentIndexChanged.connect(self.on_mainwinlayout_changed)
+
+
+    def ui_set_largematrix_options(self, options: list[str]):
+        self._ui_largematrix_combo.clear()
+        for option in options:
+            self._ui_largematrix_combo.addItem(option)
+        self._ui_largematrix_combo.currentIndexChanged.connect(self.on_largematrix_changed)
 
     
     @property
@@ -475,6 +493,8 @@ class SettingsDialogUi(QDialog):
     def on_simple_browser_changed(self):
         pass
     def on_mainwinlayout_changed(self):
+        pass
+    def on_largematrix_changed(self):
         pass
     def on_singletracecolor_changed(self):
         pass
