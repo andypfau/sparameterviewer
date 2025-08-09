@@ -98,15 +98,20 @@ class MainWindow(MainWindowUi):
 
         self.apply_settings_to_ui()
 
-        initial_paths = filenames
+        initial_paths: list[str] = filenames
+
         if len(initial_paths) < 1:
-            if len(Settings.path_history) > 0:
-                if len(Settings.path_history) > 0:
-                    dir = Settings.path_history[0]
-                    if os.path.exists(dir):
-                        initial_paths = [dir]
+            # no initial paths -> load last paths
+            for last_path in Settings.last_paths:
+                if not os.path.exists(last_path):
+                    continue  # perhaps the file/directory has been deleted
+                initial_paths.append(last_path)
+            print(f'Loading last paths <{initial_paths}>')
+        
         if len(initial_paths) < 1:
+            # still no initial paths -> use default directory
             initial_paths = [AppPaths.get_default_file_dir()]
+
         self._initial_selection = []
         for path_str in initial_paths:
             path = PathExt(path_str)
@@ -115,6 +120,7 @@ class MainWindow(MainWindowUi):
                 path = path.parent
             self.add_to_most_recent_paths(str(path))
             self.ui_filesys_browser.add_toplevel(path)
+        
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIALIZATION_ID, MainWindow.TIMER_INITIALIZATION_TIMEOUT_S, self.finish_initialization)
 
         self.update_most_recent_paths_menu()
@@ -1104,6 +1110,10 @@ class MainWindow(MainWindowUi):
                 self.files[browser_path] = SParamFile(browser_path)
                 # show preliminary status
                 self.ui_filesys_browser.update_status(browser_path, self.get_file_prop_str(self.files[browser_path]))
+    
+
+    def on_filesys_toplevels_changed(self, paths: list[str]):
+        Settings.last_paths = paths
 
 
     def on_filesys_selection_changed(self):

@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b17 (2025-08-09)
+--------------------
+
+- new: re-loading all paths on startup
+
+
 0.40b16 (2025-07-31)
 --------------------
 

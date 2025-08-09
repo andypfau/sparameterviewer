@@ -26,7 +26,6 @@ Roadmap
 
 ### Missing Features
 
-- GUI: re-open all pinned directories on startup.
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: pre-defined fixed size for saved/copied plots.
 - GUI: find a nicer representation than plain markdown files.

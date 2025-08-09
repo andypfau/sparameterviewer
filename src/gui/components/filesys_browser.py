@@ -180,6 +180,7 @@ class FilesysBrowser(QWidget):
             super().mouseReleaseEvent(event)
 
 
+    topLevelsChanged = pyqtSignal(list)
     filesChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     doubleClicked = pyqtSignal(PathExt, PathExt, FilesysBrowserItemType)
@@ -366,6 +367,7 @@ class FilesysBrowser(QWidget):
 
         finally:
             self._inhibit_triggers = False
+        self.topLevelsChanged.emit([str(item.path) for item in self._get_toplevel_items()])
         self.filesChanged.emit()
 
 
@@ -385,6 +387,7 @@ class FilesysBrowser(QWidget):
             self.update_pathbar()
         finally:
             self._inhibit_triggers = False
+        self.topLevelsChanged.emit([str(item.path) for item in self._get_toplevel_items()])
         self.filesChanged.emit()
 
     
@@ -416,6 +419,7 @@ class FilesysBrowser(QWidget):
 
         finally:
             self._inhibit_triggers = False
+        self.topLevelsChanged.emit([str(item.path) for item in self._get_toplevel_items()])
         self.filesChanged.emit()
 
 

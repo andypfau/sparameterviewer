@@ -244,6 +244,7 @@ class MainWindowUi(QMainWindow):
         self._ui_filesys_browser = FilesysBrowser()
         self._ui_filesys_browser.doubleClicked.connect(self.on_filesys_doubleclick)
         self._ui_filesys_browser.selectionChanged.connect(self.on_filesys_selection_changed)
+        self._ui_filesys_browser.topLevelsChanged.connect(self.on_filesys_toplevels_changed)
         self._ui_filesys_browser.filesChanged.connect(self.on_filesys_files_changed)
         self._ui_filesys_browser.contextMenuRequested.connect(self.on_filesys_contextmenu)
         self._ui_files_tab.setLayout(QtHelper.layout_h(self._ui_filesys_browser))
@@ -1013,6 +1014,8 @@ class MainWindowUi(QMainWindow):
     def on_logy_changed(self):
         pass
     def on_statusbar_click(self):
+        pass
+    def on_filesys_toplevels_changed(self, paths: list[str]):
         pass
     def on_filesys_files_changed(self):
         pass
