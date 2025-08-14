@@ -1,5 +1,6 @@
 from .helpers.qt_helper import QtHelper
 from info import Info
+from lib.settings import Settings
 from lib import AppPaths
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -11,6 +12,7 @@ import pathlib
 import enum
 import logging
 import os
+import sys
 from typing import Callable, Union
 
 
@@ -24,6 +26,19 @@ class AboutDialogUi(QDialog):
         self.setModal(True)
         self.setWindowFlags(Qt.WindowType.Dialog)
 
+        self._ui_expand_link = QLabel()
+        self._ui_expand_link.setText('<a href=".">Show more...</a>')
+        self._ui_expand_link.setOpenExternalLinks(False)
+        self._ui_expand_link.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
+        self._ui_expand_link.linkActivated.connect(self._ui_link_clicked)
+        
+        binary_loc = os.path.abspath(sys.argv[0])
+        settings_loc = os.path.abspath(Settings.settings_file_path)
+        self._ui_more_text = QTextEdit()
+        self._ui_more_text.setText(f'Binary location: <{binary_loc}>\nSettings location: <{settings_loc}>')
+        self._ui_more_text.setReadOnly(True)
+        self._ui_more_text.setVisible(False)
+
         image_path = pathlib.Path(AppPaths.get_resource_dir()) / 'sparamviewer.png'
         self.setLayout(QtHelper.layout_h(
             10, QtHelper.make_image(str(image_path), 'Logo'), 20,
@@ -32,6 +47,9 @@ class AboutDialogUi(QDialog):
                 8,
                 Info.AppVersionStr,
                 Info.AppDateStr,
+                16,
+                self._ui_expand_link,
+                self._ui_more_text,
                 ...
             ),
         ))
@@ -41,3 +59,8 @@ class AboutDialogUi(QDialog):
 
     def ui_show_modal(self):
         self.exec()
+
+
+    def _ui_link_clicked(self):
+        self._ui_more_text.setVisible(True)
+        self._ui_expand_link.setVisible(False)

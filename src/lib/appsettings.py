@@ -19,6 +19,11 @@ class AppSettings:
         self._observers: list[Callable[None,None]] = []
         self._inhbit_listeners = False
         self._load()
+    
+
+    @property
+    def settings_file_path(self) -> str:
+        return os.path.abspath(self._file)
 
 
     def attach(self, callback: Callable[tuple[list[str]],None]):
