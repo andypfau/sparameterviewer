@@ -1619,13 +1619,15 @@ class MainWindow(MainWindowUi):
                 if opacity is None:
                     if self.ui_semitrans_traces:
                         opacity = default_trace_opacity
+                
+                is_only_single_point = (len(f) == 1)
 
                 style2 = '-.'
                 if style=='-':
                     style2 = '-.'
                 elif style=='-.':
                     style2 = ':'
-                if self.ui_mark_datapoints:
+                if self.ui_mark_datapoints or is_only_single_point:
                     style += 'o'
                     style2 += 'o'
                 if y_qty!=YQuantity.Off and y2_qty!=YQuantity.Off:

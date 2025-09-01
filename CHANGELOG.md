@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b18 (2025-09-01)
+--------------------
+
+- new: traces with only one point are always shown as point, even when "Mark Data Points" off
+- new: when a file fails to load, its file path and other info is now shown in the file info dialog
+- bugfix: fixed some crashes when loading files with less than two points
+
+
 0.40b17 (2025-08-09)
 --------------------
 
