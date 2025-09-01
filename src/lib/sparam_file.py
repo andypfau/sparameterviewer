@@ -98,7 +98,7 @@ class SParamFile:
                 
                 assert nw.number_of_ports >= 1, f'Expected at least one port, got {nw.number_of_ports} ports ({path})'
                 assert len(nw.f) >= 1, f'Expected at least one frequency point, got {len(nw.f)} points ({path})'
-                assert len(nw.s.shape) == 3, f'Expected 3-dimensional S-matrix (nxn over frequeny), got shape {len(nw.s.shape)} ({path})'
+                assert len(nw.s.shape) == 3, f'Expected 3-dimensional S-matrix (nxn over frequency), got shape {len(nw.s.shape)} ({path})'
                 assert nw.s.shape[0] >= 1, f'Expected frequency dimension of S-matrix to be at least one, got {nw.s.shape[0]} ({path})'
                 assert nw.s.shape[1] >= 1, f'Expected egress port dimension of S-matrix to be at least one, got {nw.s.shape[1]} ({path})'
                 assert nw.s.shape[2] >= 1, f'Expected ingress port dimension of S-matrix to be at least one, got {nw.s.shape[2]} ({path})'
@@ -248,7 +248,7 @@ class SParamFile:
                     freq_step = np.mean(freq_steps)
                     spacing_str =  f'non-equidistant spacing, average spacing {SiValue(freq_step,"Hz")}'
         else:
-            spacing_str =  f'single frequeny {SiValue(self.nw.f[0],"Hz")}'
+            spacing_str =  f'single frequency {SiValue(self.nw.f[0],"Hz")}'
         
         info += f'Frequency range: {SiValue(f0,"Hz")} to {SiValue(f1,"Hz")}, {n_points_str}, {spacing_str}'
         
