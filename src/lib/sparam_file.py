@@ -95,6 +95,13 @@ class SParamFile:
                                 comments_lines.append(line[1:].strip())
                     if len(comments_lines) > 0:
                         nw.comments = '\n'.join(comments_lines)
+                
+                assert nw.number_of_ports >= 1, f'Expected at least one port, got {nw.number_of_ports} ports ({path})'
+                assert len(nw.f) >= 1, f'Expected at least one frequency point, got {len(nw.f)} points ({path})'
+                assert len(nw.s.shape) == 3, f'Expected 3-dimensional S-matrix (nxn over frequeny), got shape {len(nw.s.shape)} ({path})'
+                assert nw.s.shape[0] >= 1, f'Expected frequency dimension of S-matrix to be at least one, got {nw.s.shape[0]} ({path})'
+                assert nw.s.shape[1] >= 1, f'Expected egress port dimension of S-matrix to be at least one, got {nw.s.shape[1]} ({path})'
+                assert nw.s.shape[2] >= 1, f'Expected ingress port dimension of S-matrix to be at least one, got {nw.s.shape[2]} ({path})'
                     
                 self._nw = nw
             except Exception as ex:
@@ -130,6 +137,11 @@ class SParamFile:
     @property
     def error(self) -> bool:
         return self._error is not None
+    
+
+    @property
+    def error_message(self) -> str|None:
+        return self._error if self._error else None
 
     
     def get_plaintext(self) -> str:
@@ -146,16 +158,6 @@ class SParamFile:
     
 
     def get_info_str(self) -> str:
-        if not self.nw:
-            if self.error:
-                return self.error
-            return 'File not loaded'
-                
-        f0, f1 = self.nw.f[0], self.nw.f[-1]
-        n_pts = len(self.nw.f)
-        _, fname = os.path.split(str(self.path))
-        comm = '' if self.nw.comments is None else self.nw.comments
-        n_ports = self.nw.s.shape[1]
 
         fileinfo = ''
         def fmt_tstamp(ts):
@@ -196,13 +198,28 @@ class SParamFile:
             except:
                 fileinfo += f'File size: unknown\n'
         
+        _, fname = os.path.split(str(self.path))
+        info = f'{fname}\n'
+        info += '-'*len(fname)+'\n\n'
+        
+        if not self.nw:
+            if self.error:
+                info += 'File loading failed: ' + self.error_message
+            else:
+                info += 'File not loaded'
+            info += '\n\n'
+            info += fileinfo
+            return info
+                
+        f0, f1 = self.nw.f[0], self.nw.f[-1]
+        n_pts = len(self.nw.f)
+        comm = '' if self.nw.comments is None else self.nw.comments
+        n_ports = self.nw.s.shape[1]
+        
         if (self.nw.z0 == self.nw.z0[0,0]).all():
             z0 = str(SiValue(self.nw.z0[0,0],'Ohm'))
         else:
             z0 = 'different for each port and/or frequency'
-        
-        info = f'{fname}\n'
-        info += '-'*len(fname)+'\n\n'
         
         if len(comm)>0:
             for comm_line in comm.splitlines():
@@ -234,8 +251,8 @@ class SParamFile:
             spacing_str =  f'single frequeny {SiValue(self.nw.f[0],"Hz")}'
         
         info += f'Frequency range: {SiValue(f0,"Hz")} to {SiValue(f1,"Hz")}, {n_points_str}, {spacing_str}'
+        
         info += '\n\n'
-
         info += fileinfo
 
         return info
