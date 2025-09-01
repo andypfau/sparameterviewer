@@ -210,25 +210,28 @@ class SParamFile:
             info += '\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
 
-        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=0 else ""}'
+        n_points_str = f'{n_pts:,.0f} point{"s" if n_pts!=1 else ""}'
         
-        freq_steps = np.diff(self.nw.f)
-        freq_equidistant = np.allclose(freq_steps,freq_steps[0])
-        if freq_equidistant:
-            freq_step = freq_steps[0]
-            spacing_str =  f'{SiValue(freq_step,"Hz")} equidistant spacing'
-        else:
-            freq_arbitrary = True
-            if np.all(self.nw.f != 0):
-                freq_ratios = np.exp(np.diff(np.log(self.nw.f)))
-                if np.allclose(freq_ratios,freq_ratios[0]):
-                    freq_arbitrary = False
+        if len(self.nw.f) > 1:
+            freq_steps = np.diff(self.nw.f)
+            freq_equidistant = np.allclose(freq_steps,freq_steps[0])
+            if freq_equidistant:
+                freq_step = freq_steps[0]
+                spacing_str =  f'{SiValue(freq_step,"Hz")} equidistant spacing'
+            else:
+                freq_arbitrary = True
+                if np.all(self.nw.f != 0):
+                    freq_ratios = np.exp(np.diff(np.log(self.nw.f)))
+                    if np.allclose(freq_ratios,freq_ratios[0]):
+                        freq_arbitrary = False
+                        freq_step = np.mean(freq_steps)
+                        freq_ratio = freq_ratios[0]
+                        spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {SiValue(freq_step,"Hz")}'
+                if freq_arbitrary:
                     freq_step = np.mean(freq_steps)
-                    freq_ratio = freq_ratios[0]
-                    spacing_str = f'{freq_ratio:.4g}x logarithmic spacing, average spacing {SiValue(freq_step,"Hz")}'
-            if freq_arbitrary:
-                freq_step = np.mean(freq_steps)
-                spacing_str =  f'non-equidistant spacing, average spacing {SiValue(freq_step,"Hz")}'
+                    spacing_str =  f'non-equidistant spacing, average spacing {SiValue(freq_step,"Hz")}'
+        else:
+            spacing_str =  f'single frequeny {SiValue(self.nw.f[0],"Hz")}'
         
         info += f'Frequency range: {SiValue(f0,"Hz")} to {SiValue(f1,"Hz")}, {n_points_str}, {spacing_str}'
         info += '\n\n'
