@@ -15,7 +15,7 @@ import traceback
 
 
 
-_rex_filetypes = re.compile(r'^\.(s[0-9]+p)|(ci?ti)$', re.IGNORECASE)
+_rex_filetypes = re.compile(r'^\.((s[0-9]+p)|(ci?ti))$', re.IGNORECASE)
 _rex_archtypes = re.compile(r'^\.zip$', re.IGNORECASE)
 
 

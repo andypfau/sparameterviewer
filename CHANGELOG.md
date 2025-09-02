@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b19 (2025-09-02)
+--------------------
+
+- bugfix: showing *.cti-files in file list
+
+
 0.40b18 (2025-09-01)
 --------------------
 
