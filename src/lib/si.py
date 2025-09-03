@@ -108,7 +108,8 @@ class SiValue:
         self._value: float
 
         if isinstance(value, complex):
-            warnings.warn(f'Constructing an Si from a complex number discards the imaginary part')
+            if value.imag != 0:
+                warnings.warn(f'Constructing an Si from a complex number discards the imaginary part')
             self._value = value.real
         elif isinstance(value, str):
             self.parse(value)
