@@ -295,6 +295,7 @@ class MainWindow(MainWindowUi):
             new_lines = '\n'.join([*expressions, *comment_lines(self.ui_expression.splitlines())])
             self.ui_expression = new_lines
             self.ui_param_selector.setUseExpressions(True)
+            Settings.use_expressions = True
             self.ui_enable_expressions(True)
             self.schedule_plot_update()
         

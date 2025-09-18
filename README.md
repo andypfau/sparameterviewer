@@ -27,8 +27,9 @@ Roadmap
 ### Missing Features
 
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
+- GUI: find a way to assing color groups to files.
 - GUI: pre-defined fixed size for saved/copied plots.
-- GUI: find a nicer representation than plain markdown files.
+- GUI: for the documentations, find a nicer representation than plain markdown files.
 - General: "TODO"-comments in code.
 - GUI: expression file quick-save/quick-load and file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.

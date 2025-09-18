@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b20 (2025-09-18)
+--------------------
+
+- bugfix: properly activating expressions when using a template
+
+
 0.40b19 (2025-09-02)
 --------------------
 
