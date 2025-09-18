@@ -26,6 +26,7 @@ Roadmap
 
 ### Missing Features
 
+- GUI: tell the user which file is used as "save for template".
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to assing color groups to files.
 - GUI: pre-defined fixed size for saved/copied plots.
@@ -33,7 +34,8 @@ Roadmap
 - General: "TODO"-comments in code.
 - GUI: expression file quick-save/quick-load and file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
-- Expressions: better interaction with Numpy. How can I use numpy functions with traces? What if I have two different parameters and a binary operation?
+- Expressions: could there be a more intuitive way for interaction between SParams an Numpy than `map()`?
+- Expressions: introduce a `map()` function that takes an arbitrary number of SParams objects, and puts them into a Numpy method.
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Expressions: log output for equations (so that you can also print some data or status).
 - File type registration script for Windows (using `assoc` and `ftype`).
