@@ -13,7 +13,11 @@ class CitiReader:
 
     def __init__(self, filename: str):
         self.filename = filename
-        self._citi = read_citifile(self.filename)
+        try:
+            self._citi = read_citifile(self.filename)
+        except Exception as ex:
+            # when reading a zero-byte file, the error is just "invalid agrument"; raise a more meaningful message instead
+            raise RuntimeError(f'Unable to open file <{filename}> ({ex})')
         self.comments = self._get_comments()
 
     @property
