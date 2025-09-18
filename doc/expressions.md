@@ -98,6 +98,30 @@ saved_nw()
 Returns a `Networks` object with the network that was saved from the Filesystem Browser's context menu.
 
 
+### map()
+
+```python
+map(fn, sparams, f_arg=False)
+```
+
+Maps `SParams` objects using a user-defined function `fn`.
+
+If `f_arg=True`, the first argument handed to `fn` is the frequency (as `np.ndarray`), and all subsequent arguments are the S-parameters of each `sparams` argument (as `np.ndarray`). The S-parameters are interpolated to all have the same freuqencies. If `f_arg=False` (default), the frequency argument is omitted.
+
+If the items of `sparams` have different numbers of elements, all items with only a single element are repeated. If there are different numbers of elements that are not one, an error occurs. Example:
+- `map(fn, three_elements, three_elements)`: `fn()` is called 3x, with `three_elements[0],three_elements[0]`, `three_elements[1],three_elements[1]`, `three_elements[2],three_elements[2]`.
+- `map(fn, three_elements, one_element)`: `fn()` is called 3x, with `three_elements[0],one_element`, `three_elements[1],one_element`, `three_elements[2],one_element`.
+- `map(fn, three_elements, two_elements)`: fails.
+
+Example:
+```python
+def my_fn(s, ref_s):
+    return s / ref_s  # normalization
+
+map(my_fn, sel_nws(), saved_nw())
+```
+
+
 
 Classes
 -------

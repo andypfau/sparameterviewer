@@ -774,7 +774,10 @@ class Networks:
     def __repr__(self):
         if len(self.nws) == 1:
             return f'<Networks({self.nws[0]})>'
-        return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
+        elif len(self.nws) > 1:
+            return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
+        else:
+            return '<Networks(empty)>'
     
 
     def sel_params(self) -> SParams:

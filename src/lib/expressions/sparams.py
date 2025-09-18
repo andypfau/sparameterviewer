@@ -43,7 +43,7 @@ class SParam:
     
 
     @staticmethod
-    def _adapt_f(a: "SParam", b: "SParam") -> "tuple[skrf.Network,skrf.Network]":
+    def _adapt_OLD(a: "SParam", b: "SParam") -> "tuple[np.ndarray,np.ndarray,np.ndarray]":
         if len(a.f)==len(b.f):
             if all(af==bf for af,bf in zip(a.f, b.f)):
                 return a,b
@@ -53,7 +53,46 @@ class SParam:
         freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
         a_nw = skrf.Network(f=a.f, s=a.s, f_unit='Hz').interpolate(freq_new)
         b_nw = skrf.Network(f=b.f, s=b.s, f_unit='Hz').interpolate(freq_new)
-        return a_nw,b_nw
+        a_s = np.array(np.ndarray.flatten(a_nw.s))
+        b_s = np.array(np.ndarray.flatten(b_nw.s))
+        return freq_new.f, a_s, b_s
+    
+
+    @staticmethod
+    def _adapt(*sparams: SParam) -> "tuple[np.ndarray,list[np.ndarray]]":
+        if len(sparams) < 1:
+            return np.array([]), [np.array([])]
+        if len(sparams) == 1:
+            return sparams[0].f, [np.array(np.ndarray.flatten(sparams[0].s))]
+        assert len(sparams) >= 2
+
+        all_same = True
+        for i,sparam in enumerate(sparams):
+            if i == 0:
+                continue
+            if len(sparams[0].f) != len(sparam.f):
+                all_same = False
+                break
+            if np.any(~np.isclose(sparams[0].f, sparam.f)):
+                all_same = False
+                break
+        if all_same:
+            return sparams[0].f, [np.array(np.ndarray.flatten(sparam.s)) for sparam in sparams]
+        
+        f_min = max([np.min(sparam.f) for sparam in sparams])
+        f_max = min([np.max(sparam.f) for sparam in sparams])
+        if f_min > f_max:
+            if Settings.verbose:
+                logging.debug(f'The selected networks do not have any overlapping frequency range, returning empty objects')
+            return np.array([]), [np.array([]) for _ in range(len(sparams))]
+
+        f_all = np.unique(np.concatenate([sparam.f for sparam in sparams]))
+        f_new = np.array([f for f in f_all if f_min<=f<=f_max])
+
+        freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
+        nws_new = [skrf.Network(f=sparam.f, s=sparam.s, f_unit='Hz').interpolate(freq_new) for sparam in sparams]
+        s_new = [np.array(np.ndarray.flatten(nw.s)) for nw in nws_new]
+        return freq_new.f, s_new
     
 
     @staticmethod
@@ -62,12 +101,10 @@ class SParam:
             return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files, param_type='const')
         if isinstance(b, (int,float,complex,np.ndarray)):
             return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files, param_type='const')
-        a_nw, b_nw = SParam._adapt_f(a, b)
-        a_s = np.array(np.ndarray.flatten(a_nw.s))
-        b_s = np.array(np.ndarray.flatten(b_nw.s))
+        f, [a_s, b_s] = SParam._adapt(a, b)
         c_s = op(a_s, b_s)
         c_t = a.param_type + op_type_str + b.param_type
-        return a._modified_copy(f=a_nw.f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t)
+        return a._modified_copy(f=f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
@@ -550,7 +587,10 @@ class SParams:
     def __repr__(self):
         if len(self.sps) == 1:
             return f'<SParams({self.sps[0]})>'
-        return f'<SParams({len(self.sps)}x SParam, 1st is {self.sps[0]})>'
+        elif len(self.sps) > 1:
+            return f'<SParams({len(self.sps)}x SParam, 1st is {self.sps[0]})>'
+        else:
+            return '<SParams(empty)>'
     
     
     def _count(self) -> int:

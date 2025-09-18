@@ -11,6 +11,7 @@ import numpy as np
 import fnmatch
 import logging
 import dataclasses
+from typing import Callable
 
 
 class ExpressionParser:
@@ -71,6 +72,38 @@ class ExpressionParser:
                     sel_nws().s(e,i).plot()
                 except Exception as ex:
                     logging.error(f'Unable to plot "S{e},{i}" ({ex})')
+        
+        def map(fn: Callable[[list[np.ndarray]],np.ndarray], *sparams: SParams, f_arg: bool = False) -> SParams:
+            if len(sparams) < 1:
+                raise ValueError(f'Expected at least one SParams object, got none')
+            
+            shapes = [len(s.sps) for s in sparams]
+            broadcast_shape = 1
+            for shape in shapes:
+                if shape == 1:
+                    continue
+                elif broadcast_shape == 1:
+                    broadcast_shape = shape
+                elif broadcast_shape != shape:
+                    raise ValueError(f'Cannot broadcase shapes {shapes}')
+
+            result = []
+            for i in range(broadcast_shape):
+                sparam_list = []
+                for s in sparams:
+                    if len(s.sps) == 1:
+                        sparam_list.append(s.sps[0])
+                    else:
+                        sparam_list.append(s.sps[i])
+                f_adapted, s_adapted = SParam._adapt(*sparam_list)
+                if f_arg:
+                    s_result = fn(f_adapted, *s_adapted)
+                else:
+                    s_result = fn(*s_adapted)
+                result.append(SParam('mapped', f_adapted, s_result, sparams[0].sps[0].z0))  # TODO: better name and Z0
+            
+            return SParams(result)
+            
 
         vars_global = {}
         vars_local = {
@@ -81,6 +114,7 @@ class ExpressionParser:
             'nws': nws,
             'sel_nws': sel_nws,
             'quick': quick,
+            'map': map,
             'math': math,
             'np': np,
         }
