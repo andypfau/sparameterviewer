@@ -537,17 +537,22 @@ An alternative to the `~` operator is the `invert()` method.
 ### Addition, Subtraction, Multiplication, Division
 
 ```python
-+ - * /
++ - * @ /
 ```
 
 Applies the operation on the parameters of two networks.
+
+Note that `+ - * /` are element-wise operations, while `@` is the matrix multiplication.
 
 Example:
 ```python
 (sel_nws() / nw("thru.s2p")).s().plot()  # normalize all networks to thru.s2p, then plot S-parameters
 ```
 
-**Note**: a division is *not* the same as de-embedding! To de-embed `thru.s2p`, use `sel_nws() ** (~nw("thru.s2p"))`.
+**Notes**:
+
+- A matrix multiplication is *not* the same as cascading! To cascade e.g. `thru.s2p`, use `sel_nws() ** nw("thru.s2p")`.
+- A division is *not* the same as de-embedding! To de-embed e.g. `thru.s2p`, use `sel_nws() ** (~nw("thru.s2p"))`.
 
 
 

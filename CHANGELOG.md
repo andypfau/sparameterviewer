@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b21 (2025-09-23)
+--------------------
+
+- change: allowing operations `+ - * @ /` between `Networks` objects
+
+
 0.40b20 (2025-09-18)
 --------------------
 

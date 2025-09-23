@@ -15,7 +15,7 @@ import logging
 import re
 import os
 from types import NoneType
-from typing import overload
+from typing import overload, Callable
 
 
 
@@ -80,34 +80,39 @@ class Network:
         return nw_a, nw_b
 
         
-    def __truediv__(self, other: "Network|float") -> "Network":
+    def _smatrix_op_smatrix(self, other: "Network|float", operation_fn: Callable, operator_str: str) -> "Network":
         if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
             nw = self.nw.copy()
-            nw.s /= other
-            return Network(nw, f'{self.nw.name}/{other}', original_files=self.original_files)
+            nw.s = operation_fn(nw.s, other.s)
+            return Network(nw, f'{self.nw.name}{operator_str}{other}', original_files=self.original_files)
         elif isinstance(other, Network):
             if self.nw.number_of_ports != other.nw.number_of_ports:
                 raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
             nw, nw2 = Network._get_adapted_networks(self, other)
-            nw.s = nw.s / nw2.s
-            return Network(nw, f'{self.nw.name}/{other.nw.name}', original_files=self.original_files|other.original_files)
+            nw.s = operation_fn(nw.s, nw2.s)
+            return Network(nw, f'{self.nw.name}{operator_str}{other.nw.name}', original_files=self.original_files|other.original_files)
         else:
             raise ValueError(f'Expected operand of type float or Network, got <{other}>')
 
         
+    def __add__(self, other: "Network|float") -> "Network":
+        return self._smatrix_op_smatrix(other, lambda s1,s2: s1+s2, '+')
+
+        
+    def __sub__(self, other: "Network|float") -> "Network":
+        return self._smatrix_op_smatrix(other, lambda s1,s2: s1-s2, '-')
+
+        
+    def __matmul__(self, other: "Network") -> "Network":
+        return self._smatrix_op_smatrix(other, lambda s1,s2: s1@s2, '@')
+
+        
     def __mul__(self, other: "Network|float") -> "Network":
-        if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
-            nw = self.nw.copy()
-            nw.s *= other
-            return Network(nw, f'{self.nw.name}*{other}', original_files=self.original_files)
-        elif isinstance(other, Network):
-            if self.nw.number_of_ports != other.nw.number_of_ports:
-                raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
-            nw, nw2 = Network._get_adapted_networks(self, other)
-            nw.s = nw.s * nw2.s
-            return Network(nw, f'{self.nw.name}*{other.nw.name}', original_files=self.original_files|other.original_files)
-        else:
-            raise ValueError(f'Expected operand of type float or Network, got <{other}>')
+        return self._smatrix_op_smatrix(other, lambda s1,s2: s1*s2, '*')
+
+        
+    def __truediv__(self, other: "Network|float") -> "Network":
+        return self._smatrix_op_smatrix(other, lambda s1,s2: s1/s2, '/')
 
 
     def __invert__(self) -> "Network":
@@ -755,12 +760,24 @@ class Networks:
             return result
 
 
+    def __add__(self, other: "Networks|float") -> "Networks":
+        return self._binary_op(Network.__add__, other, Networks)
+
+
+    def __sub__(self, other: "Networks|float") -> "Networks":
+        return self._binary_op(Network.__sub__, other, Networks)
+
+
+    def __matmul__(self, other: "Networks") -> "Networks":
+        return self._binary_op(Network.__matmul__, other, Networks)
+
+
+    def __mul__(self, other: "Networks|float") -> "Networks":
+        return self._binary_op(Network.__mul__, other, Networks)
+
+
     def __truediv__(self, other: "Networks|float") -> "Networks":
-        return self._binary_op(Network.__truediv__, other, Networks)  # TODO: document
-
-
-    def __mul__(self, other: "float") -> "Networks":
-        return self._binary_op(Network.__mul__, other, Networks)  # TODO: document
+        return self._binary_op(Network.__truediv__, other, Networks)
 
 
     def __invert__(self) -> "Networks":
