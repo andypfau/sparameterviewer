@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from .path_bar import PathBar
-from lib import AppPaths, PathExt, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, natural_sort_key, get_callstack_str
+from lib import AppPaths, PathExt, Settings, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, natural_sort_key, get_callstack_str
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -173,6 +173,13 @@ class FilesysBrowser(QWidget):
     class MyTreeView(QTreeView):
 
         backClicked = pyqtSignal()
+        spacePressed = pyqtSignal()
+
+        def keyPressEvent(self, event: QtGui.QKeyEvent):
+            if event.key() == Qt.Key.Key_Space:
+                self.spacePressed.emit()
+                return
+            super().keyPressEvent(event)
 
         def mouseReleaseEvent(self, event: QMouseEvent):
             if event.button() == Qt.MouseButton.BackButton:
@@ -183,7 +190,6 @@ class FilesysBrowser(QWidget):
     topLevelsChanged = pyqtSignal(list)
     filesChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
-    doubleClicked = pyqtSignal(PathExt, PathExt, FilesysBrowserItemType)
     contextMenuRequested = pyqtSignal(PathExt, PathExt, FilesysBrowserItemType)
 
 
@@ -211,8 +217,8 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.selectionModel().selectionChanged.connect(self._on_selection_change)
         self._ui_filesys_view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
-        self._ui_filesys_view.doubleClicked.connect(self._on_doubleclick)
         self._ui_filesys_view.backClicked.connect(self._on_navigate_back)
+        self._ui_filesys_view.spacePressed.connect(self._on_space_pressed)
         self._ui_pathbar = PathBar()
         self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
         self._ui_pathbar.backClicked.connect(self._on_navigate_back)
@@ -526,7 +532,7 @@ class FilesysBrowser(QWidget):
         return self._find_toplevel_item(item.parent())
 
 
-    def _check_items(self, items: list[FilesysBrowser.MyFileItem]):
+    def _check_items(self, items: list[FilesysBrowser.MyFileItem], toggle: bool = False):
         any_changed = False
         try:
             self._inhibit_triggers = True
@@ -538,10 +544,15 @@ class FilesysBrowser(QWidget):
                     item = parent.child(row_index, 0)
                     if not isinstance(item, FilesysBrowser.MyFileItem):
                         continue
-                    do_check = item in items
-                    if item.checked != do_check:
-                        item.checked = do_check
-                        any_changed = True
+                    if toggle:
+                        if item in items:
+                            item.checked = not item.checked
+                            any_changed = True
+                    else:
+                        do_check = item in items
+                        if item.checked != do_check:
+                            item.checked = do_check
+                            any_changed = True
                     recurse(item)
             recurse(self._ui_filesys_model.invisibleRootItem())
         finally:
@@ -557,12 +568,13 @@ class FilesysBrowser(QWidget):
         
         self.update_pathbar()
 
-        selected_items = self._get_all_selected_items()
-        if len(selected_items)==1:
-            if selected_items[0].type != FilesysBrowserItemType.File:
-                return  # the user selected a single non-file; do not change the checkboxes
-        self._check_items(selected_items)
-
+        if Settings.fileview_selection_check:
+            selected_items = self._get_all_selected_items()
+            if len(selected_items)==1:
+                if selected_items[0].type != FilesysBrowserItemType.File:
+                    return  # the user selected a single non-file; do not change the checkboxes
+            self._check_items(selected_items)
+        
     
     def _on_files_changed(self):
         if self._inhibit_triggers:
@@ -601,16 +613,6 @@ class FilesysBrowser(QWidget):
             return
         self._contextmenu_item = item
         self.contextMenuRequested.emit(item.path, top_item.path, item.type)
-    
-    
-    def _on_doubleclick(self, index: QModelIndex):
-        item: FilesysBrowser.MyFileItem = self._ui_filesys_model.itemFromIndex(index)
-        if not isinstance(item, FilesysBrowser.MyFileItem):
-            return
-        top_item = self._find_toplevel_item(item)
-        if not isinstance(top_item, FilesysBrowser.MyFileItem):
-            return
-        self.doubleClicked.emit(item.path, top_item.path, item.type)
 
 
     def _on_pathbar_change(self, path: str):
@@ -636,6 +638,10 @@ class FilesysBrowser(QWidget):
             return
         from_path, to_path = self._history.pop()
         self._change_root(to_path, from_path)
+    
+
+    def _on_space_pressed(self):
+        self._check_items(self._get_all_selected_items(), toggle=True)
 
 
     @staticmethod

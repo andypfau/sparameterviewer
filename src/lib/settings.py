@@ -137,6 +137,7 @@ class SParamViewerAppSettings(AppSettings):
     simplified_no_expressions: bool = False
     dynamic_template_references: bool = False
     large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.Clickable
+    fileview_selection_check: bool = True
 
 
 

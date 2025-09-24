@@ -87,6 +87,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
             self.ui_simplified_browser = Settings.simplified_browser
+            self.ui_selectcheck = Settings.fileview_selection_check
             self.ui_maxhist = Settings.path_history_maxsize
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
@@ -217,6 +218,10 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_simple_browser_changed(self):
         Settings.simplified_browser = self.ui_simplified_browser
+
+
+    def on_selectcheck_changed(self):
+        Settings.fileview_selection_check = self.ui_selectcheck
 
 
     def on_singletracecolor_changed(self):

@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b22 (2025-09-24)
+--------------------
+
+- new: press spacebar to toggle checked-state of selected items in filesystem view
+- new: option to disable the feature that selected items are checked
+
+
 0.40b21 (2025-09-23)
 --------------------
 

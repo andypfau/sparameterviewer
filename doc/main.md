@@ -42,7 +42,10 @@ How to navigate:
 
 How to select files for plotting:
 - All checked files are plotted.
-- To check a range of files, just select them (hold *Ctrl* to select multiple files, or to select a range).
+- How to change an item being checked:
+    - Just click the checkbox; *or*
+    - Press the spacebar, and the checks of all selected items are toggled; *or*
+    - Select a range of files (hold the *Ctrl* key), and they will be checked automatically (can be disabled in settings).
 
 
 ### Expressions
