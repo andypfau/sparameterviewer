@@ -59,9 +59,9 @@ class SettingsDialogUi(QDialog):
         self._ui_simple_browser_check.toggled.connect(self.on_simple_browser_changed)
         self._ui_largematrix_combo = QComboBox()
         self._ui_largematrix_combo.setToolTip('How the S-parameter matrix behaves when there are too many parameters to be displayed.')
-        self._ui_selectcheck_check = QCheckBox('Check Files When Selected')
-        self._ui_selectcheck_check.setToolTip('When enabled, items in the filesystem view are automatically checked when they are selected (except when only a single item is selected). Regardless of this setting, you can always toggle the selected items by pressing the spacebar, or by clicking the checkbox of each file itself.')
-        self._ui_selectcheck_check.toggled.connect(self.on_selectcheck_changed)
+        self._ui_selecttocheck_check = QCheckBox('Selected Files Are Automatically Checked')
+        self._ui_selecttocheck_check.setToolTip('Only files that have their checkbox checked will be plotted. When this option is enabled, you can click anywhere on the file, or just multi-select it, and its checkbox will be checked. Regardless of this option, you cal aways click the checkbox directly, or use the spacebar to toggle the checkboxes.')
+        self._ui_selecttocheck_check.toggled.connect(self.on_selecttocheck_changed)
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
@@ -70,7 +70,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_simple_plot_check,
                 self._ui_simple_browser_check,
                 QtHelper.layout_h('Large S-Param Matrix:', self._ui_largematrix_combo,...),
-                self._ui_selectcheck_check,
+                self._ui_selecttocheck_check,
                 ...
             )
         )
@@ -251,14 +251,6 @@ class SettingsDialogUi(QDialog):
 
     
     @property
-    def ui_selectcheck(self) -> bool:
-        return self._ui_selectcheck_check.isChecked()
-    @ui_selectcheck.setter
-    def ui_selectcheck(self, value: bool):
-        self._ui_selectcheck_check.setChecked(value)
-
-    
-    @property
     def ui_mainwin_layout(self) -> str:
         return self._ui_mainwinlayout_combo.currentText()
     @ui_mainwin_layout.setter
@@ -324,6 +316,14 @@ class SettingsDialogUi(QDialog):
     @ui_verbose.setter
     def ui_verbose(self, value: bool):
         self._ui_verbose_check.setChecked(value)
+
+    
+    @property
+    def ui_selecttocheck(self) -> bool:
+        return self._ui_selecttocheck_check.isChecked()
+    @ui_selecttocheck.setter
+    def ui_selecttocheck(self, value: bool):
+        self._ui_selecttocheck_check.setChecked(value)
 
     
     @property
@@ -504,11 +504,11 @@ class SettingsDialogUi(QDialog):
         pass
     def on_simple_browser_changed(self):
         pass
-    def on_selectcheck_changed(self):
-        pass
     def on_mainwinlayout_changed(self):
         pass
     def on_largematrix_changed(self):
+        pass
+    def on_selecttocheck_changed(self):
         pass
     def on_singletracecolor_changed(self):
         pass

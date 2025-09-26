@@ -26,6 +26,8 @@ Roadmap
 
 ### Missing Features
 
+- GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
+- GUI: implement a real "filter" feature, so that only files matching a filter are displayed in the filesystem tree; rename the current filter feature to e.g. "check".
 - GUI: tell the user which file is used as "save for template".
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to assing color groups to files.

@@ -43,9 +43,15 @@ How to navigate:
 How to select files for plotting:
 - All checked files are plotted.
 - How to change an item being checked:
-    - Just click the checkbox; *or*
-    - Press the spacebar, and the checks of all selected items are toggled; *or*
-    - Select a range of files (hold the *Ctrl* key), and they will be checked automatically (can be disabled in settings).
+    - Just click the checkbox of a file to toggle it; *or*
+    - Click or select files (hold the *Ctrl* key for a range), and they will be checked automatically (this can be disabled in the settings); *or*
+    - Select any number of files then:
+        - Press the spacebar to toggle the checks of all selected files.
+            - Hold *CTRL* to toggle the checks of *each file individually* (instead of checking *all* selected files, or un-checking *all* selected files).
+            - Hold *SHIFT* to un-check all files that are not selected.
+        - Press the *+* key to check the selected files.
+        - Press the *Enter* (*Return*) key to check the selected files, and un-check all others (similar to *SHIFT+Spacebar*).
+        - Press the *-* key to un-check the selected files.
 
 
 ### Expressions

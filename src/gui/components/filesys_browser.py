@@ -173,11 +173,28 @@ class FilesysBrowser(QWidget):
     class MyTreeView(QTreeView):
 
         backClicked = pyqtSignal()
-        spacePressed = pyqtSignal()
+        spacePressed = pyqtSignal(str, bool, bool)
 
         def keyPressEvent(self, event: QtGui.QKeyEvent):
             if event.key() == Qt.Key.Key_Space:
-                self.spacePressed.emit()
+                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
+                self.spacePressed.emit(' ', ctrl, shift)
+                return
+            elif event.key() == Qt.Key.Key_Plus:
+                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
+                self.spacePressed.emit('+', ctrl, shift)
+                return
+            elif event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
+                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
+                self.spacePressed.emit('\n', ctrl, shift)
+                return
+            elif event.key() == Qt.Key.Key_Minus:
+                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
+                self.spacePressed.emit('-', ctrl, shift)
                 return
             super().keyPressEvent(event)
 
@@ -532,7 +549,39 @@ class FilesysBrowser(QWidget):
         return self._find_toplevel_item(item.parent())
 
 
-    def _check_items(self, items: list[FilesysBrowser.MyFileItem], toggle: bool = False):
+    def _check_items(self, items: list[FilesysBrowser.MyFileItem], toggle: bool = False, toggle_common: bool = False, toggle_exclusive: bool = False, modify_to = None):
+
+        if toggle and toggle_common:
+
+            def get_number_of_checked_items_recursively(parent: FilesysBrowser.MyFileItem):
+                n_total, n_checked = 0, 0
+                nonlocal any_changed
+                if parent is None:
+                    return
+                for row_index in range(parent.rowCount()):
+                    item = parent.child(row_index, 0)
+                    if not isinstance(item, FilesysBrowser.MyFileItem):
+                        continue
+                    if item in items:
+                        n_total += 1
+                        if item.checked:
+                            n_checked += 1
+                    sub_total, sub_checked = get_number_of_checked_items_recursively(item)
+                    n_total += sub_total
+                    n_checked += sub_checked
+                return n_total, n_checked
+            
+            n_total, n_checked = get_number_of_checked_items_recursively(self._ui_filesys_model.invisibleRootItem())
+            if n_checked > 0 and n_checked < n_total:
+                # some, but not all, are checked -> check all
+                toggle_to_on = True
+            elif n_checked <= n_total/2:
+                # majority is un-checked -> check all
+                toggle_to_on = True
+            else:
+                # majority is checked -> un-check all
+                toggle_to_on = False
+
         any_changed = False
         try:
             self._inhibit_triggers = True
@@ -545,8 +594,26 @@ class FilesysBrowser(QWidget):
                     if not isinstance(item, FilesysBrowser.MyFileItem):
                         continue
                     if toggle:
-                        if item in items:
-                            item.checked = not item.checked
+                        if toggle_common:
+                            if item in items:
+                                if item.checked != toggle_to_on:
+                                    item.checked = toggle_to_on
+                                    any_changed = True
+                            else:
+                                if toggle_exclusive and item.checked:
+                                    item.checked = False
+                                    any_changed = True
+                        else:
+                            if item in items:
+                                item.checked = not item.checked
+                                any_changed = True
+                            else:
+                                if toggle_exclusive and item.checked:
+                                    item.checked = False
+                                    any_changed = True
+                    elif modify_to is not None:
+                        if item in items and item.checked != modify_to:
+                            item.checked = modify_to
                             any_changed = True
                     else:
                         do_check = item in items
@@ -568,7 +635,7 @@ class FilesysBrowser(QWidget):
         
         self.update_pathbar()
 
-        if Settings.fileview_selection_check:
+        if Settings.select_file_to_check:
             selected_items = self._get_all_selected_items()
             if len(selected_items)==1:
                 if selected_items[0].type != FilesysBrowserItemType.File:
@@ -640,8 +707,16 @@ class FilesysBrowser(QWidget):
         self._change_root(to_path, from_path)
     
 
-    def _on_space_pressed(self):
-        self._check_items(self._get_all_selected_items(), toggle=True)
+    def _on_space_pressed(self, key: str, ctrl: bool, shift: bool):
+        selected = self._get_all_selected_items()
+        if key==' ':
+            self._check_items(selected, toggle=True, toggle_common=not ctrl, toggle_exclusive=shift)
+        elif key=='+':
+            self._check_items(selected, modify_to=True)
+        elif key=='\n':
+            self._check_items(selected)
+        elif key=='-':
+            self._check_items(selected, modify_to=False)
 
 
     @staticmethod

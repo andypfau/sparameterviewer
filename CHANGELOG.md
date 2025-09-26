@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b23 (2025-09-24)
+--------------------
+
+- new: more keys to check or un-check items in the filesystem browser
+
+
 0.40b22 (2025-09-24)
 --------------------
 
