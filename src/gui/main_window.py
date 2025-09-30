@@ -536,6 +536,13 @@ class MainWindow(MainWindowUi):
     def on_plottype_changed(self):
         if not self.ready:
             return
+        
+        plot_type_changed = (Settings.plot_type != self.ui_plot_selector.plotType())
+        if Settings.plot_type == PlotType.Cartesian:
+            y_qty_changed = (Settings.plot_y_quantitiy != self.ui_plot_selector.yQuantity()) or (Settings.plot_y2_quantitiy != self.ui_plot_selector.y2Quantity())
+        else:
+            y_qty_changed = False
+
         Settings.plot_type = self.ui_plot_selector.plotType()
         Settings.phase_unit = self.ui_plot_selector.phaseUnit()
         Settings.phase_processing = self.ui_plot_selector.phaseProcessing()
@@ -550,7 +557,12 @@ class MainWindow(MainWindowUi):
         Settings.plot_y2_quantitiy = self.ui_plot_selector.y2Quantity()
         self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
 
-        self.invalidate_axes_lock(update=False)  # different kind of chart -> axes scale is probably no longer valid
+        if plot_type_changed:
+            self.ui_xaxis_range.low_is_wildcard, self.ui_xaxis_range.high_is_wildcard = True, True
+            self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard = True, True
+        elif y_qty_changed:
+            self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard = True, True
+
         self.schedule_plot_update()
 
 

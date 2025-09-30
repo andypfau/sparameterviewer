@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b24 (2025-09-30)
+--------------------
+
+- new: when the option "" is off, you can now double-click to select
+- change: fixed tab order of the X- and Y-axis combo boxes
+- bugfix: removing locked axes when changing chart
+
+
 0.40b23 (2025-09-26)
 --------------------
 

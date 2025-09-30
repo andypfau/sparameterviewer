@@ -231,6 +231,7 @@ class MainWindowUi(QMainWindow):
             ),
             ..., margins=margins, spacing=wide_spacing
         ))
+        self.setTabOrder(self._ui_yaxis_range, self._ui_xaxis_range)
         self._ui_ribbon.setContentsMargins(0, 0, 0, 0)
         self._ui_ribbon.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 

@@ -173,6 +173,7 @@ class FilesysBrowser(QWidget):
     class MyTreeView(QTreeView):
 
         backClicked = pyqtSignal()
+        doubleClicked = pyqtSignal(bool, bool)
         spacePressed = pyqtSignal(str, bool, bool)
 
         def keyPressEvent(self, event: QtGui.QKeyEvent):
@@ -197,6 +198,13 @@ class FilesysBrowser(QWidget):
                 self.spacePressed.emit('-', ctrl, shift)
                 return
             super().keyPressEvent(event)
+
+        def mouseDoubleClickEvent(self, event: QMouseEvent):
+            if event.button() == Qt.MouseButton.LeftButton:
+                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
+                self.doubleClicked.emit(ctrl, shift)
+            super().mouseDoubleClickEvent(event)
 
         def mouseReleaseEvent(self, event: QMouseEvent):
             if event.button() == Qt.MouseButton.BackButton:
@@ -235,6 +243,7 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
         self._ui_filesys_view.backClicked.connect(self._on_navigate_back)
+        self._ui_filesys_view.doubleClicked.connect(self._on_doubleclicked)
         self._ui_filesys_view.spacePressed.connect(self._on_space_pressed)
         self._ui_pathbar = PathBar()
         self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
@@ -705,6 +714,12 @@ class FilesysBrowser(QWidget):
             return
         from_path, to_path = self._history.pop()
         self._change_root(to_path, from_path)
+    
+
+    def _on_doubleclicked(self, ctrl: bool, shift: bool):
+        if not Settings.select_file_to_check:
+            selected_items = self._get_all_selected_items()
+            self._check_items(selected_items, toggle=True, toggle_common=True, toggle_exclusive=shift)
     
 
     def _on_space_pressed(self, key: str, ctrl: bool, shift: bool):
