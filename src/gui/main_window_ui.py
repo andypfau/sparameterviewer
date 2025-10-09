@@ -37,7 +37,6 @@ class MainWindowUi(QMainWindow):
 
     def __init__(self):
         self._ui_timers: dict[any,tuple[QTimer,Callable]] = {}
-        self._allow_plot_tool = True
         self._show_expressions = True
         self._layout = MainWindowLayout.Wide
         self._show_menu = False
@@ -286,6 +285,8 @@ class MainWindowUi(QMainWindow):
         self._ui_auto_cursor_trace_check = QCheckBox('Auto Trace')
         self._ui_auto_cursor_trace_check.setChecked(True)
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
+        self._ui_zoompan_label = QtHelper.make_label('Disable Zoom/Pan To Use Cursors')
+        self._ui_zoompan_label.setVisible(False)
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
         self._ui_cursor_edit_x1 = SiValueEdit()
@@ -306,7 +307,7 @@ class MainWindowUi(QMainWindow):
             [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_edit_x1, 'Y1:', self._ui_cursor_readout_y1],
             [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_edit_x2, 'Y2:', self._ui_cursor_readout_y2],
             [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
-            [None, None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
+            [QtHelper.CellSpan(self._ui_zoompan_label, cols=2), None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
         ])
         cursor_layout.setColumnStretch(0, 0)
         cursor_layout.setColumnStretch(1, 2)
@@ -454,23 +455,15 @@ class MainWindowUi(QMainWindow):
 
     
     def _on_plottool_pan(self):
-        if not self._allow_plot_tool:
-            self._ui_pan_button.setChecked(False)
-            self._ui_zoom_button.setChecked(False)
-            self._ui_plot.setTool(PlotWidget.Tool.Off)
-            return
         self._ui_zoom_button.setChecked(False)
         self._ui_plot.setTool(self.ui_plot_tool)
+        self._enable_cursors(self.ui_plot_tool == PlotWidget.Tool.Off)
     
 
     def _on_plottool_zoom(self):
-        if not self._allow_plot_tool:
-            self._ui_pan_button.setChecked(False)
-            self._ui_zoom_button.setChecked(False)
-            self._ui_plot.setTool(PlotWidget.Tool.Off)
-            return
         self._ui_pan_button.setChecked(False)
         self._ui_plot.setTool(self.ui_plot_tool)
+        self._enable_cursors(self.ui_plot_tool == PlotWidget.Tool.Off)
 
 
     def ui_show(self):
@@ -640,18 +633,7 @@ class MainWindowUi(QMainWindow):
         self._ui_pan_button.setChecked(value == PlotWidget.Tool.Pan)
         self._ui_zoom_button.setChecked(value == PlotWidget.Tool.Zoom)
         self._ui_plot.setTool(value)
-
-
-    @property
-    def ui_allow_plot_tool(self) -> bool:
-        return self._allow_plot_tool
-    @ui_allow_plot_tool.setter
-    def ui_allow_plot_tool(self, value: bool):
-        self._allow_plot_tool = value
-        if not value:
-            self._ui_pan_button.setChecked(False)
-            self._ui_zoom_button.setChecked(False)
-            self._ui_plot.setTool(PlotWidget.Tool.Off)
+        self._enable_cursors(value == PlotWidget.Tool.Off)
 
 
     @property
@@ -924,6 +906,17 @@ class MainWindowUi(QMainWindow):
     def _on_semitrans_changed(self):
         self._update_enabled()
         self.on_semitrans_changed()
+    
+
+    def _enable_cursors(self, enable: bool = True):
+        self._ui_cursor1_radio.setEnabled(enable)
+        self._ui_cursor2_radio.setEnabled(enable)
+        self._ui_auto_cursor_check.setEnabled(enable)
+        self._ui_cursor1_trace_combo.setEnabled(enable)
+        self._ui_cursor2_trace_combo.setEnabled(enable)
+        self._ui_auto_cursor_trace_check.setEnabled(enable)
+        self._ui_cursor_syncx_check.setEnabled(enable)
+        self._ui_zoompan_label.setVisible(not enable)
 
 
     # to be implemented in derived class

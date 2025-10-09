@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b25 (2025-10-09)
+--------------------
+
+- new: can now zoom/pan while cursors are active
+
+
 0.40b24 (2025-09-30)
 --------------------
 

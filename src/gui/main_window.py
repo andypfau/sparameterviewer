@@ -1288,7 +1288,11 @@ class MainWindow(MainWindowUi):
 
 
     def update_cursors(self, left_btn_pressed: bool = False, left_btn_event: bool = False, x: float = None, y: float = None, x2: float = None, y2: float = None):
-        if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
+        if not self.plot:
+            return
+        if self.ui_tab != MainWindowUi.Tab.Cursors:
+            return
+        if self.ui_plot_tool != PlotWidget.Tool.Off:
             return
         
         # TODO: allow cursors on 2nd axis
