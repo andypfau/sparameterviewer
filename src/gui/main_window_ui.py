@@ -285,7 +285,7 @@ class MainWindowUi(QMainWindow):
         self._ui_auto_cursor_trace_check = QCheckBox('Auto Trace')
         self._ui_auto_cursor_trace_check.setChecked(True)
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
-        self._ui_zoompan_label = QtHelper.make_label('Disable Zoom/Pan To Use Cursors')
+        self._ui_zoompan_label = QtHelper.make_label('Disable Zoom/Pan To Move Cursors')
         self._ui_zoompan_label.setVisible(False)
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)

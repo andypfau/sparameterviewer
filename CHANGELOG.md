@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b26 (2025-10-10)
+--------------------
+
+- new: cursor can now be fine-placed at an interpolated position, if zoomed in deep enough
+
+
 0.40b25 (2025-10-09)
 --------------------
 

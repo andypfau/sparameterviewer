@@ -220,9 +220,7 @@ class PlotHelper:
     def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None, width: float = 1, height: float = 1) -> "tuple[PlotData,float,float,float]":
 
         best_error = +1e99
-        best_x = None
-        best_y = None
-        best_z = None
+        best_index = None
         best_plot = None
 
         for plot in self.items:
@@ -239,12 +237,40 @@ class PlotHelper:
             error = dist[idx]
             if error < best_error:
                 best_error = error
-                best_x = plot.data.x.values[idx]
-                best_y = plot.data.y.values[idx]
-                best_z = plot.data.z.values[idx] if plot.data.z is not None else None
-                best_plot = plot.data
+                best_plot = plot
+                best_index = idx
+        
+        if best_plot is None:
+            return None, None, None, None
 
-        return best_plot, best_x, best_y, best_z
+        best_x = best_plot.data.x.values[best_index]
+        best_y = best_plot.data.y.values[best_index]
+        best_z = best_plot.data.z.values[best_index] if best_plot.data.z is not None else None
+    
+        # are we left or right of the target?
+        i0, i1 = None, None
+        if best_x <= x and best_index < len(best_plot.data.x.values)-1:
+            i0, i1 = best_index, best_index+1
+        elif best_x >= x and best_index > 0:
+            i0, i1 = best_index-1, best_index
+        
+        if i0 is not None:
+            x0 = best_plot.data.x.values[i0]
+            x1 = best_plot.data.x.values[i1]
+            y0 = best_plot.data.y.values[i0]
+            y1 = best_plot.data.y.values[i1]
+            z0 = best_plot.data.z.values[i0] if best_plot.data.z is not None else None
+            z1 = best_plot.data.z.values[i1] if best_plot.data.z is not None else None
+            
+            # are we in a range where the data points are far apart?
+            if x1 > x0 and x1-x0 >= width/100:
+                # use interpolation, so that the cursor can be placed between actual data points
+                relpos = (x - x0) / (x1 - x0)
+                best_x = x0 + relpos * (x1 - x0)
+                best_y = y0 + relpos * (y1 - y0)
+                best_z = z0 + relpos * (z1 - z0) if z0 is not None else None
+        
+        return best_plot.data, best_x, best_y, best_z
 
 
     def add(self, x: "list[float]", y: "list[float]", z: "list[float]|None", name: str, style: str, color: str, width: float, opacity: float, prefer_2nd_yaxis: bool = False):
@@ -362,6 +388,8 @@ class PlotHelper:
 
         show_legend = self._show_legend
         if len(self.items) <= 1 and self._hide_single_item_legend:
+            if len(self.items)==1 and Settings.verbose:
+                logging.info(f'Hiding legend (option to hide legend for a single item is active)')
             show_legend = False
         if self._max_legend_items >= 0 and len(self.items) > self._max_legend_items:
             show_legend = False
