@@ -217,7 +217,7 @@ class PlotHelper:
             return (1, self.cursors[1])
 
 
-    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None, width: float = 1, height: float = 1) -> "tuple[PlotData,float,float,float]":
+    def get_closest_plot_point(self, x: float, y: float, name: "str|None" = None, width: float = 1, height: float = 1, interpolate: bool = False) -> "tuple[PlotData,float,float,float]":
 
         best_error = +1e99
         best_index = None
@@ -263,7 +263,7 @@ class PlotHelper:
             z1 = best_plot.data.z.values[i1] if best_plot.data.z is not None else None
             
             # are we in a range where the data points are far apart?
-            if x1 > x0 and x1-x0 >= width/100:
+            if interpolate and x1 > x0 and x1-x0 >= width/1000:
                 # use interpolation, so that the cursor can be placed between actual data points
                 relpos = (x - x0) / (x1 - x0)
                 best_x = x0 + relpos * (x1 - x0)

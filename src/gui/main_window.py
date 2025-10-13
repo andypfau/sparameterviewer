@@ -78,7 +78,7 @@ class MainWindow(MainWindowUi):
         self._last_cursor_x = [0, 0]
         self._last_cursor_trace = ['', '']
         self._smartscale_set_y = False
-        self._saved_nw_name_for_template: str|None = None
+        self._ref_path_for_template: str|None = None
 
         super().__init__()
         
@@ -230,12 +230,21 @@ class MainWindow(MainWindowUi):
                 self.ui_show_abort_button(True)
                 self.ui_update()
         return True
-    
+
+
+    def set_file_status(self, path: PathExt):
+        if not path:
+            return
+        status = self.get_file_prop_str(self.files[path])
+        if path == self._ref_path_for_template:
+            status = 'REF - ' + status
+        self.ui_filesys_browser.update_status(path, status)
+
     
     def after_load_sparamfile(self, path: PathExt):
         if path not in self.files:
             return
-        self.ui_filesys_browser.update_status(path, self.get_file_prop_str(self.files[path]))
+        self.set_file_status(path)
 
     
 
@@ -251,7 +260,9 @@ class MainWindow(MainWindowUi):
             self.ui_show_status_message(record.message, record.level)
     
 
-    def get_nw_name_for_template(self, path: PathExt) -> str:
+    def get_nw_name_for_template(self, path: PathExt) -> str|None:
+        if not path:
+            return None
         if path.is_in_arch():
             return path.arch_path_name
         else:
@@ -270,13 +281,13 @@ class MainWindow(MainWindowUi):
                 return const_selected_files()
         
         def get_reference_file_for_multifile_op() -> str|None:
-            if self._saved_nw_name_for_template is None:
+            if self._ref_path_for_template is None:
                 info_dialog('Error', 'No reference network selected.', informative_text='Right-click a network in te fileview browser, and click "Save for Template". Then use this template again.')
                 return None
             if Settings.dynamic_template_references:
                 return 'saved_nw()'
             else:
-                return f'nw("{self._saved_nw_name_for_template}")'
+                return f'nw("{self.get_nw_name_for_template(self._ref_path_for_template)}")'
 
         def set_expression(*expressions):
             if Settings.simplified_no_expressions:
@@ -1065,7 +1076,11 @@ class MainWindow(MainWindowUi):
             return copyname
         def make_save_for_template(path: PathExt):
             def savefortemplate():
-                self._saved_nw_name_for_template = self.get_nw_name_for_template(path)
+                old_ref = self._ref_path_for_template
+                self._ref_path_for_template = path
+                if old_ref:
+                    self.set_file_status(old_ref)
+                self.set_file_status(self._ref_path_for_template)
                 if self.ui_param_selector.useExpressions():
                     self.schedule_plot_update()
             return savefortemplate
@@ -1161,7 +1176,7 @@ class MainWindow(MainWindowUi):
                 cursor.enable(False)
             else:
                 plot_width, plot_height = self._get_plot_dimensions()
-                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
+                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
                 cursor.set(x, y, z, True, plot.color)
@@ -1192,7 +1207,7 @@ class MainWindow(MainWindowUi):
                 cursor = self.plot.cursors[cursor_index]
                 trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
                 plot_width, plot_height = self._get_plot_dimensions()
-                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
+                plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     continue
                 cursor.set(x, y, z, True, plot.color)
@@ -1201,6 +1216,10 @@ class MainWindow(MainWindowUi):
 
         except Exception as ex:
             logging.error(f'Cursor error: {ex}')
+    
+
+    def on_cursor_finex_changed(self):
+        pass
 
 
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
@@ -1241,7 +1260,7 @@ class MainWindow(MainWindowUi):
                 else:
                     trace_name = self.ui_cursor1_trace if cursor_index==0 else self.ui_cursor2_trace
                     plot_width, plot_height = self._get_plot_dimensions()
-                    plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height)
+                    plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                     if plot is None:
                         continue
                     cursor.set(x, y, z, True, plot.color)
@@ -1276,7 +1295,7 @@ class MainWindow(MainWindowUi):
                 cursor.enable(False)
             else:
                 plot_width, plot_height = self._get_plot_dimensions()
-                plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height)
+                plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
                 cursor.set(x, y, z, True, plot.color)
@@ -1321,7 +1340,7 @@ class MainWindow(MainWindowUi):
                 if target_cursor_index is not None:
 
                     if self.ui_auto_cursor_trace:
-                        plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, width=plot_width, height=plot_height)
+                        plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                         if plot is not None:
                             if target_cursor_index==0:
                                 self.ui_cursor1_trace = plot.name
@@ -1330,7 +1349,7 @@ class MainWindow(MainWindowUi):
                     else:
                         selected_trace_name = self.ui_cursor1_trace if target_cursor_index==0 else self.ui_cursor2_trace
                         if selected_trace_name is not None:
-                            plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, name=selected_trace_name, width=plot_width, height=plot_height)
+                            plot, x, y, z = self.plot.get_closest_plot_point(x, y if snap_y else None, name=selected_trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                         else:
                             plot, x, y, z = None, None, None, None
 
@@ -1340,7 +1359,7 @@ class MainWindow(MainWindowUi):
                         
                     if self.ui_cursor_syncx:
                         other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
-                        other_plot, x, y, z = self.plot.get_closest_plot_point(x, None, name=other_trace_name, width=plot_width, height=plot_height)
+                        other_plot, x, y, z = self.plot.get_closest_plot_point(x, None, name=other_trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                         if other_plot is not None:
                             other_cursor_index = 1 - target_cursor_index
                             other_cursor = self.plot.cursors[other_cursor_index]
@@ -1598,13 +1617,13 @@ class MainWindow(MainWindowUi):
             if use_expressions:
 
                 Settings.expression = self.ui_expression
-                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self._saved_nw_name_for_template, add_to_plot_list)  
+                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list)  
                 param_selector_is_in_use = result.default_actions_used
 
             else:
 
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self._saved_nw_name_for_template, add_to_plot_list)  
+                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list)  
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()

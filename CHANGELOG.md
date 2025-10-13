@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b27 (2025-10-13)
+--------------------
+
+- new: checkbox to toggle fine cursor placement
+- new: marking the template reference file with "REF" in the "Info" column in the filesystem browser
+
+
 0.40b26 (2025-10-10)
 --------------------
 
@@ -17,7 +24,7 @@ S-Parameter Viewer Changelog
 0.40b24 (2025-09-30)
 --------------------
 
-- new: when the option "" is off, you can now double-click to select
+- new: when clicked items are not selected, you can now double-click a file to select it
 - change: fixed tab order of the X- and Y-axis combo boxes
 - bugfix: removing locked axes when changing chart
 

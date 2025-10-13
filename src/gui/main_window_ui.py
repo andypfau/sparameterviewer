@@ -282,13 +282,20 @@ class MainWindowUi(QMainWindow):
         self._ui_cursor2_trace_combo.currentIndexChanged.connect(self.on_cursor_trace_change)
         self._ui_auto_cursor_check = QCheckBox('Auto Cursor')
         self._ui_auto_cursor_check.toggled.connect(self.on_auto_cursor_changed)
+        self._ui_auto_cursor_check.setToolTip('When clicking into the plot, automatically select the cursors that is closest to the clicked point')
         self._ui_auto_cursor_trace_check = QCheckBox('Auto Trace')
         self._ui_auto_cursor_trace_check.setChecked(True)
         self._ui_auto_cursor_trace_check.toggled.connect(self.on_auto_cursor_trace_changed)
+        self._ui_auto_cursor_trace_check.setToolTip('When clicking into the plot, automatically put the cursor onto the trace that is closest to the clicked point')
         self._ui_zoompan_label = QtHelper.make_label('Disable Zoom/Pan To Move Cursors')
         self._ui_zoompan_label.setVisible(False)
+        self._ui_zoompan_label.setToolTip('The zoom or pan tool is activated in the toolbar. De-activate it to move cursors with the mouse')
         self._ui_cursor_syncx_check = QCheckBox('Sync X')
         self._ui_cursor_syncx_check.toggled.connect(self.on_cursor_syncx_changed)
+        self._ui_cursor_syncx_check.setToolTip('Set both cursors to the same x-position')
+        self._ui_cursor_finex_check = QCheckBox('Fine X')
+        self._ui_cursor_finex_check.toggled.connect(self.on_cursor_finex_changed)
+        self._ui_cursor_finex_check.setToolTip('Interpolate between points in the plot; if disabled, cursors can only be placed on discrete points that actually are in the raw data of the plot')
         self._ui_cursor_edit_x1 = SiValueEdit()
         self._ui_cursor_edit_x1.setReadOnly(True)
         self._ui_cursor_edit_x1.valueChanged.connect(self.on_cursor_x1_changed)
@@ -307,7 +314,7 @@ class MainWindowUi(QMainWindow):
             [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_edit_x1, 'Y1:', self._ui_cursor_readout_y1],
             [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_edit_x2, 'Y2:', self._ui_cursor_readout_y2],
             [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
-            [QtHelper.CellSpan(self._ui_zoompan_label, cols=2), None, QtHelper.CellSpan(self._ui_cursor_syncx_check, cols=2)],
+            [QtHelper.CellSpan(self._ui_zoompan_label, cols=2), None, QtHelper.CellSpan(QtHelper.layout_h(self._ui_cursor_syncx_check, self._ui_cursor_finex_check), cols=2)],
         ])
         cursor_layout.setColumnStretch(0, 0)
         cursor_layout.setColumnStretch(1, 2)
@@ -881,6 +888,14 @@ class MainWindowUi(QMainWindow):
     def ui_cursor_syncx(self, value: bool):
         self._ui_cursor_syncx_check.setChecked(value)
 
+    
+    @property
+    def ui_cursor_finex(self) -> bool:
+        return self._ui_cursor_finex_check.isChecked()
+    @ui_cursor_finex.setter
+    def ui_cursor_finex(self, value: bool):
+        self._ui_cursor_finex_check.setChecked(value)
+
 
     def ui_show_status_message(self, message: str|None = None, level: int = logging.INFO):
         self._ui_status_bar.setMessage(message, level)
@@ -997,6 +1012,8 @@ class MainWindowUi(QMainWindow):
     def on_auto_cursor_trace_changed(self):
         pass
     def on_cursor_syncx_changed(self):
+        pass
+    def on_cursor_finex_changed(self):
         pass
     def on_plot_mouse_event(self, left_btn_pressed: bool, left_btn_event: bool, x: Optional[float], y: Optional[float], x2: Optional[float], y2: Optional[float]):
         pass
