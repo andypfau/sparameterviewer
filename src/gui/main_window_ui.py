@@ -159,6 +159,12 @@ class MainWindowUi(QMainWindow):
         self._ui_color_combo.setStyleSheet('QComboBox QAbstractItemView { min-width: 25ex; }')
         margins, default_spacing, wide_spacing = 0, 2, 6
         self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing, margins=0)
+        self._ui_zoom_buttons_panel = QtHelper.layout_h(
+            self._ui_zoom_xm_button, self._ui_zoom_xp_button,
+            wide_spacing,
+            self._ui_zoom_ym_button, self._ui_zoom_yp_button, 
+            ..., spacing=default_spacing
+        )
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
@@ -178,7 +184,8 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
-                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
+                #QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
+                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
@@ -201,6 +208,7 @@ class MainWindowUi(QMainWindow):
                     self._ui_refresh_button,
                     ..., margins=margins, spacing=default_spacing
                 ),
+                self._ui_zoom_buttons_panel,
                 self._ui_colors_layout,
                 ..., margins=margins, spacing=default_spacing
             ),
@@ -352,6 +360,7 @@ class MainWindowUi(QMainWindow):
         self._ui_plot.attach(self.on_plot_mouse_event)
         self._ui_status_bar.clicked.connect(self.on_statusbar_click)
 
+        self._ui_show_zoombuttons(False)
         self._build_menus()
         self._update_layout()
         self._update_enabled()
@@ -465,16 +474,27 @@ class MainWindowUi(QMainWindow):
         self._ui_short_legend_button.setVisible(self.ui_show_legend)
 
     
+    def _ui_show_zoombuttons(self, show: bool):
+        layout = self._ui_zoom_buttons_panel
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            widget = item.widget()
+            if widget:
+                widget.setVisible(show)
+
+    
     def _on_plottool_pan(self):
         self._ui_zoom_button.setChecked(False)
         self._ui_plot.setTool(self.ui_plot_tool)
         self._enable_cursors(self.ui_plot_tool == PlotWidget.Tool.Off)
+        self._ui_show_zoombuttons(self.ui_plot_tool != PlotWidget.Tool.Off)
     
 
     def _on_plottool_zoom(self):
         self._ui_pan_button.setChecked(False)
         self._ui_plot.setTool(self.ui_plot_tool)
         self._enable_cursors(self.ui_plot_tool == PlotWidget.Tool.Off)
+        self._ui_show_zoombuttons(self.ui_plot_tool != PlotWidget.Tool.Off)
     
 
     def _on_plottool_zoom_xp(self):
