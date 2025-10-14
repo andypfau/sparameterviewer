@@ -122,12 +122,16 @@ class MainWindowUi(QMainWindow):
         self._ui_semitrans_button = QtHelper.make_toolbutton(self, None, self._on_semitrans_changed, icon='toolbar_transparent.svg', tooltip='Semi-Transparent Traces', checked=False)
         self._ui_logx_button = QtHelper.make_toolbutton(self, None, self.on_logx_changed, icon='toolbar_log-x.svg', tooltip='Logarithmic X-Axis', checked=False)
         self._ui_logy_button = QtHelper.make_toolbutton(self, None, self.on_logy_changed, icon='toolbar_log-y.svg', tooltip='Logarithmic Y-Axis', checked=False)
-        self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock X-Axis Scale')
-        self._ui_locky_button = QtHelper.make_toolbutton(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock Y-Axis Scale')
-        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Lock both X- and Y-Axis Scales')
+        self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock/unlock X-Axis Scale')
+        self._ui_locky_button = QtHelper.make_toolbutton(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock/unlock Y-Axis Scale')
+        self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Lock/unlock both X- and Y-Axis Scales')
         self._ui_smartdb_button = QtHelper.make_toolbutton(self, None, self.on_smart_db, icon='toolbar_smart-db.svg', tooltip='Attempt Smart Scaling of dB-Values', checked=False)
-        self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot', checked=False)
-        self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot', checked=False)
+        self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot; while this is active, you cannot move cursors', checked=False)
+        self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot; while this is active, you cannot move cursors', checked=False)
+        self._ui_zoom_xp_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_xp, icon='toolbar_zoom_xp.svg', tooltip='X-Axis Zoom In ')
+        self._ui_zoom_xm_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_xm, icon='toolbar_zoom_xm.svg', tooltip='X-Axis Zoom Out')
+        self._ui_zoom_yp_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_yp, icon='toolbar_zoom_yp.svg', tooltip='Y-Axis Zoom In')
+        self._ui_zoom_ym_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_ym, icon='toolbar_zoom_ym.svg', tooltip='Y-Axis Zoom Out')
         self._ui_mark_button = QtHelper.make_toolbutton(self, None, self.on_mark_datapoints_changed, icon='toolbar_mark-points.svg', tooltip='Mark Data Points', checked=False)
         self._ui_save_image_button = QtHelper.make_toolbutton(self, None, self.on_save_plot_image, icon='toolbar_save-image.svg', tooltip='Save Image to File')
         self._ui_copy_image_button = QtHelper.make_toolbutton(self, None, self.on_copy_image, icon='toolbar_copy-image.svg', tooltip='Copy Image to Clipboard')
@@ -174,7 +178,7 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
-                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
+                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
@@ -471,6 +475,22 @@ class MainWindowUi(QMainWindow):
         self._ui_pan_button.setChecked(False)
         self._ui_plot.setTool(self.ui_plot_tool)
         self._enable_cursors(self.ui_plot_tool == PlotWidget.Tool.Off)
+    
+
+    def _on_plottool_zoom_xp(self):
+        self.on_zoom_clicked(dx=+1, dy=0)
+    
+
+    def _on_plottool_zoom_xm(self):
+        self.on_zoom_clicked(dx=-1, dy=0)
+    
+
+    def _on_plottool_zoom_yp(self):
+        self.on_zoom_clicked(dx=0, dy=+1)
+    
+
+    def _on_plottool_zoom_ym(self):
+        self.on_zoom_clicked(dx=0, dy=-1)
 
 
     def ui_show(self):
@@ -1022,6 +1042,8 @@ class MainWindowUi(QMainWindow):
     def on_logx_changed(self):
         pass
     def on_logy_changed(self):
+        pass
+    def on_zoom_clicked(self, dx: int, dy: int):
         pass
     def on_statusbar_click(self):
         pass

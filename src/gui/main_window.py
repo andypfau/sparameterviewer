@@ -938,6 +938,32 @@ class MainWindow(MainWindowUi):
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
         self.schedule_plot_update()
+
+
+    def on_zoom_clicked(self, dx: int, dy: int):
+        ZOOM_FACTOR = 0.8
+        if dx != 0:
+            self.ui_smart_db = False
+            if self.ui_xaxis_range.both_are_wildcard:
+                (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.plot.get_xlim()
+                self.ui_smart_db = False
+            else:
+                mid, extent = (self.ui_xaxis_range.low+self.ui_xaxis_range.high)/2, self.ui_xaxis_range.high-self.ui_xaxis_range.low
+                extent *= ZOOM_FACTOR**dx
+                (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = (mid-extent/2, mid+extent/2)
+
+        if dy != 0:
+            self.ui_smart_db = False
+            if self.ui_yaxis_range.both_are_wildcard:
+                (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
+                self.ui_smart_db = False
+            else:
+                mid, extent = (self.ui_yaxis_range.low+self.ui_yaxis_range.high)/2, self.ui_yaxis_range.high-self.ui_yaxis_range.low
+                extent *= ZOOM_FACTOR**dy
+                (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (mid-extent/2, mid+extent/2)
+
+        if dx != 0 or dy != 0:
+            self.schedule_plot_update()
     
 
     def on_user_change_xaxis(self, axes: matplotlib.axes._axes.Axes):

@@ -2,11 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.40b27 (2025-10-13)
+0.40b27 (2025-10-14)
 --------------------
 
 - new: checkbox to toggle fine cursor placement
 - new: marking the template reference file with "REF" in the "Info" column in the filesystem browser
+- new: buttons to zoom in/out
 
 
 0.40b26 (2025-10-10)

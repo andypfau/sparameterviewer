@@ -3,4 +3,4 @@ class Info:
     Domain = 'apfau.de'
     AppName = 'S-Parameter Viewer'
     AppVersionStr = "0.40b27"  # see https://peps.python.org/pep-0440/
-    AppDateStr = "2025-10-13"
+    AppDateStr = "2025-10-14"
