@@ -25,6 +25,8 @@ Main Window
     - Additional options in the menu.
 6. **Tools**:
     - Filter to quickly select files that match a pattern.
+    - Pan/Zoom tools for the graph.
+        - While active, additional buttons to increase/decrease X/Y zoom are shown.
     - Copy/save graph.
     - The [tabular view](./tools.md) allows to view the parameters as a table, and to export it in valious formats.
     - Additional tools in the menu.

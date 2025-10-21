@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b28 (2025-10-21)
+--------------------
+
+- new: a real "filter" feature; the old feature is now a "select" feature, but kept the same shortcut
+
+
 0.40b27 (2025-10-14)
 --------------------
 

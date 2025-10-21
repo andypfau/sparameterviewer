@@ -1,6 +1,7 @@
 import matplotlib.axes
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
+from .helpers.file_filter import FileFilter
 from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog, custom_buttons_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
@@ -584,7 +585,17 @@ class MainWindow(MainWindowUi):
     
 
     def on_show_filter(self):
-        result = FilterDialog(self).show_modal_dialog(list(sorted(self.files.keys())))
+        result = FilterDialog(self, select_mode=False).show_modal_dialog(list(sorted(self.files.keys())))
+        if result.action == FilterDialogUi.Action.Select or result.action == FilterDialogUi.Action.Remove:
+            self.ui_file_filter_enabled = result.filter.active
+            self.ui_filesys_browser.filter = result.filter
+        else:
+            self.ui_file_filter_enabled = False
+            self.ui_filesys_browser.filter = FileFilter()
+
+
+    def on_show_filesel(self):
+        result = FilterDialog(self, select_mode=True).show_modal_dialog(list(sorted(self.files.keys())))
         currently_selected = self.ui_filesys_browser.selected_files
         match result.action:
             case FilterDialogUi.Action.Select:

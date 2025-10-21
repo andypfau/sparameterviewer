@@ -115,7 +115,8 @@ class MainWindowUi(QMainWindow):
         self._ui_plot_selector = PlotSelector(self)
         self._ui_plot_selector.valueChanged.connect(self.on_plottype_changed)
         self._ui_menu_button = QtHelper.make_toolbutton(self, None, icon='toolbar_menu.svg', tooltip='Show Main Menu (Alt)')
-        self._ui_filter_button = QtHelper.make_toolbutton(self, None, self.on_show_filter, icon='toolbar_filter.svg', tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
+        self._ui_filter_button = QtHelper.make_toolbutton(self, None, self.on_show_filter, icon='toolbar_filter.svg', tooltip='Only show files that match a filter string (Ctrl+Shift+F)', shortcut='Ctrl+Shift+F', checked=False)
+        self._ui_filesel_button = QtHelper.make_toolbutton(self, None, self.on_show_filesel, icon='toolbar_filesel.svg', tooltip='Select files that match a filter string (Ctrl+F)', shortcut='Ctrl+F')
         self._ui_refresh_button = QtHelper.make_toolbutton(self, None, self.on_update_plot, icon='toolbar_refresh.svg', tooltip='Refresh Plot (F5)', shortcut='F5')
         self._ui_legend_button = QtHelper.make_toolbutton(self, None, self._on_show_legend, icon='toolbar_legend.svg', tooltip='Show Legend', checked=False)
         self._ui_short_legend_button = QtHelper.make_toolbutton(self, None, self.on_shorten_legend, icon='toolbar_short_legend.svg', tooltip='Shorten Legend Text', checked=False)
@@ -216,6 +217,7 @@ class MainWindowUi(QMainWindow):
             QtHelper.layout_v(
                 QtHelper.layout_h(
                     self._ui_filter_button,
+                    self._ui_filesel_button,
                     ...,
                     QtHelper.layout_v(self._ui_toolmenu_button, ..., spacing=0),
                     margins=margins, spacing=default_spacing
@@ -692,6 +694,14 @@ class MainWindowUi(QMainWindow):
 
 
     @property
+    def ui_file_filter_enabled(self) -> bool:
+        return self._ui_filter_button.isChecked()
+    @ui_file_filter_enabled.setter
+    def ui_file_filter_enabled(self, value: bool):
+        self._ui_filter_button.setChecked(value)
+
+
+    @property
     def ui_enable_trace_color_selector(self) -> bool:
         return self._ui_colors_layout.isEnabled()
     @ui_enable_trace_color_selector.setter
@@ -980,6 +990,8 @@ class MainWindowUi(QMainWindow):
     def on_plottype_changed(self):
         pass
     def on_show_filter(self):
+        pass
+    def on_show_filesel(self):
         pass
     def on_load_dir(self):
         pass

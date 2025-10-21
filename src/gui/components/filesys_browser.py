@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
+from ..helpers.file_filter import FileFilter
 from .path_bar import PathBar
 from lib import AppPaths, PathExt, Settings, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, natural_sort_key, get_callstack_str
 
@@ -37,15 +38,17 @@ class FilesysBrowser(QWidget):
     _icon_arch: QIcon = None
 
 
+
     class MyFileItem(QStandardItem):
 
-        def __init__(self, model: FilesysBrowser.MyFileItemModel, path: PathExt, type: FilesysBrowserItemType, *, is_toplevel: bool = False):
+        def __init__(self, model: FilesysBrowser.MyFileItemModel, path: PathExt, type: FilesysBrowserItemType, *, is_toplevel: bool = False, filter: FileFilter = FileFilter()):
             self._last_reported_checked_state = None
             self._model = model
             self._path = path
             self._children: list[PathExt]|None = None
             self._type = type
             self._is_toplevel = is_toplevel
+            self._filter: FileFilter = filter
             
             # assume any directory or archive has children; this allows us to postpone the directory scan to as late as possible
             self._has_children = type in [FilesysBrowserItemType.Dir, FilesysBrowserItemType.Arch]
@@ -107,6 +110,7 @@ class FilesysBrowser(QWidget):
                 children = [p for p in find_files_in_archive(str(self._path)) if is_ext_supported_file(p.arch_path_suffix)] if support_archives else []
             else:
                 children = []
+            children = [child for child in children if self._filter.apply(child)]
             self._has_children = len(children) > 0
 
             if self._type == FilesysBrowserItemType.Arch:
@@ -119,9 +123,9 @@ class FilesysBrowser(QWidget):
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, file, FilesysBrowserItemType.File), QStandardItem('')))
                 if support_archives:
                     for arch in sorted([p for p in files if is_ext_supported_archive(p.suffix)], key=lambda p: natural_sort_key(p.final_name)):
-                        super().appendRow(FilesysBrowser.MyFileItem(self._model, arch, FilesysBrowserItemType.Arch))
+                        super().appendRow(FilesysBrowser.MyFileItem(self._model, arch, FilesysBrowserItemType.Arch, filter=self._filter))
                 for dir in sorted(dirs, key=lambda p: natural_sort_key(p.final_name)):
-                    super().appendRow(FilesysBrowser.MyFileItem(self._model, dir, FilesysBrowserItemType.Dir))
+                    super().appendRow(FilesysBrowser.MyFileItem(self._model, dir, FilesysBrowserItemType.Dir, filter=self._filter))
             
             return self._has_children
                 
@@ -227,6 +231,7 @@ class FilesysBrowser(QWidget):
         self._contextmenu_item: FilesysBrowser.MyFileItem = None
         self._inhibit_triggers = True
         self._show_archives = False
+        self._filter: FileFilter = FileFilter()
         self._history: list[tuple[PathExt,PathExt]] = []
         
         self._ui_filesys_view = FilesysBrowser.MyTreeView()
@@ -340,6 +345,17 @@ class FilesysBrowser(QWidget):
         finally:
             self._inhibit_triggers = False
         self.selectionChanged.emit()
+    
+
+    @property
+    def filter(self) -> FileFilter:
+        return self._filter
+    @filter.setter
+    def filter(self, value: FileFilter):
+        if value == self._filter:
+            return
+        self._filter = value
+        self.refresh()
     
 
     def select_first_file(self):
@@ -461,6 +477,8 @@ class FilesysBrowser(QWidget):
 
 
     def refresh(self):
+        # TODO: re-select previously selected items
+
         try:
             self._inhibit_triggers = True
             toplevel_paths: list[PathExt] = []
@@ -527,11 +545,11 @@ class FilesysBrowser(QWidget):
                 return  # path is already at top-level; ignore
 
         if path.is_dir():
-            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Dir, is_toplevel=True)
+            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Dir, is_toplevel=True, filter=self._filter)
         elif path.is_file() and is_ext_supported_archive(path.suffix):
             if not self._show_archives:
                 return None
-            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Arch, is_toplevel=True)
+            new_item = FilesysBrowser.MyFileItem(self._ui_filesys_model, path, FilesysBrowserItemType.Arch, is_toplevel=True, filter=self._filter)
         else:
             return  # files cannot be a top-lvel item; ignore
         

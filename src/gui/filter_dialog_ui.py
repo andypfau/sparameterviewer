@@ -32,11 +32,12 @@ class FilterDialogUi(QDialog):
             self.setText(path.final_name)
 
 
-    def __init__(self, parent):
+    def __init__(self, parent, select_mode: bool):
         super().__init__(parent)
         self._result = FilterDialogUi.Action.Select
+        self._select_mode = select_mode
 
-        self.setWindowTitle('Filter Files')
+        self.setWindowTitle('Select Files' if select_mode else 'Filter Files')
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
         self.setSizeGripEnabled(True)
@@ -56,11 +57,15 @@ class FilterDialogUi(QDialog):
         self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
 
         self._ui_files_list = QListView()
-        self._ui_files_list.setToolTip('Files that match your search are selected here. You may manually change the selection.')
+        if self._select_mode:
+            self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+            self._ui_files_list.setToolTip('Files that match your search are selected here. You may manually change the selection.')
+        else:
+            self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+            self._ui_files_list.setToolTip('Files that match your search are selected here.')
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)
-        self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         
         # set more vibrant colors (by default, the selection cannot be distinguished clearly from non-selection)
         palette = QPalette()
@@ -74,15 +79,33 @@ class FilterDialogUi(QDialog):
         """)
 
         self.ui_select_button = QtHelper.make_button(self, '', self._on_select, icon='filter_select.svg')
-        self.ui_select_button.setToolTip('Only plot selected files')
+        self.ui_select_button.setToolTip('Only select these files' if self._select_mode else 'Only show these files')
         self.ui_select_button.setMinimumWidth(50)
         self.ui_select_button.setDefault(True)
-        self.ui_add_button = QtHelper.make_button(self, '', self._on_add, icon='filter_add.svg')
-        self.ui_add_button.setToolTip('Additionally plot selected files')
-        self.ui_remove_button = QtHelper.make_button(self, '', self._on_remove, icon='filter_subtract.svg')
-        self.ui_remove_button.setToolTip('Don\'t plot selected files')
-        self.ui_toggle_button = QtHelper.make_button(self, '', self._on_toggle, icon='filter_toggle.svg')
-        self.ui_toggle_button.setToolTip('Toggle plotting of selected files files')
+        if self._select_mode:
+            self.ui_add_button = QtHelper.make_button(self, '', self._on_add, icon='filter_add.svg')
+            self.ui_add_button.setToolTip('Additionally check these files')
+            self.ui_remove_button = QtHelper.make_button(self, '', self._on_remove, icon='filter_subtract.svg')
+            self.ui_remove_button.setToolTip('Don\' check these files')
+            self.ui_toggle_button = QtHelper.make_button(self, '', self._on_toggle, icon='filter_toggle.svg')
+            self.ui_toggle_button.setToolTip('Toggle these files')
+            button_layout = QtHelper.layout_h(
+                self.ui_select_button,
+                15,
+                self.ui_add_button,
+                self.ui_remove_button,
+                self.ui_toggle_button,
+                ...,
+            )
+        else:
+            self.ui_select_inv_button = QtHelper.make_button(self, '', self._on_select_inv, icon='filter_select-inv.svg')
+            self.ui_select_inv_button.setToolTip('Hide all files except these')
+            button_layout = QtHelper.layout_h(
+                self.ui_select_button,
+                15,
+                self.ui_select_inv_button,
+                ...,
+            )
         
         self.setLayout(QtHelper.layout_v(
             QtHelper.layout_h(
@@ -91,14 +114,7 @@ class FilterDialogUi(QDialog):
                 self._ui_regex_radio,
             ),
             self._ui_files_list,
-            QtHelper.layout_h(
-                self.ui_select_button,
-                15,
-                self.ui_add_button,
-                self.ui_remove_button,
-                self.ui_toggle_button,
-                ...,
-            ),
+            button_layout,
         ))
 
         self.resize(400, 500)
@@ -168,6 +184,11 @@ class FilterDialogUi(QDialog):
 
     def _on_select(self):
         self._result = FilterDialogUi.Action.Select
+        self.accept()
+
+
+    def _on_select_inv(self):
+        self._result = FilterDialogUi.Action.Remove
         self.accept()
 
 
