@@ -124,7 +124,8 @@ class SParamViewerAppSettings(AppSettings):
     editor_font: str = ''
     csv_separator: CsvSeparator = CsvSeparator.Semicolon
     search_regex: bool = False
-    last_search: str = ''
+    last_filter_dialog_str: str = ''
+    last_select_dialog_str: str = ''
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point

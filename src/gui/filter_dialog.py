@@ -28,7 +28,10 @@ class FilterDialog(FilterDialogUi):
         
         self._set_displayed_files([], self._files)
         self.ui_regex_mode = Settings.search_regex
-        self.ui_search_text = Settings.last_search
+        if self._select_mode:
+            self.ui_search_text = Settings.last_select_dialog_str
+        else:
+            self.ui_search_text = Settings.last_filter_dialog_str
 
         result = super().ui_show_modal()
         filter = self._get_filter(failsafe=True, invert=result==FilterDialogUi.Action.Remove)
@@ -76,7 +79,10 @@ class FilterDialog(FilterDialogUi):
 
 
     def on_search_change(self):
-        Settings.last_search = self.ui_search_text
+        if self._select_mode:
+            Settings.last_select_dialog_str = self.ui_search_text
+        else:
+            Settings.last_filter_dialog_str = self.ui_search_text
         self.do_filtering()
         
 
