@@ -3,7 +3,7 @@ from .helpers.simple_dialogs import okcancel_dialog
 from .helpers.simple_dialogs import open_file_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
-from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior
+from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme
 from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum
 import pathlib
 import logging
@@ -39,6 +39,12 @@ class SettingsDialog(SettingsDialogUi):
         LargeMatrixBehavior.Clickable: 'Editable, Double-Click to Expand',
     }
 
+    GUICOLORSCHEME_NAMES = {
+        GuiColorScheme.Default: 'Default',
+        GuiColorScheme.Light: 'Light',
+        GuiColorScheme.Dark: 'Dark',
+    }
+
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -50,6 +56,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_logyneg_options(list(SettingsDialog.LOGNEG_NAMES.values()))
         self.ui_set_mainwinlayout_options(list(SettingsDialog.MAINWINLAYOUT_NAMES.values()))
         self.ui_set_largematrix_options(list(SettingsDialog.LARGEMATRIX_NAMES.values()))
+        self.ui_set_guicolorscheme_options(list(SettingsDialog.GUICOLORSCHEME_NAMES.values()))
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -83,6 +90,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_verbose = Settings.verbose
             self.ui_mainwin_layout = enum_to_string(Settings.mainwindow_layout, SettingsDialog.MAINWINLAYOUT_NAMES)
             self.ui_largematrix_layout = enum_to_string(Settings.large_matrix_behavior, SettingsDialog.LARGEMATRIX_NAMES)
+            self.ui_guicolorscheme = enum_to_string(Settings.gui_color_scheme, SettingsDialog.GUICOLORSCHEME_NAMES)
             self.ui_simplified_plot = Settings.simplified_plot_sel
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
@@ -204,6 +212,11 @@ class SettingsDialog(SettingsDialogUi):
         Settings.large_matrix_behavior = string_to_enum(self.ui_largematrix_layout, SettingsDialog.LARGEMATRIX_NAMES)
     
     
+    def on_guicolorscheme_changed(self):
+        Settings.gui_color_scheme = string_to_enum(self.ui_guicolorscheme, SettingsDialog.GUICOLORSCHEME_NAMES)
+        QtHelper.set_gui_color_scheme(Settings.gui_color_scheme)
+
+
     def on_simple_plot_changed(self):
         Settings.simplified_plot_sel = self.ui_simplified_plot
     

@@ -62,6 +62,8 @@ class SettingsDialogUi(QDialog):
         self._ui_selecttocheck_check = QCheckBox('Selected Files Are Automatically Checked')
         self._ui_selecttocheck_check.setToolTip('Only files that have their checkbox checked will be plotted. When this option is enabled, you can click anywhere on the file, or just multi-select it, and its checkbox will be checked. Regardless of this option, you cal aways click the checkbox directly, or use the spacebar to toggle the checkboxes.')
         self._ui_selecttocheck_check.toggled.connect(self.on_selecttocheck_changed)
+        self._ui_guicolorscheme_combo = QComboBox()
+        self._ui_guicolorscheme_combo.setToolTip('Global GUI color scheme.')
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
@@ -71,6 +73,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_simple_browser_check,
                 QtHelper.layout_h('Large S-Param Matrix:', self._ui_largematrix_combo,...),
                 self._ui_selecttocheck_check,
+                QtHelper.layout_h('Color Scheme:', self._ui_guicolorscheme_combo,...),
                 ...
             )
         )
@@ -267,6 +270,14 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_guicolorscheme(self) -> str:
+        return self._ui_guicolorscheme_combo.currentText()
+    @ui_guicolorscheme.setter
+    def ui_guicolorscheme(self, value: str):
+        self._ui_guicolorscheme_combo.setCurrentText(value)
+
+    
+    @property
     def ui_logxneg(self) -> str:
         return self._ui_logxneg_combo.currentText()
     @ui_logxneg.setter
@@ -308,6 +319,13 @@ class SettingsDialogUi(QDialog):
         for option in options:
             self._ui_largematrix_combo.addItem(option)
         self._ui_largematrix_combo.currentIndexChanged.connect(self.on_largematrix_changed)
+
+
+    def ui_set_guicolorscheme_options(self, options: list[str]):
+        self._ui_guicolorscheme_combo.clear()
+        for option in options:
+            self._ui_guicolorscheme_combo.addItem(option)
+        self._ui_guicolorscheme_combo.currentIndexChanged.connect(self.on_guicolorscheme_changed)
 
     
     @property
@@ -507,6 +525,8 @@ class SettingsDialogUi(QDialog):
     def on_mainwinlayout_changed(self):
         pass
     def on_largematrix_changed(self):
+        pass
+    def on_guicolorscheme_changed(self):
         pass
     def on_selecttocheck_changed(self):
         pass

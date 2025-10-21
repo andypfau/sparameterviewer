@@ -1,12 +1,12 @@
 #!/bin/python
 
 import sys, os, logging
-from PyQt6 import QtWidgets
+from PyQt6 import QtWidgets, QtCore
 
 from gui.main_window import MainWindow
 from gui.helpers.log_handler import LogHandler
 from gui.helpers.qt_helper import QtHelper
-from lib import AppPaths, is_running_from_binary, Settings
+from lib import AppPaths, is_running_from_binary, Settings, GuiColorScheme
 
 
 if __name__ == '__main__':
@@ -38,6 +38,7 @@ if __name__ == '__main__':
 
     try:
         app = QtWidgets.QApplication(sys.argv)
+        QtHelper.set_gui_color_scheme(Settings.gui_color_scheme)
         filenames = sys.argv[1:]
         MainWindow(filenames).show()
         app.exec()

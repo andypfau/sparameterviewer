@@ -79,6 +79,11 @@ class LargeMatrixBehavior(enum.StrEnum):
     Clickable = 'clickable'
     Scrollable = 'scrollable'
 
+class GuiColorScheme(enum.StrEnum):
+    Default = 'default'
+    Light = 'light'
+    Dark = 'dark'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -138,6 +143,7 @@ class SParamViewerAppSettings(AppSettings):
     dynamic_template_references: bool = False
     large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.Clickable
     select_file_to_check: bool = True
+    gui_color_scheme: GuiColorScheme = GuiColorScheme.Default
 
 
 

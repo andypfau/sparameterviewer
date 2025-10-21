@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - new: a real "filter" feature; the old feature is now a "select" feature, but kept the same shortcut
+- new: feature to choose light or dark color scheme
 
 
 0.40b27 (2025-10-14)

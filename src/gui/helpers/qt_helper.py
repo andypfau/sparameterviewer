@@ -1,4 +1,4 @@
-from lib import is_windows, AppPaths, Settings
+from lib import is_windows, AppPaths, Settings, GuiColorScheme
 from PyQt6 import QtCore, QtGui, QtWidgets, QtSvg
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -375,3 +375,15 @@ class QtHelper:
                 hue += 1.0
             result = QColor.fromHslF(hue, result.hslSaturationF(), result.lightnessF(), result.alphaF())
         return result
+    
+
+    @staticmethod
+    def set_gui_color_scheme(scheme: GuiColorScheme):
+        try:
+            if scheme == GuiColorScheme.Light:
+                QtWidgets.QApplication.styleHints().setColorScheme(QtCore.Qt.ColorScheme.Light)
+            elif scheme == GuiColorScheme.Dark:
+                QtWidgets.QApplication.styleHints().setColorScheme(QtCore.Qt.ColorScheme.Dark)
+        except Exception as ex:
+            logging.exception('Setting color scheme failed, ignoring ({ex})')
+
