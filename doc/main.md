@@ -24,7 +24,8 @@ Main Window
 5. **Plot Options**: legend, trace options, plot tools.
     - Additional options in the menu.
 6. **Tools**:
-    - Filter to quickly select files that match a pattern.
+    - Filter to only show files that match a pattern.
+    - Select files that match a pattern.
     - Pan/Zoom tools for the graph.
         - While active, additional buttons to increase/decrease X/Y zoom are shown.
     - Copy/save graph.
