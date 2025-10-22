@@ -1121,6 +1121,11 @@ class MainWindow(MainWindowUi):
                 if self.ui_param_selector.useExpressions():
                     self.schedule_plot_update()
             return savefortemplate
+        def make_deactivate_filters():
+            def deactivate_filters():
+                self.ui_file_filter_enabled = False
+                self.ui_filesys_browser.filter = FileFilter()
+            return deactivate_filters
 
         menu = []
         is_toplevel = path == toplevel_path
@@ -1155,6 +1160,8 @@ class MainWindow(MainWindowUi):
             if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
                 menu.append((None, None))
                 menu.append((f'Copy Path', make_copy_path(path)))
+        if item_type == FilesysBrowserItemType.Dummy:
+            menu.append((f'Deactivate Filters', make_deactivate_filters()))
         
         if len(menu) > 0:
             self.ui_filesys_show_contextmenu(menu)

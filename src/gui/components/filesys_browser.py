@@ -24,6 +24,7 @@ class FilesysBrowserItemType(enum.Enum):
     File = enum.auto()
     Dir = enum.auto()
     Arch = enum.auto()
+    Dummy = enum.auto()
 
 
 
@@ -62,6 +63,8 @@ class FilesysBrowser(QWidget):
                 icon = FilesysBrowser._icon_file
             if is_toplevel:
                 text = str(path)
+            elif self._type == FilesysBrowserItemType.Dummy:
+                text = '[...]'
             else:
                 text = path.final_name
             super().__init__(icon, text)
@@ -101,7 +104,7 @@ class FilesysBrowser(QWidget):
                 return False
             self._children_added = True
             
-            if self._type == FilesysBrowserItemType.File:
+            if self._type == FilesysBrowserItemType.File or self._type == FilesysBrowserItemType.Dummy:
                 return False
 
             if self._type == FilesysBrowserItemType.Dir:
@@ -110,17 +113,29 @@ class FilesysBrowser(QWidget):
                 children = [p for p in find_files_in_archive(str(self._path)) if is_ext_supported_file(p.arch_path_suffix)] if support_archives else []
             else:
                 children = []
-            children = [child for child in children if self._filter.apply(child)]
+            
             self._has_children = len(children) > 0
 
             if self._type == FilesysBrowserItemType.Arch:
+                filtered_out_any = False
                 for path in children:
+                    if not self._filter.matches(path):
+                        filtered_out_any = True
+                        continue
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, path, FilesysBrowserItemType.File), QStandardItem('')))
+                if filtered_out_any:
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Dummy), QStandardItem('Some files were hidden by filtering')))
             else:
                 dirs = [p for p in children if p.is_dir()]
                 files = [p for p in children if p.is_file()]
+                filtered_out_any = False
                 for file in sorted([p for p in files if is_ext_supported_file(p.suffix)], key=lambda p: natural_sort_key(p.final_name)):
+                    if not self._filter.matches(file):
+                        filtered_out_any = True
+                        continue
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, file, FilesysBrowserItemType.File), QStandardItem('')))
+                if filtered_out_any:
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Dummy), QStandardItem('Some files were hidden by filtering')))
                 if support_archives:
                     for arch in sorted([p for p in files if is_ext_supported_archive(p.suffix)], key=lambda p: natural_sort_key(p.final_name)):
                         super().appendRow(FilesysBrowser.MyFileItem(self._model, arch, FilesysBrowserItemType.Arch, filter=self._filter))

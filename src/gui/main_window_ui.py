@@ -755,10 +755,6 @@ class MainWindowUi(QMainWindow):
     @ui_maxlegend.setter
     def ui_maxlegend(self, value: int):
         self._ui_max_legend_spin.setValue(value)
-
-
-    def ui_filesys_navigate(self, path: str):
-        self._ui_filesys_browser.navigate(path)
     
 
     def ui_filesys_show_contextmenu(self, items: list[tuple[str,Callable|list]]):

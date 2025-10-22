@@ -68,7 +68,5 @@ class FileFilter:
     def active(self) -> bool:
         return self._fn is not None
 
-    def apply(self, path: PathExt) -> bool:
-        if path.is_dir() or path.is_in_arch():
-            return True
+    def matches(self, path: PathExt) -> bool:
         return self._fn(path.final_name)

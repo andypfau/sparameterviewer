@@ -74,8 +74,8 @@ class FilterDialog(FilterDialogUi):
                 self.ui_indicate_search_error(True)
                 return
             
-            self._matched_files = [file for file in self._files if filter.apply(file)]
-            unmatched_files = [file for file in self._files if not filter.apply(file)]
+            self._matched_files = [file for file in self._files if filter.matches(file)]
+            unmatched_files = [file for file in self._files if not filter.matches(file)]
             self._set_displayed_files(self._matched_files, unmatched_files)
             self.ui_indicate_search_error(False)
 
