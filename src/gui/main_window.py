@@ -586,12 +586,12 @@ class MainWindow(MainWindowUi):
 
     def on_show_filter(self):
         result = FilterDialog(self, select_mode=False).show_modal_dialog(list(sorted(self.files.keys())))
-        if result.action == FilterDialogUi.Action.Select or result.action == FilterDialogUi.Action.Remove:
-            self.ui_file_filter_enabled = result.filter.active
-            self.ui_filesys_browser.filter = result.filter
-        else:
+        if result.action == FilterDialogUi.Action.Cancel:
             self.ui_file_filter_enabled = False
             self.ui_filesys_browser.filter = FileFilter()
+        else:
+            self.ui_file_filter_enabled = result.filter.active
+            self.ui_filesys_browser.filter = result.filter
 
 
     def on_show_filesel(self):

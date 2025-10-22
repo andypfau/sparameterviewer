@@ -34,7 +34,13 @@ class FilterDialog(FilterDialogUi):
             self.ui_search_text = Settings.last_filter_dialog_str
 
         result = super().ui_show_modal()
-        filter = self._get_filter(failsafe=True, invert=result==FilterDialogUi.Action.Remove)
+        match result:
+            case FilterDialogUi.Action.Select:
+                filter = self._get_filter(failsafe=True)
+            case FilterDialogUi.Action.SelectInverted:
+                filter = self._get_filter(failsafe=True, invert=True)
+            case _:
+                filter = FileFilter()
         files = self.ui_get_selected_files() if self._select_mode else []
         
         return FilterDialog.Result(result, filter, files)

@@ -21,6 +21,7 @@ class FilterDialogUi(QDialog):
         Add = enum.auto()
         Remove = enum.auto()
         Toggle = enum.auto()
+        SelectInverted = enum.auto()
 
     
 
@@ -98,12 +99,15 @@ class FilterDialogUi(QDialog):
                 ...,
             )
         else:
-            self.ui_select_inv_button = QtHelper.make_button(self, '', self._on_select_inv, icon='filter_select-inv.svg')
+            self.ui_select_inv_button = QtHelper.make_button(self, '', self._on_filter_inv, icon='filter_select-inv.svg')
             self.ui_select_inv_button.setToolTip('Hide all files except these')
+            self.ui_off_button = QtHelper.make_button(self, '', self._on_filter_off, icon='filter_filter-off.svg')
+            self.ui_off_button.setToolTip('Turn all filters off (show all files)')
             button_layout = QtHelper.layout_h(
                 self.ui_select_button,
                 15,
                 self.ui_select_inv_button,
+                self.ui_off_button,
                 ...,
             )
         
@@ -187,8 +191,13 @@ class FilterDialogUi(QDialog):
         self.accept()
 
 
-    def _on_select_inv(self):
-        self._result = FilterDialogUi.Action.Remove
+    def _on_filter_inv(self):
+        self._result = FilterDialogUi.Action.SelectInverted
+        self.accept()
+
+
+    def _on_filter_off(self):
+        self._result = FilterDialogUi.Action.Cancel
         self.accept()
 
 
