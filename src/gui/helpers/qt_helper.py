@@ -1,3 +1,4 @@
+from __future__ import annotations
 from lib import is_windows, AppPaths, Settings, GuiColorScheme
 from PyQt6 import QtCore, QtGui, QtWidgets, QtSvg
 from PyQt6.QtCore import *
@@ -6,11 +7,15 @@ from PyQt6.QtWidgets import *
 import logging
 from pathlib import Path
 from typing import Callable, Optional, Union
+import enum
 import dataclasses
 
 
 
 class QtHelper:
+
+
+    PROCESSING_BLACK_TO_CONTRAST = 1
 
 
     @staticmethod
@@ -29,15 +34,29 @@ class QtHelper:
 
 
     @staticmethod
-    def load_resource_icon(filename: str, svg_size: QSize|None = None) -> QIcon:
-        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size))
+    def load_resource_icon(filename: str, svg_size: QSize|None = None, processing: int = 0) -> QIcon:
+        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size, processing=processing))
 
 
     @staticmethod
-    def load_resource_pixmap(filename: str, svg_size: QSize|None = None) -> QPixmap:
+    def load_resource_pixmap(filename: str, svg_size: QSize|None = None, processing: int = 0) -> QPixmap:
         path = Path(AppPaths.get_resource_dir()) / filename
+        
         if path.suffix.lower() == '.svg':
-            renderer = QtSvg.QSvgRenderer(str(path))
+            
+            with open(str(path), 'rb') as fp:
+                file_contents = fp.read()
+
+            if processing & QtHelper.PROCESSING_BLACK_TO_CONTRAST:  # TODO: set this flag for all toolbar icons
+                processing -= QtHelper.PROCESSING_BLACK_TO_CONTRAST
+
+                file_xml = file_contents.decode('UTF-8')
+                file_xml = file_xml.replace('#000000', '#FFFFFF')
+                file_contents = file_xml.encode('UTF-8')
+            
+            assert processing == 0, f'Unsupported processing request'
+
+            renderer = QtSvg.QSvgRenderer(file_contents)
             size = svg_size or renderer.defaultSize()
             pixmap = QPixmap(size)
             pixmap.fill(QColorConstants.Transparent)
@@ -45,7 +64,9 @@ class QtHelper:
             renderer.render(painter)
             painter.end()
             return pixmap
+        
         else:
+            assert processing == 0, f'Unsupported processing request'
             return QPixmap(str(path))
 
 
@@ -119,7 +140,7 @@ class QtHelper:
 
 
     @staticmethod
-    def make_toolbutton(parent: QObject, text: str = None, action: Callable = None, /, *, icon: str|QIcon|tuple[str,QSize]|None = None, checked: bool = None, tooltip: str = None, shortcut: str = None) -> QToolButton:
+    def make_toolbutton(parent: QObject, text: str = None, action: Callable = None, /, *, icon: str|None = None, checked: bool = None, tooltip: str = None, shortcut: str = None) -> QToolButton:
         button = QToolButton()
         button.setAutoRaise(True)
         button.setText(text)
