@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b29 (2025-10-22)
+--------------------
+
+- change: showing absolute path in 2nd colum to make the filesystem browser a bit less wide
+- new: showing dummy element in filesystem browser if files are filtered out; can disable filter via context menu
+
+
 0.40b28 (2025-10-21)
 --------------------
 

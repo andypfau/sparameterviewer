@@ -61,12 +61,10 @@ class FilesysBrowser(QWidget):
                 icon = FilesysBrowser._icon_arch
             else:
                 icon = FilesysBrowser._icon_file
-            if is_toplevel:
-                text = str(path)
-            elif self._type == FilesysBrowserItemType.Dummy:
+            if self._type == FilesysBrowserItemType.Dummy:
                 text = '[...]'
             else:
-                text = path.final_name
+                text = path.name
             super().__init__(icon, text)
             
             if type == FilesysBrowserItemType.File:
@@ -568,7 +566,7 @@ class FilesysBrowser(QWidget):
         else:
             return  # files cannot be a top-lvel item; ignore
         
-        self._ui_filesys_model.insertRow(row_index, new_item)
+        self._ui_filesys_model.insertRow(row_index, (new_item, QStandardItem(str(path.parent))))
         new_item_index = self._ui_filesys_model.indexFromItem(new_item)
         if new_item_index:
             self._ui_filesys_view.expand(new_item_index)
