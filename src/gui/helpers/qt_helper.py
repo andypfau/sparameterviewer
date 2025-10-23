@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import *
 import logging
 from pathlib import Path
 from typing import Callable, Optional, Union
-import enum
+import re
 import dataclasses
 
 
@@ -34,8 +34,13 @@ class QtHelper:
 
 
     @staticmethod
-    def load_resource_icon(filename: str, svg_size: QSize|None = None, processing: int = 0) -> QIcon:
-        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size, processing=processing))
+    def load_resource_contrast_icon(filename: str, svg_size: QSize|None = None) -> QIcon:
+        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size, processing=QtHelper.PROCESSING_BLACK_TO_CONTRAST))
+
+
+    @staticmethod
+    def load_resource_icon(filename: str, svg_size: QSize|None = None) -> QIcon:
+        return QIcon(QtHelper.load_resource_pixmap(filename=filename, svg_size=svg_size))
 
 
     @staticmethod
@@ -47,12 +52,30 @@ class QtHelper:
             with open(str(path), 'rb') as fp:
                 file_contents = fp.read()
 
-            if processing & QtHelper.PROCESSING_BLACK_TO_CONTRAST:  # TODO: set this flag for all toolbar icons
+            if processing & QtHelper.PROCESSING_BLACK_TO_CONTRAST:
                 processing -= QtHelper.PROCESSING_BLACK_TO_CONTRAST
 
-                file_xml = file_contents.decode('UTF-8')
-                file_xml = file_xml.replace('#000000', '#FFFFFF')
-                file_contents = file_xml.encode('UTF-8')
+                if QtHelper.get_current_gui_color_scheme() == GuiColorScheme.Dark:
+
+                    # using dark scheme -> adapt contrast
+
+                    file_xml = file_contents.decode('UTF-8')
+
+                    # find all color codes
+                    for m in reversed(list(re.finditer(r'#([0-9a-zA-Z]{6})', file_xml))):
+                        color = int(m.group(1), 16)
+                        
+                        # determine brightness of that color
+                        r, g, b = (color >> 16) & 0xFF, (color >> 8) & 0xFF, (color >> 0) & 0xFF
+                        brightness = ((float(r)/256) + (float(g)/256) + (float(b)/256)) / 3
+                        if brightness < 0.5:
+                            
+                            # this is a dark color -> darken it
+                            rc, gc, bc = 255-r, 255-g, 255-b
+                            replacement_str = f'{rc:02X}{gc:02X}{bc:02X}'
+                            file_xml = file_xml[:m.start(1)] + replacement_str + file_xml[m.end(1):]
+
+                    file_contents = file_xml.encode('UTF-8')
             
             assert processing == 0, f'Unsupported processing request'
 
@@ -123,7 +146,7 @@ class QtHelper:
         if action:
             button.clicked.connect(action)
         if icon:
-            image = QtHelper.load_resource_icon(icon)
+            image = QtHelper.load_resource_contrast_icon(icon)
             button.setIcon(image)
             sizes = image.availableSizes()
             if len(sizes) >= 1:
@@ -147,7 +170,7 @@ class QtHelper:
         if action:
             button.clicked.connect(action)
         if icon:
-            image = QtHelper.load_resource_icon(icon)
+            image = QtHelper.load_resource_contrast_icon(icon)
             button.setIcon(image)
             sizes = image.availableSizes()
             if len(sizes) >= 1:
@@ -399,6 +422,18 @@ class QtHelper:
     
 
     @staticmethod
+    def get_current_gui_color_scheme() -> GuiColorScheme:
+        try:
+            if QtWidgets.QApplication.styleHints().colorScheme() == QtCore.Qt.ColorScheme.Dark:
+                return GuiColorScheme.Dark
+            if QtWidgets.QApplication.styleHints().colorScheme() == QtCore.Qt.ColorScheme.Light:
+                return GuiColorScheme.Light
+        except Exception as ex:
+            logging.exception(f'Getting color scheme failed, assuming default ({ex})')
+        return GuiColorScheme.Default
+    
+
+    @staticmethod
     def set_gui_color_scheme(scheme: GuiColorScheme):
         try:
             if scheme == GuiColorScheme.Light:
@@ -406,5 +441,4 @@ class QtHelper:
             elif scheme == GuiColorScheme.Dark:
                 QtWidgets.QApplication.styleHints().setColorScheme(QtCore.Qt.ColorScheme.Dark)
         except Exception as ex:
-            logging.exception('Setting color scheme failed, ignoring ({ex})')
-
+            logging.exception(f'Setting color scheme failed, ignoring ({ex})')
