@@ -64,7 +64,7 @@ class FilesysBrowser(QWidget):
             if self._type == FilesysBrowserItemType.Dummy:
                 text = '[...]'
             else:
-                text = path.name
+                text = path.final_name
             super().__init__(icon, text)
             
             if type == FilesysBrowserItemType.File:
