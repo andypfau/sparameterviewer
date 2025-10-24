@@ -63,7 +63,7 @@ class SettingsDialogUi(QDialog):
         self._ui_selecttocheck_check.setToolTip('Only files that have their checkbox checked will be plotted. When this option is enabled, you can click anywhere on the file, or just multi-select it, and its checkbox will be checked. Regardless of this option, you cal aways click the checkbox directly, or use the spacebar to toggle the checkboxes.')
         self._ui_selecttocheck_check.toggled.connect(self.on_selecttocheck_changed)
         self._ui_guicolorscheme_combo = QComboBox()
-        self._ui_guicolorscheme_combo.setToolTip('Global GUI color scheme.')
+        self._ui_guicolorscheme_combo.setToolTip('Global GUI color scheme. Will only be applied after re-starting the application.')
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
@@ -73,7 +73,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_simple_browser_check,
                 QtHelper.layout_h('Large S-Param Matrix:', self._ui_largematrix_combo,...),
                 self._ui_selecttocheck_check,
-                QtHelper.layout_h('Color Scheme:', self._ui_guicolorscheme_combo,...),
+                QtHelper.layout_h('Color Scheme (requires re-start):', self._ui_guicolorscheme_combo,...),
                 ...
             )
         )

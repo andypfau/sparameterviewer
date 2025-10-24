@@ -214,7 +214,6 @@ class SettingsDialog(SettingsDialogUi):
     
     def on_guicolorscheme_changed(self):
         Settings.gui_color_scheme = string_to_enum(self.ui_guicolorscheme, SettingsDialog.GUICOLORSCHEME_NAMES)
-        QtHelper.set_gui_color_scheme(Settings.gui_color_scheme)
 
 
     def on_simple_plot_changed(self):

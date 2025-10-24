@@ -1072,6 +1072,11 @@ class MainWindow(MainWindowUi):
         self.prepare_cursors()
 
 
+    def on_filesys_elision_doubleclick(self):
+        self.ui_file_filter_enabled = False
+        self.ui_filesys_browser.filter = FileFilter()
+    
+
     def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         
         def make_pin(new_path: PathExt):
@@ -1160,7 +1165,7 @@ class MainWindow(MainWindowUi):
             if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
                 menu.append((None, None))
                 menu.append((f'Copy Path', make_copy_path(path)))
-        if item_type == FilesysBrowserItemType.Dummy:
+        if item_type == FilesysBrowserItemType.Elision:
             menu.append((f'Deactivate Filters', make_deactivate_filters()))
         
         if len(menu) > 0:

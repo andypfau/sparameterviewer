@@ -63,7 +63,7 @@ class FilterDialogUi(QDialog):
             self._ui_files_list.setToolTip('Files that match your search are selected here. You may manually change the selection.')
         else:
             self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-            self._ui_files_list.setToolTip('Files that match your search are selected here.')
+            self._ui_files_list.setToolTip('Files that match your search are selected here. Note that files in un-opened directories or archives are not shown here yet.')
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)

@@ -260,6 +260,7 @@ class MainWindowUi(QMainWindow):
         self._ui_filesys_browser.topLevelsChanged.connect(self.on_filesys_toplevels_changed)
         self._ui_filesys_browser.filesChanged.connect(self.on_filesys_files_changed)
         self._ui_filesys_browser.contextMenuRequested.connect(self.on_filesys_contextmenu)
+        self._ui_filesys_browser.elisionDoubleclick.connect(self.on_filesys_elision_doubleclick)
         self._ui_files_tab.setLayout(QtHelper.layout_h(self._ui_filesys_browser))
         
         self._ui_expressions_tab = QWidget()
@@ -1080,6 +1081,8 @@ class MainWindowUi(QMainWindow):
     def on_filesys_files_changed(self):
         pass
     def on_filesys_selection_changed(self):
+        pass
+    def on_filesys_elision_doubleclick(self):
         pass
     def on_filesys_contextmenu(self, path: PathExt, toplevel_path: PathExt, item_type: FilesysBrowserItemType):
         pass

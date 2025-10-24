@@ -24,7 +24,7 @@ class FilesysBrowserItemType(enum.Enum):
     File = enum.auto()
     Dir = enum.auto()
     Arch = enum.auto()
-    Dummy = enum.auto()
+    Elision = enum.auto()
 
 
 
@@ -61,7 +61,7 @@ class FilesysBrowser(QWidget):
                 icon = FilesysBrowser._icon_arch
             else:
                 icon = FilesysBrowser._icon_file
-            if self._type == FilesysBrowserItemType.Dummy:
+            if self._type == FilesysBrowserItemType.Elision:
                 text = '[...]'
             else:
                 text = path.final_name
@@ -102,7 +102,7 @@ class FilesysBrowser(QWidget):
                 return False
             self._children_added = True
             
-            if self._type == FilesysBrowserItemType.File or self._type == FilesysBrowserItemType.Dummy:
+            if self._type == FilesysBrowserItemType.File or self._type == FilesysBrowserItemType.Elision:
                 return False
 
             if self._type == FilesysBrowserItemType.Dir:
@@ -122,7 +122,7 @@ class FilesysBrowser(QWidget):
                         continue
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, path, FilesysBrowserItemType.File), QStandardItem('')))
                 if filtered_out_any:
-                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Dummy), QStandardItem('Some files were hidden by filtering')))
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Elision), QStandardItem('Some files were hidden by filtering')))
             else:
                 dirs = [p for p in children if p.is_dir()]
                 files = [p for p in children if p.is_file()]
@@ -133,7 +133,7 @@ class FilesysBrowser(QWidget):
                         continue
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, file, FilesysBrowserItemType.File), QStandardItem('')))
                 if filtered_out_any:
-                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Dummy), QStandardItem('Some files were hidden by filtering')))
+                    super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Elision), QStandardItem('Some files were hidden by filtering')))
                 if support_archives:
                     for arch in sorted([p for p in files if is_ext_supported_archive(p.suffix)], key=lambda p: natural_sort_key(p.final_name)):
                         super().appendRow(FilesysBrowser.MyFileItem(self._model, arch, FilesysBrowserItemType.Arch, filter=self._filter))
@@ -233,6 +233,7 @@ class FilesysBrowser(QWidget):
     filesChanged = pyqtSignal()
     selectionChanged = pyqtSignal()
     contextMenuRequested = pyqtSignal(PathExt, PathExt, FilesysBrowserItemType)
+    elisionDoubleclick = pyqtSignal()
 
 
     def __init__(self):
@@ -748,8 +749,11 @@ class FilesysBrowser(QWidget):
     
 
     def _on_doubleclicked(self, ctrl: bool, shift: bool):
+        selected_items = self._get_all_selected_items()
+        if len(selected_items) >= 1 and selected_items[0].type == FilesysBrowserItemType.Elision:
+            self.elisionDoubleclick.emit()
+            return
         if not Settings.select_file_to_check:
-            selected_items = self._get_all_selected_items()
             self._check_items(selected_items, toggle=True, toggle_common=True, toggle_exclusive=shift)
     
 
