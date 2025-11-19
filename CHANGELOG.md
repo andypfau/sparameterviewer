@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b30 (2025-11-19)
+--------------------
+
+- bugix: changing the trace of a cursor now properly updates the readout
+
+
 0.40b29 (2025-10-22)
 --------------------
 

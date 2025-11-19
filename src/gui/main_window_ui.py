@@ -292,9 +292,9 @@ class MainWindowUi(QMainWindow):
         self._ui_cursor2_radio = QRadioButton('Cursor 2')
         self._ui_cursor2_radio.toggled.connect(self.on_cursor_select)
         self._ui_cursor1_trace_combo = QComboBox()
-        self._ui_cursor1_trace_combo.currentIndexChanged.connect(self.on_cursor_trace_change)
+        self._ui_cursor1_trace_combo.currentIndexChanged.connect(self.on_cursor1_trace_change)
         self._ui_cursor2_trace_combo = QComboBox()
-        self._ui_cursor2_trace_combo.currentIndexChanged.connect(self.on_cursor_trace_change)
+        self._ui_cursor2_trace_combo.currentIndexChanged.connect(self.on_cursor2_trace_change)
         self._ui_auto_cursor_check = QCheckBox('Auto Cursor')
         self._ui_auto_cursor_check.toggled.connect(self.on_auto_cursor_changed)
         self._ui_auto_cursor_check.setToolTip('When clicking into the plot, automatically select the cursors that is closest to the clicked point')
@@ -1054,7 +1054,9 @@ class MainWindowUi(QMainWindow):
         pass
     def on_cursor_x2_changed(self):
         pass
-    def on_cursor_trace_change(self):
+    def on_cursor1_trace_change(self):
+        pass
+    def on_cursor2_trace_change(self):
         pass
     def on_auto_cursor_changed(self):
         pass

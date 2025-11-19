@@ -1210,12 +1210,19 @@ class MainWindow(MainWindowUi):
         self.update_cursors()
 
 
-    def on_cursor_trace_change(self):
+    def on_cursor1_trace_change(self):
+        self.on_cursor_trace_change(0)
+
+
+    def on_cursor2_trace_change(self):
+        self.on_cursor_trace_change(1)
+
+        
+    def on_cursor_trace_change(self, cursor_index: int):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             return
 
         try:
-            cursor_index = self.ui_cursor_index
             if not self.plot.cursors[cursor_index].enabled:
                 return
 
@@ -1228,6 +1235,7 @@ class MainWindow(MainWindowUi):
                 plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
+                print(f'Setting cursor {cursor_index} to plot {plot.name}')
                 cursor.set(x, y, z, True, plot.color)
 
             self.update_cursor_readout()
@@ -1480,6 +1488,7 @@ class MainWindow(MainWindowUi):
         else:
             self._last_cursor_trace[1] = ''
         
+        print(f'Setting Y-readounts to "{readout_y1}" and "{readout_y2}"')
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
     

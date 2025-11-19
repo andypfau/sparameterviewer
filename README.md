@@ -25,7 +25,6 @@ Roadmap
 
 
 ### Missing Features
-
 - GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
 - GUI: tell the user which file is used as "save for template".
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
