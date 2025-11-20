@@ -269,6 +269,18 @@ class MainWindowUi(QMainWindow):
         self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
         self._ui_template_button.clicked.connect(self.on_template_button)
+        self._ui_expr_history_menu = QMenu()
+        self._ui_save_expr_button = QToolButton()
+        self._ui_save_expr_button.setText('Save')
+        self._ui_save_expr_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self._ui_save_expr_button.clicked.connect(self.on_save_expressions)
+        self._ui_save_expr_button.setMenu(self._ui_expr_history_menu)
+        self._ui_load_expr_button = QToolButton()
+        self._ui_load_expr_button.setText('Load')
+        self._ui_load_expr_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self._ui_load_expr_button.clicked.connect(self.on_load_expressions)
+        self._ui_load_expr_button.setMenu(self._ui_expr_history_menu)
+
         self._ui_help_button = QPushButton('Help')
         self._ui_help_button.clicked.connect(self.on_help_button)
         self._ui_editor_font = QtHelper.make_font(family=QtHelper.get_monospace_font())
@@ -279,6 +291,9 @@ class MainWindowUi(QMainWindow):
                 self._ui_template_button,
                 5,
                 self._ui_help_button,
+                5,
+                self._ui_save_expr_button,
+                self._ui_load_expr_button,
                 ...
             ),
             self._ui_editor
@@ -368,6 +383,8 @@ class MainWindowUi(QMainWindow):
         self._update_layout()
         self._update_enabled()
         self.ui_enable_expressions(True)
+        self.ui_update_expression_files_history([])
+        self.ui_update_files_history([])
 
 
     def keyPressEvent(self, event: QtGui.QKeyEvent|None):  # overloaded from QTextEdit
@@ -432,7 +449,6 @@ class MainWindowUi(QMainWindow):
         self._ui_menuitem_loaddir_files = QtHelper.add_menuitem(self._ui_mainmenu, 'Open Directory...', self.on_load_dir, shortcut='Ctrl+O')
         self._ui_menuitem_reload_all_files = QtHelper.add_menuitem(self._ui_mainmenu, 'Reload All Files', self.on_reload_all_files, shortcut='Ctrl+F5')
         self._ui_mainmenu_recent = QtHelper.add_submenu(self._ui_mainmenu, 'Recent Directories', visible=False)
-        self._ui_menuitem_recent_items = []
         self._ui_mainmenu.addSeparator()
         self._ui_menuitem_load_expr = QtHelper.add_menuitem(self._ui_mainmenu, 'Load Expressions...', self.on_load_expressions)
         self._ui_menuitem_save_expr = QtHelper.add_menuitem(self._ui_mainmenu, 'Save Expressions...', self.on_save_expressions)
@@ -950,14 +966,30 @@ class MainWindowUi(QMainWindow):
 
     def ui_update_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
         
-        self._ui_menuitem_recent_items.clear()
         self._ui_mainmenu_recent.clear()
 
+        any_item = False
         for (text,callback) in texts_and_callbacks:
-            new_item = QtHelper.add_menuitem(self._ui_mainmenu_recent, text, callback)
-            self._ui_menuitem_recent_items.append(new_item)
+            QtHelper.add_menuitem(self._ui_mainmenu_recent, text, callback)
+            any_item = True
         
-        self._ui_mainmenu_recent.setEnabled(len(self._ui_menuitem_recent_items) > 0)
+        if not any_item:
+            item = QtHelper.add_menuitem(self._ui_mainmenu_recent, "File History is Empty", None)
+            item.setEnabled(False)
+
+
+    def ui_update_expression_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
+        
+        self._ui_expr_history_menu.clear()
+
+        any_item = False
+        for (text,callback) in texts_and_callbacks:
+            QtHelper.add_menuitem(self._ui_expr_history_menu, text, callback)
+            any_item = True
+        
+        if not any_item:
+            item = QtHelper.add_menuitem(self._ui_expr_history_menu, "File History is Empty", None)
+            item.setEnabled(False)
     
 
     def _on_show_legend(self):

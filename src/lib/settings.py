@@ -119,6 +119,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_mark_points: bool = False
     path_history: list[str] = []
     path_history_maxsize: int = 10
+    exprfile_history: list[str] = []
     last_paths: list[str] = []
     comment_existing_expr: bool = True
     editor_font: str = ''

@@ -125,6 +125,7 @@ class MainWindow(MainWindowUi):
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIALIZATION_ID, MainWindow.TIMER_INITIALIZATION_TIMEOUT_S, self.finish_initialization)
 
         self.update_most_recent_paths_menu()
+        self.update_most_recent_exprfile_menu()
         Settings.attach(self.on_settings_change)
         self.ready = True
 
@@ -651,6 +652,34 @@ class MainWindow(MainWindowUi):
         self.ui_update_files_history(entries)
 
 
+    def update_most_recent_exprfile_menu(self):
+        
+        def make_load_function(path: str):
+            def load():
+                if not pathlib.Path(path).exists():
+                    error_dialog('Loaing Failed', 'Cannot load recent expression file.', f'<{path}> does not exist any more')
+                    self.update_most_recent_exprfile_menu()  # this will remove stale paths
+                    return
+                self.load_expressions_from_file(path)
+            return load
+        
+        def path_for_display(path: str):
+            MAX_LEN = 80
+            filename = pathlib.Path(path).name
+            directory = str(pathlib.Path(path).parent)
+            short_directory = shorten_path(directory, MAX_LEN)
+            return f'{filename} ({short_directory})'
+        
+        def history_file_valid(path: str):
+            try:
+                return pathlib.Path(path).exists() and pathlib.Path(path).is_file()
+            except:
+                return True
+        
+        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.exprfile_history if history_file_valid(path)]
+        self.ui_update_expression_files_history(entries)
+
+
     def add_to_most_recent_paths(self, path: str):
         history = Settings.path_history
 
@@ -666,6 +695,23 @@ class MainWindow(MainWindowUi):
         Settings.path_history = history
         
         self.update_most_recent_paths_menu()
+
+
+    def add_to_most_recentexprfiles(self, path: str):
+        history = Settings.exprfile_history
+
+        if path in history:
+            idx = history.index(path)
+            del history[idx]
+        
+        history.insert(0, path)
+        
+        while len(history) > Settings.path_history_maxsize:
+            del history[-1]
+        
+        Settings.exprfile_history = history
+        
+        self.update_most_recent_exprfile_menu()
 
 
     def reload_all_files(self):
@@ -823,29 +869,55 @@ class MainWindow(MainWindowUi):
     
 
     def on_load_expressions(self):
+        filename = open_file_dialog(self, title='Load Expressions', filetypes=[('Expressions','.py'),('Text','.txt'),('All Files','*')])
+        if not filename:
+            return
+        
+        self.load_expressions_from_file(filename)
+    
+
+    def load_expressions_from_file(self, path: str):
+
+        self.add_to_most_recentexprfiles(path)
+
+        merge = False
 
         if len(self.ui_expression.strip()) > 0:
-            if not okcancel_dialog('Overwrite', 'Expressions are not empty and will be overwritten.'):
-                return
+            action = custom_buttons_dialog('Load Expressions', 'Expressions are not empty!"', ['Abort', 'Overwrite', 'Merge'])
+            match action:
+                case 0:
+                    return
+                case 1:
+                    pass
+                case 2:
+                    merge = True
+                    pass
+                case _: raise ValueError()
 
         try:
-            fn = open_file_dialog(self, title='Load Expressions', filetypes=[('Expressions','.py'),('Text','.txt'),('All Files','*')])
-            if not fn:
-                return
-            with open(fn, 'r') as fp:
+            with open(path, 'r') as fp:
                 py = fp.read()
-            self.ui_expression = py.strip()
+            
+            if merge:
+                self.ui_expression = py.strip() + '\n\n' + self.ui_expression
+            else:
+                self.ui_expression = py.strip()
+
         except Exception as ex:
             error_dialog('Error', 'Loading expressions failed.', detailed_text=str(ex))
-    
+
 
     def on_save_expressions(self):
         try:
-            fn = save_file_dialog(self, title='Save Expressions', filetypes=[('Expressions','.py'),('Text','.txt'),('All Files','*')])
-            if not fn:
+            filename = save_file_dialog(self, title='Save Expressions', filetypes=[('Expressions','.py'),('Text','.txt'),('All Files','*')])
+            if not filename:
                 return
-            with open(fn, 'w') as fp:
+            
+            with open(filename, 'w') as fp:
                 fp.write(self.ui_expression.strip())
+
+            self.add_to_most_recentexprfiles(filename)  # only add it AFTER saving, otherwise the non-existing file will be ignored...
+
         except Exception as ex:
             error_dialog('Error', 'Saving expressions failed.', detailed_text=str(ex))
     
@@ -1052,10 +1124,22 @@ class MainWindow(MainWindowUi):
 
         if 'path_history_maxsize' in attributes:
             history = Settings.path_history
+            deleted_any = False
             while len(history) > Settings.path_history_maxsize:
                 del history[-1]
-            Settings.path_history = history
+                deleted_any = True
+            if deleted_any:
+                Settings.path_history = history
             self.update_most_recent_paths_menu()
+            
+            history = Settings.exprfile_history
+            deleted_any = False
+            while len(history) > Settings.path_history_maxsize:
+                del history[-1]
+                deleted_any = True
+            if deleted_any:
+                Settings.exprfile_history = history
+            self.update_most_recent_exprfile_menu()
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',

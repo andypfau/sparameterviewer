@@ -32,7 +32,6 @@ Roadmap
 - GUI: pre-defined fixed size for saved/copied plots.
 - GUI: for the documentations, find a nicer representation than plain markdown files.
 - General: "TODO"-comments in code.
-- GUI: expression file quick-save/quick-load and file history.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - Expressions: `f_arg` parameter for `SParams.map()`.
 - Expressions: add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.

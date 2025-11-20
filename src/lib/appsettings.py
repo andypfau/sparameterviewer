@@ -44,8 +44,11 @@ class AppSettings:
         is_setting = ('_defaults' in self.__dict__) and (__name in self.__dict__['_defaults'])
         if is_setting:
             current_value = self.__getattribute__(__name)
-            if __value == current_value:
-                return
+            if isinstance(__value, (list,dict,set)):
+                pass  # mutable type -> assume something was changed
+            else:
+                if __value == current_value:
+                    return
         super().__setattr__(__name, __value)
         if is_setting:
             self._save()

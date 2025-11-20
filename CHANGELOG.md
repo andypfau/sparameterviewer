@@ -2,10 +2,11 @@ S-Parameter Viewer Changelog
 ============================
 
 
-TBD
+0.40b31 (2025-11-20)
 --------------------
 
 - new: open file with external default application from filesystem browser contetxt menu
+- new: buttons to save/load expressions, with file history
 - change: nicer file info
 - bugfix: filtering with wildcards is working again
 
