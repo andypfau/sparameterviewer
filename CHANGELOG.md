@@ -7,12 +7,13 @@ TBD
 
 - new: open file with external default application from filesystem browser contetxt menu
 - change: nicer file info
+- bugfix: filtering with wildcards is working again
 
 
 0.40b30 (2025-11-19)
 --------------------
 
-- bugix: changing the trace of a cursor now properly updates the readout
+- bugfix: changing the trace of a cursor now properly updates the readout
 
 
 0.40b29 (2025-10-22)

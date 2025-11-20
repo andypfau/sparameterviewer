@@ -11,6 +11,8 @@ class FileFilter:
         if filter is None or filter == '':
             self._fn = lambda name: True
         else:
+            if not regex:
+                filter = self._wildcard_to_regex(filter)
             compiled_regex = re.compile(filter, re.IGNORECASE)
             if self._full_match:
                 self._fn = lambda name: bool(compiled_regex.match(name)) != negate
