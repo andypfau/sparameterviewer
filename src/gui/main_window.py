@@ -20,7 +20,7 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale
+from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale, open_file_in_default_viewer
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
@@ -1131,6 +1131,13 @@ class MainWindow(MainWindowUi):
                 self.ui_file_filter_enabled = False
                 self.ui_filesys_browser.filter = FileFilter()
             return deactivate_filters
+        def make_open_in_default_app(path: PathExt):
+            def open_in_default_app():
+                try:
+                    open_file_in_default_viewer(str(path))
+                except Exception as ex:
+                    error_dialog('Open With Default Application', f'Unable to open this file item with default application.', f'Try to open <{str(path)}> manually ({ex}).')
+            return open_in_default_app
 
         menu = []
         is_toplevel = path == toplevel_path
@@ -1165,6 +1172,7 @@ class MainWindow(MainWindowUi):
             if not (self.ui_filesys_browser.simplified() and Settings.simplified_no_expressions):
                 menu.append((None, None))
                 menu.append((f'Copy Path', make_copy_path(path)))
+                menu.append((f'Open With Default Application', make_open_in_default_app(path)))
         if item_type == FilesysBrowserItemType.Elision:
             menu.append((f'Deactivate Filters', make_deactivate_filters()))
         

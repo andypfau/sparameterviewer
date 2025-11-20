@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 TBD
 --------------------
 
+- new: open file with external default application from filesystem browser contetxt menu
 - change: nicer file info
 
 
