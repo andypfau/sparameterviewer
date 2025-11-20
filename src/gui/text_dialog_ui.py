@@ -34,10 +34,13 @@ class TextDialogUi(QDialog):
         self._ui_save_button = QtHelper.make_button(self, 'Save As...', self.on_save)
         self._ui_save_shortcut = QtHelper.make_shortcut(self, 'Ctrl+S', self.on_save)
         self._ui_open_button = QtHelper.make_button(self, 'Open Externally', self.on_open_ext)
+        self._ui_linewrap_check = QCheckBox('Wrap')
+        self._ui_linewrap_check.setToolTip('Wrap ling lines')
+        self._ui_linewrap_check.toggled.connect(self._on_linewrap_toggled)
         
         self.setLayout(QtHelper.layout_v(
             self._ui_infostr,
-            QtHelper.layout_h(self._ui_copy_button, self._ui_save_button, self._ui_open_button, ...),
+            QtHelper.layout_h(self._ui_copy_button, self._ui_save_button, self._ui_open_button, 8, self._ui_linewrap_check, ...),
         ))
 
         self.resize(800, 600)
@@ -57,6 +60,13 @@ class TextDialogUi(QDialog):
 
     def ui_set_title(self, title: str):
         self.setWindowTitle(title)
+    
+
+    def _on_linewrap_toggled(self):
+        if self._ui_linewrap_check.isChecked():
+            self._ui_infostr.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        else:
+            self._ui_infostr.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
 
     # to be implemented in derived class

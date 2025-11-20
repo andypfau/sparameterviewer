@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+TBD
+--------------------
+
+- change: nicer file info
+
+
 0.40b30 (2025-11-19)
 --------------------
 

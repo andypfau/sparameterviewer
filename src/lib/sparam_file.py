@@ -222,8 +222,9 @@ class SParamFile:
             z0 = 'different for each port and/or frequency'
         
         if len(comm)>0:
+            info += 'File comment:\n'
             for comm_line in comm.splitlines():
-                info += comm_line.strip() + '\n'
+                info += '  ' + comm_line.strip() + '\n'
             info += '\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
 
