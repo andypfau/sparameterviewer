@@ -269,17 +269,18 @@ class MainWindowUi(QMainWindow):
         self._ui_update_button.clicked.connect(self.on_update_expressions)
         self._ui_template_button = QPushButton('Template...')
         self._ui_template_button.clicked.connect(self.on_template_button)
-        self._ui_expr_history_menu = QMenu()
         self._ui_save_expr_button = QToolButton()
         self._ui_save_expr_button.setText('Save')
         self._ui_save_expr_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self._ui_save_expr_button.clicked.connect(self.on_save_expressions)
-        self._ui_save_expr_button.setMenu(self._ui_expr_history_menu)
+        self._ui_save_expr_history_menu = QMenu()
+        self._ui_save_expr_button.setMenu(self._ui_save_expr_history_menu)
         self._ui_load_expr_button = QToolButton()
         self._ui_load_expr_button.setText('Load')
         self._ui_load_expr_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self._ui_load_expr_button.clicked.connect(self.on_load_expressions)
-        self._ui_load_expr_button.setMenu(self._ui_expr_history_menu)
+        self._ui_load_expr_history_menu = QMenu()
+        self._ui_load_expr_button.setMenu(self._ui_load_expr_history_menu)
 
         self._ui_help_button = QPushButton('Help')
         self._ui_help_button.clicked.connect(self.on_help_button)
@@ -383,7 +384,7 @@ class MainWindowUi(QMainWindow):
         self._update_layout()
         self._update_enabled()
         self.ui_enable_expressions(True)
-        self.ui_update_expression_files_history([])
+        self.ui_update_expression_files_history([], [])
         self.ui_update_files_history([])
 
 
@@ -978,18 +979,20 @@ class MainWindowUi(QMainWindow):
             item.setEnabled(False)
 
 
-    def ui_update_expression_files_history(self, texts_and_callbacks: list[tuple[str,Callable]]):
-        
-        self._ui_expr_history_menu.clear()
+    def ui_update_expression_files_history(self, save_texts_and_callbacks: list[tuple[str,Callable]], load_texts_and_callbacks: list[tuple[str,Callable]]):
 
-        any_item = False
-        for (text,callback) in texts_and_callbacks:
-            QtHelper.add_menuitem(self._ui_expr_history_menu, text, callback)
-            any_item = True
-        
-        if not any_item:
-            item = QtHelper.add_menuitem(self._ui_expr_history_menu, "File History is Empty", None)
-            item.setEnabled(False)
+        for texts_and_callbacks,target_menu in [(save_texts_and_callbacks,self._ui_save_expr_history_menu), (load_texts_and_callbacks,self._ui_load_expr_history_menu)    ]:
+            
+            target_menu.clear()
+
+            any_item = False
+            for (text,callback) in texts_and_callbacks:
+                QtHelper.add_menuitem(target_menu, text, callback)
+                any_item = True
+            
+            if not any_item:
+                item = QtHelper.add_menuitem(target_menu, "File History is Empty", None)
+                item.setEnabled(False)
     
 
     def _on_show_legend(self):

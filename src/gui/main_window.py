@@ -663,6 +663,11 @@ class MainWindow(MainWindowUi):
                 self.load_expressions_from_file(path)
             return load
         
+        def make_save_function(path: str):
+            def save():
+                self.save_expressions_to_file(path, confirm_overwrite=True)
+            return save
+        
         def path_for_display(path: str):
             MAX_LEN = 80
             filename = pathlib.Path(path).name
@@ -676,9 +681,9 @@ class MainWindow(MainWindowUi):
             except:
                 return True
         
-        entries = [(path_for_display(path), make_load_function(path)) for path in Settings.exprfile_history if history_file_valid(path)]
-        self.ui_update_expression_files_history(entries)
-
+        save_entries = [(path_for_display(path), make_save_function(path)) for path in Settings.exprfile_history]
+        load_entries = [(path_for_display(path), make_load_function(path)) for path in Settings.exprfile_history if history_file_valid(path)]
+        self.ui_update_expression_files_history(save_entries, load_entries)
 
     def add_to_most_recent_paths(self, path: str):
         history = Settings.path_history
@@ -913,10 +918,22 @@ class MainWindow(MainWindowUi):
             if not filename:
                 return
             
-            with open(filename, 'w') as fp:
+            self.save_expressions_to_file(filename, confirm_overwrite=False)
+
+        except Exception as ex:
+            error_dialog('Error', 'Saving expressions failed.', detailed_text=str(ex))
+
+
+    def save_expressions_to_file(self, path: str, confirm_overwrite: bool):
+        try:
+            if confirm_overwrite and pathlib.Path(path).exists():
+                if not okcancel_dialog('Save Expressions', 'The selected expressions file already exists, and will be overwritten.', detailed_text=f'Filename: "{path}"'):
+                    return
+
+            with open(path, 'w') as fp:
                 fp.write(self.ui_expression.strip())
 
-            self.add_to_most_recentexprfiles(filename)  # only add it AFTER saving, otherwise the non-existing file will be ignored...
+            self.add_to_most_recentexprfiles(path)  # only add it AFTER saving, otherwise the non-existing file will be ignored...
 
         except Exception as ex:
             error_dialog('Error', 'Saving expressions failed.', detailed_text=str(ex))
