@@ -663,9 +663,19 @@ class MainWindow(MainWindowUi):
                 self.load_expressions_from_file(path)
             return load
         
+        def make_load_scratchpad_function():
+            def load():
+                self.load_expressions_from_str(Settings.expression_scratchpad)
+            return load
+        
         def make_save_function(path: str):
             def save():
                 self.save_expressions_to_file(path, confirm_overwrite=True)
+            return save
+        
+        def make_save_scratchpad_function():
+            def save():
+                Settings.expression_scratchpad = self.ui_expression
             return save
         
         def path_for_display(path: str):
@@ -681,8 +691,8 @@ class MainWindow(MainWindowUi):
             except:
                 return True
         
-        save_entries = [(path_for_display(path), make_save_function(path)) for path in Settings.exprfile_history]
-        load_entries = [(path_for_display(path), make_load_function(path)) for path in Settings.exprfile_history if history_file_valid(path)]
+        save_entries = [('Scratchpad', make_save_scratchpad_function()), *[(path_for_display(path), make_save_function(path)) for path in Settings.exprfile_history]]
+        load_entries = [('Scratchpad', make_load_scratchpad_function()), *[(path_for_display(path), make_load_function(path)) for path in Settings.exprfile_history if history_file_valid(path)]]
         self.ui_update_expression_files_history(save_entries, load_entries)
 
     def add_to_most_recent_paths(self, path: str):
@@ -885,31 +895,29 @@ class MainWindow(MainWindowUi):
 
         self.add_to_most_recentexprfiles(path)
 
-        merge = False
-
-        if len(self.ui_expression.strip()) > 0:
-            action = custom_buttons_dialog('Load Expressions', 'Expressions are not empty!"', ['Abort', 'Overwrite', 'Merge'])
-            match action:
-                case 0:
-                    return
-                case 1:
-                    pass
-                case 2:
-                    merge = True
-                    pass
-                case _: raise ValueError()
-
         try:
             with open(path, 'r') as fp:
-                py = fp.read()
-            
-            if merge:
-                self.ui_expression = py.strip() + '\n\n' + self.ui_expression
-            else:
-                self.ui_expression = py.strip()
+                expressions = fp.read()
 
         except Exception as ex:
             error_dialog('Error', 'Loading expressions failed.', detailed_text=str(ex))
+        
+        self.load_expressions_from_str(expressions)
+
+
+    def load_expressions_from_str(self, expressions: str):
+        
+        merge = False
+        if len(self.ui_expression.strip()) > 0:
+            action = custom_buttons_dialog('Load Expressions', 'Expressions are not empty, loading expressions will overwrite them, or they can be merged.', ['Abort', 'Overwrite', 'Merge'])
+            if action:
+                return
+            merge = action == 2
+
+        if merge:
+            self.ui_expression = expressions.strip() + '\n\n' + self.ui_expression
+        else:
+            self.ui_expression = expressions.strip()
 
 
     def on_save_expressions(self):

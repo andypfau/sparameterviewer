@@ -120,6 +120,7 @@ class SParamViewerAppSettings(AppSettings):
     path_history: list[str] = []
     path_history_maxsize: int = 10
     exprfile_history: list[str] = []
+    expression_scratchpad: str = ''
     last_paths: list[str] = []
     comment_existing_expr: bool = True
     editor_font: str = ''
