@@ -31,10 +31,17 @@ class StabilityCircle:
         # calculate stability circle for output
         # see <https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability>
         delta = s11*s22 - s12*s21
-        denom = pow(abs(s22),2) - pow(abs(delta),2)
+        denom = abs(s22)**2 - abs(delta)**2
         self.center = (s22 - s11.conjugate()*delta).conjugate() / denom
         self.radius = abs((s12*s21) / denom)
-        self.stable_inside = True if abs(s22)>1 else False
+        
+        # determine if stable inside or outside
+        # see <https://www.analog.com/en/resources/technical-articles/lownoise-amplifier-stability-concept-to-practical-considerations-part-2.html>
+        surrounds_origin = abs(self.center) <= self.radius
+        if surrounds_origin:
+            self.stable_inside = bool(abs(s11)<1 and abs(delta)>abs(s22))
+        else:
+            self.stable_inside = bool(abs(s11)>1 and abs(delta)>abs(s22))
     
 
     def get_plot_data(self, n_points: int = 101) -> "np.ndarray":

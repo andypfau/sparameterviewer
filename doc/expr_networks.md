@@ -403,7 +403,7 @@ Plots the stability circle at the given frequency.
 
 Set `port=1` if you want to calculate the stability at the input, otherwise the output is calculated.
 
-It adds "s.i." (stable inside circle) or "s.o." (stable outside of the circle) to the plot name.
+It adds "s.i." (stable inside of the circle) or "s.o." (stable outside of the circle) to the plot name.
 
 Example:
 ```python

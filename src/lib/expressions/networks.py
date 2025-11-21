@@ -519,8 +519,8 @@ class Network:
         stab = StabilityCircle(self.nw, frequency_hz, port)
         data = stab.get_plot_data(n_points)
         freq = np.full([n_points], frequency_hz)
-        label = label if label is not None else self.nw.name
-        label += f' (s.i.)' if stab.stable_inside else f' (s.o.)'
+        label = label if label is not None else f'{self.nw.name} St. P{port}'
+        label += ' (s.i.)' if stab.stable_inside else ' (s.o.)'
         SParam.plot_xy(freq, data, self.nw.z0, label, style, color, width, opacity, self.original_files, 'stability')
         
     
