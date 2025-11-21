@@ -107,7 +107,6 @@ class MainWindow(MainWindowUi):
                 if not os.path.exists(last_path):
                     continue  # perhaps the file/directory has been deleted
                 initial_paths.append(last_path)
-            print(f'Loading last paths <{initial_paths}>')
         
         if len(initial_paths) < 1:
             # still no initial paths -> use default directory
@@ -1352,7 +1351,6 @@ class MainWindow(MainWindowUi):
                 plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
-                print(f'Setting cursor {cursor_index} to plot {plot.name}')
                 cursor.set(x, y, z, True, plot.color)
 
             self.update_cursor_readout()
@@ -1605,7 +1603,6 @@ class MainWindow(MainWindowUi):
         else:
             self._last_cursor_trace[1] = ''
         
-        print(f'Setting Y-readounts to "{readout_y1}" and "{readout_y2}"')
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
         self.ui_plot.draw()
     
