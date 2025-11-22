@@ -267,6 +267,18 @@ class Network:
         return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k')
     
 
+    def mag(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.nw.name} (only valid for 2-port networks)')
+        return SParam(f'{self.nw.name} MAG', self.nw.f, self.nw.max_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MAG')
+    
+
+    def msg(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.msg(): cannot calculate maximum stable power gain of {self.nw.name} (only valid for 2-port networks)')
+        return SParam(f'{self.nw.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG')
+    
+
     def mu(self, mu: int = 1):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
@@ -835,7 +847,15 @@ class Networks:
     
     def mu(self, mu: int = 1):
         return self._unary_op(Network.mu, SParams, mu=mu)
-        
+    
+    
+    def mag(self):
+        return self._unary_op(Network.mag, SParams)
+    
+    
+    def msg(self):
+        return self._unary_op(Network.msg, SParams)
+
     
     def passivity(self):
         return self._unary_op(Network.passivity, SParams)

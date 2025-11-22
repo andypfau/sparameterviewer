@@ -390,6 +390,13 @@ class MainWindow(MainWindowUi):
             )
             setup_plot(PlotType.Cartesian)
         
+        def power_gain():
+            set_expression(
+                'sel_nws().msg().plot()  # maximum availalbe gain\n' +
+                'sel_nws().msg().plot()  # maximum stable gain' +
+            )
+            setup_plot(PlotType.Cartesian)
+        
         def cascade():
             selected_files = const_selected_files()
             if len(selected_files) < 2:
@@ -513,6 +520,8 @@ class MainWindow(MainWindowUi):
                 ('Passivity', passivity),
                 ('Losslessness', losslessness),
                 ('All of Above', four_metrics),
+                (None, None),
+                ('Available / Stable Gain', power_gain),
             ]),
             ('Operations on Individual Networks', [
                 ('Normalize at Given Frequency', normalize_to_f),
