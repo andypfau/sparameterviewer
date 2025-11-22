@@ -180,6 +180,36 @@ nw("amp.s2p").k().plot()
 
 
 
+### mag()
+
+```python
+mag() → SParams
+```
+
+Returns the maximum available power gain.
+
+Example:
+```python
+nw("amp.s2p").mag().plot()
+```
+
+
+
+### msg()
+
+```python
+msg() → SParams
+```
+
+Returns the maximum stable power gain.
+
+Example:
+```python
+nw("amp.s2p").msg().plot()
+```
+
+
+
 ### mu()
 
 ```python
