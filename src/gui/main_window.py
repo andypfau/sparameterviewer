@@ -321,27 +321,27 @@ class MainWindow(MainWindowUi):
                 self.ui_plot_selector.setYQuantity(quantity)
 
         def all_sparams():
-            set_expression('sel_nws().s().plot()')
+            set_expression('sel_nws().s().plot()  # all S-params')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def insertion_loss():
-            set_expression('sel_nws().s(il_only=True).plot()')
+            set_expression('sel_nws().s(il_only=True).plot()  # insertion loss')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def insertion_loss_reciprocal():
-            set_expression('sel_nws().s(fwd_il_only=True).plot()')
+            set_expression('sel_nws().s(fwd_il_only=True).plot()  # forward gain')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def return_loss():
-            set_expression('sel_nws().s(rl_only=True).plot()')
+            set_expression('sel_nws().s(rl_only=True).plot()  # return loss')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def vswr():
-            set_expression('sel_nws().s(rl_only=True).vswr().plot()')
+            set_expression('sel_nws().s(rl_only=True).vswr().plot()  # voltage standing wave ratio')
             setup_plot(PlotType.Cartesian)
         
         def mismatch_loss():
-            set_expression('sel_nws().s(rl_only=True).ml().plot()')
+            set_expression('sel_nws().s(rl_only=True).ml().plot()  # mismatch loss')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
 
         def quick11():
@@ -361,39 +361,39 @@ class MainWindow(MainWindowUi):
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def stability():
-            set_expression('sel_nws().mu(1).plot() # should be > 1 for stable network',
-                           'sel_nws().mu(2).plot() # should be > 1 for stable network')
+            set_expression('sel_nws().mu(1).plot()  # µ; should be > 1 for stable network',
+                           'sel_nws().mu(2).plot()  # µ\'; should be > 1 for stable network')
             setup_plot(PlotType.Cartesian)
         
         def reciprocity():
-            set_expression('sel_nws().reciprocity().plot() # should be 0 for reciprocal network')
+            set_expression('sel_nws().reciprocity().plot()  # should be 0 for reciprocal network')
             setup_plot(PlotType.Cartesian)
         
         def symmetry():
-            set_expression('sel_nws().symmetry().plot() # should be 0 for symmetric network')
+            set_expression('sel_nws().symmetry().plot()  # should be 0 for symmetric network')
             setup_plot(PlotType.Cartesian)
         
         def passivity():
-            set_expression('sel_nws().passivity().plot() # should be 0 for passive network')
+            set_expression('sel_nws().passivity().plot()  # should be 0 for passive network')
             setup_plot(PlotType.Cartesian)
         
         def losslessness():
-            set_expression('sel_nws().losslessness().plot() # should be 0 for lossless network')
+            set_expression('sel_nws().losslessness().plot()  # should be 0 for lossless network')
             setup_plot(PlotType.Cartesian)
         
         def four_metrics():
             set_expression(
-                'sel_nws().reciprocity().plot()  # should be 0 for reciprocal network\n' +
-                'sel_nws().symmetry().plot()     # should be 0 for symmetric network\n' +
-                'sel_nws().passivity().plot()    # should be 0 for passive network\n' +
-                'sel_nws().losslessness().plot() # should be 0 for lossless network'
+                'sel_nws().reciprocity().plot()   # should be 0 for reciprocal network\n' +
+                'sel_nws().symmetry().plot()      # should be 0 for symmetric network\n' +
+                'sel_nws().passivity().plot()     # should be 0 for passive network\n' +
+                'sel_nws().losslessness().plot()  # should be 0 for lossless network'
             )
             setup_plot(PlotType.Cartesian)
         
         def power_gain():
             set_expression(
                 'sel_nws().msg().plot()  # maximum availalbe gain\n' +
-                'sel_nws().msg().plot()  # maximum stable gain' +
+                'sel_nws().msg().plot()  # maximum stable gain'
             )
             setup_plot(PlotType.Cartesian)
         
@@ -407,34 +407,34 @@ class MainWindow(MainWindowUi):
         
         def normalize_to_ref():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()')
+                set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()  # normalize to reference newtork')
         
         def deembed_ref_from_others():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'((~{ref_nw}) ** sel_nws()).plot_sel_params()')
+                set_expression(f'((~{ref_nw}) ** sel_nws()).plot_sel_params()  # de-embed reference network')
         
         def deembed_ref_flipped_from_others():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(~({ref_nw}.flipped()) ** sel_nws()).plot_sel_params()')
+                set_expression(f'(~({ref_nw}.flipped()) ** sel_nws()).plot_sel_params()  # de-embed flipped reference network')
         
         def from_others_deembed_ref():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() ** (~"{ref_nw}).plot_sel_params()')
+                set_expression(f'(sel_nws() ** (~"{ref_nw}).plot_sel_params()  # de-embed reference network')
         
         def from_others_deembed_ref_flipped():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() ** (~{ref_nw}).flipped)).plot_sel_params()')
+                set_expression(f'(sel_nws() ** (~{ref_nw}).flipped)).plot_sel_params()  # de-embed flipped reference network')
         
         def deembed_ref_as_2xthru():
             if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f"((~{ref_nw}).half(side=1)) ** sel_nws() ** (~{ref_nw}).half(side=2))).plot_sel_params()")
+                set_expression(f"((~{ref_nw}).half(side=1)) ** sel_nws() ** (~{ref_nw}).half(side=2))).plot_sel_params()  # deembed 2x thru")
         
         def normalize_to_f():
             selected_files = dynamic_selected_files()
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.sel_params().norm(at_f=10e9).plot()' for nw in selected_files]
+            expressions = [f'{nw}.sel_params().norm(at_f=10e9).plot()  # normalize at given frequency' for nw in selected_files]
             set_expression(*expressions)
         
         def mixed_mode():
@@ -442,7 +442,7 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f"{nw}.s2m(['p1','p2','n1','n2']).s('dd21').plot()" for nw in selected_files]
+            expressions = [f"{nw}.s2m(['p1','p2','n1','n2']).s('dd21').plot()  # single-ended to mixed-mode" for nw in selected_files]
             set_expression(*expressions)
 
         def z_renorm():
@@ -450,7 +450,7 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()' for nw in selected_files]
+            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()  # re-normalize impedance' for nw in selected_files]
             set_expression(*expressions)
 
         def add_tline():
@@ -458,7 +458,7 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()' for nw in selected_files]
+            expressions = [f'{nw}.add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()  # add a transmission line' for nw in selected_files]
             set_expression(*expressions)
 
         def all_selected():
@@ -470,23 +470,23 @@ class MainWindow(MainWindowUi):
             set_expression(*expressions)
         
         def z():
-            set_expression('sel_nws().z(any,any).plot()')
+            set_expression('sel_nws().z(any,any).plot()  # Z-parameters')
             setup_plot(PlotType.Cartesian)
         
         def y():
-            set_expression('sel_nws().y(any,any).plot()')
+            set_expression('sel_nws().y(any,any).plot()  # Y-parameters')
             setup_plot(PlotType.Cartesian)
         
         def abcd():
-            set_expression('sel_nws().abcd(any,any).plot()')
+            set_expression('sel_nws().abcd(any,any).plot()  # ABCD-parameters')
             setup_plot(PlotType.Cartesian)
         
         def t():
-            set_expression('sel_nws().t(any,any).plot()')
+            set_expression('sel_nws().t(any,any).plot()  # scattering transfer parameters')
             setup_plot(PlotType.Cartesian)
         
         def stability_circles():
-            set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)')
+            set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)  # stability circle at given frequency')
             setup_plot(PlotType.Smith)
         
         self.ui_show_template_menu([
