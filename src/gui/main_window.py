@@ -392,7 +392,7 @@ class MainWindow(MainWindowUi):
         
         def power_gain():
             set_expression(
-                'sel_nws().msg().plot()  # maximum availalbe gain\n' +
+                'sel_nws().mag().plot()  # maximum availalbe gain\n' +
                 'sel_nws().msg().plot()  # maximum stable gain'
             )
             setup_plot(PlotType.Cartesian)
