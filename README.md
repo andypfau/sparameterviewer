@@ -25,6 +25,8 @@ Roadmap
 
 
 ### Missing Features
+
+- Bug: when I plot e.g. `msg()`, it is treated as a real number, and plotting in dB does not work!
 - GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
 - GUI: tell the user which file is used as "save for template".
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
