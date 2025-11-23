@@ -180,6 +180,22 @@ nw("amp.s2p").k().plot()
 
 
 
+### mu()
+
+```python
+mu(mu=1) → SParams
+```
+
+Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Sinsky). For a stable network, this should be >1 (or >0 dB).
+
+Example:
+```python
+nw("amp.s2p").mu(1).plot("µ")
+nw("amp.s2p").mu(2).plot("µ'")
+```
+
+
+
 ### mag()
 
 ```python
@@ -210,18 +226,17 @@ nw("amp.s2p").msg().plot()
 
 
 
-### mu()
+### u()
 
 ```python
-mu(mu=1) → SParams
+u() → SParams
 ```
 
-Returns the µ (mu=1, default) or µ' (mu=2) method stability factor (Edwards-Sinsky). For a stable network, this should be >1 (or >0 dB).
+Returns Mason's unilateral gain.
 
 Example:
 ```python
-nw("amp.s2p").mu(1).plot("µ")
-nw("amp.s2p").mu(2).plot("µ'")
+nw("amp.s2p").u().plot()
 ```
 
 

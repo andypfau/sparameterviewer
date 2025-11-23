@@ -279,6 +279,12 @@ class Network:
         return SParam(f'{self.nw.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG')
     
 
+    def u(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.u(): cannot calculate Mason\'s unilateral gain of {self.nw.name} (only valid for 2-port networks)')
+        return SParam(f'{self.nw.name} U', self.nw.f, self.nw.unilateral_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='U')
+    
+
     def mu(self, mu: int = 1):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
@@ -855,6 +861,10 @@ class Networks:
     
     def msg(self):
         return self._unary_op(Network.msg, SParams)
+    
+    
+    def u(self):
+        return self._unary_op(Network.u, SParams)
 
     
     def passivity(self):

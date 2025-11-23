@@ -393,7 +393,8 @@ class MainWindow(MainWindowUi):
         def power_gain():
             set_expression(
                 'sel_nws().mag().plot()  # maximum availalbe gain\n' +
-                'sel_nws().msg().plot()  # maximum stable gain'
+                'sel_nws().msg().plot()  # maximum stable gain\n' +
+                'sel_nws().u().plot()    # Masons unilateral gain'
             )
             setup_plot(PlotType.Cartesian)
         
@@ -521,7 +522,7 @@ class MainWindow(MainWindowUi):
                 ('Losslessness', losslessness),
                 ('All of Above', four_metrics),
                 (None, None),
-                ('Available / Stable Gain', power_gain),
+                ('Amplifier Gain (2-Port Only)', power_gain),
             ]),
             ('Operations on Individual Networks', [
                 ('Normalize at Given Frequency', normalize_to_f),
