@@ -349,6 +349,15 @@ class MainWindowUi(QMainWindow):
             [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx, 'ΔY:', self._ui_cursor_readout_dy],
             [QtHelper.CellSpan(self._ui_zoompan_label, cols=2), None, QtHelper.CellSpan(QtHelper.layout_h(self._ui_cursor_syncx_check, self._ui_cursor_finex_check), cols=2)],
         ])
+        # cursor_layout = QtHelper.layout_grid([
+        #     [self._ui_cursor1_radio, self._ui_cursor1_trace_combo, 'X1:', self._ui_cursor_edit_x1],
+        #     [None, None, 'Y1:', self._ui_cursor_readout_y1],
+        #     [self._ui_cursor2_radio, self._ui_cursor2_trace_combo, 'X2:', self._ui_cursor_edit_x2],
+        #     [None, None, 'Y2:', self._ui_cursor_readout_y2],
+        #     [self._ui_auto_cursor_check, self._ui_auto_cursor_trace_check, 'ΔX:', self._ui_cursor_readout_dx],
+        #     [QtHelper.CellSpan(QtHelper.layout_h(self._ui_cursor_syncx_check, self._ui_cursor_finex_check), cols=2), None, 'ΔY:', self._ui_cursor_readout_dy],
+        #     [QtHelper.CellSpan(self._ui_zoompan_label, cols=2), None, ],
+        # ])
         cursor_layout.setColumnStretch(0, 0)
         cursor_layout.setColumnStretch(1, 2)
         cursor_layout.setColumnStretch(2, 0)

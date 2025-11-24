@@ -26,12 +26,11 @@ Roadmap
 
 ### Missing Features
 
-- Bug: when I plot e.g. `msg()`, it is treated as a real number, and plotting in dB does not work!
+- Bug: many `SParam` functions, e.g. `abs()`, do not have a proper number-type assinged.
 - GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
-- GUI: tell the user which file is used as "save for template".
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
-- GUI: find a way to assing color groups to files.
-- GUI: pre-defined fixed size for saved/copied plots.
+- GUI: find a way to assign color groups to files.
+- GUI: find a way to set define fixed size for saved/copied plots.
 - GUI: for the documentations, find a nicer representation than plain markdown files.
 - General: "TODO"-comments in code.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.

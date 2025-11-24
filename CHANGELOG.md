@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.40b32 (2025-11-24)
+--------------------
+
+- bugfix: fixed orientation of stability circles
+- bugfix: treating parameters as vector-like (e.g. S-parameters), magnitude-like, or scalar-like (e.g. k or µ), so that e.g. the k-factor can no longer be converted to dB
+
+
 0.40b31 (2025-11-20)
 --------------------
 

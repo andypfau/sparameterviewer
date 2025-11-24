@@ -27,6 +27,7 @@ from lib import PlotHelper
 from lib import ExpressionParser, DefaultAction
 from lib import PathExt
 from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
+from lib.expressions.sparams import NumberType
 from info import Info
 
 import pathlib
@@ -1725,9 +1726,9 @@ class MainWindow(MainWindowUi):
             color_mapping = {}
             
             all_plot_kwargs = []
-            def add_to_plot_list(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None):
+            def add_to_plot_list(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None, number_type: NumberType = NumberType.VectorLike):
                 nonlocal all_plot_kwargs
-                all_plot_kwargs.append(dict(f=f, sp=sp, z0=z0, name=name, style=style, color=color, width=width, opacity=opacity, original_files=original_files, param_kind=param_kind))
+                all_plot_kwargs.append(dict(f=f, sp=sp, z0=z0, name=name, style=style, color=color, width=width, opacity=opacity, original_files=original_files, param_kind=param_kind, number_type=number_type))
                     
             selected_files = self.get_selected_files()
 
@@ -1826,11 +1827,14 @@ class MainWindow(MainWindowUi):
                     self.ui_enable_trace_color_selector = True
                 color_assignment = string_to_enum(self.ui_color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
 
-            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None):
+            def add_to_plot(f, sp, z0, name, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_kind: str = None, number_type: NumberType = NumberType.VectorLike):
                 nonlocal color_assignment, available_colors, next_color_index, color_mapping
 
                 if np.all(np.isnan(sp)):
                     return
+
+                if Settings.treat_all_as_complex:
+                    number_type = NumberType.VectorLike
 
                 if style is None:
                     style = '-'
@@ -1887,16 +1891,16 @@ class MainWindow(MainWindowUi):
                         return radians * 180 / math.pi
                     return radians
 
-                treat_as_complex = Settings.treat_all_as_complex or np.iscomplexobj(sp)
+                
                 if plot_type in [PlotType.Polar, PlotType.Smith]:
-                    if treat_as_complex:
+                    if number_type in [NumberType.VectorLike]:
                         self.plot.add(np.real(sp), np.imag(sp), f, name, style, **kwargs)
                     else:
                         if Settings.verbose:
                             chart_type_str = 'Smith' if plot_type==PlotType.Smith else 'polar'
-                            logging.info(f'The trace "{name}" is real-valued; omitting from {chart_type_str} chart')
+                            logging.info(f'The trace "{name}" is not vector-like; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
-                    if treat_as_complex:
+                    if number_type in [NumberType.MagnitudeLike, NumberType.PlainScalar]:
                         t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
                         if tdr_z:
                             lev[lev==0] = 1e-20 # avoid division by zero in the next step
@@ -1906,33 +1910,49 @@ class MainWindow(MainWindowUi):
                             self.plot.add(t, lev, None, name, style, **kwargs)
                     else:
                         if Settings.verbose:
-                            logging.info(f'The trace "{name}" is real-valued; omitting from time-domain transformed chart')
-                else:
-                    if treat_as_complex:
+                            logging.info(f'The trace "{name}" is vector-like; omitting from time-domain transformed chart')
+                else: # cartesian plot
+                    if number_type in [NumberType.VectorLike, NumberType.MagnitudeLike]:
                         if y_qty == YQuantity.Decibels:
                             self.plot.add(f, v2db(sp), None, name, style, **kwargs)
                         elif y_qty == YQuantity.Magnitude:
                             self.plot.add(f, np.abs(sp), None, name, style, **kwargs)
                         elif y_qty == YQuantity.RealImag:
                             self.plot.add(f, np.real(sp), None, name+' re', style, **kwargs)
-                            self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
+                            if number_type in [NumberType.VectorLike]:
+                                self.plot.add(f, np.imag(sp), None, name+' im', style2, **kwargs)
+                            else:
+                                if Settings.verbose:
+                                    logging.info(f'The trace "{name}" is not vector-like; just plotting the real value, ignoring imaginary part')
                         elif y_qty == YQuantity.Real:
                             self.plot.add(f, np.real(sp), None, name, style, **kwargs)
                         elif y_qty == YQuantity.Imag:
-                            self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
-                        
-                        if y2_qty == YQuantity.Phase:
-                            if phase_processing == PhaseProcessing.UnwrapDetrend:
-                                self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
-                            elif phase_processing == PhaseProcessing.Unwrap:
-                                self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            if number_type in [NumberType.VectorLike]:
+                                self.plot.add(f, np.imag(sp), None, name, style, **kwargs)
                             else:
-                                self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                                if Settings.verbose:
+                                    logging.info(f'The trace "{name}" is not vector-like; just plotting the real value, ignoring imaginary part')
+    
+                        if y2_qty == YQuantity.Phase:
+                            if number_type in [NumberType.VectorLike]:
+                                if phase_processing == PhaseProcessing.UnwrapDetrend:
+                                    self.plot.add(f, transform_phase(scipy.signal.detrend(np.unwrap(np.angle(sp)),type='linear')), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                                elif phase_processing == PhaseProcessing.Unwrap:
+                                    self.plot.add(f, transform_phase(np.unwrap(np.angle(sp))), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                                else:
+                                    self.plot.add(f, transform_phase(np.angle(sp)), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            else:
+                                if Settings.verbose:
+                                    logging.info(f'The trace "{name}" is not vector-like; just plotting the real value, ignoring phase')
                         elif y2_qty == YQuantity.GroupDelay:
-                            self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            if number_type in [NumberType.VectorLike]:
+                                self.plot.add(*group_delay(f,sp), None, name, style_y2, prefer_2nd_yaxis=True, **kwargs)
+                            else:
+                                if Settings.verbose:
+                                    logging.info(f'The trace "{name}" is not vector-like; just plotting the real value, ignoring group delay')
                     else:  # real-valued data
                         if Settings.verbose:
-                            logging.info(f'The trace "{name}" is real-valued; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
+                            logging.info(f'The trace "{name}" is a plain scalar; just plotting the real value, ignoring decibel/magnitude/real/imag/phase/groupdelay')
                         self.plot.add(f, sp, None, name, style, **kwargs)
 
             for kwargs in all_plot_kwargs:

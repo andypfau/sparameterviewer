@@ -3,7 +3,7 @@ from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import parse_quick_param
 from .networks import Networks
-from .sparams import SParam, SParams
+from .sparams import SParam, SParams, NumberType
 from .helpers import DefaultAction
 
 import math
@@ -28,7 +28,7 @@ class ExpressionParser:
         selected_networks: "list[SParamFile]",
         default_actions: "list[DefaultAction]",
         ref_nw_name: "str|None",
-        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str]"):
+        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str,NumberType]"):
 
         SParam._plot_fn = plot_fn
         Networks.default_actions = default_actions
@@ -89,18 +89,19 @@ class ExpressionParser:
 
             result = []
             for i in range(broadcast_shape):
-                sparam_list = []
+                sparam_list: list[SParam] = []
                 for s in sparams:
                     if len(s.sps) == 1:
-                        sparam_list.append(s.sps[0])
+                        sparam_list.extend(s.sps[0])
                     else:
                         sparam_list.append(s.sps[i])
+                number_type = NumberType.min(*[s.number_type for s in sparam_list])
                 f_adapted, s_adapted = SParam._adapt(*sparam_list)
                 if f_arg:
                     s_result = fn(f_adapted, *s_adapted)
                 else:
                     s_result = fn(*s_adapted)
-                result.append(SParam('mapped', f_adapted, s_result, sparams[0].sps[0].z0))  # TODO: better name and Z0
+                result.append(SParam('mapped', f_adapted, s_result, sparams[0].sps[0].z0, number_type))  # TODO: better name and Z0
             
             return SParams(result)
             

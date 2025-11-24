@@ -2,7 +2,7 @@ from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
-from .sparams import SParam, SParams
+from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
@@ -223,7 +223,7 @@ class Network:
                     param_label = param_name
                 param_value = self.nw.s[:,ep-1,ip-1].astype(complex)
 
-                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_files=self.original_files, param_type=param_name))
+                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_files=self.original_files, param_type=param_name, number_type=NumberType.VectorLike))
         return result
     
 
@@ -264,7 +264,7 @@ class Network:
     def k(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k')
+        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k', number_type=NumberType.PlainScalar)
     
 
     def mag(self):
@@ -297,7 +297,7 @@ class Network:
             p1,p2 = 1,0
         delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
         stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
-        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}')
+        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}', number_type=NumberType.PlainScalar)
     
 
     def losslessness(self):
@@ -313,7 +313,7 @@ class Network:
         errors = np.abs(prod - target)
         result_metric = np.max(errors, axis=(1,2))  # should be zero if lossless
         
-        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'losslessness')
+        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'losslessness', number_type=NumberType.PlainScalar)
     
 
     def passivity(self):
@@ -333,7 +333,7 @@ class Network:
             worst_error = np.max(passivity_error)
             result_metric[idx] = worst_error
         
-        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'passivity')
+        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'passivity', number_type=NumberType.PlainScalar)
     
 
     def reciprocity(self):
@@ -349,7 +349,7 @@ class Network:
         absdiff = np.abs(diff)
         result_metric = np.max(absdiff, axis=(1,2))  # should be zero if reciprocal
 
-        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'reciprocity')
+        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'reciprocity', number_type=NumberType.PlainScalar)
     
 
     def symmetry(self):
@@ -373,7 +373,7 @@ class Network:
 
         result_metric = result_metric_ij + result_metric_ii
 
-        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'symmetry')
+        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'symmetry', number_type=NumberType.PlainScalar)
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":

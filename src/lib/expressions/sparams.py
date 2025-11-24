@@ -15,30 +15,50 @@ import logging
 import scipy.signal, scipy.stats
 import os
 import re
+import enum
 from typing import Callable
+
+
+
+class NumberType(enum.Enum):
+    VectorLike = enum.auto()  # allow things like abs, phase, dB, ...
+    MagnitudeLike = enum.auto()  # do not allow phase or Smith/polar, but OK to do abs or dB
+    PlainScalar = enum.auto()  # do not even allow abs or dB, just allow Cartesian plots
+
+    @staticmethod
+    def min(*number_types) -> NumberType:
+        result = NumberType.VectorLike
+        for t in number_types:
+            if t == NumberType.PlainScalar:
+                result = NumberType.PlainScalar
+            if t == NumberType.MagnitudeLike and result == NumberType.VectorLike:
+                result = NumberType.MagnitudeLike
+        return result
+        
 
 
 
 class SParam:
 
 
-    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str], None]
+    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str,NumberType], None]
 
 
-    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None):
+    def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None, number_type: NumberType = NumberType.VectorLike):
         assert len(f) == len(s), f'Expected frequency and S vecors to have same length, got {len(f)} and {len(s)}'
-        self.name, self.f, self.s, self.z0 = name, f, s, z0
+        self.name, self.f, self.s, self.z0, self.number_type = name, f, s, z0, number_type
         self.original_files, self.param_type = original_files or set(), param_type
     
 
-    def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_files: set[PathExt] = None, param_type: str|None=None) -> SParam:
+    def _modified_copy(self, *, name: str|None = None, f: np.ndarray|None = None, s: np.ndarray|None = None, z0: float|None = None, original_files: set[PathExt] = None, param_type: str|None=None, number_type: NumberType|None = None) -> SParam:
         return SParam(
             name if name is not None else self.name,
             f if f is not None else self.f,
             s if s is not None else self.s,
             z0 if z0 is not None else self.z0,
             original_files if original_files is not None else self.original_files,
-            param_type if param_type is not None else self.param_type
+            param_type if param_type is not None else self.param_type,
+            number_type if number_type is not None else self.number_type
         )
     
 
@@ -98,13 +118,14 @@ class SParam:
     @staticmethod
     def _op(a: "SParam", b: "SParam", op: "Callable", op_type_str: str = '.op.') -> "SParam":
         if isinstance(a, (int,float,complex,np.ndarray)):
-            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files, param_type='const')
+            return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files, param_type='const', number_type=b.number_type)
         if isinstance(b, (int,float,complex,np.ndarray)):
-            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files, param_type='const')
+            return SParam(a.name, a.f, op(np.array(np.ndarray.flatten(a.s)),b), z0=a.z0, original_files=a.original_files, param_type='const', number_type=a.number_type)
         f, [a_s, b_s] = SParam._adapt(a, b)
         c_s = op(a_s, b_s)
         c_t = a.param_type + op_type_str + b.param_type
-        return a._modified_copy(f=f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t)
+        nt = NumberType.min(a.number_type, b.number_type)
+        return a._modified_copy(f=f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t, number_type=nt)
 
         
     def __truediv__(self, other: "SParam|float") -> "SParam":
@@ -201,16 +222,16 @@ class SParam:
 
     
     @staticmethod
-    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None):
-        SParam._plot_fn(x, y, z0, label, style, color, width, opacity, original_files, param_type)
+    def plot_xy(x: np.ndarray, y: np.ndarray, z0: complex, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None, number_type: NumberType = NumberType.VectorLike):
+        SParam._plot_fn(x, y, z0, label, style, color, width, opacity, original_files, param_type, number_type)
 
     
-    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None):
+    def plot(self, label: str = None, style: str = None, color: str = None, width: float = None, opacity: float = None, original_files: set[PathExt] = None, param_type: str = None, number_type: NumberType = NumberType.VectorLike):
         if label is None:
             label = self.name
         else:
             label = label.replace('$NAME', self.name)
-        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_files, param_type)
+        SParam.plot_xy(self.f, self.s, self.z0, label, style, color, width, opacity, original_files, param_type, number_type)
 
     
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "SParam":
@@ -429,7 +450,7 @@ class SParams:
     def plot(self, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         for sp in self.sps:
             try:
-                sp.plot(label=label, style=style, color=color, width=width, opacity=opacity, original_files=sp.original_files, param_type=sp.param_type)
+                sp.plot(label=label, style=style, color=color, width=width, opacity=opacity, original_files=sp.original_files, param_type=sp.param_type, number_type=sp.number_type)
             except Exception as ex:
                 logging.warning(f'Plotting of <{sp.name}> failed ({ex}), ignoring')
     
@@ -498,9 +519,11 @@ class SParams:
 
     def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp', enforce_real: bool=False):
         sps = self.interpolate().sps
+        assert min_size >= 1
         if len(sps) < min_size:
             return SParams(sps=[])
         f = sps[0].f
+        nt = sps[0].number_type
         
         s_input = []
         list_of_abs = []
@@ -513,7 +536,7 @@ class SParams:
         if list_of_abs and Settings.verbose:
             logging.debug(f'Took absolute of S-parameters {list_of_abs}')
         s = fn([s for s in s_input])
-        return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str)])
+        return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str, number_type=nt)])
 
 
     def mean(self):
