@@ -26,7 +26,6 @@ Roadmap
 
 ### Missing Features
 
-- Bug: many `SParam` functions, e.g. `abs()`, do not have a proper number-type assinged.
 - GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to assign color groups to files.
