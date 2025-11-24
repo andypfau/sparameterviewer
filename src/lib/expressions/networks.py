@@ -270,19 +270,19 @@ class Network:
     def mag(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} MAG', self.nw.f, self.nw.max_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MAG')
+        return SParam(f'{self.nw.name} MAG', self.nw.f, self.nw.max_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MAG', number_type=NumberType.MagnitudeLike)
     
 
     def msg(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.msg(): cannot calculate maximum stable power gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG')
+        return SParam(f'{self.nw.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG', number_type=NumberType.MagnitudeLike)
     
 
     def u(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.u(): cannot calculate Mason\'s unilateral gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} U', self.nw.f, self.nw.unilateral_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='U')
+        return SParam(f'{self.nw.name} U', self.nw.f, self.nw.unilateral_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='U', number_type=NumberType.MagnitudeLike)
     
 
     def mu(self, mu: int = 1):

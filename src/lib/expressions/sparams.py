@@ -116,7 +116,7 @@ class SParam:
     
 
     @staticmethod
-    def _op(a: "SParam", b: "SParam", op: "Callable", op_type_str: str = '.op.') -> "SParam":
+    def _op(a: "SParam", b: "SParam", op: "Callable", op_type_str: str = '.op.', number_type: NumberType = None) -> "SParam":
         if isinstance(a, (int,float,complex,np.ndarray)):
             return SParam(b.name, b.f, op(a,np.array(np.ndarray.flatten(b.s))), z0=b.z0, original_files=b.original_files, param_type='const', number_type=b.number_type)
         if isinstance(b, (int,float,complex,np.ndarray)):
@@ -124,7 +124,7 @@ class SParam:
         f, [a_s, b_s] = SParam._adapt(a, b)
         c_s = op(a_s, b_s)
         c_t = a.param_type + op_type_str + b.param_type
-        nt = NumberType.min(a.number_type, b.number_type)
+        nt = NumberType.min(a.number_type, b.number_type) if number_type is None else number_type
         return a._modified_copy(f=f, s=c_s, original_files=a.original_files|b.original_files, param_type=c_t, number_type=nt)
 
         
@@ -173,27 +173,27 @@ class SParam:
 
     
     def abs(self) -> "SParam":
-        return self._modified_copy(s=np.abs(self.s), param_type=self.param_type+'.abs')
+        return self._modified_copy(s=np.abs(self.s), param_type=self.param_type+'.abs', number_type=NumberType.MagnitudeLike)
 
     
     def db(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db', number_type=NumberType.PlainScalar)
 
     
     def db10(self) -> "SParam":
-        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
+        return self._modified_copy(s=10*np.log10(np.maximum(1e-30,np.abs(self.s))).astype(float), param_type=self.param_type+'.db', number_type=NumberType.PlainScalar)
 
     
     def db20(self) -> "SParam":
-        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db')
+        return self._modified_copy(s=20*np.log10(np.maximum(1e-15,np.abs(self.s))).astype(float), param_type=self.param_type+'.db', number_type=NumberType.PlainScalar)
 
     
     def ml(self) -> "SParam":
-        return self._modified_copy(name=self.name+' ML', s=np.sqrt(1-(np.abs(self.s)**2)).astype(complex), param_type=self.param_type+'.ml')
+        return self._modified_copy(name=self.name+' ML', s=np.sqrt(1-(np.abs(self.s)**2)).astype(complex), param_type=self.param_type+'.ml', number_type=NumberType.MagnitudeLike)
 
     
     def vswr(self) -> "SParam":
-        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)).astype(float), param_type=self.param_type+'.vswr')
+        return self._modified_copy(name=self.name+' VSWR', s=(1+np.abs(self.s))/(1-np.abs(self.s)).astype(float), param_type=self.param_type+'.vswr', number_type=NumberType.PlainScalar)
 
     
     def phase(self, processing: "str|None" = None) -> "SParam":
@@ -205,7 +205,7 @@ class SParam:
             s = np.unwrap(s)
         elif s is not None:
             raise ValueError(f'Invalid processing option "{processing}"')
-        return self._modified_copy(s=s.astype(float), param_type=self.param_type+'.pha')
+        return self._modified_copy(s=s.astype(float), param_type=self.param_type+'.pha', number_type=NumberType.PlainScalar)
 
 
     def norm(self, at_f: float, method='div') -> "SParam":
@@ -265,7 +265,7 @@ class SParam:
 
         f = np.array([f_target_start, f_target_end])
         s = np.array([s11_linear, s11_linear])
-        return self._modified_copy(f=f, s=s, param_type=self.param_type+'.rlavg')
+        return self._modified_copy(f=f, s=s, param_type=self.param_type+'.rlavg', number_type=NumberType.MagnitudeLike)
     
         
 
