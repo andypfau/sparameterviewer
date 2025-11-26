@@ -1900,7 +1900,7 @@ class MainWindow(MainWindowUi):
                             chart_type_str = 'Smith' if plot_type==PlotType.Smith else 'polar'
                             logging.info(f'The trace "{name}" is not vector-like; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
-                    if number_type in [NumberType.MagnitudeLike, NumberType.PlainScalar]:
+                    if number_type in [NumberType.VectorLike]:
                         t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
                         if tdr_z:
                             lev[lev==0] = 1e-20 # avoid division by zero in the next step
