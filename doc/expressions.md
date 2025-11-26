@@ -35,7 +35,7 @@ However, there is also a quicker way if you don't need full control:
 The expressions use [Python](https://docs.python.org/3/) syntax. You have access to:
 - The global functions described in the section below;
 - The classes `Networks` and `SParams`, described in the sections below;
-- The libraries `math` ([math](https://docs.python.org/3/library/math.html)) and `np` ([NumPy](https://numpy.org/doc/)).
+- The libraries `math` ([math](https://docs.python.org/3/library/math.html)), `cmath` ([cmath](https://docs.python.org/3/library/cmath.html)) and `np` ([NumPy](https://numpy.org/doc/)).
 
 
 

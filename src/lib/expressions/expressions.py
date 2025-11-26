@@ -7,6 +7,7 @@ from .sparams import SParam, SParams, NumberType
 from .helpers import DefaultAction
 
 import math
+import cmath
 import numpy as np
 import fnmatch
 import logging
@@ -117,6 +118,7 @@ class ExpressionParser:
             'quick': quick,
             'map': map,
             'math': math,
+            'cmath': cmath,
             'np': np,
         }
         
