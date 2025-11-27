@@ -1,138 +1,83 @@
 import re
+import itertools
+import logging
 
 
 
-def shorten_string_list(strings: list[str], elide_str: str = '…') -> list[str]:
+def shorten_string_list(strings: list[str], elide_str: str = '…', target_len: int = 25) -> list[str]:
+    """
+    Shorten a list of strings, such that all strings are still distinct (at least if they were distinct before).
+
+    strings:    list of strings to shorten
+    elide_str:  the string to use to indicate elision
+    target_len: target maximum length of each string (no elisions are attempted if the strings are already this short)
+    """
     
-    if len(strings) <= 1:
+    assert len(elide_str) == 1
+    if len(strings) < 1:
+        return []
+
+    DEFAULT_ELIDED_LEN = 3
+    MAX_TUPLE_SIZE = 25  # higher numbers -> more powerful, but also slower...
+
+    def ntuple_strings(list_of_tokens: list[str], n: int) -> list[str]:
+        """ e.g. ntuple_strings(['a','b','c','d'],3) -> ['abc','bcd'] """
+        if len(list_of_tokens) < n:
+            return [''.join(list_of_tokens)]
+        return [''.join(list_of_tokens[i:i+n]) for i in range(len(list_of_tokens)-n+1)]
+        
+    def split_into_tokens(s: str) -> list[str]:
+        """ e.g. split_into_tokens('The File.s2p') -> ['The', ' ', 'File', '.', 's2p'] """
+        return [p for p in re.split(r'([ _/\\+~*#.,;-]|\b)',s) if p != '']
+
+    def elide(string: str, elidable_string: str, elision_string: str, final_len: int) -> str:
+        """ e.g. elide('HelloWorld~', 'World', '~', 3) -> 'HelloWo~' """
+        len_elidable, len_elision = len(elidable_string), len(elision_string)
+        assert len_elidable >= final_len and len_elision == 1
+        replacement = elidable_string[0:final_len-len_elision] + elision_string
+        return string.replace(elidable_string,replacement).replace(elision_string+elision_string,elision_string)
+
+    def target_reached(strings: list[str]) -> bool:
+        return max([len(string) for string in strings]) < target_len
+    
+    if target_reached(strings):
         return strings
-        
-    n = len(strings)
-    tokens_list = [[p for p in re.split(r'([ _/\\+~*#.,;-]|\b)',s) if p != ''] for s in strings]
-    max_len = max(*[len(l) for l in tokens_list])
 
-    def shorten_in_direction(direction: int):
-        assert direction in [-1, +1], f'Expected direction to be +1 or -1, got {direction}'
-        
-        pointers = [0 if direction==+1 else len(tokens_list[i]) for i in range(n)]
-    
-        def create_dictionary():
-            dictionary = {}
-            for i in range(n):
-                if pointers[i] < 0 or pointers[i] >= len(tokens_list[i]):
-                    continue
-                token = tokens_list[i][pointers[i]]
-                if isinstance(token, tuple):
-                    continue
-                indices = dictionary.get(token, list())
-                indices.append(i)
-                dictionary[token] = indices
-            #print(f'Found {dictionary}')
-            return dictionary
+    # how many distinct strings do we have? Note that it could be that a few of them are already idential, so our goal is that no
+    #   matter what we do, the number of distinct strings does not get lower
+    original_distinct_strings = len(set(strings))
 
-        def get_most_frequent_token(dictionary):
-            if len(dictionary) < 1:
-                return None
+    strings_tokens = [split_into_tokens(s) for s in strings]
+    ntuple_max = min(max([len(tokens) for tokens in strings_tokens]), MAX_TUPLE_SIZE)
+
+    impacts = []
+    for tuple_size in range(ntuple_max, 0, -1):
+
+        # create a set of substrings that occur in the strings
+        strings_tokens_tuples = [ntuple_strings(tokens,tuple_size) for tokens in strings_tokens]
+        elidable_strings = set([t for t in itertools.chain(*strings_tokens_tuples)])
+
+        for elidable_string in elidable_strings:
+            if len(elidable_string) <= DEFAULT_ELIDED_LEN:
+                continue  # makes no sense to elide such a short string
             
-            elide_token, elide_token_count = None, 0
-            for token,indices in dictionary.items():
-                if isinstance(token, tuple):
-                    continue
-                count = len(dictionary[token])
-                if count >= 2 and count > elide_token_count:
-                    elide_token_count = count
-                    elide_token = token
-            return elide_token
-    
-        def try_shorten():
-            dictionary = create_dictionary()
-            if len(dictionary) == 1:
-                #print(f'Perfect result{dictionary}; eliding, advancing')
-                for i in range(n):
-                    pointer = pointers[i]
-                    if pointer < 0 or pointer >= len(tokens_list[i]):
-                        continue
-                    if not isinstance(tokens_list[i][pointer], tuple):
-                        tokens_list[i][pointer] = (tokens_list[i][pointer],)
-                    pointers[i] += direction
-            else:
-                #print(f'Ambiguous result {dictionary}')
-                
-                elide_token = get_most_frequent_token(dictionary)
-                if elide_token is None:
-                    #print('Nothing I can do, moving pointers, ending...')
-                    for i in range(n):
-                        pointers[i] += direction
-                    return
+            # calculate how much shorter the overall list of string would become with this elision
+            n = sum([1 if elidable_string in string else 0 for string in strings])
+            impact = n * max(2, len(elidable_string) - DEFAULT_ELIDED_LEN)
+            impacts.append((impact, elidable_string))
 
-                #print(f'Seeing what I can do with "{elide_token}"')
-                for token,indices in dictionary.items():
-                    if token == elide_token:
-                        continue
-                    for i in indices:
-                        for offset in range(-2, +3+1):
-                            pointer = pointers[i] + offset
-                            if pointer < 0 or pointer >= len(tokens_list[i]):
-                                continue
-                            if tokens_list[i][pointer] == elide_token:
-                                #print(f'Found token "{elide_token}" also in {tokens_list[i]} at {pointers[i]}+{offset}')
-                                pointers[i] = pointer
-                                break
-                dictionary = create_dictionary()
-                #print(f'Dictionary is now "dictionary"')
-                if len(dictionary) == 1:
-                    #print(f'Eliding "{elide_token}", advancing ...')
-                    for token,indices in dictionary.items():
-                        if token == elide_token:
-                            for i in indices:
-                                if not isinstance(tokens_list[i][pointers[i]], tuple):
-                                    tokens_list[i][pointers[i]] = (tokens_list[i][pointers[i]],)
-                                #pointers[i] += direction
-                    for i in range(n):
-                        pointers[i] += direction
-                else:
-                    #print('Nothing I can do, moving pointers, ending...')
-                    for i in range(n):
-                        pointers[i] += direction
-                    return
+    # impacts now is a list (impact,elidable_string), where the elidable string with the most impact comes first
+    impacts = list(sorted(impacts, key=lambda t: t[0], reverse=True))
     
-        for _ in range(max_len):
-            try_shorten()
+    for _,elidable_string in impacts:
+        
+        new_strings = [elide(s,elidable_string,elide_str,DEFAULT_ELIDED_LEN) for s in strings]
+        
+        new_distinct_strings = len(set(new_strings))
+        if new_distinct_strings == original_distinct_strings:
+            strings = new_strings
+            
+            if target_reached(strings):
+                return strings
 
-    # run the algorithm twice; once forward, once backward
-    shorten_in_direction(+1)
-    shorten_in_direction(-1)
-    
-    def tokens_to_str(tokens):
-        result = ''
-        accu_str = ''
-        accu_elide = ''
-        
-        def flush_accu(is_last=False):
-            nonlocal result, accu_str, accu_elide
-            is_first = result==''
-            if accu_str != '':
-                result += accu_str
-                accu_str = ''
-            if accu_elide != '':
-                if len(accu_elide) >= 2:
-                    if not (is_first or is_last):
-                        result += elide_str
-                else:
-                    result += accu_elide
-                accu_elide = ''
-        
-        for token in tokens:
-            if isinstance(token, tuple):
-                if accu_str:
-                    flush_accu()
-                accu_elide += token[0]
-            else:
-                if accu_elide:
-                    flush_accu()
-                accu_str += token
-        flush_accu(is_last=True)
-        
-        return result
-    
-    return [tokens_to_str(tokens) for tokens in tokens_list]
+    return strings
