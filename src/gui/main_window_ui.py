@@ -748,11 +748,18 @@ class MainWindowUi(QMainWindow):
 
 
     @property
-    def ui_show_unitcircle(self) -> bool:
-        return self._ui_unitcircle.isVisible()
-    @ui_show_unitcircle.setter
-    def ui_show_unitcircle(self, value: bool):
+    def ui_use_polar_axis_controls(self) -> bool:
+        return not self._ui_locky_button.isVisible()
+    @ui_use_polar_axis_controls.setter
+    def ui_use_polar_axis_controls(self, value: bool):
         self._ui_unitcircle.setVisible(value)
+        self._ui_locky_button.setEnabled(not value)
+        self._ui_yaxis_range.setEnabled(not value)
+        self._ui_logx_button.setEnabled(not value)
+        self._ui_logy_button.setEnabled(not value)
+        self._ui_zoom_yp_button.setEnabled(not value)
+        self._ui_zoom_ym_button.setEnabled(not value)
+        
 
 
     @property
