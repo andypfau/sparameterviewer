@@ -307,133 +307,20 @@ nw("lpf.s2p").crop_f(f_end=5e9).plot_sel_params()
 
 
 
-### add_sr()
+### shunt()
 
 ```python
-add_sr(resistance, port=1) → Networks
+shunt(gamma_term=-1) → Networks
 ```
 
-Returns a network with a series resistance attached to the specified port. Works only for 1-ports and 2-ports.
+Calculates a new 2-port network, which represents a shunted version of the original network. Example usages:
+- Take the S-parameters of a series impedance, and turn it into a shunt impedance (with `gamma_term=-1`, which represents a short to GND).
+- Take the S-parameters of a transmission line, and turn it into a shorted stub (with `gamma_term=-1`, which represents a short to GND).
+- Take the S-parameters of a transmission line, and turn it into an open stub (with `gamma_term=+1`, which represents an open).
 
-Example:
+Examples:
 ```python
-nw("lpf.s2p").add_sr(10).plot_sel_params()  # add a 10 Ω series resistor on port 1
-```
-
-
-
-### add_sl()
-
-```python
-add_sl(inductance, port=1) → Networks
-```
-
-Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
-
-Example:
-```python
-nw("lpf.s2p").add_sl(1e-9).plot_sel_params()  # add a 1 nH series inductor on port 1
-```
-
-
-
-### add_sc()
-
-```python
-add_sc(capacitance, port=1) → Networks
-```
-
-Returns a network with a series inductance attached to the specified port. Works only for 1-ports and 2-ports.
-
-Example:
-```python
-nw("lpf.s2p").add_sc(100e-9).plot_sel_params()  # add a 100 nF series capacitor on port 1
-```
-
-
-
-### add_pr()
-
-```python
-add_pr(resistance, port=1) → Networks
-```
-
-Returns a network with a parallel resistance to GND (shunt), attached to the specified port. Works only for 1-ports and 2-ports.
-
-Example:
-```python
-nw("lpf.s2p").add_pr(1e3).plot_sel_params()  # add a 1 kΩ shunt resistor on port 1
-```
-
-
-
-### add_pl()
-
-```python
-add_pl(inductance, port=1) → Networks
-```
-
-Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
-
-Example:
-```python
-nw("lpf.s2p").add_pl(1e-6).plot_sel_params()  # add a 1 µH shunt inductor on port 1
-```
-
-
-
-### add_pc()
-
-```python
-add_pc(capacitance, port=1) → Networks
-```
-Returns a network with a parallel inductance attached to the specified port. Works only for 1-ports and 2-ports.
-
-Example:
-```python
-nw("lpf.s2p").add_pc(1e-12).plot_sel_params()  # add a 1 pF shunt capacitor on port 1
-```
-
-
-
-### add_tl()
-
-```python
-add_tl(degrees, frequency_hz=1e9, z0=None, loss_db=0, port=1]) → Networks
-```
-
-Returns a network with anideal transmission line attached to the specified port. Works only for 1-ports and 2-ports.
-
-The length is specified in degrees at the given frequency.
-
-The loss is the real part of the propagation constant, and is constant over frequency.
-
-If `z0` is not provided, the reference impedance of the corresponding port is used.
-
-Example:
-```python
-nw("lpf.s2p").add_tl(360).plot_sel_params()  # add a 360° line on port 1
-```
-
-
-
-### add_ltl()
-
-```python
-add_ltl(len_m, eps_r, db_m_mhz=0, db_m_sqmhz=0, port=1) → Networks
-```
-
-Returns a network with a lossy transmission line attached to the specified port. Works only for 1-ports and 2-ports.
-
-The length is specified in meters, and the dielectric constant must be provided as well.
-
-The loss is specified in two terms, one in dB/(m⋅Hz), one in dB/(m⋅√Hz).
-
-If `z0` is not provided, the reference impedance of the corresponding port is used.
-
-Example:
-```python
-nw("lpf.s2p").add_ltl(0.2, 4, 1e-3, 1e-3).plot_sel_params()  # add a 20 cm line on port 1
+nw("thru.s2p").shunt().plot_sel_params()  # turn that thru into a shorted stub
 ```
 
 
@@ -441,18 +328,22 @@ nw("lpf.s2p").add_ltl(0.2, 4, 1e-3, 1e-3).plot_sel_params()  # add a 20 cm line 
 ### plot_stab()
 
 ```python
-plot_stab(frequency_hz, port=2, n_points=101, label=None, style='-')
+plot_stab(f=None, n=None, port=2, n_points=101, label=None, style='-')
 ```
 
-Plots the stability circle at the given frequency.
+Plots the stability circles of a network. You can either specifcy:
+- the freuqency of the circle you want to plot, with `f=...`, or
+- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted)
 
 Set `port=1` if you want to calculate the stability at the input, otherwise the output is calculated.
 
-It adds "s.i." (stable inside of the circle) or "s.o." (stable outside of the circle) to the plot name.
+The functions adds the frequency, and "s.i." (stable inside of the circle) or "s.o." (stable outside of the circle) to the plot label.
+
+You can also provide the argument `n_points=...`, which defines how many graph points are used to represent the circle.
 
 Example:
 ```python
-nw("amp.s2p").plot_stab(10e9)  # use the Smith chart to plot this!
+nw("amp.s2p").plot_stab(n=10)  # use the Smith chart to plot this!
 ```
 
 

@@ -3,14 +3,16 @@
 Preface
 -------
 
-Expressions are intended to unlock possibilities and flexibility of S-parameter handling that would be uuneccessarily complex with a GUI.
+Expressions are intended to unlock possibilities and flexibility of S-parameter handling that would be unneccessarily complex with a GUI.
 
-The majority of the functionality offered by expressions can easily be accessed using the "Template"-Button in the "Expressions" tab. The generatred expressions can then be modified to adapt to any need.
+The majority of the functionality offered by expressions can easily be accessed using the "Template"-Button in the "Expressions" tab. The generated expressions can then be modified to adapt to any need.
 
 
 
 Basics
 ------
+
+Each file that you can plot is a "network", which is represented by the `Networks` class. This class can actually represent a set of multiple files, which are then processed all in the same way (e.g. get S11 and plot it).
 
 The basic concept is to load one (`nw("name")`) or multiple (`nws()`) networks, get a specific S-parameter (`s(i,j)`), and plot it (`plot()`):
 
@@ -33,10 +35,20 @@ However, there is also a quicker way if you don't need full control:
 ```
 
 The expressions use [Python](https://docs.python.org/3/) syntax. You have access to:
-- The global functions described in the section below;
-- The classes `Networks` and `SParams`, described in the sections below;
-- The libraries `math` ([math](https://docs.python.org/3/library/math.html)), `cmath` ([cmath](https://docs.python.org/3/library/cmath.html)) and `np` ([NumPy](https://numpy.org/doc/)).
-
+- Packets:
+    - `math`: [math](https://docs.python.org/3/library/math.html)
+    - `cmath`: [cmath](https://docs.python.org/3/library/cmath.html)
+    - `np`: [NumPy](https://numpy.org/doc/)
+- Global functions, see reference below:
+    - `sel_nws()`: all selected networks
+    - `nw()`: a single specific network
+    - `nws()`: a set of specific networks
+    - `saved_nw()`: the network that was selected as reference in the GUI
+    - `quick()`: a simple and quick plotting mechanism
+- Classes:
+    - `Networks`: [representation of one or more network files](./expr_networks.md)
+    - `SParams`: [representation of data from networks](./expr_networks.md)
+    - `Comps`: [parameteric network components](./expr_components.md)
 
 
 
@@ -118,7 +130,7 @@ Example:
 def my_fn(s, ref_s):
     return s / ref_s  # normalization
 
-map(my_fn, sel_nws(), saved_nw())
+map(my_fn, sel_nws(), saved_nw()).plot_sel_params()
 ```
 
 
