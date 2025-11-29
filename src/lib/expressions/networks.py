@@ -436,6 +436,24 @@ class Network:
         return SParam(f'{self.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k', number_type=NumberType.PlainScalar)
     
 
+    def _delta(self) -> np.ndarray:
+        assert self.nw.number_of_ports == 2
+        return np.abs(self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0])
+
+    
+    def delta(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.delta(mu): cannot calculate determinant of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} Δ', self.nw.f, np.abs(self._delta()), self.nw.z0[0,0], original_files=self.original_files, param_type='Δ', number_type=NumberType.PlainScalar)
+    
+
+    def b1(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.b1(): cannot calculate determinant of {self.name} (only valid for 2-port networks)')
+        b1 = 1 + np.abs(self.nw.s[:,0,0]) - np.abs(self.nw.s[:,1,1]) - np.abs(self._delta())
+        return SParam(f'{self.name} B1', self.nw.f, b1, self.nw.z0[0,0], original_files=self.original_files, param_type='B1', number_type=NumberType.PlainScalar)
+    
+
     def mag(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.name} (only valid for 2-port networks)')
@@ -464,8 +482,7 @@ class Network:
             p1,p2 = 0,1
         else:
             p1,p2 = 1,0
-        delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
-        stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
+        stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*self._delta()) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
         return SParam(f'{self.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}', number_type=NumberType.PlainScalar)
     
 
@@ -952,6 +969,14 @@ class Networks:
 
     def k(self):
         return self._unary_op(Network.k, SParams)
+        
+    
+    def delta(self):
+        return self._unary_op(Network.delta, SParams)
+        
+    
+    def b1(self):
+        return self._unary_op(Network.b1, SParams)
         
     
     def mu(self, mu: int = 1):

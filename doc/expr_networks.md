@@ -171,11 +171,41 @@ deemb.s(21).plot("De-Embedded DUT", style='--')
 k() → SParams
 ```
 
-Returns the K (Rollet) stability factor. For a stable network, this should be >1 (or >0 dB).
+Returns the Rollet K stability factor. For a stable network, this should be > 1, as well as either Δ < 1 or B1 > 0.
 
 Example:
 ```python
 nw("amp.s2p").k().plot()
+```
+
+
+
+### b1()
+
+```python
+b1() → SParams
+```
+
+Returns the absolute of the B1 the 2-port S-matrix. For a stable network, this should be > 0, as well as k < 1.
+
+Example:
+```python
+nw("amp.s2p").be().plot()
+```
+
+
+
+### delta()
+
+```python
+delta() → SParams
+```
+
+Returns the absolute of the determinant of the 2-port S-matrix. For a stable network, this should be < 1, as well as k < 1.
+
+Example:
+```python
+nw("amp.s2p").delta().plot()
 ```
 
 

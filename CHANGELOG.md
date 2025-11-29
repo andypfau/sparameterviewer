@@ -9,6 +9,7 @@ S-Parameter Viewer Changelog
 - new: access to `cmath` from expressions
 - new: enhanced the `Networks.plot_stab()` method, it can now plot muiltiple stability circles
 - new: button to scale polar and Smith diagrams to the unit circle
+- new: stability functions `Networks.delta()` and `Networks.b1()`
 - change: improved the legend title shortening algorithm
 - bugfix: line/marker styling in Smith diagrams
 

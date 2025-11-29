@@ -362,7 +362,12 @@ class MainWindow(MainWindowUi):
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
-        def stability():
+        def stability_k():
+            set_expression('sel_nws().k().plot()       # k; should be > 1 for stable network',
+                           'sel_nws().delta().plot()  # Δ; should be < 1 for stable network')
+            setup_plot(PlotType.Cartesian)
+        
+        def stability_mu():
             set_expression('sel_nws().mu(1).plot()  # µ; should be > 1 for stable network',
                            'sel_nws().mu(2).plot()  # µ\'; should be > 1 for stable network')
             setup_plot(PlotType.Cartesian)
@@ -547,7 +552,8 @@ class MainWindow(MainWindowUi):
                 ('All of Above', four_metrics),
                 (None, None),
                 ('Amplifier Gain (2-Port Only)', amp_gain),
-                ('Amplifier Stability (2-Port Only)', stability),
+                ('Amplifier Stability K (2-Port Only)', stability_k),
+                ('Amplifier Stability µ (2-Port Only)', stability_mu),
                 ('Amplifier Stability Circles (2-Port Only)', stability_circles),
             ]),
             ('Operations on Individual Networks', [
