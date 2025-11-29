@@ -44,7 +44,7 @@ class R(ParametricNetwork):
     def __init__(self, r: float, topo: str):
         self._series_r = r
         self._topo = topo
-        super().__init__(None, name=f'{SiValue(self._series_r,"Ω")}')
+        super().__init__(None, name=f'{topo} {SiValue(self._series_r,"Ω")}')
     
     @override
     def _calculate(self, f: np.ndarray, z0: float):
@@ -66,7 +66,7 @@ class L(ParametricNetwork):
     def __init__(self, l: float, topo: str):
         self._series_l = l
         self._topo = topo
-        super().__init__(None, name=f'{SiValue(self._series_l,"H")}')
+        super().__init__(None, name=f'{topo} {SiValue(self._series_l,"H")}')
     
     @override
     def _calculate(self, f: np.ndarray, z0: float):
@@ -88,7 +88,7 @@ class C(ParametricNetwork):
     def __init__(self, c: float, topo: str):
         self._series_c = c
         self._topo = topo
-        super().__init__(None, name=f'{SiValue(self._series_c,"F")}')
+        super().__init__(None, name=f'{topo} {SiValue(self._series_c,"F")}')
     
     @override
     def _calculate(self, f: np.ndarray, z0: float):
@@ -231,6 +231,12 @@ class Line(ParametricNetwork):
         
         if self._topo == 'shunt':
             s = Network._series_to_shunt(s, self._line_stub_gamma)
+            if self._line_stub_gamma == -1:
+                name += ' short stub'
+            elif self._line_stub_gamma == +1:
+                name += ' open stub'
+            else:
+                name += f' stub (Γ={self._line_stub_gamma})'
         else:
             assert self._topo == 'series'
         
