@@ -455,12 +455,36 @@ class MainWindow(MainWindowUi):
             expressions = [f'{nw}.renorm([50,75]).plot_sel_params()  # re-normalize impedance' for nw in selected_files]
             set_expression(*expressions)
 
+        def add_passive():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f'({nw} ** Comp.CSer(1e-9)).plot_sel_params()  # add a passive series component' for nw in selected_files]
+            set_expression(*expressions)
+
+        def add_shunted_passive():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f'({nw} ** Comp.RShunt(1e3)).plot_sel_params()  # add a shunted passive component' for nw in selected_files]
+            set_expression(*expressions)
+
         def add_tline():
             selected_files = dynamic_selected_files()
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.add_tl(degrees=360,frequency_hz=1e9,port=2).plot_sel_params()  # add a transmission line' for nw in selected_files]
+            expressions = [f'({nw} ** Comp.Line(len=0.1)).plot_sel_params()  # add a transmission line' for nw in selected_files]
+            set_expression(*expressions)
+
+        def add_tline_stub():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f'({nw} ** Comp.LineStub(len=0.1, stub_gamma=+1)).plot_sel_params()  # add a transmission line stub' for nw in selected_files]
             set_expression(*expressions)
 
         def all_selected():
@@ -488,7 +512,7 @@ class MainWindow(MainWindowUi):
             setup_plot(PlotType.Cartesian)
         
         def stability_circles():
-            set_expression('sel_nws().plot_stab(frequency_hz=1e9,port=2)  # stability circle at given frequency')
+            set_expression('sel_nws().plot_stab(n=5,port=2)  # stability circles of port 2')
             setup_plot(PlotType.Smith)
         
         self.ui_show_template_menu([
@@ -531,7 +555,10 @@ class MainWindow(MainWindowUi):
                 ('Single-Ended to Mixed-Mode', mixed_mode),
                 ('Impedance Renormalization', z_renorm),
                 (None, None),
+                ('Add Passive To Network', add_passive),
+                ('Add Shunted Passive To Network', add_shunted_passive),
                 ('Add Line To Network', add_tline),
+                ('Add Line-Stub To Network', add_tline_stub),
                 (None, None),
                 ('Just Plot All Selected Files', all_selected),
             ]),

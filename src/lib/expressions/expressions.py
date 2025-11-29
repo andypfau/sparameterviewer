@@ -4,6 +4,7 @@ from ..stabcircle import StabilityCircle
 from ..sparam_helpers import parse_quick_param
 from .networks import Networks
 from .sparams import SParam, SParams, NumberType
+from .components import Components
 from .helpers import DefaultAction
 
 import math
@@ -86,7 +87,7 @@ class ExpressionParser:
                 elif broadcast_shape == 1:
                     broadcast_shape = shape
                 elif broadcast_shape != shape:
-                    raise ValueError(f'Cannot broadcase shapes {shapes}')
+                    raise ValueError(f'Cannot broadcast shapes {shapes}')
 
             result = []
             for i in range(broadcast_shape):
@@ -111,6 +112,7 @@ class ExpressionParser:
         vars_local = {
             'Networks': Networks,
             'SParams': SParams,
+            'Comp': Components,
             'nw': nw,
             'saved_nw': saved_nw,
             'nws': nws,

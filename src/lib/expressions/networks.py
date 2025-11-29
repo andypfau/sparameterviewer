@@ -6,6 +6,7 @@ from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
+from ..si import SiValue
 from info import Info
 
 import math
@@ -14,6 +15,7 @@ import numpy as np
 import logging
 import re
 import os
+import logging
 from types import NoneType
 from typing import overload, Callable
 
@@ -23,29 +25,104 @@ class Network:
 
     
     def __init__(self, nw: "Network|skrf.Network|SParamFile" = None, name: str = None, original_files: "set[PathExt]" = None):
-        self.nw: skrf.Network
+        self._nw: skrf.Network = None
         self.original_files: set[PathExt] = original_files or set()
+        
         if isinstance(nw, SParamFile):
-            self.nw = nw.nw
+            self._nw = nw.nw
             self.original_files.add(nw.path)
+            if name is None:
+                name = nw.name
         elif isinstance(nw, Network):
-            self.nw = nw.nw
+            self._nw = nw._nw
             self.original_files |= nw.original_files
+            if name is None:
+                name = nw._name
         elif isinstance(nw, skrf.Network):
-            self.nw = nw
+            self._nw = nw
+            if name is None:
+                name = nw.name
+        elif nw is None:
+            pass  # will hopefully be initialized later, when self._calculate() is called
         else:
             raise ValueError(f'Invalid type to init Network object (<{nw}>)')
-        if name is not None:
-            self.nw.name = name
+        
+        self._name = name
+        
+        self._postponed_operations = []
+    
+
+    def _ready(self) -> bool:
+        return self._name is not None and self._nw is not None
+
+
+    def _ensure_ready(self) -> bool:
+        assert self._ready(), 'Network is not ready'
+        self._run_postponed_operations()
+
+
+    def _run_postponed_operations(self):
+        assert self._ready(), 'Network is not ready'
+
+        # swap lists to avoid an infinite recursion...
+        operations_to_run, self._postponed_operations = self._postponed_operations, []
+
+        for method, args, kwargs in operations_to_run:
+            print(f'~~ Running postponed operation ({method}, {args}, {kwargs})')
+            result = method(self, *args, **kwargs)
+            self._nw = result._nw
+            self._name = result._name
+            self.original_files = result.original_files
+        
+
+    def _postponable(method):
+        def wrapper(self: "Network", *args, **kwargs):
+            if self._ready():
+                print(f'~~ Running postponable operation immediately ({method}, {args}, {kwargs})')
+                return method(self, *args, **kwargs)
+            else:
+                print(f'~~ Postponing operation ({method}, {args}, {kwargs})')
+                import copy
+                obj = copy.deepcopy(self)
+                obj._postponed_operations.append((method, args, kwargs))
+                return obj
+        return wrapper
+
+    
+    def _calculate(self, f: np.ndarray, z0: float):
+        # to be implemented in derived classes; calling this should calculate and update the network (`self.nw`) based on the given frequency and reference impedance
+        pass
+    
+    
+    @staticmethod
+    def _calculate_with_respect_to(*networks: "Network"):
+
+        f, z0 = None, None
+        for network in networks:
+            if network._nw is not None:
+                f, z0 = network._nw.f, network._nw.z0[0,0]
+                break  # TODO: iterate over all networks and find the widest one instead...?
+        
+        for network in networks:
+            network._calculate(f, z0)
     
 
     @property
-    def name(self):
-        return self.nw.name
+    def name(self) -> str:
+        self._ensure_ready()
+        return self._name
+    
+
+    @property
+    def nw(self) -> skrf.Network:
+        self._ensure_ready()
+        return self._nw
     
 
     @staticmethod
     def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network,skrf.Network]":
+
+        Network._calculate_with_respect_to(a, b)
         
         def crop_ports(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
             max_ports = max(a.number_of_ports, b.number_of_ports)
@@ -53,23 +130,11 @@ class Network:
             return a, b
 
         def interpolate_f(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
-            def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
-                current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
-                interp_mag = np.interp(new_f, current_f, current_mag)
-                interp_pha = np.interp(new_f, current_f, current_pha)
-                return interp_mag * np.exp(1j*interp_pha)
             all_freqs = np.array(sorted(list(set([*a.f, *b.f]))))
             f_new = skrf.Frequency.from_f(all_freqs, unit='Hz')
             assert a.number_of_ports == b.number_of_ports, f'Expected both networks to have the same number of ports during interpolation step, got {a.number_of_ports} and {b.number_of_ports}'
-            a_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
-            b_s_new = np.ndarray([len(all_freqs), a.number_of_ports, a.number_of_ports], dtype=complex)
-            for ep in range(a.number_of_ports):
-                for ip in range(a.number_of_ports):
-                    a_s_new[:,ep,ip] = interpolate_param(a.s[:,ep,ip], np.array(a.f), all_freqs)
-                    b_s_new[:,ep,ip] = interpolate_param(b.s[:,ep,ip], np.array(b.f), all_freqs)
-            a_new, b_new = skrf.Network(), skrf.Network()
-            a_new.frequency, a_new.s, a_new.z0, a_new.name = f_new, a_s_new, a.z0[0,:a.number_of_ports], a.name
-            b_new.frequency, b_new.s, a_new.z0, b_new.name = f_new, b_s_new, a.z0[0,:b.number_of_ports], b.name
+            a_new = Network._get_interpolated_sparams(a.nw, f_new)
+            b_new = Network._get_interpolated_sparams(b.nw, f_new)
             return a_new, b_new
 
         nw_a, nw_b = a.nw.copy(), b.nw.copy()
@@ -78,19 +143,42 @@ class Network:
         if not np.array_equal(nw_a.f, nw_b.f):
             nw_a, nw_b = interpolate_f(nw_a, nw_b)
         return nw_a, nw_b
+    
+
+    @staticmethod
+    def _get_interpolated_sparams(nw: skrf.Network, f: np.ndarray) -> skrf.Network:
+        
+        def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
+            current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
+            interp_mag = np.interp(new_f, current_f, current_mag)
+            interp_pha = np.interp(new_f, current_f, current_pha)
+            return interp_mag * np.exp(1j*interp_pha)
+        
+        s_new = np.ndarray([len(f),nw.nports,nw.nports], dtype=complex)
+        for ep in range(nw.nports):
+            for ip in range(nw.nports):
+                s_new[:,ep,ip] = interpolate_param(nw.s[:,ep,ip], nw.f, f)
+        return skrf.Network(s=s_new, name=nw.name, z0=nw.z0, f=f, f_unit='Hz')
+
+    
+    def _interpolate(self, f: np.ndarray) -> "Network":
+        print(f'Network._interpolate() called')
+        return Network(Network._get_interpolated_sparams(self.nw,f), name=self.name, original_files=self.original_files)
 
         
     def _smatrix_op_smatrix(self, other: "Network|float", operation_fn: Callable, operator_str: str) -> "Network":
         if isinstance(other,int) or isinstance(other,float) or isinstance(other,complex):
+            self._calculate(None, None)
             nw = self.nw.copy()
             nw.s = operation_fn(nw.s, other.s)
-            return Network(nw, f'{self.nw.name}{operator_str}{other}', original_files=self.original_files)
+            return Network(nw, f'{self.name}{operator_str}{other}', original_files=self.original_files)
         elif isinstance(other, Network):
+            Network._calculate_with_respect_to(self, other)
             if self.nw.number_of_ports != other.nw.number_of_ports:
-                raise RuntimeError(f'The networks "{self.nw.name}" and "{other.nw.name}" have no different number of ports')
+                raise RuntimeError(f'The networks "{self.name}" and "{other.name}" have no different number of ports')
             nw, nw2 = Network._get_adapted_networks(self, other)
             nw.s = operation_fn(nw.s, nw2.s)
-            return Network(nw, f'{self.nw.name}{operator_str}{other.nw.name}', original_files=self.original_files|other.original_files)
+            return Network(nw, f'{self.name}{operator_str}{other.name}', original_files=self.original_files|other.original_files)
         else:
             raise ValueError(f'Expected operand of type float or Network, got <{other}>')
 
@@ -120,14 +208,15 @@ class Network:
 
 
     def __pow__(self, other: "Network") -> "Network":
-        # TODO: I have no idea what I was thinking here... why the "+" in the name? Why take the power of two networks?
-        # I think I should make this the same way as the implementation of __mul__ and __truediv__, and perhaps add __add__ and __sub__
         a_nw,b_nw = Network._get_adapted_networks(self, other)
-        return Network(a_nw**b_nw, a_nw.name+'+'+b_nw.name, original_files=self.original_files|other.original_files)
+        return Network(a_nw**b_nw, self.name+'∘'+other.name, original_files=self.original_files|other.original_files)
     
 
     def __repr__(self):
-        return f'<Network({self.nw})>'
+        if self._ready():
+            return f'<Network({self.nw})>'
+        else:
+            return f'<Network(...)>'
 
 
     def sel_params(self) -> list[SParam]:
@@ -223,9 +312,48 @@ class Network:
                     param_label = param_name
                 param_value = self.nw.s[:,ep-1,ip-1].astype(complex)
 
-                result.append(SParam(f'{self.nw.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_files=self.original_files, param_type=param_name, number_type=NumberType.VectorLike))
+                result.append(SParam(f'{self.name} {param_label}', self.nw.f, param_value, self.nw.z0[0,ep-1], original_files=self.original_files, param_type=param_name, number_type=NumberType.VectorLike))
         return result
     
+
+    @staticmethod
+    def _get_interpolation_frequency(f_start_or_vector_or_reference: "np.ndarray|float|Network", f_stop: float = None, f_step: float = None, n: int = None, scale='lin') -> np.ndarray:
+        if isinstance(f_start_or_vector_or_reference, np.ndarray):
+            return f_start_or_vector_or_reference
+        elif isinstance(f_start_or_vector_or_reference, Network):
+            return f_start_or_vector_or_reference.nw.f
+        elif isinstance(f_start_or_vector_or_reference, (int,float)):
+            if f_stop is None:
+                raise ValueError('Interpolate(): f_stop must be provided when first argument is a frequency')
+            f_start = f_start_or_vector_or_reference
+            if f_step is not None and n is None:
+                if scale=='lin':
+                    if f_stop < f_start or f_start < 0 or f_step <= 0:
+                        raise ValueError('Interpolate(): invalid linear scale')
+                    return np.arange(f_start, f_stop, f_step)
+                elif scale=='log':
+                    if f_stop < f_start or f_start <= 0 or f_step <= 0:
+                        raise ValueError('Interpolate(): invlaid logarithmic scale')
+                    n = math.ceil(math.log(f_stop/f_start) / math.log(f_step))
+                    return np.geomspace(f_start, f_stop, n)
+            elif f_step is None and n is not None:
+                if scale=='lin':
+                    if f_stop < f_start or f_start < 0 or n < 1:
+                        raise ValueError('Interpolate(): invalid linear scale')
+                    return np.linspace(f_start, f_stop, n)
+                elif scale=='log':
+                    if f_stop < f_start or f_start <= 0 or n < 1:
+                        raise ValueError('Interpolate(): invalid logarithmic scale')
+                    return np.geomspace(f_start, f_stop, n)
+            raise ValueError('Interpolate(): invalid scale')
+        raise ValueError('Interpolate(): invalid argument')
+    
+    
+    def interpolate(self, f_start_or_vector_or_reference: "np.ndarray|float|Network", f_stop: float = None, f_step: float = None, n: int = None, scale='lin')-> "Network":
+        print(f'Network.interpolate() called')
+        f = Network._get_interpolation_frequency(f_start_or_vector_or_reference=f_start_or_vector_or_reference, f_stop=f_stop, f_step=f_step, n=n, scale=scale)
+        return self._interpolate(f)
+
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Network":
         f_start = -1e99 if f_start is None else f_start
@@ -241,7 +369,7 @@ class Network:
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
         new_s = self.nw.s[idx0:idx1+1,:,:]
-        new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
+        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -249,7 +377,7 @@ class Network:
         idx = np.argmin(np.abs(f - self.nw.f))
         new_f = self.nw.f[idx]
         new_s = self.nw.s[idx,:,:]
-        new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
+        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -257,37 +385,78 @@ class Network:
         idx = np.argmin(np.abs(f - self.nw.f))
         new_f = self.nw.f[idx]
         new_s = self.nw.s[idx,:,:]
-        new_nw = skrf.Network(name=self.nw.name, f=new_f, s=new_s, f_unit='Hz')
+        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
+        return Network(new_nw, original_files=self.original_files)
+
+
+    @staticmethod
+    def _series_to_shunt(s_series: np.ndarray, gamma_term: complex = -1) -> np.ndarray:
+        assert s_series.shape[1]==2 and s_series.shape[2]==2
+        s11, s21, s12, s22 = s_series[:,0,0], s_series[:,1,0], s_series[:,0,1], s_series[:,1,1]
+        
+        GAMMA_TEE, LOSS_TEE = -1/3, 2/3  # S-parameters of a tee-junction
+        gamma_into_shunted = s11 + s21 * s12 * gamma_term / (1 - s22 * gamma_term)
+        gamma_at_tee_leg = gamma_into_shunted / (1 - GAMMA_TEE * gamma_into_shunted)
+        
+        s_shunt = np.ndarray(s_series.shape, dtype=complex)
+        s_shunt[:,0,0] = s_shunt[:,1,1] = GAMMA_TEE + LOSS_TEE**2 * gamma_at_tee_leg
+        s_shunt[:,1,0] = s_shunt[:,0,1] = LOSS_TEE + LOSS_TEE**2 * gamma_at_tee_leg
+
+        return s_shunt
+        
+
+    @_postponable
+    def shunt(self, gamma_term: complex = -1) -> "Network":
+        """
+        Example usage:
+            network.shunt(gamma_term=-1): parallel-circuit a shunt (stub, but shorted at the end)
+            network.shunt(gamma_term=+1): parallel-circuit an open stub
+            network.shunt(gamma_term=0):  parallel-circuit a terminated stub
+        """
+
+        if self.nw.nports != 2:
+            raise RuntimeError(f'Network.shunt(): can only shunt a 2-port network')
+        
+        new_s = Network._series_to_shunt(self.nw.s, gamma_term)
+
+        if gamma_term == -1:  # short
+            name_suffix = 'Shunt'
+        elif gamma_term == +1:  # open
+            name_suffix = 'Stub'
+        else:
+            name_suffix = 'Term. Stub'
+        
+        new_nw = skrf.Network(name=f'{self.name} {name_suffix}', f=self.nw.f, s=new_s, f_unit='Hz')
         return Network(new_nw, original_files=self.original_files)
     
 
     def k(self):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k', number_type=NumberType.PlainScalar)
+            raise RuntimeError(f'Network.k(): cannot calculate stability factor of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} k', self.nw.f, self.nw.stability, self.nw.z0[0,0], original_files=self.original_files, param_type='k', number_type=NumberType.PlainScalar)
     
 
     def mag(self):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} MAG', self.nw.f, self.nw.max_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MAG', number_type=NumberType.MagnitudeLike)
+            raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} MAG', self.nw.f, self.nw.max_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MAG', number_type=NumberType.MagnitudeLike)
     
 
     def msg(self):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.msg(): cannot calculate maximum stable power gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG', number_type=NumberType.MagnitudeLike)
+            raise RuntimeError(f'Network.msg(): cannot calculate maximum stable power gain of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} MSG', self.nw.f, self.nw.max_stable_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='MSG', number_type=NumberType.MagnitudeLike)
     
 
     def u(self):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.u(): cannot calculate Mason\'s unilateral gain of {self.nw.name} (only valid for 2-port networks)')
-        return SParam(f'{self.nw.name} U', self.nw.f, self.nw.unilateral_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='U', number_type=NumberType.MagnitudeLike)
+            raise RuntimeError(f'Network.u(): cannot calculate Mason\'s unilateral gain of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} U', self.nw.f, self.nw.unilateral_gain, self.nw.z0[0,0], original_files=self.original_files, param_type='U', number_type=NumberType.MagnitudeLike)
     
 
     def mu(self, mu: int = 1):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.nw.name} (only valid for 2-port networks)')
+            raise RuntimeError(f'Network.mu(mu): cannot calculate stability factor of {self.name} (only valid for 2-port networks)')
         if mu!=1 and mu!=2:
             raise RuntimeError(f'Network.mu(mu): argument mu must be 1 or 2')
         # see https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability
@@ -297,7 +466,7 @@ class Network:
             p1,p2 = 1,0
         delta = self.nw.s[:,0,0]*self.nw.s[:,1,1] - self.nw.s[:,0,1]*self.nw.s[:,1,0]
         stability_factor = (1 - np.abs(self.nw.s[:,p1,p1]**2)) / (np.abs(self.nw.s[:,p2,p2]-np.conjugate(self.nw.s[:,p1,p1])*delta) + np.abs(self.nw.s[:,1,0]*self.nw.s[:,0,1]))
-        return SParam(f'{self.nw.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} µ{mu}', self.nw.f, stability_factor, self.nw.z0[0,0], original_files=self.original_files, param_type=f'µ{mu}', number_type=NumberType.PlainScalar)
     
 
     def losslessness(self):
@@ -313,7 +482,7 @@ class Network:
         errors = np.abs(prod - target)
         result_metric = np.max(errors, axis=(1,2))  # should be zero if lossless
         
-        return SParam(f'{self.nw.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'losslessness', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} Losslessness', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'losslessness', number_type=NumberType.PlainScalar)
     
 
     def passivity(self):
@@ -333,12 +502,12 @@ class Network:
             worst_error = np.max(passivity_error)
             result_metric[idx] = worst_error
         
-        return SParam(f'{self.nw.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'passivity', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} Passivity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'passivity', number_type=NumberType.PlainScalar)
     
 
     def reciprocity(self):
         if self.nw.nports < 2:
-            raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.nw.name} (only valid for 2-port or higher networks)')
+            raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.ame} (only valid for 2-port or higher networks)')
         s = self.nw.s
         
         # A network is reciprocal if S^T = S (see e.g. Pozar, 1.9), This function returns, per frequency,
@@ -349,12 +518,12 @@ class Network:
         absdiff = np.abs(diff)
         result_metric = np.max(absdiff, axis=(1,2))  # should be zero if reciprocal
 
-        return SParam(f'{self.nw.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'reciprocity', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} Reciprocity', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'reciprocity', number_type=NumberType.PlainScalar)
     
 
     def symmetry(self):
         if self.nw.nports < 2:
-            raise RuntimeError(f'Network.symmetry(): cannot calculate reciprocity of {self.nw.name} (only valid for 2-port or higher networks)')
+            raise RuntimeError(f'Network.symmetry(): cannot calculate reciprocity of {self.name} (only valid for 2-port or higher networks)')
         s = self.nw.s
         
         # I define a network as symmetric if it is reciprocal, and additionally Sii=Sjj=Skk..., This function returns, per frequency,
@@ -373,7 +542,7 @@ class Network:
 
         result_metric = result_metric_ij + result_metric_ii
 
-        return SParam(f'{self.nw.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'symmetry', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} Symmetry', self.nw.f, result_metric, self.nw.z0[0,0], original_files=self.original_files, param_type=f'symmetry', number_type=NumberType.PlainScalar)
     
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
@@ -393,145 +562,47 @@ class Network:
     
 
     def flip(self) -> "Network":
-        return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name, original_files=self.original_files)
+        return Network(skrf.Network(name=self.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name, original_files=self.original_files)
     
 
     def invert(self) -> "Network":
         return Network(self.nw.inv, name='!'+self.name, original_files=self.original_files)
 
-
-    def _get_added_2port(self, s_matrix: np.ndarray, port: int) -> "Network":
-        
-        if port<1 or port>self.nw.number_of_ports:
-            raise ValueError(f'Port number {port} out of range')
-        
-        if self.nw.number_of_ports==1:
-            s_new = np.zeros([len(self.nw.f),1,1], dtype=complex)
-            s11 = s_matrix[:,0,0]
-            s22 = s_matrix[:,1,1]
-            s21 = s_matrix[:,1,0]
-            s12 = s_matrix[:,0,1]
-            s11_self = self.nw.s[:,0,0]
-            delta = 1 - s22 * s11_self
-            s_new[:,0,0] = (s11*delta + s21*s11_self*s12) / delta
-            return Network(skrf.Network(name=self.nw.name, f=self.nw.f, s=s_new, f_unit='Hz'), original_files=self.original_files)
-
-        elif self.nw.number_of_ports==2:
-            other_nw = skrf.Network(name=self.nw.name, f=self.nw.f, s=s_matrix, f_unit='Hz')
-            if port==1:
-                new_nw = other_nw ** self.nw
-            elif port==2:
-                new_nw = self.nw ** other_nw
-            else:
-                raise ValueError()
-            return Network(new_nw, original_files=self.original_files)
-        else:
-            raise RuntimeError('Impedance adding is only supported for 1-port and 2-port networks')
-    
-
-    def _get_added_z(self, z: np.ndarray, port: int, mode: str) -> "Network":
-        z0 = self.nw.z0[0,0]
-        # see https://www.edn.com/bypass-capacitor-s-parameter-models-what-you-need-to-know/
-        s_matrix = np.zeros([len(self.nw.f),2,2], dtype=complex)
-        if mode=='series':
-            factor = 1/(z+2*z0)
-            s_matrix[:,0,0] = s_matrix[:,1,1] = z*factor
-            s_matrix[:,1,0] = s_matrix[:,0,1] = 2*z0*factor
-        elif mode=='parallel':
-            factor = 1/(1/z+2/z0)
-            s_matrix[:,0,0] = s_matrix[:,1,1] = (1/z)*factor
-            s_matrix[:,1,0] = s_matrix[:,0,1] = (2/z0)*factor
-        else:
-            raise RuntimeError('Invalid Z mode')
-        return self._get_added_2port(s_matrix, port)
-
-    
-    def add_sr(self, resistance: float, port: int = 1) -> "Network":
-        return self._get_added_z(np.full([len(self.nw.f)], resistance), port, 'series')
-
-    
-    def add_sl(self, inductance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1j*math.tau*self.nw.f*inductance, port, 'series')
-
-    
-    def add_sc(self, capacitance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1/(1j*math.tau*self.nw.f*capacitance), port, 'series')
-
     
     def add_pr(self, resistance: float, port: int = 1) -> "Network":
-        return self._get_added_z(np.full([len(self.nw.f)], resistance), port, 'parallel')
+        logging.warning('Network.add_pr(): obsolete, use Comp.R().shunt() instead')
+        from .components import Components
+        if port == 1:
+            return Components.RSer(resistance) ** self
+        elif port == 2:
+            return self ** Components.RShunt(resistance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
 
     
     def add_pl(self, inductance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1j*math.tau*self.nw.f*inductance, port, 'parallel')
+        logging.warning('Network.add_pl(): obsolete, use Comp.L().shunt() instead')
+        from .components import Components
+        if port == 1:
+            return Components.LShunt(inductance) ** self
+        elif port == 2:
+            return self ** Components.LShunt(inductance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
     
 
     def add_pc(self, capacitance: float, port: int = 1) -> "Network":
-        return self._get_added_z(1/(1j*math.tau*self.nw.f*capacitance), port, 'parallel')
-    
+        logging.warning('Network.add_pc(): obsolete, use Comp.C().shunt() instead')
+        from .components import Components
+        if port == 1:
+            return Components.CShunt(capacitance) ** self
+        elif port == 2:
+            return self ** Components.CShunt(capacitance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
 
-    @staticmethod
-    def _tline(arg, z0_line, z0_system) -> np.ndarray:
-        s_matrix = np.zeros([len(arg),2,2], dtype=complex)
+           
         
-        # see https://cds.cern.ch/record/1415639/files/p67.pdf
-        sh = np.sinh(arg)
-        ch = np.cosh(arg)
-        zzpzz = z0_system*z0_system + z0_line*z0_line
-        zzmzz = z0_system*z0_system - z0_line*z0_line
-        ds = 2*z0_system*z0_line*ch + zzpzz*sh
-        s_matrix[:,0,0] = s_matrix[:,1,1] = (zzmzz*sh)/ds
-        s_matrix[:,1,0] = s_matrix[:,0,1] = (2*z0_system*z0_line)/ds
-
-        return s_matrix
-    
-
-    def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss_db: float = 0, port: int = 1) -> "Network":
-        """
-        Add ideal transmission line to the network
-        Arguments:
-            degrees:      phase shift of the transmission line, in degrees, at a given frequency (see next argument)
-            frequency_hz: the frequency at which the phase shift is defined
-            loss_db:      loss of the tranmission line, in dB; loss is frequency-independent
-            port:         at which end of the network to add this transmission line
-        """
-        
-        # complex argument for simple transmission line
-        loss_v = pow(10, loss_db/20) # dB to volts
-        arg_mag = math.log(loss_v) # compensate for the exp-function in the tline equation
-        arg_pha = math.radians(degrees) * (self.nw.f/frequency_hz)
-
-        z0_system = self.nw.z0[0,0]
-        z0_line = z0 if z0 is not None else z0_system
-        s_matrix = Network._tline(1j*arg_pha+arg_mag, z0_line, z0_system)
-        return self._get_added_2port(s_matrix, port)
-    
-
-    def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m_mhz: float = 0, db_m_sqmhz: float = 0, port: int = 1) -> "Network":
-        """
-        Add lossy transmission line to the network
-        Arguments:
-            eps_r:     dielectric constant of transmission line material
-            z0:        wave impedance of the transmission line
-            db_m_mhz:  loss of the tranmission line, in dB/(m*MHz)
-            db_m_sqmhz: loss of the tranmission line, in dB/(m*√MHz)
-            port:      at which end of the network to add this transmission line
-        """
-        
-        # complex argument for lossy transmission line; see Pozar, Microwave Engineering, sections 2.7 (tlines) and 4.4 (ABCD-params of tlines)
-        loss_db = db_m_mhz*(self.nw.f/1e6)*len_m + db_m_sqmhz*np.sqrt(self.nw.f/1e6)*len_m
-        loss_v = pow(10, loss_db/20) # dB to volts
-        arg_mag = np.log(loss_v) # compensate for the exp-function in the tline equation
-        C0 = 299792458
-        c_in_dielectric = C0 / math.sqrt(eps_r)
-        l = len_m * self.nw.f / c_in_dielectric
-        arg_pha = l * math.tau
-
-        z0_system = self.nw.z0[0,0]
-        z0_line = z0 if z0 is not None else z0_system
-        s_matrix = Network._tline(1j*arg_pha+arg_mag, z0_line, z0_system)
-        return self._get_added_2port(s_matrix, port)
-
     
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         stab = StabilityCircle(self.nw, frequency_hz, port)
@@ -714,9 +785,23 @@ class Networks:
     default_actions_used: bool = False
 
 
-    def __init__(self, nws: "list[skrf.Network]|list[Network]" = None):
-        self.nws = [Network(nw) for nw in nws]
+    def __init__(self, nws: "list[skrf.Network]|list[Network]|list[SParamFile]" = None):
+        def cast(obj):
+            if isinstance(obj, Network):
+                return obj
+            elif isinstance(obj, SParamFile):
+                return Network(obj)
+            elif isinstance(obj, skrf.Network):
+                return Network(obj)
+            else:
+                raise ValueError(f'Internal error: Network object initiliazed with invalid object ({obj})')
+        self.nws = [cast(nw) for nw in nws]
 
+
+    def _calculate(self, f: np.ndarray, z0: float):
+        for nw in self.nws:
+            nw._calculate(f, z0)
+    
 
     @staticmethod
     def _broadcast(a, b) -> "tuple[list[Network],list[Network]]":
@@ -750,7 +835,7 @@ class Networks:
                 else:
                     result.append(r)
             except Exception as ex:
-                logging.warning(f'Method <{format_call_signature(fn,*args,**kwargs)})> on network <{nw.nw.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,*args,**kwargs)})> on {nw} failed ({ex}), ignoring')
         if return_type == Networks:
             return Networks(nws=result)
         elif return_type == SParams:
@@ -769,7 +854,7 @@ class Networks:
                 else:
                     result.append(r)
             except Exception as ex:
-                logging.warning(f'Method <{format_call_signature(fn,args,kwargs)}> on network <{nw.name}> failed ({ex}), ignoring')
+                logging.warning(f'Method <{format_call_signature(fn,args,kwargs)}> on {nw} failed ({ex}), ignoring')
         if return_type == Networks:
             return Networks(nws=result)
         elif return_type == SParams:
@@ -817,7 +902,7 @@ class Networks:
 
     def sel_params(self) -> SParams:
         return self._unary_op(Network.sel_params, SParams)
-    
+
 
     def s(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
         return self._unary_op(Network.s, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
@@ -838,6 +923,10 @@ class Networks:
     def abcd(self, egress_port = None, ingress_port = None, rl_only: bool = False, il_only: bool = False, fwd_il_only: bool = False, rev_il_only: bool = False, name: str = None) -> SParams:
         return self._unary_op(Network.abcd, SParams, egress_port=egress_port, ingress_port=ingress_port, rl_only=rl_only, il_only=il_only, fwd_il_only=fwd_il_only, rev_il_only=rev_il_only, name=name)
     
+    
+    def interpolate(self, f_start_or_vector_or_reference: "np.ndarray|float", f_stop: float = None, f_step: float = None, n: int = None, scale='lin', **kwargs)-> "Networks":
+        return self._unary_op(Network.interpolate, Networks, f_start_or_vector_or_reference=f_start_or_vector_or_reference, f_stop=f_stop, f_step=f_step, n=n, scale=scale, **kwargs)
+
 
     def crop_f(self, f_start: "float|None" = None, f_end: "float|None" = None) -> "Networks":
         return self._unary_op(Network.crop_f, Networks, f_start=f_start, f_end=f_end)
@@ -845,6 +934,10 @@ class Networks:
 
     def at_f(self, f: float) -> "Networks":
         return self._unary_op(Network.at_f, Networks, f=f)
+
+    
+    def shunt(self, gamma_term: complex = -1) -> "Networks":
+        return self._unary_op(Network.shunt, Networks, gamma_term=gamma_term)
     
 
     def k(self):
@@ -896,35 +989,91 @@ class Networks:
 
     
     def add_sr(self, resistance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_sr, Networks, resistance=resistance, port=port)
+        logging.warning('Networks.add_sr(): obsolete, use Comp.R() instead')
+        from .components import Components
+        if port == 1:
+            return Components.RSer(resistance) ** self
+        elif port == 2:
+            return self ** Components.RSer(resistance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
 
 
     def add_sl(self, inductance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_sl, Networks, inductance=inductance, port=port)
+        logging.warning('Networks.add_sl(): obsolete, use Comp.L() instead')
+        from .components import Components
+        if port == 1:
+            return Components.LSer(inductance) ** self
+        elif port == 2:
+            return self ** Components.LSer(inductance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
 
     
     def add_sc(self, capacitance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_sc, Networks, capacitance=capacitance, port=port)
+        logging.warning('Networks.add_sc(): obsolete, use Comp.C() instead')
+        from .components import Components
+        if port == 1:
+            return Components.CSer(capacitance) ** self
+        elif port == 2:
+            return self ** Components.CSer(capacitance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
         
     
     def add_pr(self, resistance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_pr, Networks, resistance=resistance, port=port)
+        logging.warning('Networks.add_pr(): obsolete, use Comp.R() instead')
+        from .components import Components
+        if port == 1:
+            return Components.RShunt(resistance) ** self
+        elif port == 2:
+            return self ** Components.RShunt(resistance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
         
     
     def add_pl(self, inductance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_pl, Networks, inductance=inductance, port=port)
+        logging.warning('Networks.add_pl(): obsolete, use Comp.L() instead')
+        from .components import Components
+        if port == 1:
+            return Components.LShunt(inductance) ** self
+        elif port == 2:
+            return self ** Components.LShunt(inductance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
         
     
     def add_pc(self, capacitance: float, port: int = 1) -> "Networks":
-        return self._unary_op(Network.add_pc, Networks, capacitance=capacitance, port=port)
+        logging.warning('Networks.add_pc(): obsolete, use Comp.C() instead')
+        from .components import Components
+        if port == 1:
+            return Components.CShunt(capacitance) ** self
+        elif port == 2:
+            return self ** Components.CShunt(capacitance)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
         
     
     def add_tl(self, degrees: float, frequency_hz: float = 1e9, z0: float = None, loss_db: float = 0, port: int = 1) -> "Network":
-        return self._unary_op(Network.add_tl, Networks, degrees=degrees, frequency_hz=frequency_hz, z0=z0, loss_db=loss_db, port=port)
+        logging.warning('Networks.add_tl(): obsolete, use Comp.Line() instead')
+        from .components import Components
+        if port == 1:
+            return Components.Line(deg=degrees,z=z0,at_f=frequency_hz,db=loss_db) ** self
+        elif port == 2:
+            return self ** Components.Line(deg=degrees,z=z0,at_f=frequency_hz,db=loss_db)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
     
 
     def add_ltl(self, len_m: float, eps_r: float, z0: float = None, db_m_mhz: float = 0, db_m_sqmhz: float = 0, port: int = 1) -> "Network":
-        return self._unary_op(Network.add_ltl, Networks, len_m=len_m, eps_r=eps_r, z0=z0, db_m_mhz=db_m_mhz, db_m_sqmhz=db_m_sqmhz, port=port)
+        logging.warning('Networks.add_ltl(): obsolete, use Comp.Line() instead')
+        from .components import Components
+        if port == 1:
+            return Components.Line(len=len_m,z=z0,eps_r=eps_r,db_m_mhz=db_m_mhz,db_m_sqmhz=db_m_sqmhz) ** self
+        elif port == 2:
+            return self ** Components.Line(len=len_m,z=z0,eps_r=eps_r,db_m_mhz=db_m_mhz,db_m_sqmhz=db_m_sqmhz)
+        else:
+            raise ValueError(f'Invalid port number: {port}')
 
 
     def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
