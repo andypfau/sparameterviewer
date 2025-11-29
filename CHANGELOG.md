@@ -7,6 +7,7 @@ S-Parameter Viewer Changelog
 
 - new: access to new `Comp` namespace from expressions, to generate paramtric components; the methods `Networks.add_r()` etc. are marked as obsolete
 - new: access to `cmath` from expressions
+- new: enhanced the `Networks.plot_stab()` method, it can now plot muiltiple stability circles
 - change: improved the legend title shortening algorithm
 - bugfix: line/marker styling in Smith diagrams
 

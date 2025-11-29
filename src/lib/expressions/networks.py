@@ -4,7 +4,7 @@ from ..stabcircle import StabilityCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
-from ..utils import sanitize_filename
+from ..utils import sanitize_filename, get_subset
 from ..citi import CitiWriter
 from ..si import SiValue
 from info import Info
@@ -601,16 +601,26 @@ class Network:
         else:
             raise ValueError(f'Invalid port number: {port}')
 
-           
+
+    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         
-    
-    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
-        stab = StabilityCircle(self.nw, frequency_hz, port)
-        data = stab.get_plot_data(n_points)
-        freq = np.full([n_points], frequency_hz)
-        label = label if label is not None else f'{self.nw.name} St. P{port}'
-        label += ' (s.i.)' if stab.stable_inside else ' (s.o.)'
-        SParam.plot_xy(freq, data, self.nw.z0, label, style, color, width, opacity, self.original_files, 'stability')
+        def _plot_stab(f):
+            nonlocal port, n_points, label, style, color, width, opacity
+            stab = StabilityCircle(self.nw, f, port)
+            data = stab.get_plot_data(n_points)
+            freq = np.full([n_points], f)
+            final_label = label if label is not None else f'{self.name} St. {SiValue(f,"Hz")} P{port}'
+            final_label += ' (s.i.)' if stab.stable_inside else ' (s.o.)'
+            SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'stability')
+        
+        if f is not None and n is None:
+            _plot_stab(f)
+        elif f is None and n is not None:
+            for freq in get_subset(self.nw.f, n):
+                _plot_stab(freq)
+        else:
+            raise ValueError('plot_stab(): need either argument f or n')
+        
         
     
     def quick(self, *items):
@@ -1076,8 +1086,8 @@ class Networks:
             raise ValueError(f'Invalid port number: {port}')
 
 
-    def plot_stab(self, frequency_hz: float, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
-        self._unary_op(Network.plot_stab, None, frequency_hz=frequency_hz, port=port, n_points=n_points, label=label, style=style)
+    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
 
 
     def plot_sel_params(self) -> None:

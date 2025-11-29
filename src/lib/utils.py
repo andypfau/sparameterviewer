@@ -390,3 +390,22 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
     nice_y0, nice_y1 = nice_range(y0, y1)
     
     return True, nice_y0, nice_y1
+
+
+def get_subset(arr, n: int):
+    """
+    Returns a subset of a list; examples:
+        `get_subset([1,2,3,4,5], 1)` -> `[3]` (the middle item)
+        `get_subset([1,2,3,4,5], 2)` -> `[0,4]` (1st and last item)
+        `get_subset([1,2,3,4,5], 3)` -> `[0,2,4]` (three equidistant items)
+        `get_subset([1,2,3,4,5], 99)` -> `[0,1,2,3,4]` (all items)
+    """
+    n_all = len(arr)
+    if n <= 0:
+        return []  # zero items
+    elif n == 1:
+        return [arr[round(n_all/2)]]  # the middle item
+    elif n < n_all:
+        return [arr[max(0,min(n_all-1,round((n_all-1)*i/(n-1))))] for i in range(n)]  # equidistant samples
+    else:
+        return arr  # all items
