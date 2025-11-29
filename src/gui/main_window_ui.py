@@ -749,7 +749,7 @@ class MainWindowUi(QMainWindow):
 
     @property
     def ui_use_polar_axis_controls(self) -> bool:
-        return not self._ui_locky_button.isVisible()
+        return self._ui_unitcircle.isVisible()
     @ui_use_polar_axis_controls.setter
     def ui_use_polar_axis_controls(self, value: bool):
         self._ui_unitcircle.setVisible(value)

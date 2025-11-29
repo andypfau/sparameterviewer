@@ -1075,6 +1075,10 @@ class MainWindow(MainWindowUi):
 
 
     def on_lock_both_axes(self):
+        if self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]:
+            self.on_lock_xaxis()
+            return
+
         self._smartscale_set_y = False
         self.ui_smart_db = False
         self.ui_plot_tool = PlotWidget.Tool.Off
