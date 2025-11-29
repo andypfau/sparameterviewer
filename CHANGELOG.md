@@ -7,6 +7,7 @@ S-Parameter Viewer Changelog
 
 - new: access to `cmath` from expressions
 - change: improved the legend title shortening algorithm
+- bugfix: line/marker styling in Smith diagrams
 
 
 0.40b32 (2025-11-24)
