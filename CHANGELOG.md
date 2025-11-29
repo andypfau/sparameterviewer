@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 0.41b1 (2025-11-27)
 --------------------
 
+- new: access to `cmath` from expressions
 - change: improved the legend title shortening algorithm
 
 
