@@ -26,6 +26,7 @@ Roadmap
 
 ### Missing Features
 
+- Bug: review the examples for the `map()` function, I think they do not work.
 - GUI: statistics on networks (e.g. mean of S-matrices), and templates for statistics.
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to assign color groups to files.
@@ -36,7 +37,6 @@ Roadmap
 - Expressions: `f_arg` parameter for `SParams.map()`.
 - Expressions: add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
 - Expressions: could there be a more intuitive way for interaction between SParams an Numpy than `map()`?
-- Expressions: introduce a `map()` function that takes an arbitrary number of SParams objects, and puts them into a Numpy method.
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Expressions: log output for equations (so that you can also print some data or status).
 - File type registration script for Windows (using `assoc` and `ftype`).
