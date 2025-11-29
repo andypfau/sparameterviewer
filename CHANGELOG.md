@@ -5,6 +5,7 @@ S-Parameter Viewer Changelog
 0.41b1 (2025-11-27)
 --------------------
 
+- new: access to new `Comp` namespace from expressions, to generate paramtric components; the methods `Networks.add_r()` etc. are marked as obsolete
 - new: access to `cmath` from expressions
 - change: improved the legend title shortening algorithm
 - bugfix: line/marker styling in Smith diagrams
