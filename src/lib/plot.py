@@ -437,7 +437,7 @@ class PlotHelper:
                 elif self._smith:
                     c = x + 1j*y
                     from skrf import plotting
-                    new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None, color=color, lw=width, alpha=opacity)
+                    new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None, color=color, lw=width, alpha=opacity, **PlotHelper._style_to_kwargs(style))
                 else:
                     if self._x_log:
                         x, y = fix_log_x(data=x, other_data=y, name=item.label)
@@ -470,6 +470,25 @@ class PlotHelper:
                 legend2 = self.plot2.get_legend()
                 if legend2:
                     legend2.remove()
+    
+
+    @staticmethod
+    def _style_to_kwargs(style: str) -> dict[str,str]:
+        """ split e.g. 'o--' into {marker='o', linestyle='--'} """
+        MARKERS = ['o', 's', '^', 'v', '<', '>', 'd', 'p', 'h', '*', '+', 'x', '.', ',', '|', '_']
+        LINESTYLES = ['-', '--', '-.', ':']
+        result = {'marker':'', 'linestyle':''}
+        for m in MARKERS:
+            if m in style:
+                result['marker'] = m
+                style = style.replace(m, '')
+                break
+        for ls in LINESTYLES:
+            if ls in style:
+                result['linestyle'] = ls
+                style = style.replace(ls, '')
+                break
+        return result
         
 
     def _fix_axis_labels(self):
