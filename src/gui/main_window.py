@@ -172,6 +172,7 @@ class MainWindow(MainWindowUi):
                 self.ui_layout = Settings.mainwindow_layout
                 self.ui_filesys_browser.show_archives = Settings.extract_zip
                 self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
+                self.ui_show_unitcircle = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
                 return None
             except Exception as ex:
                 return ex
@@ -606,6 +607,7 @@ class MainWindow(MainWindowUi):
         Settings.plot_y_quantitiy = self.ui_plot_selector.yQuantity()
         Settings.plot_y2_quantitiy = self.ui_plot_selector.y2Quantity()
         self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
+        self.ui_show_unitcircle = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
 
         if plot_type_changed:
             self.ui_xaxis_range.low_is_wildcard, self.ui_xaxis_range.high_is_wildcard = True, True
@@ -1082,6 +1084,19 @@ class MainWindow(MainWindowUi):
             self.ui_smart_db = False
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
+        self.schedule_plot_update()
+
+    
+    def on_unitcircle(self):
+        self._smartscale_set_y = False
+        self.ui_smart_db = False
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        if self.ui_plot_selector.plotType() == PlotType.Smith:
+            (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = (-1, +1)
+            (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (-1, +1)
+        elif self.ui_plot_selector.plotType() == PlotType.Polar:
+            self.ui_xaxis_range.both_are_wildcard = True
+            (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = (-1, +1)
         self.schedule_plot_update()
 
 

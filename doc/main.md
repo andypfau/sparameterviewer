@@ -21,6 +21,7 @@ Main Window
     - Enter a range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.
     - Use the lock buttons to toggle between a fixed range, or auto-scale.
     - You can enable smart dB scaling (only if Y-axis is in dB), which attempts to focus on the upper region of the S-parameters.
+    - For polar and Smith diagrams, the unit circle button allows you to scale the diagram to scale the diagram to radius 1.
 5. **Plot Options**: legend, trace options, plot tools.
     - Additional options in the menu.
 6. **Tools**:

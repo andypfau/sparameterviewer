@@ -126,6 +126,7 @@ class MainWindowUi(QMainWindow):
         self._ui_lockx_button = QtHelper.make_toolbutton(self, None, self.on_lock_xaxis, icon='toolbar_lock-x.svg', tooltip='Lock/unlock X-Axis Scale')
         self._ui_locky_button = QtHelper.make_toolbutton(self, None, self.on_lock_yaxis, icon='toolbar_lock-y.svg', tooltip='Lock/unlock Y-Axis Scale')
         self._ui_lockboth_button = QtHelper.make_toolbutton(self, None, self.on_lock_both_axes, icon='toolbar_lock-both.svg', tooltip='Lock/unlock both X- and Y-Axis Scales')
+        self._ui_unitcircle = QtHelper.make_toolbutton(self, None, self.on_unitcircle, icon='toolbar_unitcircle.svg', tooltip='Scale to Unit Circle')
         self._ui_smartdb_button = QtHelper.make_toolbutton(self, None, self.on_smart_db, icon='toolbar_smart-db.svg', tooltip='Attempt Smart Scaling of dB-Values', checked=False)
         self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot; while this is active, you cannot move cursors', checked=False)
         self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot; while this is active, you cannot move cursors', checked=False)
@@ -186,7 +187,7 @@ class MainWindowUi(QMainWindow):
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
                 #QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
-                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
+                QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_smartdb_button, self._ui_unitcircle, ..., spacing=default_spacing),
                 ..., margins=margins, spacing=default_spacing
             ),
             vline(),
@@ -738,13 +739,20 @@ class MainWindowUi(QMainWindow):
             self._ui_color_combo.setToolTip('Trace colors are assigned individually per trace, because only one file is plotted (this behavior can be changed in the Settings dialog).')
 
 
-
     @property
     def ui_show_smart_db(self) -> bool:
         return self._ui_smartdb_button.isVisible()
     @ui_show_smart_db.setter
     def ui_show_smart_db(self, value: bool):
         self._ui_smartdb_button.setVisible(value)
+
+
+    @property
+    def ui_show_unitcircle(self) -> bool:
+        return self._ui_unitcircle.isVisible()
+    @ui_show_unitcircle.setter
+    def ui_show_unitcircle(self, value: bool):
+        self._ui_unitcircle.setVisible(value)
 
 
     @property
@@ -1074,6 +1082,8 @@ class MainWindowUi(QMainWindow):
     def on_lock_yaxis(self):
         pass
     def on_lock_both_axes(self):
+        pass
+    def on_unitcircle(self):
         pass
     def on_smart_db(self):
         pass
