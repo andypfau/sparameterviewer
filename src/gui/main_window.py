@@ -392,11 +392,12 @@ class MainWindow(MainWindowUi):
             )
             setup_plot(PlotType.Cartesian)
         
-        def power_gain():
+        def amp_gain():
             set_expression(
-                'sel_nws().mag().plot()  # maximum availalbe gain\n' +
+                'sel_nws().s(21).plot()  # S-parameter gain\n' +
+                'sel_nws().mag().plot()  # maximum available gain\n' +
                 'sel_nws().msg().plot()  # maximum stable gain\n' +
-                'sel_nws().u().plot()    # Masons unilateral gain'
+                'sel_nws().u().plot()    # Mason\'s unilateral gain'
             )
             setup_plot(PlotType.Cartesian)
         
@@ -539,20 +540,18 @@ class MainWindow(MainWindowUi):
                 ('T-Matrix (Scattering Transfer; Even Port Numbers Only)', t),
             ]),
             ('Network Analysis', [
-                ('Stability (2-Port Only)', stability),
-                ('Stability Circles (2-Port Only)', stability_circles),
-                (None, None),
                 ('Reciprocity (2-Port or Higher Only)', reciprocity),
                 ('Symmmetry (2-Port or Higher Only)', symmetry),
                 ('Passivity', passivity),
                 ('Losslessness', losslessness),
                 ('All of Above', four_metrics),
                 (None, None),
-                ('Amplifier Gain (2-Port Only)', power_gain),
+                ('Amplifier Gain (2-Port Only)', amp_gain),
+                ('Amplifier Stability (2-Port Only)', stability),
+                ('Amplifier Stability Circles (2-Port Only)', stability_circles),
             ]),
             ('Operations on Individual Networks', [
                 ('Normalize at Given Frequency', normalize_to_f),
-                (None, None),
                 ('Single-Ended to Mixed-Mode', mixed_mode),
                 ('Impedance Renormalization', z_renorm),
                 (None, None),
