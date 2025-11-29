@@ -12,13 +12,13 @@ def shorten_string_list(strings: list[str], elide_str: str = '…', target_len: 
     elide_str:  the string to use to indicate elision
     target_len: target maximum length of each string (no elisions are attempted if the strings are already this short)
     """
-    
+
     assert len(elide_str) == 1
     if len(strings) < 1:
         return []
 
-    DEFAULT_ELIDED_LEN = 3
-    MAX_TUPLE_SIZE = 25  # higher numbers -> more powerful, but also slower...
+    TARGET_ELIDED_LEN = 3  # e.g. 3 means to elide "LongString" to e.g. "Lo…"
+    MAX_TOKENS_TO_TRY = 1_000  # empirical safeguard against the algorithm running slow
 
     def ntuple_strings(list_of_tokens: list[str], n: int) -> list[str]:
         """ e.g. ntuple_strings(['a','b','c','d'],3) -> ['abc','bcd'] """
@@ -48,36 +48,44 @@ def shorten_string_list(strings: list[str], elide_str: str = '…', target_len: 
     original_distinct_strings = len(set(strings))
 
     strings_tokens = [split_into_tokens(s) for s in strings]
-    ntuple_max = min(max([len(tokens) for tokens in strings_tokens]), MAX_TUPLE_SIZE)
+    ntuple_max = max([len(tokens) for tokens in strings_tokens])
 
     impacts = []
-    for tuple_size in range(ntuple_max, 0, -1):
+    for tuple_size in range(1, ntuple_max+1):
 
         # create a set of substrings that occur in the strings
         strings_tokens_tuples = [ntuple_strings(tokens,tuple_size) for tokens in strings_tokens]
         elidable_strings = set([t for t in itertools.chain(*strings_tokens_tuples)])
 
         for elidable_string in elidable_strings:
-            if len(elidable_string) <= DEFAULT_ELIDED_LEN:
+            if len(elidable_string) <= TARGET_ELIDED_LEN:
                 continue  # makes no sense to elide such a short string
             
             # calculate how much shorter the overall list of string would become with this elision
             n = sum([1 if elidable_string in string else 0 for string in strings])
-            impact = n * max(2, len(elidable_string) - DEFAULT_ELIDED_LEN)
+            impact = (n**2) * max(2, len(elidable_string) - TARGET_ELIDED_LEN)  # empirical
             impacts.append((impact, elidable_string))
+            
+            if len(impacts) > MAX_TOKENS_TO_TRY:
+                break
+        if len(impacts) > MAX_TOKENS_TO_TRY:
+            break
 
-    # impacts now is a list (impact,elidable_string), where the elidable string with the most impact comes first
     impacts = list(sorted(impacts, key=lambda t: t[0], reverse=True))
+    # impacts now is a list of (impact,elidable_string) tuples, sorted such that the element with the highest impact comes first
     
-    for _,elidable_string in impacts:
+    for i,(_,elidable_string) in enumerate(impacts):
         
-        new_strings = [elide(s,elidable_string,elide_str,DEFAULT_ELIDED_LEN) for s in strings]
+        new_strings = [elide(s,elidable_string,elide_str,TARGET_ELIDED_LEN) for s in strings]
         
         new_distinct_strings = len(set(new_strings))
         if new_distinct_strings == original_distinct_strings:
             strings = new_strings
             
             if target_reached(strings):
-                return strings
+                break
 
+        if i >= MAX_TOKENS_TO_TRY:
+            break
+    
     return strings

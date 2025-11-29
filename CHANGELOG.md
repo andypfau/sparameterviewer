@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b1 (2025-11-27)
+--------------------
+
+- change: improved the legend title shortening algorithm
+
+
 0.40b32 (2025-11-24)
 --------------------
 
