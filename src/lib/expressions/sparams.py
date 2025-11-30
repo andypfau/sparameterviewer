@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
-from ..stabcircle import StabilityCircle
+from ..circles import StabilityCircle
 from ..utils import sanitize_filename
 from ..citi import CitiWriter
 from ..settings import Settings

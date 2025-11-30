@@ -226,6 +226,53 @@ nw("amp.s2p").mu(2).plot("µ'")
 
 
 
+### nf_min(), f_min()
+
+```python
+nf_min() → SParams
+f_min() → SParams
+```
+
+Returns the minimum noise figure or minimum noise factor. Only valid for networks which have noise-parameters.
+
+Example:
+```python
+sel_nws().nf_min().plot()
+```
+
+
+
+### gamma_opt(), z_opt()
+
+```python
+gamma_opt() → SParams
+z_opt() → SParams
+```
+
+Returns the optimum input reflection coefficient or optimum input impedance for minimum noise. Only valid for networks which have noise-parameters.
+
+Example:
+```python
+sel_nws().gamma_opt().plot()
+```
+
+
+
+### rn()
+
+```python
+rn() → SParams
+```
+
+Returns the Returns the equivalent noise resistance. Only valid for networks which have noise-parameters.
+
+Example:
+```python
+sel_nws().rn().plot()
+```
+
+
+
 ### mag()
 
 ```python
@@ -237,6 +284,25 @@ Returns the maximum available power gain.
 Example:
 ```python
 nw("amp.s2p").mag().plot()
+```
+
+
+
+### plot_noise()
+
+```python
+plot_noise(db, f=None, n=None, n_points=101, label=None, style='-')
+```
+
+Plots the noise circles of a network for NF=`db`. You can either specifcy:
+- the freuqency of the circle you want to plot, with `f=...`, or
+- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted); default is `n=1`
+
+You can also provide the argument `n_points=...`, which defines how many graph points are used to represent the circle.
+
+Example:
+```python
+sel_nws().plot_noise(db=3)  # use the Smith chart to plot this!
 ```
 
 
@@ -363,7 +429,7 @@ plot_stab(f=None, n=None, port=2, n_points=101, label=None, style='-')
 
 Plots the stability circles of a network. You can either specifcy:
 - the freuqency of the circle you want to plot, with `f=...`, or
-- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted)
+- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted); default is `n=1`
 
 Set `port=1` if you want to calculate the stability at the input, otherwise the output is calculated.
 

@@ -1,6 +1,6 @@
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
-from ..stabcircle import StabilityCircle
+from ..circles import StabilityCircle, NoiseCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
@@ -454,6 +454,57 @@ class Network:
         return SParam(f'{self.name} B1', self.nw.f, b1, self.nw.z0[0,0], original_files=self.original_files, param_type='B1', number_type=NumberType.PlainScalar)
     
 
+    def nf_min(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.nf_min(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} NFmin', self.nw.f, self.nw.nfmin_db, self.nw.z0[0,0], original_files=self.original_files, param_type='NFmin', number_type=NumberType.PlainScalar)
+    
+
+    def f_min(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.f_min(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} Fmin', self.nw.f, self.nw.nfmin, self.nw.z0[0,0], original_files=self.original_files, param_type='Fmin', number_type=NumberType.MagnitudeLike)
+    
+
+    def gamma_opt(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.gamma_opt(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        gamma_opt = (self.nw.z_opt - self.nw.z0[0,0]) / (self.nw.z_opt + self.nw.z0[0,0])
+        return SParam(f'{self.name} Γopt', self.nw.f, gamma_opt, self.nw.z0[0,0], original_files=self.original_files, param_type='Γopt', number_type=NumberType.VectorLike)
+    
+
+    def z_opt(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.z_opt(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} Zopt', self.nw.f, self.nw.z_opt, self.nw.z0[0,0], original_files=self.original_files, param_type='Zopt', number_type=NumberType.VectorLike)
+    
+
+    def rn(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.rn(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} RN', self.nw.f, self.nw.rn, self.nw.z0[0,0], original_files=self.original_files, param_type='RN', number_type=NumberType.PlainScalar)
+
+
+    def plot_noise(self, db: float, f: float = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+        
+        def _plot_noise(f):
+            nonlocal n_points, label, style, color, width, opacity
+            stab = NoiseCircle(self.nw, f, db)
+            data = stab.get_plot_data(n_points)
+            freq = np.full([n_points], f)
+            final_label = label if label is not None else f'{self.name} NF {db} dB {SiValue(f,"Hz")}'
+            SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'noise')
+        
+        if f is not None and n is None:
+            _plot_noise(f)
+        elif f is None:
+            n = n if n is not None else 1
+            for freq in get_subset(self.nw.f, n):
+                _plot_noise(freq)
+        else:
+            raise ValueError('plot_noise(): need either argument f or n')
+    
+
     def mag(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.mag(): cannot calculate maximum available power gain of {self.name} (only valid for 2-port networks)')
@@ -632,7 +683,8 @@ class Network:
         
         if f is not None and n is None:
             _plot_stab(f)
-        elif f is None and n is not None:
+        elif f is None:
+            n = n if n is not None else 1
             for freq in get_subset(self.nw.f, n):
                 _plot_stab(freq)
         else:
@@ -985,6 +1037,30 @@ class Networks:
 
     def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
+        
+    
+    def nf_min(self):
+        return self._unary_op(Network.nf_min, SParams)
+        
+    
+    def f_min(self):
+        return self._unary_op(Network.f_min, SParams)
+        
+    
+    def gamma_opt(self):
+        return self._unary_op(Network.gamma_opt, SParams)
+        
+    
+    def z_opt(self):
+        return self._unary_op(Network.z_opt, SParams)
+        
+    
+    def rn(self):
+        return self._unary_op(Network.rn, SParams)
+    
+
+    def plot_noise(self, db: float, f: float = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        self._unary_op(Network.plot_noise, None, db=db, f=f, n=n, n_points=n_points, label=label, style=style)
 
     
     def mag(self):

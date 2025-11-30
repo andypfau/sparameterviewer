@@ -1,6 +1,6 @@
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
-from ..stabcircle import StabilityCircle
+from ..circles import StabilityCircle
 from ..sparam_helpers import parse_quick_param
 from .networks import Networks
 from .sparams import SParam, SParams, NumberType

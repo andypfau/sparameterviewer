@@ -2,7 +2,7 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.41b1 (2025-11-27)
+0.41b1 (2025-11-30)
 --------------------
 
 - new: access to new `Comp` namespace from expressions, to generate paramtric components; the methods `Networks.add_r()` etc. are marked as obsolete
@@ -10,6 +10,7 @@ S-Parameter Viewer Changelog
 - new: enhanced the `Networks.plot_stab()` method, it can now plot muiltiple stability circles
 - new: button to scale polar and Smith diagrams to the unit circle
 - new: stability functions `Networks.delta()` and `Networks.b1()`
+- new: noise functions `Networks.f_min()`, `Networks.nf_min()`, `Networks.gamma_opt()`, `Networks.z_opt()`, `Networks.rn()`, `Networks.plot_noise()`
 - change: improved the legend title shortening algorithm
 - bugfix: line/marker styling in Smith diagrams
 

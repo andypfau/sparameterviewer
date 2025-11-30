@@ -372,6 +372,21 @@ class MainWindow(MainWindowUi):
                            'sel_nws().mu(2).plot()  # µ\'; should be > 1 for stable network')
             setup_plot(PlotType.Cartesian)
         
+        def stability_circles():
+            set_expression('sel_nws().plot_stab(n=5,port=2)  # stability circles of port 2')
+            setup_plot(PlotType.Smith)
+        
+        def amp_noise():
+            set_expression('sel_nws().f_min().plot()      # minimum noise factor',
+                           'sel_nws().rn().plot()         # equivalent noise resistance',
+                           'sel_nws().gamma_opt().plot()  # optimum input reflection coefficient for minimum noise; plot in Smith chart')
+            setup_plot(PlotType.Cartesian)
+
+        def amp_noise_circles():
+            set_expression('for db in [1, 3]:',
+                           '  sel_nws().plot_noise(db,n=1)  # noise circles')
+            setup_plot(PlotType.Smith)
+        
         def reciprocity():
             set_expression('sel_nws().reciprocity().plot()  # should be 0 for reciprocal network')
             setup_plot(PlotType.Cartesian)
@@ -518,10 +533,6 @@ class MainWindow(MainWindowUi):
             set_expression('sel_nws().t(any,any).plot()  # scattering transfer parameters')
             setup_plot(PlotType.Cartesian)
         
-        def stability_circles():
-            set_expression('sel_nws().plot_stab(n=5,port=2)  # stability circles of port 2')
-            setup_plot(PlotType.Smith)
-        
         self.ui_show_template_menu([
             ('As Currently Selected', as_currently_selected),
             (None, None),
@@ -555,6 +566,9 @@ class MainWindow(MainWindowUi):
                 ('Amplifier Stability K (2-Port Only)', stability_k),
                 ('Amplifier Stability µ (2-Port Only)', stability_mu),
                 ('Amplifier Stability Circles (2-Port Only)', stability_circles),
+                (None, None),
+                ('Amplifier Noise (2-Port Only)', amp_noise),
+                ('Amplifier Noise Circles (2-Port Only)', amp_noise_circles),
             ]),
             ('Operations on Individual Networks', [
                 ('Normalize at Given Frequency', normalize_to_f),
