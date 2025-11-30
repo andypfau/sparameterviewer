@@ -982,6 +982,10 @@ class Networks:
     def mu(self, mu: int = 1):
         return self._unary_op(Network.mu, SParams, mu=mu)
     
+
+    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
+
     
     def mag(self):
         return self._unary_op(Network.mag, SParams)
@@ -1109,10 +1113,6 @@ class Networks:
             return self ** Components.Line(len=len_m,z=z0,eps_r=eps_r,db_m_mhz=db_m_mhz,db_m_sqmhz=db_m_sqmhz)
         else:
             raise ValueError(f'Invalid port number: {port}')
-
-
-    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
-        self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
 
 
     def plot_sel_params(self) -> None:
