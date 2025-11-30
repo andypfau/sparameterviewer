@@ -37,6 +37,7 @@ class StabilityCircle:
         
         # determine if stable inside or outside
         # see <https://www.analog.com/en/resources/technical-articles/lownoise-amplifier-stability-concept-to-practical-considerations-part-2.html>
+        # TODO: there are other deifnitions, which one is right? See Pozar, 11.2, Stability, and <https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability>
         surrounds_origin = abs(self.center) <= self.radius
         if surrounds_origin:
             self.stable_inside = bool(abs(s11)<1 and abs(delta)>abs(s22))
