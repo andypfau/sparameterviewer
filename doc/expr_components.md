@@ -156,23 +156,23 @@ Comp.Line(deg=90,at_f=10e9) ** sel_nws()  # adds a matched, lossless λ/4 (at 10
 
 
 
-### Comp.LineStub
+### Comp.LineShunt
 
 ```python
-Comp.LineStub(..., stub_gamma=-1) -> ParametricNetwork
+Comp.LineShunt(..., stub_gamma=-1) -> ParametricNetwork
 ```
 
-Same as `Comp.Line(...)`, except that this line is a shunt (i.e. connected as a shunt).
+Same as `Comp.Line(...)`, except that this line is connected as a shunt stub.
 
-The stub is terminated with the reflection coefficient `stub_gamma`; use e.g. `stub_gamma=-1` for an open stub, or `stub_gamma=+1` for a shorted stub.
+The stub is terminated with the reflection coefficient `stub_gamma`; use e.g. `stub_gamma=-1` for an open shunt stub, or `stub_gamma=+1` for a shorted shunt stub.
 
 Example:
 ```python
-sel_nws() ** Comp.LineStub(deg=90,a_f=1e9)  # adds a shorted λ/4 (at 1 GHz) stub before the network
-Comp.LineStub(deg=90,a_f=1e9,gamma_stub=+1) ** sel_nws()  # adds an open λ/4 (at 1 GHz) stub after the network
+sel_nws() ** Comp.LineShunt(deg=90,a_f=1e9)  # adds a shorted λ/4 (at 1 GHz) shunt stub before the network
+Comp.LineShunt(deg=90,a_f=1e9,gamma_stub=+1) ** sel_nws()  # adds an open λ/4 (at 1 GHz) shunt stub after the network
 ```
 
-Note that `Comp.LineStub(..., stub_gamma=...)` is equivalent to `Comp.Line(...).shunt(gamma_term=...)`.
+Note that `Comp.LineShunt(..., stub_gamma=...)` is equivalent to `Comp.Line(...).shunt(gamma_term=...)`.
 
 
 

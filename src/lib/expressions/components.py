@@ -232,11 +232,11 @@ class Line(ParametricNetwork):
         if self._topo == 'shunt':
             s = Network._series_to_shunt(s, self._line_stub_gamma)
             if self._line_stub_gamma == -1:
-                name += ' short stub'
+                name += ' short shunt'
             elif self._line_stub_gamma == +1:
-                name += ' open stub'
+                name += ' open shunt'
             else:
-                name += f' stub (Γ={self._line_stub_gamma})'
+                name += f' shunt (Γ={self._line_stub_gamma})'
         else:
             assert self._topo == 'series'
         
@@ -361,7 +361,7 @@ class Components:  # just a container for parametric networks
         def __init__(self, z: float = None, c_m: float = None, l_m: float = None, r_m: float = None, g_m: float = None, len: float = None, eps_r: float = None, df: float = None, delay: float = None, deg: float = None, at_f: float = None, db: float = None, db_m_mhz: float = None, db_m_sqmhz = None):
             super().__init__([Line(z, c_m, l_m, r_m, g_m, len, eps_r, df, delay, deg, at_f, db, db_m_mhz, db_m_sqmhz, topo='series')])
 
-    class LineStub(Networks):
+    class LineShunt(Networks):
         def __init__(self, z: float = None, c_m: float = None, l_m: float = None, r_m: float = None, g_m: float = None, len: float = None, eps_r: float = None, df: float = None, delay: float = None, deg: float = None, at_f: float = None, db: float = None, db_m_mhz: float = None, db_m_sqmhz = None, stub_gamma: complex = -1):
             super().__init__([Line(z, c_m, l_m, r_m, g_m, len, eps_r, df, delay, deg, at_f, db, db_m_mhz, db_m_sqmhz, topo='shunt', stub_gamma=stub_gamma)])
     
