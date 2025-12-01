@@ -429,6 +429,10 @@ class MainWindow(MainWindowUi):
             nws = ' ** '.join([selected_files])
             set_expression(f'({nws}).s(2,1).plot()')
         
+        def cascade_ref():
+            if ref_nw := get_reference_file_for_multifile_op():
+                set_expression(f'(({ref_nw}) ** sel_nws()).plot_sel_params()  # cascade reference network')
+        
         def normalize_to_ref():
             if ref_nw := get_reference_file_for_multifile_op():
                 set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()  # normalize to reference newtork')
@@ -514,7 +518,7 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.s().plot()' for nw in selected_files]
+            expressions = [f'{nw}.sel_params().plot()' for nw in selected_files]
             set_expression(*expressions)
         
         def z():
@@ -548,6 +552,8 @@ class MainWindow(MainWindowUi):
                 ('S11, S21, S22', quick112122),
                 ('S11, S21, S12, S22', quick11211222),
                 ('S11, S21, S22, S31, S32, S33', quick112122313233),
+                (None, None),
+                ('Plot Selected Networks Explicitly', all_selected),
             ]),
             ('Other Parameters', [
                 ('Z-Matrix (Impedance)', z),
@@ -555,38 +561,33 @@ class MainWindow(MainWindowUi):
                 ('ABCD-Matrix (Cascade; 2-Port Only)', abcd),
                 ('T-Matrix (Scattering Transfer; Even Port Numbers Only)', t),
             ]),
-            ('Network Analysis', [
+            ('General Network Analysis', [
                 ('Reciprocity (2-Port or Higher Only)', reciprocity),
                 ('Symmmetry (2-Port or Higher Only)', symmetry),
                 ('Passivity', passivity),
                 ('Losslessness', losslessness),
+                (None, None),
                 ('All of Above', four_metrics),
-                (None, None),
-                ('Amplifier Gain (2-Port Only)', amp_gain),
-                ('Amplifier Stability K (2-Port Only)', stability_k),
-                ('Amplifier Stability µ (2-Port Only)', stability_mu),
-                ('Amplifier Stability Circles (2-Port Only)', stability_circles),
-                (None, None),
-                ('Amplifier Noise (2-Port Only)', amp_noise),
-                ('Amplifier Noise Circles (2-Port Only)', amp_noise_circles),
             ]),
-            ('Operations on Individual Networks', [
-                ('Normalize at Given Frequency', normalize_to_f),
-                ('Single-Ended to Mixed-Mode', mixed_mode),
-                ('Impedance Renormalization', z_renorm),
+            ('Amplifier Analysis', [
+                ('Gain (2-Port Only)', amp_gain),
                 (None, None),
+                ('Stability K (2-Port Only)', stability_k),
+                ('Stability µ (2-Port Only)', stability_mu),
+                ('Stability Circles (2-Port Only)', stability_circles),
+                (None, None),
+                ('Noise (2-Port Only)', amp_noise),
+                ('Noise Circles (2-Port Only)', amp_noise_circles),
+            ]),
+            ('Add Network', [
                 ('Add Passive To Network', add_passive),
                 ('Add Shunted Passive To Network', add_shunted_passive),
                 ('Add Line To Network', add_tline),
                 ('Add Line-Stub To Network', add_tline_stub),
-                (None, None),
-                ('Just Plot All Selected Files', all_selected),
             ]),
-            ('Operations On Multiple Networks', [
+            ('Cascading and De-Embedding', [
                 ('Cascade Selected Networks', cascade),
-            ]),
-            ('Operations With a Reference Network', [
-                ('Normalize to Reference Network', normalize_to_ref),
+                ('Cascade Reference Network', cascade_ref),
                 (None, None),
                 ('De-Embed Reference Network From Others', deembed_ref_from_others),
                 ('De-Embed Reference Network (Flipped) From Others', deembed_ref_flipped_from_others),
@@ -594,6 +595,13 @@ class MainWindow(MainWindowUi):
                 ('From Others De-Embed Reference Network (Flipped)', from_others_deembed_ref_flipped),
                 (None, None),
                 ('Treat Reference as 2xTHRU, De-Embed from Others', deembed_ref_as_2xthru),
+            ]),
+            ('Normalization and Conversion', [
+                ('Normalize at Given Frequency', normalize_to_f),
+                ('Normalize to Reference Network', normalize_to_ref),
+                (None, None),
+                ('Single-Ended to Mixed-Mode', mixed_mode),
+                ('Impedance Renormalization', z_renorm),
             ]),
         ])
 
