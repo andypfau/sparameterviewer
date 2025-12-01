@@ -2029,7 +2029,7 @@ class MainWindow(MainWindowUi):
             if plot_type == PlotType.Polar:
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
                     self.plot.plot.set_xlim(auto=True)
-                    self.plot.plot.set_ylim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
+                    self.plot.plot.set_ylim(max(0,self.ui_xaxis_range.low), self.ui_xaxis_range.high, auto=False)
 
             elif plot_type == PlotType.Smith:
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
