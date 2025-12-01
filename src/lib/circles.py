@@ -49,25 +49,20 @@ class StabilityCircle(SParameterCircle):
         s22 = nw.s[0,1,1]
 
         if port==1:
-            s11, s21, s12, s22 = s22, s12, s21, s11 # just flip the network, then do the same calculation
+            s11, s21, s12, s22 = s22, s12, s21, s11 # just flip the network, then do the same calculation, to get an input circle
         elif port!=2:
             raise ValueError('Stability circle argument <port> must be 1 or 2')
         
-        # calculate stability circle for output
-        # see <https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability>
+        # calculate stability circle for output, see e.g. <Pozar, Microwave Engineering>, <Sorrentino Bianchi, Microwave and RF Engineering>, <https://www.analog.com/en/resources/technical-articles/lownoise-amplifier-stability-concept-to-practical-considerations-part-2.html>
         delta = s11*s22 - s12*s21
         denom = abs(s22)**2 - abs(delta)**2
         self.center = (s22 - s11.conjugate()*delta).conjugate() / denom
         self.radius = abs((s12*s21) / denom)
         
-        # determine if stable inside or outside
-        # see <https://www.analog.com/en/resources/technical-articles/lownoise-amplifier-stability-concept-to-practical-considerations-part-2.html>
-        # TODO: there are other definitions, which one is right? See Pozar, 11.2, Stability, and <https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_V%3A_Amplifiers_and_Oscillators_(Steer)/02%3A_Linear_Amplifiers/2.06%3A_Amplifier_Stability>
-        surrounds_origin = abs(self.center) <= self.radius
-        if surrounds_origin:
-            self.stable_inside = bool(abs(s11)<1 and abs(delta)>abs(s22))
-        else:
-            self.stable_inside = bool(abs(s11)>1 and abs(delta)>abs(s22))
+        # determine if stable inside or outside, see e.g. <Sorrentino Bianchi, Microwave and RF Engineering>, <https://www.analog.com/en/resources/technical-articles/lownoise-amplifier-stability-concept-to-practical-considerations-part-2.html>
+        distance_to_origin = abs(self.center - 0)
+        surrounds_origin = distance_to_origin <= self.radius
+        self.stable_inside = (abs(s11) <= 1) == (surrounds_origin)
         
     
     def _get_center_and_radius(self) -> tuple[complex,float]:
