@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b2 (2025-12-01)
+--------------------
+
+- new: `Networks.plot_stab()` and `Networks.plot_noise()` accept array arguments
+
+
 0.41b1 (2025-11-30)
 --------------------
 

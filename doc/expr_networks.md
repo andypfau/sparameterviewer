@@ -295,8 +295,10 @@ plot_noise(db, f=None, n=None, n_points=101, label=None, style='-')
 ```
 
 Plots the noise circles of a network for NF=`db`. You can either specifcy:
-- the freuqency of the circle you want to plot, with `f=...`, or
-- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted); default is `n=1`
+- the frequency, or a list of frequencies, of the circle you want to plot, e.g. with `f=1e9` or `f=[1e9,2e9]`, or
+- the number of circle you want to plot, e.g. `n=5` (then `n` equidistant frequency samples are plotted); default is `n=1`
+
+The argument `db` can also be a list, e.g. `db=[3,6]` to plot noise circles for 3 dB and for 6 dB.
 
 You can also provide the argument `n_points=...`, which defines how many graph points are used to represent the circle.
 
@@ -428,8 +430,8 @@ plot_stab(f=None, n=None, port=2, n_points=101, label=None, style='-')
 ```
 
 Plots the stability circles of a network. You can either specifcy:
-- the freuqency of the circle you want to plot, with `f=...`, or
-- the number of circle you want to plot, with `n=...` (then `n` equidistant frequency samples are plotted); default is `n=1`
+- the frequency, or a list of frequencies, of the circle you want to plot, e.g. with `f=1e9` or `f=[1e9,2e9]`, or
+- the number of circle you want to plot, e.g. `n=5` (then `n` equidistant frequency samples are plotted); default is `n=1`
 
 Set `port=1` if you want to calculate the stability at the input, otherwise the output is calculated.
 

@@ -92,7 +92,10 @@ class NoiseCircle(SParameterCircle):
         # calculate noise circle; see Pozar, 12.3, Low-Noise Amplifier Design
         n = (10**(nf_db/10) - f_min) / (4 * rn / z0) * abs(1+Γ_opt)**2
         self.center = Γ_opt / (n + 1)
-        self.radius = math.sqrt(n * (n + 1 - abs(Γ_opt)**2)) / (n + 1)
+        sqrt_arg = n * (n + 1 - abs(Γ_opt)**2)
+        if sqrt_arg < 0:
+            raise ValueError(f'Cannot calculate noise circle for NF={nf_db} dB at f={SiValue(frequency_hz,"Hz")}: out of range')
+        self.radius = math.sqrt(sqrt_arg) / (n + 1)
         
     
     def _get_center_and_radius(self) -> tuple[complex,float]:

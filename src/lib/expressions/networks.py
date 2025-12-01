@@ -485,22 +485,33 @@ class Network:
         return SParam(f'{self.name} RN', self.nw.f, self.nw.rn, self.nw.z0[0,0], original_files=self.original_files, param_type='RN', number_type=NumberType.PlainScalar)
 
 
-    def plot_noise(self, db: float, f: float = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+    def plot_noise(self, db: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         
-        def _plot_noise(f):
+        if not hasattr(db, '__len__'):
+            db = [db]
+        
+        def _plot_noise(db, f):
             nonlocal n_points, label, style, color, width, opacity
-            stab = NoiseCircle(self.nw, f, db)
-            data = stab.get_plot_data(n_points)
-            freq = np.full([n_points], f)
-            final_label = label if label is not None else f'{self.name} NF {db} dB {SiValue(f,"Hz")}'
-            SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'noise')
+            try:
+                stab = NoiseCircle(self.nw, f, db)
+                data = stab.get_plot_data(n_points)
+                freq = np.full([n_points], f)
+                final_label = label if label is not None else f'{self.name} NF {db} dB {SiValue(f,"Hz")}'
+                SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'noise') 
+            except:
+                pass  # ignore this, contintue with other circles
         
         if f is not None and n is None:
-            _plot_noise(f)
+            if not hasattr(f, '__len__'):
+                f = [f]
+            for f1 in f:
+                for db1 in db:
+                    _plot_noise(db1, f1)
         elif f is None:
             n = n if n is not None else 1
-            for freq in get_subset(self.nw.f, n):
-                _plot_noise(freq)
+            for f1 in get_subset(self.nw.f, n):
+                for db1 in db:
+                    _plot_noise(db1, f1)
         else:
             raise ValueError('plot_noise(): need either argument f or n')
     
@@ -671,22 +682,28 @@ class Network:
 
 
     def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
-        
+                
         def _plot_stab(f):
             nonlocal port, n_points, label, style, color, width, opacity
-            stab = StabilityCircle(self.nw, f, port)
-            data = stab.get_plot_data(n_points)
-            freq = np.full([n_points], f)
-            final_label = label if label is not None else f'{self.name} St. {SiValue(f,"Hz")} P{port}'
-            final_label += ' (s.i.)' if stab.stable_inside else ' (s.o.)'
-            SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'stability')
+            try:
+                stab = StabilityCircle(self.nw, f, port)
+                data = stab.get_plot_data(n_points)
+                freq = np.full([n_points], f)
+                final_label = label if label is not None else f'{self.name} St. {SiValue(f,"Hz")} P{port}'
+                final_label += ' (s.i.)' if stab.stable_inside else ' (s.o.)'
+                SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'stability')
+            except:
+                pass  # ignore this, contintue with other circles
         
         if f is not None and n is None:
-            _plot_stab(f)
+            if not hasattr(f, '__len__'):
+                f = [f]
+            for f1 in f:
+                _plot_stab(f1)
         elif f is None:
             n = n if n is not None else 1
-            for freq in get_subset(self.nw.f, n):
-                _plot_stab(freq)
+            for f1 in get_subset(self.nw.f, n):
+                _plot_stab(f1)
         else:
             raise ValueError('plot_stab(): need either argument f or n')
         
@@ -1035,6 +1052,7 @@ class Networks:
         return self._unary_op(Network.mu, SParams, mu=mu)
     
 
+    # TODO: allow to hand in an array of frequencies for f
     def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
         
@@ -1059,8 +1077,11 @@ class Networks:
         return self._unary_op(Network.rn, SParams)
     
 
-    def plot_noise(self, db: float, f: float = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
+    def plot_noise(self, db: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_noise, None, db=db, f=f, n=n, n_points=n_points, label=label, style=style)
+    
+
+    # TODO: constant-gain circles
 
     
     def mag(self):
