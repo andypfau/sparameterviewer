@@ -67,6 +67,8 @@ However, using Python-based expressions, you have even more control over what is
 
 You can use the "Template" button to automatically generate useful expressions. Note that you can right-click a file in the Filesystem Browser, and click "Save for Template", which selects the reference network that is needed by some templates.
 
+You can save/load the expressions to/from files, by clicking "Save"/"Load". In the drop-down of the buttons, you find the most recent files, as well as "Scratchpad", which is a quick-save/-load slot that is stored in the application's settings.
+
 
 ### Cursors
 
