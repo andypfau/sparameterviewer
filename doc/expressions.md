@@ -198,8 +198,7 @@ Advanced
 
 ```python
 # calculate directivity (S42/S32) of a directional coupler
-# note that this example requires plotting in linear units, as the values are already converted to dB
-(nw("coupler_4port.s4p").s(4,2).db() - nw("coupler_4port.s4p").s(3,2).db()).plot("Directivity")
+(nw("coupler_4port.s4p").s(4,2) / nw("coupler_4port.s4p").s(3,2)).plot("Directivity")
 
 # de-embed a 2xTHRU
 (nw("thru.s2p").half(side=1).invert() ** nw("atty_10db.s2p") ** nw("thru.s2p").half(side=2).flip()).s(2,1).plot("De-embedded")
@@ -212,7 +211,7 @@ nws("amp.s2p").mu().plot("µ Stability Factor",":")
 
 # add elements to a network (in this case, a parallel cap, followed by a short transmission line)
 nws("amp.s2p").s(1,1).plot("Baseline",":")
-nws("amp.s2p").add_pc(400e-15).add_tl(7,2e9,25).s(1,1).plot("Optimized","-")
+((nws("amp.s2p") ** Comp.CShunt(400e-15)) ** Comp.Line(delay=1e-9)).s(1,1).plot("Optimized","-")
 
 # Compare S21 of all available networks to the currently selected one
 (nws().s(2,1) / sel_nws().s(2,1)).plot()

@@ -598,5 +598,7 @@ Cascades two networks. Frequency grids are interpolated accordingly.
 
 Example:
 ```python
-(sel_nws() ** nw("thru.s2p")).plot_sel_params()  # cascade thru.s2p to selected networks, then plot S-parameters
+# cascade selected network with thru.s2p, then plot S-parameters, i.e.:
+#   1--selected network---thru.s2p--2
+(sel_nws() ** nw("thru.s2p")).plot_sel_params()
 ```
