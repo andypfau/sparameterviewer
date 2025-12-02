@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..circles import StabilityCircle
-from ..utils import sanitize_filename
+from ..utils import sanitize_filename, db2v, v2db
 from ..citi import CitiWriter
 from ..settings import Settings
 from .helpers import format_call_signature
@@ -517,13 +517,14 @@ class SParams:
         return f_start, f_end, n
 
 
-    def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp', enforce_real: bool=False):
+    def _interpolated_fn(self, name, fn, min_size=1, type_str: str='.interp', enforce_real: bool=False, number_type: NumberType = None):
         sps = self.interpolate().sps
         assert min_size >= 1
         if len(sps) < min_size:
             return SParams(sps=[])
         f = sps[0].f
-        nt = sps[0].number_type
+        if number_type is None:
+            number_type = sps[0].number_type
         
         s_input = []
         list_of_abs = []
@@ -536,22 +537,36 @@ class SParams:
         if list_of_abs and Settings.verbose:
             logging.debug(f'Took absolute of S-parameters {list_of_abs}')
         s = fn([s for s in s_input])
-        return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str, number_type=nt)])
+        return SParams(sps=[SParam(name, f, s, math.nan, param_type=type_str, number_type=number_type)])
 
 
-    def mean(self):
-        return self._interpolated_fn('Mean', lambda s: np.mean(s,axis=0), type_str='.mean')
+    @staticmethod
+    def _wrap_calc_in_db(fn):
+        return lambda x: db2v(fn(v2db(x)))
+    
+    
+    def mean(self, in_db = True):
+        def _mean(s):
+            return np.mean(s,axis=0)
+        fn = SParams._wrap_calc_in_db(_mean) if in_db else _mean
+        return self._interpolated_fn('Mean', fn, type_str='.mean', number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
 
 
-    def median(self):
-        return self._interpolated_fn('Median', lambda s: np.median(s,axis=0), type_str='.median')
+    def median(self, in_db = True):
+        def _median(s):
+            return np.median(s,axis=0)
+        fn = SParams._wrap_calc_in_db(_median) if in_db else _median
+        return self._interpolated_fn('Median', fn, type_str='.median', number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
 
 
-    def sdev(self, ddof=1):
-        return self._interpolated_fn('StdDev', lambda s: np.std(s,axis=0,ddof=ddof), min_size=2, type_str='.sdev')
+    def sdev(self, ddof=1, in_db = True):
+        def _sdev(s):
+            return np.std(s,axis=0,ddof=ddof)
+        fn = SParams._wrap_calc_in_db(_sdev) if in_db else _sdev
+        return self._interpolated_fn('StdDev', fn, min_size=2, type_str='.sdev', number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
 
 
-    def rsdev(self, quantiles=50):
+    def rsdev(self, quantiles=50, in_db = True):
         if isinstance(quantiles,(int,float)):
             assert 0<quantiles<100, f'Expected quantile to be in the exlcusive range 0..100%, got {quantiles}'
             q1, q2 = 0.5-(quantiles/100/2), 0.5+(quantiles/100/2)
@@ -561,15 +576,31 @@ class SParams:
             assert 0<qp1<100 and 0<qp2<100 and qp1<qp2, f'Expected quantiles to be ascending, and in the exlcusive range 0..100%, got {qp1} and {qp2}'
             q1, q2 = qp1/100, qp2/200
         norm_iqr = scipy.stats.norm.ppf(q2) - scipy.stats.norm.ppf(q1)
-        return self._interpolated_fn('RStdDev', lambda s: (np.quantile(s,q2,axis=0)-np.quantile(s,q1,axis=0))/norm_iqr, min_size=2, type_str='.rsdev', enforce_real=True)
+
+        def _rsdev(s):
+            return (np.quantile(abs(s),q2,axis=0)-np.quantile(abs(s),q1,axis=0))/norm_iqr
+        fn = SParams._wrap_calc_in_db(_rsdev) if in_db else _rsdev
+        return self._interpolated_fn('RStdDev', fn, min_size=2, type_str='.rsdev', enforce_real=True, number_type=NumberType.MagnitudeLike)
 
 
-    def min(self):
-        return self._interpolated_fn('Min', lambda s: np.min(s,axis=0), min_size=1, type_str='.min', enforce_real=True)
+    def min(self, in_db = True):
+        def _min(s):
+            return np.min(s,axis=0)
+        fn = SParams._wrap_calc_in_db(_min) if in_db else _min
+        return self._interpolated_fn('Min', fn, min_size=1, type_str='.min', enforce_real=True, number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
 
 
-    def max(self):
-        return self._interpolated_fn('Max', lambda s: np.max(s,axis=0), min_size=1, type_str='.max', enforce_real=True)
+    def max(self, in_db = True):
+        def _max(s):
+            return np.max(s,axis=0)
+        fn = SParams._wrap_calc_in_db(_max) if in_db else _max
+        return self._interpolated_fn('Max', fn, min_size=1, type_str='.max', enforce_real=True, number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
+
+    def pkpk(self, in_db = True):
+        def _pkpk(s):
+            return np.max(s,axis=0) - np.min(s,axis=0)
+        fn = SParams._wrap_calc_in_db(_pkpk) if in_db else _pkpk
+        return self._interpolated_fn('PkPk', fn, min_size=1, type_str='.pkpk', enforce_real=True, number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
     
 
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":

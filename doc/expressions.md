@@ -7,6 +7,8 @@ Expressions are intended to unlock possibilities and flexibility of S-parameter 
 
 The majority of the functionality offered by expressions can easily be accessed using the "Template"-Button in the "Expressions" tab. The generated expressions can then be modified to adapt to any need.
 
+When selecting a template, the template code is added on top of the expressions. Existing expressions are commented out; this behavior chan be changed in the settings, or temporarly be toggled by holding the CTRL key.
+
 
 
 Basics

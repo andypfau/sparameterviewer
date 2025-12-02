@@ -210,7 +210,7 @@ class QtHelper:
 
 
     @staticmethod
-    def show_popup_menu(parent: QWidget, items: list[tuple[str,Callable|list]], position: QPoint):
+    def show_popup_menu(parent: QWidget, items: list[tuple[str,Callable|list]], position: QPoint, call_wrapper: Callable[[Callable,bool,bool], None]|None = None):
         """
         Builds a menu
         Each key in `items` is the text on a menu item, or `None` to insert a separator.
@@ -229,7 +229,17 @@ class QtHelper:
                     if name.startswith('*'):
                         name = name[1:]
                         bold = True
-                    QtHelper.add_menuitem(menu, text=name, action=action_or_submenu, bold=bold)
+                    if call_wrapper is not None:
+                        def make_wrapper(callable):
+                            def wrapper():
+                                ctrl = bool(QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier)
+                                shift = bool(QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier)
+                                call_wrapper(callable, ctrl, shift)
+                            return wrapper
+                        action = make_wrapper(action_or_submenu)
+                    else:
+                        action = action_or_submenu
+                    QtHelper.add_menuitem(menu, text=name, action=action, bold=bold)
         menu = QMenu(parent)
         populate_menu(menu, items)
         menu.popup(position)

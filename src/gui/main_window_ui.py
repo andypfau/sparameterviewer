@@ -631,9 +631,9 @@ class MainWindowUi(QMainWindow):
         QApplication.processEvents()
 
 
-    def ui_show_template_menu(self, items: list[tuple[str,Callable|list]]):
+    def ui_show_template_menu(self, items: list[tuple[str,Callable|list]], call_wrapper: Callable[[Callable,bool,bool], None]|None = None):
         button_pos = self._ui_template_button.mapToGlobal(QPoint(0, self._ui_template_button.height()))
-        QtHelper.show_popup_menu(self, items, button_pos)
+        QtHelper.show_popup_menu(self, items, button_pos, call_wrapper=call_wrapper)
 
     
     def ui_set_window_title(self, title: str):

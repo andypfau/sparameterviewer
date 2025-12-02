@@ -274,6 +274,8 @@ class MainWindow(MainWindowUi):
     
     def on_template_button(self):
 
+        comment_existing_expr = Settings.comment_existing_expr
+
         def const_selected_files():
             return [f'nw(\'{self.get_nw_name_for_template(file.path)}\')' for file in self.get_selected_files()]
         
@@ -293,10 +295,11 @@ class MainWindow(MainWindowUi):
                 return f'nw("{self.get_nw_name_for_template(self._ref_path_for_template)}")'
 
         def set_expression(*expressions):
+            nonlocal comment_existing_expr
             if Settings.simplified_no_expressions:
                 return
             def comment_lines(lines: list[str]) -> list[str]:
-                if not Settings.comment_existing_expr:
+                if not comment_existing_expr:
                     return lines
                 result = []
                 for line in lines:
@@ -314,6 +317,9 @@ class MainWindow(MainWindowUi):
             self.schedule_plot_update()
         
         def as_currently_selected():
+            from PyQt6 import QtCore, QtGui, QtWidgets
+            if QtWidgets.QApplication.keyboardModifiers() & QtCore.Qt.KeyboardModifier.ControlModifier:
+                print('AAAAAAAAA')
             set_expression(self.generated_expressions)
 
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
@@ -361,9 +367,34 @@ class MainWindow(MainWindowUi):
         def quick112122313233():
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+
+        def stat_minmax():
+            if len(const_selected_files()) < 2:
+                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
+            set_expression('sel_nws().sel_params().min().plot()     # lowest value',
+                           'sel_nws().sel_params().max().plot()     # highest value',
+                           'sel_nws().sel_params().pkpk().plot()    # peak-to-peak value',
+                           'sel_nws().sel_params().plot(style=":")  # all raw data')
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+
+        def stat_meansdev():
+            if len(const_selected_files()) < 2:
+                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
+            set_expression('sel_nws().sel_params().mean().plot()    # mean',
+                           'sel_nws().sel_params().sdev().plot()    # standard deviation',
+                           'sel_nws().sel_params().plot(style=":")  # all raw data')
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+
+        def stat_rmeansdev():
+            if len(const_selected_files()) < 2:
+                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
+            set_expression('sel_nws().sel_params().median().plot()             # median / robust mean',
+                           'sel_nws().sel_params().rsdev(quantiles=50).plot()  # robust standard deviation from inter-quantile range',
+                           'sel_nws().sel_params().plot(style=":")             # all raw data')
+            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def stability_k():
-            set_expression('sel_nws().k().plot()       # k; should be > 1 for stable network',
+            set_expression('sel_nws().k().plot()      # k; should be > 1 for stable network',
                            'sel_nws().delta().plot()  # Δ; should be < 1 for stable network')
             setup_plot(PlotType.Cartesian)
         
@@ -537,6 +568,11 @@ class MainWindow(MainWindowUi):
             set_expression('sel_nws().t(any,any).plot()  # scattering transfer parameters')
             setup_plot(PlotType.Cartesian)
         
+        def invoke_template(template_fn, ctrl, shift):
+            nonlocal comment_existing_expr
+            comment_existing_expr = Settings.comment_existing_expr != ctrl
+            template_fn()
+        
         self.ui_show_template_menu([
             ('As Currently Selected', as_currently_selected),
             (None, None),
@@ -603,7 +639,12 @@ class MainWindow(MainWindowUi):
                 ('Single-Ended to Mixed-Mode', mixed_mode),
                 ('Impedance Renormalization', z_renorm),
             ]),
-        ])
+            ('Statistics', [
+                ('Min, Max, Peak-Peak', stat_minmax),
+                ('Mean and Stddev', stat_meansdev),
+                ('Robust Mean and Stddev', stat_rmeansdev),
+            ]),
+        ], call_wrapper=invoke_template)
 
 
     def on_color_change(self):

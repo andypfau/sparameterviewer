@@ -158,6 +158,10 @@ def v2db(v):
     return 20*np.log10(np.maximum(1e-15, np.abs(v)))
 
 
+def db2v(db):
+    return 10**(db/20)
+
+
 def group_delay(frequencies, sparams):
     d_phase = np.diff(np.unwrap(np.angle(sparams)))
     d_freq = np.diff(frequencies)

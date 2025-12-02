@@ -190,14 +190,16 @@ sel_nws().sel_params().norm(1e9).plot()  # normalize all traces to the 1 GHz-poi
 ### min()
 
 ```python
-min() → SParams.
+min(in_db=True) → SParams.
 ```
 
 Returns the minimum value (per frequency) of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid. If the input data has complex data type, the absolute is taken first.
 
+The parameter `in_db` works as explained under `sdev()`
+
 Example:
 ```python
-sel_nws().sel_params().abs().min().plot()
+sel_nws().sel_params().min().plot()
 ```
 
 
@@ -205,14 +207,33 @@ sel_nws().sel_params().abs().min().plot()
 ### max()
 
 ```python
-max() → SParams.
+max(in_db=True) → SParams.
 ```
 
 Returns the maximum value (per frequency) of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid. If the input data has complex data type, the absolute is taken first.
 
+The parameter `in_db` works as explained under `sdev()`
+
 Example:
 ```python
-sel_nws().sel_params().abs().max().plot()
+sel_nws().sel_params().max().plot()
+```
+
+
+
+### pkpk()
+
+```python
+pkpk(in_db=True) → SParams.
+```
+
+Returns the peak-peak value (per frequency) of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid. If the input data has complex data type, the absolute is taken first.
+
+The parameter `in_db` works as explained under `sdev()`
+
+Example:
+```python
+sel_nws().sel_params().pkpk().plot()
 ```
 
 
@@ -220,10 +241,12 @@ sel_nws().sel_params().abs().max().plot()
 ### mean()
 
 ```python
-mean() → SParams.
+mean(in_db=True) → SParams.
 ```
 
 Returns the arithmetic mean of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid.
+
+The parameter `in_db` works as explained under `sdev()`
 
 Example:
 ```python
@@ -235,10 +258,12 @@ sel_nws().sel_params().mean().plot()
 ### median()
 
 ```python
-median() → SParams.
+median(in_db=True) → SParams.
 ```
 
 Returns the median of multiple S-parameters. Applies `interpolate()` first, to get a common frequency grid.
+
+The parameter `in_db` works as explained under `sdev()`
 
 Example:
 ```python
@@ -250,10 +275,12 @@ sel_nws().sel_params().median().plot()
 ### sdev()
 
 ```python
-sdev(ddof=1) → SParams.
+sdev(ddof=1, in_db=True) → SParams.
 ```
 
 Returns the standard deviation of multiple S-parameters. The paraemter `ddof` is the delta degrees of freedom which is handed into NumPy's `std()` function. Applies `interpolate()` first, to get a common frequency grid.
+
+If `in_db=True` (default), it converts all S-parameters to dB, calculates the standard deviation, then converts back to linear units (which you can then plot in dB or magniiude, by using the corresponding GUI controls). If `in_db=False`, the calculation is done on the S-parameters directly, which typically does not return the expected result.
 
 Example:
 ```python
@@ -265,19 +292,21 @@ sel_nws().sel_params().sdev().plot()
 ### rsdev()
 
 ```python
-rsdev(quantiles=50) → SParams.
+rsdev(quantiles=50, in_db=True) → SParams.
 ```
 
 Returns the robust standard deviation of multiple S-parameters, by calculating the inter-quantile range (IQR), and comparing it to the IQR of a normal distribution. If the input data has complex data type, the absolute is taken first. Applies `interpolate()` first, to get a common frequency grid.
 
+The parameter `in_db=True` works as explained under `sdev()`, except that for `in_d_b=False`, the magnitude of the S-parameters os calcualted before calculading the inter-quantile range (because that function is undefined for complex values).
+
 The parameter `quantiles` can be:
 
-* A tuple of percentages, e.g. `(25,75)` to get the 25%..75% IQR.
-* A single percentages, e.g. `50` to get the 25%..75% IQR.
+* A tuple of percentages, e.g. `(10,90)` to get the 10%..90% IQR.
+* A single percentages, e.g. `80` to get the 10%..90% IQR.
 
 Example:
 ```python
-sel_nws().sel_params().abs().rsdev().plot()
+sel_nws().sel_params().rsdev().plot()
 ```
 
 
