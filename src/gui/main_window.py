@@ -394,8 +394,8 @@ class MainWindow(MainWindowUi):
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
         
         def stability_k():
-            set_expression('sel_nws().k().plot()      # k; should be > 1 for stable network',
-                           'sel_nws().delta().plot()  # Δ; should be < 1 for stable network')
+            set_expression('sel_nws().k().plot()      # Stability k; should be > 1 for stable network',
+                           'sel_nws().delta().plot()  # Stability Δ; should be < 1 for stable network')
             setup_plot(PlotType.Cartesian)
         
         def stability_mu():
@@ -408,14 +408,17 @@ class MainWindow(MainWindowUi):
             setup_plot(PlotType.Smith)
         
         def amp_noise():
-            set_expression('sel_nws().f_min().plot()      # minimum noise factor',
-                           'sel_nws().rn().plot()         # equivalent noise resistance',
-                           'sel_nws().gamma_opt().plot()  # optimum input reflection coefficient for minimum noise; plot in Smith chart')
+            set_expression('sel_nws().noisefactor().plot()  # noise factor F')
+            setup_plot(PlotType.Cartesian)
+        
+        def amp_minnoise():
+            set_expression('sel_nws().f_min().plot()      # minimum noise factor Fmin',
+                           'sel_nws().rn().plot()         # equivalent noise resistance Rn',
+                           'sel_nws().gamma_opt().plot()  # optimum input reflection coefficient Γopt for minimum noise; plot in Smith chart')
             setup_plot(PlotType.Cartesian)
 
         def amp_noise_circles():
-            set_expression('for db in [1, 3]:',
-                           '  sel_nws().plot_noise(db,n=1)  # noise circles')
+            set_expression('sel_nws().plot_noise([1,3],n=1)  # noise circles')
             setup_plot(PlotType.Smith)
         
         def reciprocity():
@@ -509,7 +512,7 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()  # re-normalize impedance' for nw in selected_files]
+            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()  # re-normalize port impedances' for nw in selected_files]
             set_expression(*expressions)
 
         def add_passive():
@@ -612,8 +615,9 @@ class MainWindow(MainWindowUi):
                 ('Stability µ (2-Port Only)', stability_mu),
                 ('Stability Circles (2-Port Only)', stability_circles),
                 (None, None),
-                ('Noise (2-Port Only)', amp_noise),
+                ('Noise Figure (2-Port Only)', amp_noise),
                 ('Noise Circles (2-Port Only)', amp_noise_circles),
+                ('Minimum Noise Parameters (2-Port Only)', amp_minnoise),
             ]),
             ('Add Network', [
                 ('Add Passive To Network', add_passive),

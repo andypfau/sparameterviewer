@@ -2,12 +2,18 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b4 (2025-12-04)
+--------------------
+
+- new: `Networks.nf()` and `Networks.noisefactor()`
+
+
 0.41b3 (2025-12-02)
 --------------------
 
 - new: templates for statistics
 - new: hold CTRL when selecting a template to toggle commenting of existing code
-- change: standard deviations are now calculated in dB by default
+- change: standard deviations are now calculated on data-in-dB by default
 
 
 0.41b2 (2025-12-01)

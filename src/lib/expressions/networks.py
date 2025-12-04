@@ -4,7 +4,7 @@ from ..circles import StabilityCircle, NoiseCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
-from ..utils import sanitize_filename, get_subset
+from ..utils import sanitize_filename, get_subset, p2db
 from ..citi import CitiWriter
 from ..si import SiValue
 from info import Info
@@ -454,15 +454,27 @@ class Network:
         return SParam(f'{self.name} B1', self.nw.f, b1, self.nw.z0[0,0], original_files=self.original_files, param_type='B1', number_type=NumberType.PlainScalar)
     
 
+    def nf(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.nf(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} NF', self.nw.f, p2db(self.nw.nf), self.nw.z0[0,0], original_files=self.original_files, param_type='NF', number_type=NumberType.PlainScalar)
+    
+
+    def noisefactor(self):
+        if self.nw.number_of_ports != 2:
+            raise RuntimeError(f'Network.noisefactor(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+        return SParam(f'{self.name} F', self.nw.f, self.nw.nf, self.nw.z0[0,0], original_files=self.original_files, param_type='F', number_type=NumberType.MagnitudeLike)
+    
+
     def nf_min(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.nf_min(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
         return SParam(f'{self.name} NFmin', self.nw.f, self.nw.nfmin_db, self.nw.z0[0,0], original_files=self.original_files, param_type='NFmin', number_type=NumberType.PlainScalar)
     
 
-    def f_min(self):
+    def noisefactor_min(self):
         if self.nw.number_of_ports != 2:
-            raise RuntimeError(f'Network.f_min(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
+            raise RuntimeError(f'Network.noisefactor_min(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
         return SParam(f'{self.name} Fmin', self.nw.f, self.nw.nfmin, self.nw.z0[0,0], original_files=self.original_files, param_type='Fmin', number_type=NumberType.MagnitudeLike)
     
 
@@ -681,7 +693,7 @@ class Network:
             raise ValueError(f'Invalid port number: {port}')
 
 
-    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+    def plot_stab(self, f: "float|np.ndarray" = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
                 
         def _plot_stab(f):
             nonlocal port, n_points, label, style, color, width, opacity
@@ -1052,17 +1064,24 @@ class Networks:
         return self._unary_op(Network.mu, SParams, mu=mu)
     
 
-    # TODO: allow to hand in an array of frequencies for f
-    def plot_stab(self, f: float = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
+    def plot_stab(self, f: "float|np.ndarray" = None, n: int = None, port: int = 2, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_stab, None, f=f, n=n, port=port, n_points=n_points, label=label, style=style)
+        
+    
+    def nf(self):
+        return self._unary_op(Network.nf, SParams)
+        
+    
+    def noisefactor(self):
+        return self._unary_op(Network.noisefactor, SParams)
         
     
     def nf_min(self):
         return self._unary_op(Network.nf_min, SParams)
         
     
-    def f_min(self):
-        return self._unary_op(Network.f_min, SParams)
+    def noisefactor_min(self):
+        return self._unary_op(Network.noisefactor_min, SParams)
         
     
     def gamma_opt(self):

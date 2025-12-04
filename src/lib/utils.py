@@ -154,11 +154,19 @@ def start_process(binary_path: str, *args):
     subprocess.Popen([binary_path, *args], start_new_session=True)
 
 
+def p2db(p):
+    return 10*np.log10(np.maximum(1e-30, np.abs(p)))
+
+
 def v2db(v):
     return 20*np.log10(np.maximum(1e-15, np.abs(v)))
 
 
 def db2v(db):
+    return 10**(db/20)
+
+
+def db2p(db):
     return 10**(db/20)
 
 

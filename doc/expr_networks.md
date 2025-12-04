@@ -339,6 +339,104 @@ nw("amp.s2p").u().plot()
 
 
 
+### noisefactor()
+
+```python
+noisefactor() → SParams
+```
+
+Returns the network's noise factor F (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").noisefactor().plot()
+```
+
+Named `noisefactor` to avoid confustion with the frequency. F can be calculated from NF (see `nf()`).
+
+
+
+### nf()
+
+```python
+nf() → SParams
+```
+
+Returns the network's noise figure NF in dB (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").nf().plot()
+```
+
+NF can be calculated from F (see `noisefactor()`).
+
+
+
+### noisefactor_min()
+
+```python
+noisefactor_min() → SParams
+```
+
+Returns the network's minimum noise factor Fmin (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").noisefactor_min().plot()
+```
+
+
+
+### gamma_opt()
+
+```python
+gamma_opt() → SParams
+```
+
+Returns the network's noise optimum source reflection coefficient Γopt for minimum noise (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").gamma_opt().plot()
+```
+
+Γopt can be calculated from Zopt (see `z_opt()`).
+
+
+
+### z_opt()
+
+```python
+z_opt() → SParams
+```
+
+Returns the network's noise optimum source impedane Zopt for minimum noise (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").z_opt().plot()
+```
+
+Zopt can be calculated from Γopt (see `gamma_opt()`).
+
+
+
+### rn()
+
+```python
+rn() → SParams
+```
+
+Returns the network's equivalent noise resistance (if it is provided in the file). Only valid for 2-port networks.
+
+Example:
+```python
+nw("amp.s2p").rn().plot()
+```
+
+
+
 ### losslessness()
 
 ```python
@@ -504,7 +602,7 @@ Renormalize to a specific reference impedance. <z> can be a scalar, or a list of
 Example:
 ```python
 balun = nw("balun21.s4p")
-balun = balun.renorm([50,50,100,100])
+balun = balun.renorm([50,50,100,100])  # port 1 and 2: renormalize to 50 Ω; port 3 and 4: renormalize to 100 Ω
 balun.plot_sel_params()
 ```
 
