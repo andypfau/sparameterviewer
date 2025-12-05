@@ -317,9 +317,6 @@ class MainWindow(MainWindowUi):
             self.schedule_plot_update()
         
         def as_currently_selected():
-            from PyQt6 import QtCore, QtGui, QtWidgets
-            if QtWidgets.QApplication.keyboardModifiers() & QtCore.Qt.KeyboardModifier.ControlModifier:
-                print('AAAAAAAAA')
             set_expression(self.generated_expressions)
 
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):

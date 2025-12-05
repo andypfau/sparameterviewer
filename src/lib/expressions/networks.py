@@ -68,7 +68,6 @@ class Network:
         operations_to_run, self._postponed_operations = self._postponed_operations, []
 
         for method, args, kwargs in operations_to_run:
-            print(f'~~ Running postponed operation ({method}, {args}, {kwargs})')
             result = method(self, *args, **kwargs)
             self._nw = result._nw
             self._name = result._name
@@ -78,10 +77,8 @@ class Network:
     def _postponable(method):
         def wrapper(self: "Network", *args, **kwargs):
             if self._ready():
-                print(f'~~ Running postponable operation immediately ({method}, {args}, {kwargs})')
                 return method(self, *args, **kwargs)
             else:
-                print(f'~~ Postponing operation ({method}, {args}, {kwargs})')
                 import copy
                 obj = copy.deepcopy(self)
                 obj._postponed_operations.append((method, args, kwargs))
@@ -162,7 +159,6 @@ class Network:
 
     
     def _interpolate(self, f: np.ndarray) -> "Network":
-        print(f'Network._interpolate() called')
         return Network(Network._get_interpolated_sparams(self.nw,f), name=self.name, original_files=self.original_files)
 
         
@@ -350,7 +346,6 @@ class Network:
     
     
     def interpolate(self, f_start_or_vector_or_reference: "np.ndarray|float|Network", f_stop: float = None, f_step: float = None, n: int = None, scale='lin')-> "Network":
-        print(f'Network.interpolate() called')
         f = Network._get_interpolation_frequency(f_start_or_vector_or_reference=f_start_or_vector_or_reference, f_stop=f_stop, f_step=f_step, n=n, scale=scale)
         return self._interpolate(f)
 

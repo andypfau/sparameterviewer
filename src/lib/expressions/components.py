@@ -26,13 +26,11 @@ class ParametricNetwork(Network):
 
 
     def interpolate(self, f_start_or_vector_or_reference: "np.ndarray|float|Network", f_stop: float = None, f_step: float = None, n: int = None, scale='lin', z0=50)-> "ParametricNetwork":
-        print(f'ParametricNetwork.interpolate() called')
         f = Network._get_interpolation_frequency(f_start_or_vector_or_reference=f_start_or_vector_or_reference, f_stop=f_stop, f_step=f_step, n=n, scale=scale)
         return self._calculate(self, f=f, z0=z0)
 
 
     def _interpolate(self, f: np.ndarray) -> "ParametricNetwork":
-        print(f'ParametricNetwork._interpolate() called')
         result = copy.deepcopy(self)
         result._calculate(f=f, z0=50)
         return result
