@@ -1,4 +1,4 @@
-! 2-Port simulation of an amplifier
+! 4-Port simulation of a differential amplifier
 ! Port 1: positive input
 ! Port 2: positive output
 ! Port 3: negative input
