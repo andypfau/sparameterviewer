@@ -323,10 +323,15 @@ class MainWindow(MainWindowUi):
             set_expression(self.generated_expressions)
 
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
-            if plot_type:
+            changed = False
+            if plot_type and plot_type != self.ui_plot_selector.plotType():
                 self.ui_plot_selector.setPlotType(plot_type)
-            if quantity:
+                changed = True
+            if quantity and quantity != self.ui_plot_selector.yQuantity():
                 self.ui_plot_selector.setYQuantity(quantity)
+                changed = True
+            if changed:
+                self.on_plottype_changed()
 
         def all_sparams():
             set_expression('sel_nws().s().plot()  # all S-params')
