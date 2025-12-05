@@ -186,12 +186,14 @@ class SiRange:
 
     STR_WILDCARD = '*'
     STR_SEPARATOR = '…'
+    STR_CENTERED_SEPARATOR = '±'
 
 
     def __init__(self, low: float = any, high: float = any, spec: SiFormat = SiFormat(), *, wildcard_value_low: any = any, wildcard_value_high: any = any, allow_both_wildcards: bool = True, allow_individual_wildcards: bool = True):
         self._observers: list[callable[tuple[float,float],None]] = []
         self._low, self._high, self.spec = low, high, spec
         self.wildcard_value_low, self.wildcard_value_high, self.allow_both_wildcards, self.allow_individual_wildcards = wildcard_value_low, wildcard_value_high, allow_both_wildcards, allow_individual_wildcards
+        self._centered_mode = False
 
 
     @property
@@ -200,6 +202,7 @@ class SiRange:
     @low.setter
     def low(self, value: float):
         self._low = value
+        self._centered_mode = False
         self._notify()
 
 
@@ -209,6 +212,7 @@ class SiRange:
     @high.setter
     def high(self, value: float):
         self._high = value
+        self._centered_mode = False
         self._notify()
     
 
@@ -223,6 +227,7 @@ class SiRange:
             if not (self.allow_individual_wildcards or self.allow_both_wildcards):
                 raise RuntimeError('Setting lower range value to wildcard is not allowed')
             self._low = self.wildcard_value_low
+            self._centered_mode = False
             self._notify()
         else:
             raise RuntimeError('Cannot un-set low wildcard directly; instead, set the low value to some numeric value')
@@ -239,6 +244,7 @@ class SiRange:
             if not (self.allow_individual_wildcards or self.allow_both_wildcards):
                 raise RuntimeError('Setting lower range value to wildcard is not allowed')
             self._high = self.wildcard_value_high
+            self._centered_mode = False
             self._notify()
         else:
             raise RuntimeError('Cannot un-set high wildcard directly; instead, set the high value to some numeric value')
@@ -255,6 +261,7 @@ class SiRange:
             if not self.allow_both_wildcards:
                 raise RuntimeError('Setting both range values to wildcard is not allowed')
             self._low, self._high = self.wildcard_value_low, self.wildcard_value_high
+            self._centered_mode = False
             self._notify()
         else:
             raise RuntimeError('Cannot un-set wildcards directly; instead, set the low and high values to some numeric values')
@@ -288,9 +295,14 @@ class SiRange:
             if self.allow_individual_wildcards:
                 return f'{SiRange.STR_WILDCARD} {SiRange.STR_SEPARATOR} {SiRange.STR_WILDCARD}'
         
-        low_str  = SiRange.STR_WILDCARD if self.low_is_wildcard  else str(SiValue(self._low,  spec=self.spec))
-        high_str = SiRange.STR_WILDCARD if self.high_is_wildcard else str(SiValue(self._high, spec=self.spec))
-        return f'{low_str} {SiRange.STR_SEPARATOR} {high_str}'
+        if self._centered_mode and not (self.low_is_wildcard or self.high_is_wildcard):
+            center_str = str(SiValue((self._low+self._high)/2, spec=self.spec))
+            offset_str = str(SiValue((self._high-self._low)/2, spec=self.spec))
+            return f'{center_str} {SiRange.STR_CENTERED_SEPARATOR} {offset_str}'
+        else:
+            low_str  = SiRange.STR_WILDCARD if self.low_is_wildcard  else str(SiValue(self._low,  spec=self.spec))
+            high_str = SiRange.STR_WILDCARD if self.high_is_wildcard else str(SiValue(self._high, spec=self.spec))
+            return f'{low_str} {SiRange.STR_SEPARATOR} {high_str}'
     
 
     def parse(self, value: str) -> SiRange:
@@ -306,7 +318,7 @@ class SiRange:
                 self._low, self._high = self.wildcard_value_low, self.wildcard_value_high
                 return self
         
-        def set_low_high(part_a: str, part_b: str):
+        def set_values(part_a: str, part_b: str, *, centered: bool = False):
             
             part_a, part_b = part_a.strip(), part_b.strip()
             
@@ -320,40 +332,52 @@ class SiRange:
             else:
                 b = self.spec.parse(part_b)
             
-            if a != self.wildcard_value_low and b != self.wildcard_value_high and a > b:
-                self._low, self._high = b, a
+            if centered:
+                if a == self.wildcard_value_low or b == self.wildcard_value_high:
+                    raise ValueError(f'Cannot parse range "{s}"; parts are {parts} (wildcards not allowed here)')
+                self._low, self._high = a - b, a + b
+                self._centered_mode = True
             else:
-                self._low, self._high = a, b
+                if a != self.wildcard_value_low and b != self.wildcard_value_high and a > b:
+                    self._low, self._high = b, a
+                else:
+                    self._low, self._high = a, b
 
         # separated by whitespace?
         parts = re.split(r'\s+', s)
         if len(parts) == 2:
-            set_low_high(parts[0], parts[1])
+            set_values(parts[0], parts[1])
+            return self
+
+        # separated by plus/minus?
+        parts = re.split(r'\s*(?:\+-|-\+|±)\s*', s)
+        if len(parts) == 2:
+            set_values(parts[0], parts[1], centered=True)
             return self
 
         # separated by any separator other than "-"?
         parts = re.split(r'\s*(?:;|,|…|\.\.\.|\.\.)\s*', s)
         if len(parts) == 2:
-            set_low_high(parts[0], parts[1])
+            set_values(parts[0], parts[1])
             return self
 
         # separated by "-"? Be careful not to mis-interpret it as a minus-sign!
         parts = [part for part in re.split(r'(-)', s) if part.strip()!='']
         if len(parts)==3 and parts[1]=='-':
             # e.g. "1 - 2"
-            set_low_high(parts[0], parts[2])
+            set_values(parts[0], parts[2])
             return self
         if len(parts)==4 and parts[0]=='-' and parts[2]=='-':
             # e.g. "-1 - 2"
-            set_low_high(parts[0]+parts[1], parts[3])
+            set_values(parts[0]+parts[1], parts[3])
             return self
         if len(parts)==4 and parts[1]=='-' and parts[2]=='-':
             # e.g. "1 - -2"
-            set_low_high(parts[0], parts[2]+parts[3])
+            set_values(parts[0], parts[2]+parts[3])
             return self
         if len(parts)==5 and parts[0]=='-' and parts[2]=='-' and parts[3]=='-':
             # e.g. "-1 - -2"
-            set_low_high(parts[0]+parts[1], parts[3]+parts[4])
+            set_values(parts[0]+parts[1], parts[3]+parts[4])
             return self
 
         raise ValueError(f'Cannot parse range "{s}"; parts are {parts}')

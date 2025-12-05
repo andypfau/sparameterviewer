@@ -18,7 +18,7 @@ Main Window
     - Options for time-domain: impulse or step response. Windowing options and impedance conversion in menu.
     - Options for Smith: Z- or Y-plane.
 4. **Axis Range**:
-    - Enter a range, e.g. "0..20G" for 0 to 20 GHz, or "*" for auto-scale.
+    - Enter a range, e.g. "0..20G" for 0 to 20 GHz, "10G +- 1 GHz" for 9 to 11 GHz, or "*" for auto-scale.
     - Use the lock buttons to toggle between a fixed range, or auto-scale.
     - You can enable smart dB scaling (only if Y-axis is in dB), which attempts to focus on the upper region of the S-parameters.
     - For polar and Smith diagrams, the unit circle button allows you to scale the diagram to scale the diagram to radius 1.
