@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b5 (2025-12-07)
+--------------------
+
+- new: centered range input, e.g. "10G +- 1G" (instead of "9G - 11 G")
+
+
 0.41b4 (2025-12-04)
 --------------------
 
