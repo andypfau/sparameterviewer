@@ -73,8 +73,6 @@ class MainWindow(MainWindowUi):
         self._log_dialog: LogDialog|None = None
         self.cursor_event_queue: list[tuple] = []
         self.plot: PlotHelper|None = None
-        self.sparamfile_list_t_start: float = -1
-        self.sparamfile_list_aborted = False
         self.sparamfile_load_t_start: float = -1
         self.sparamfile_load_aborted = False
         self._last_cursor_x = [0, 0]
@@ -86,7 +84,6 @@ class MainWindow(MainWindowUi):
         
         LogHandler.inst().attach(self.on_log_entry)
 
-        self.clear_list_counter()
         self.clear_load_counter()
         def before_load_sparamfile(path: PathExt) -> bool:
             return self.before_load_sparamfile(path)
@@ -208,12 +205,6 @@ class MainWindow(MainWindowUi):
             self.ui_filesys_browser.selected_files = self._initial_selection
         else:
             self.ui_filesys_browser.select_first_file()
-
-
-    def clear_list_counter(self):
-        # TODO: this is not monitored anywhere!
-        self.sparamfile_list_t_start = -1
-        self.sparamfile_list_aborted = False
 
 
     def clear_load_counter(self):
