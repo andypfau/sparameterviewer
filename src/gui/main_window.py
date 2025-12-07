@@ -836,7 +836,6 @@ class MainWindow(MainWindowUi):
     def reload_all_files(self):
         try:
             self.ready = False
-            self.clear_list_counter()
             self.ui_filesys_browser.refresh()
             self.files.clear()
             self.update_params_size()
