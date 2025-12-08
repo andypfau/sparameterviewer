@@ -452,13 +452,13 @@ class Network:
     def nf(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.nf(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
-        return SParam(f'{self.name} NF', self.nw.f, p2db(self.nw.nf), self.nw.z0[0,0], original_files=self.original_files, param_type='NF', number_type=NumberType.PlainScalar)
+        return SParam(f'{self.name} NF', self.nw.f_noise.f, p2db(self.nw.nf(self.nw.z0[0,0])), self.nw.z0[0,0], original_files=self.original_files, param_type='NF', number_type=NumberType.PlainScalar)
     
 
     def noisefactor(self):
         if self.nw.number_of_ports != 2:
             raise RuntimeError(f'Network.noisefactor(): cannot determine noise parameters of {self.name} (only valid for 2-port networks)')
-        return SParam(f'{self.name} F', self.nw.f, self.nw.nf, self.nw.z0[0,0], original_files=self.original_files, param_type='F', number_type=NumberType.MagnitudeLike)
+        return SParam(f'{self.name} F', self.nw.f_noise.f, self.nw.nf(self.nw.z0[0,0]), self.nw.z0[0,0], original_files=self.original_files, param_type='F', number_type=NumberType.MagnitudeLike)
     
 
     def nf_min(self):
