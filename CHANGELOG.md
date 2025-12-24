@@ -5,7 +5,8 @@ S-Parameter Viewer Changelog
 0.41b6 (2025-12-24)
 --------------------
 
-- bugfix: displaying S11 and S22 at the same time for a network with more than 2 dimensions
+- bugfix: displaying S11 and S22 at the same time, for a network with more than 2 dimensions
+- bugfix: plotting Sii as dashed line if both Sii and Sij are displayed, for a network with more than 2 dimensions
 
 
 0.41b5 (2025-12-07)

@@ -1862,10 +1862,11 @@ class MainWindow(MainWindowUi):
                 any_il, any_rl = False, False
                 for i in range(params_mask.shape[0]):
                     for j in range(params_mask.shape[1]):
-                        if i==j:
-                            any_rl = True
-                        else:
-                            any_il = True
+                        if (params_mask[i,j]):
+                            if i==j:
+                                any_rl = True
+                            else:
+                                any_il = True
                 if any_il and any_rl:
                     plot_kwargs_il['style'] = '-'
                     plot_kwargs_rl['style'] = '--'
@@ -1881,8 +1882,8 @@ class MainWindow(MainWindowUi):
 
             else:
 
-                any_il = params & Parameters.S21 or params & Parameters.S12
-                any_rl = params & Parameters.Sii or params & Parameters.S11 or params & Parameters.S22
+                any_il = (params & Parameters.S21) or (params & Parameters.S12)
+                any_rl = (params & Parameters.Sii) or (params & Parameters.S11) or (params & Parameters.S22)
                 if any_il and any_rl:
                     plot_kwargs_il['style'] = '-'
                     plot_kwargs_rl['style'] = '--'
