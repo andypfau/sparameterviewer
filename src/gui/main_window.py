@@ -160,6 +160,7 @@ class MainWindow(MainWindowUi):
                 self.ui_maxlegend = Settings.max_legend_items
                 self.ui_expression = Settings.expression
                 self.ui_show_legend = Settings.show_legend
+                self.ui_show_grid = Settings.show_grid
                 self.ui_hide_single_item_legend = Settings.hide_single_item_legend
                 self.ui_shorten_legend = Settings.shorten_legend_items
                 self.ui_mark_datapoints = Settings.plot_mark_points
@@ -1070,6 +1071,11 @@ class MainWindow(MainWindowUi):
         self.schedule_plot_update()
 
 
+    def on_show_grid(self):
+        Settings.show_grid = self.ui_show_grid
+        self.schedule_plot_update()
+
+
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
         self.schedule_plot_update()
@@ -1286,7 +1292,7 @@ class MainWindow(MainWindowUi):
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
-                'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor'), attributes):
+                'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor', 'show_grid'), attributes):
             self.schedule_plot_update()
     
     
@@ -2102,6 +2108,8 @@ class MainWindow(MainWindowUi):
                     if self.plot_axes_are_valid and not self.ui_yaxis_range.both_are_wildcard:
                         self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high, auto=False)
             
+            self.plot.plot.grid(visible=Settings.show_grid)
+
             self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
             self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
 

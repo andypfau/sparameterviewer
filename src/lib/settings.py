@@ -96,6 +96,7 @@ class SParamViewerAppSettings(AppSettings):
     phase_processing: PhaseProcessing = PhaseProcessing.Off
     show_legend: bool = True
     hide_single_item_legend: bool = True
+    show_grid: bool = True
     shorten_legend_items: bool = True
     smart_db_scaling: bool = True
     log_x: bool = False

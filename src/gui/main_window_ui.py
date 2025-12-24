@@ -475,6 +475,8 @@ class MainWindowUi(QMainWindow):
         self._ui_opacity_slider.valueChanged.connect(self.on_traceopacity_changed)
         self._ui_opacity_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
         self._ui_viewmenu.addSeparator()
+        self._ui_menuitem_show_grid = QtHelper.add_menuitem(self._ui_viewmenu, 'Show Grid', self.on_show_grid, checkable=True)
+        self._ui_viewmenu.addSeparator()
         self._ui_max_legend_spin = QSpinBox()
         self._ui_max_legend_spin.setMinimum(1)
         self._ui_max_legend_spin.setMaximum(999)
@@ -809,6 +811,14 @@ class MainWindowUi(QMainWindow):
     
 
     @property
+    def ui_show_grid(self) -> bool:
+        return self._ui_menuitem_show_grid.isChecked()
+    @ui_show_grid.setter
+    def ui_show_grid(self, value):
+        self._ui_menuitem_show_grid.setChecked(value)
+    
+
+    @property
     def ui_shorten_legend(self) -> bool:
         return self._ui_short_legend_button.isChecked()
     @ui_shorten_legend.setter
@@ -1077,6 +1087,8 @@ class MainWindowUi(QMainWindow):
     def on_save_expressions(self):
         pass
     def on_show_legend(self):
+        pass
+    def on_show_grid(self):
         pass
     def on_hide_single_legend(self):
         pass
