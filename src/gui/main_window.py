@@ -1896,10 +1896,11 @@ class MainWindow(MainWindowUi):
             
                 if params & Parameters.Sii:
                     actions.append(DefaultAction([], dict(rl_only=True), [], plot_kwargs_rl))
-                elif params & Parameters.S11:
-                    actions.append(DefaultAction([11], dict(), [], plot_kwargs_rl))
-                elif params & Parameters.S22:
-                    actions.append(DefaultAction([22], dict(), [], plot_kwargs_rl))
+                else:
+                    if params & Parameters.S11:
+                        actions.append(DefaultAction([11], dict(), [], plot_kwargs_rl))
+                    if params & Parameters.S22:
+                        actions.append(DefaultAction([22], dict(), [], plot_kwargs_rl))
             
             generated_lines = [f'sel_nws().s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
             self.generated_expressions = '\n'.join(generated_lines)
