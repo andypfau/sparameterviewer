@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b7 (2026-01-01)
+--------------------
+
+- new: `Networks.nf()` and `Networks.noisefactor()` now have optional argument `z` to explicitly set the reference impedance for noise calculation
+- bugfix: `Networks.nf()` and `Networks.noisefactor()` now display the correct noise figure/factor
+
+
 0.41b6 (2025-12-24)
 --------------------
 
