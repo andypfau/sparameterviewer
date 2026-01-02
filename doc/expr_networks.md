@@ -342,10 +342,12 @@ nw("amp.s2p").u().plot()
 ### noisefactor()
 
 ```python
-noisefactor() → SParams
+noisefactor(z=None) → SParams
 ```
 
 Returns the network's noise factor F (if it is provided in the file). Only valid for 2-port networks.
+
+If `z` is given, F is calculated at that source impedance, otherwise the network's reference impedance is used.
 
 Example:
 ```python
@@ -359,10 +361,12 @@ Named `noisefactor` to avoid confustion with the frequency. F can be calculated 
 ### nf()
 
 ```python
-nf() → SParams
+nf(z=None) → SParams
 ```
 
 Returns the network's noise figure NF in dB (if it is provided in the file). Only valid for 2-port networks.
+
+If `z` is given, NF is calculated at that source impedance, otherwise the network's reference impedance is used.
 
 Example:
 ```python
