@@ -959,10 +959,7 @@ class MainWindow(MainWindowUi):
         try:
             selected_file = self.get_selected_files()[0]
             title = f'Plaintext Data of <{selected_file.name}>'
-            if selected_file.path.is_in_arch():
-                TextDialog(self).show_modal_dialog(title, text=selected_file.get_plaintext())
-            else:
-                TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
+            TextDialog(self).show_modal_dialog(title, file_path=selected_file.path)
         except Exception as ex:
             error_dialog('Error', 'Unable to load show plaintext.', detailed_text=str(ex))
 

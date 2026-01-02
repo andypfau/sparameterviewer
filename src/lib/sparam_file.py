@@ -142,19 +142,6 @@ class SParamFile:
     @property
     def error_message(self) -> str|None:
         return self._error if self._error else None
-
-    
-    def get_plaintext(self) -> str:
-        if self.path.is_in_arch():
-            try:
-                with ArchiveFileLoader(str(self.path), self.path.arch_path) as extracted_path:
-                    with open(extracted_path, 'r') as fp:
-                        return fp.read()
-            except Exception as ex:
-                raise RuntimeError(f'Unable to extract and load <{self.path.arch_path}> from archive <{str(self.path)}> ({ex})')
-        else:
-            with open(self.path, 'r') as fp:
-                return fp.read()
     
 
     def get_info_str(self) -> str:

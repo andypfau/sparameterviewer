@@ -1,7 +1,7 @@
 from .text_dialog_ui import TextDialogUi
 from .settings_dialog import SettingsDialog
 from .helpers.simple_dialogs import save_file_dialog, error_dialog
-from lib import Clipboard, AppPaths, start_process, PathExt, Settings
+from lib import Clipboard, AppPaths, start_process, PathExt, Settings, ArchiveFileLoader
 
 
 class TextDialog(TextDialogUi):
@@ -18,13 +18,23 @@ class TextDialog(TextDialogUi):
         self.title = title
         self.file_path = file_path
         self.filetypes = save_filetypes
-        
+
+        def load_file_contents(path: PathExt):
+            if path.is_in_arch():
+                try:
+                    with ArchiveFileLoader(str(path), path.arch_path) as extracted_path:
+                        with open(extracted_path, 'r') as fp:
+                            return fp.read()
+                except Exception as ex:
+                    raise RuntimeError(f'Unable to extract and load <{path.arch_path}> from archive <{str(path)}> ({ex})')
+            else:
+                with open(path, 'r') as fp:
+                    return fp.read()
+
         if file_path:
             assert text is None, f'Expected not text, got "{text}"'
             try:
-                # TODO: support archives. My idea is that PathExt offers a helper method to obtain the file contents.
-                with open(str(file_path), 'r') as fp:
-                    self.text = fp.read()
+                self.text = load_file_contents(file_path)
             except Exception as ex:
                 error_dialog('Error', 'Unable to read file contents', detailed_text=str(ex))
         else:
