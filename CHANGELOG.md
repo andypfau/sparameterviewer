@@ -2,7 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.41b7 (2026-01-01)
+0.41b8 (2026-01-05)
+--------------------
+
+- new: GUI option to manually choose legend position
+
+
+0.41b7 (2026-01-02)
 --------------------
 
 - new: `Networks.nf()` and `Networks.noisefactor()` now have optional argument `z` to explicitly set the reference impedance for noise calculation

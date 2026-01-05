@@ -484,6 +484,9 @@ class MainWindowUi(QMainWindow):
         self._ui_max_legend_spin.valueChanged.connect(self.on_maxlegend_changed)
         self._ui_max_legend_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Max. Legend Items:', self._ui_max_legend_spin))
         self._ui_menuitem_hide_single_legend = QtHelper.add_menuitem(self._ui_viewmenu, 'Hide Single-Item Legend', self.on_hide_single_legend, checkable=True)
+        self._ui_viewmenu.addSeparator()
+        self._ui_legend_pos_combo = QComboBox()
+        self._ui_legend_pos_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Legend Position:', self._ui_legend_pos_combo))
         self._ui_plotmenu_button.setMenu(self._ui_viewmenu)
         self._ui_plotmenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
@@ -552,6 +555,13 @@ class MainWindowUi(QMainWindow):
             self._ui_color_combo.addItem(option)
         self._ui_color_combo.currentIndexChanged.connect(self.on_color_change)
 
+
+    def ui_set_legend_pos_options(self, options: list[str]):
+        self._ui_legend_pos_combo.clear()
+        for option in options:
+            self._ui_legend_pos_combo.addItem(option)
+        self._ui_legend_pos_combo.currentIndexChanged.connect(self.on_legend_pos_change)
+
     
     @property
     def ui_filesys_browser(self) -> FilesysBrowser:
@@ -585,6 +595,14 @@ class MainWindowUi(QMainWindow):
     @ui_color_assignment.setter
     def ui_color_assignment(self, value: str):
         self._ui_color_combo.setCurrentText(value)
+
+    
+    @property
+    def ui_legend_pos(self) -> str:
+        return self._ui_legend_pos_combo.currentText()
+    @ui_legend_pos.setter
+    def ui_legend_pos(self, value: str):
+        self._ui_legend_pos_combo.setCurrentText(value)
 
     
     def ui_enable_expressions(self, enable: bool):
@@ -1163,6 +1181,8 @@ class MainWindowUi(QMainWindow):
     def on_yaxis_range_change(self):
         pass
     def on_color_change(self):
+        pass
+    def on_legend_pos_change(self):
         pass
     def on_resize(self):
         pass

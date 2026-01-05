@@ -84,6 +84,18 @@ class GuiColorScheme(enum.StrEnum):
     Light = 'light'
     Dark = 'dark'
 
+class LegendPos(enum.StrEnum):
+    Auto = 'auto'
+    TopLeft = 'topleft'
+    Top = 'top'
+    TopRight = 'topright'
+    Left = 'left'
+    Center = 'center'
+    Right = 'right'
+    BottomLeft = 'bottomleft'
+    Bottom = 'bottom'
+    BottomRight = 'bottomright'
+
 
 
 class SParamViewerAppSettings(AppSettings):
@@ -148,6 +160,7 @@ class SParamViewerAppSettings(AppSettings):
     large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.Clickable
     select_file_to_check: bool = True
     gui_color_scheme: GuiColorScheme = GuiColorScheme.Default
+    legend_position: LegendPos = LegendPos.Auto
 
 
 

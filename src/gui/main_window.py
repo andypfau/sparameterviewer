@@ -26,7 +26,7 @@ from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser, DefaultAction
 from lib import PathExt
-from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, LegendPos
 from lib.expressions.sparams import NumberType
 from info import Info
 
@@ -62,6 +62,19 @@ class MainWindow(MainWindowUi):
         ColorAssignment.Monochrome: 'Monochrome',
     }
 
+    LEGEND_POS_NAMES = {
+        LegendPos.Auto: 'Automatic',
+        LegendPos.TopLeft: 'Top Left',
+        LegendPos.Top: 'Top Center',
+        LegendPos.TopRight: 'Top Right',
+        LegendPos.Left: 'Left Center',
+        LegendPos.Center: 'Center',
+        LegendPos.Right: 'Right Center',
+        LegendPos.BottomLeft: 'Bottom Left',
+        LegendPos.BottomRight: 'Bottom Right',
+        LegendPos.Bottom: 'Bottom Center',
+    }
+
 
     def __init__(self, filenames: list[str]):
         self.ready = False
@@ -94,6 +107,7 @@ class MainWindow(MainWindowUi):
 
         self.ui_set_window_title(Info.AppName)
         self.ui_set_color_assignment_options(list(MainWindow.COLOR_ASSIGNMENT_NAMES.values()))
+        self.ui_set_legend_pos_options(list(MainWindow.LEGEND_POS_NAMES.values()))
 
         self.apply_settings_to_ui()
 
@@ -155,6 +169,7 @@ class MainWindow(MainWindowUi):
                 self.ui_enable_expressions(Settings.use_expressions)
                 self.ui_show_expressions(not Settings.simplified_no_expressions)
                 self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
+                self.ui_legend_pos = enum_to_string(Settings.legend_position, MainWindow.LEGEND_POS_NAMES)
                 self.ui_semitrans_traces = Settings.plot_semitransparent
                 self.ui_trace_opacity = Settings.plot_semitransparent_opacity
                 self.ui_maxlegend = Settings.max_legend_items
@@ -648,6 +663,10 @@ class MainWindow(MainWindowUi):
     def on_color_change(self):
         if self.ui_enable_trace_color_selector:
             Settings.color_assignment = string_to_enum(self.ui_color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
+
+
+    def on_legend_pos_change(self):
+        Settings.legend_position = string_to_enum(self.ui_legend_pos, MainWindow.LEGEND_POS_NAMES)
     
 
     def on_plottype_changed(self):
@@ -1289,7 +1308,7 @@ class MainWindow(MainWindowUi):
 
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
-                'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor', 'show_grid'), attributes):
+                'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor', 'show_grid', 'legend_position'), attributes):
             self.schedule_plot_update()
     
     
@@ -2109,6 +2128,20 @@ class MainWindow(MainWindowUi):
 
             self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
             self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
+
+            if self.ui_show_legend:
+                match Settings.legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+                    case LegendPos.Auto: loc = 0
+                    case LegendPos.TopLeft: loc = 2
+                    case LegendPos.Top: loc = 9
+                    case LegendPos.TopRight: loc = 1
+                    case LegendPos.Left: loc = 6
+                    case LegendPos.Center: loc = 10
+                    case LegendPos.Right: loc = 7
+                    case LegendPos.BottomLeft: loc = 3
+                    case LegendPos.Bottom: loc = 8
+                    case LegendPos.BottomRight: loc = 4
+                self.plot.plot.legend(loc=loc)
 
             self.ui_plot.draw()
 

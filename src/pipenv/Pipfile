@@ -16,5 +16,5 @@ pyinstaller = "*"
 
 [dev-packages]
 
-[requires]
-python_version = "3.13"
+#[requires]
+#python_version = "3.13"
