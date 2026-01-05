@@ -4,37 +4,47 @@ How To Run
 Prerequisites
 -------------
 
-- Tested under Windows and under Fedora Linux.
-- Tested with Python 3.13.
-    - Might work with 3.7 or newer, but was not tested.
-- Python packet dependencies:
-    - Mandatory: `PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
-    - Optional: `pyinstaller`: to compile a binary.
-    - Optional: `markdown`: to convert Markdown docs to HTML (using `doc/make_html_docs.py`).
+Either install the required Python packets:
+- Mandatory: `python -m pip install PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
+- Optional: `python -m pip install pyinstaller`: to compile a binary.
+- Optional: `python -m pip install markdown`: to convert Markdown docs to HTML (using `doc/make_html_docs.py`).
 
+Then run
+```bash
+cd src
+python ../sparamviewer.py
+```
 
-Execution
----------
-
-Make sure the dependencies are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
-
-Then just run `python sparameterviewer.py`.
+Alternatively, install the packets `pipenv pyenv`, then use the environment:
+```bash
+cd src/pipenv
+python -m pipenv shell
+python ../sparamviewer.py
+``` 
+Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") the "`[requires]`" section in <`srv/pipenv/Pipfile`>.
 
 Optionally, compile it, see next section.
+
+S-parameter Viewer was tested with:
+- Python 3.13.
+    - Might work with 3.7 or newer, but was not tested.
+- Windows 11, Fedora Linux 43.
 
 
 Compiling
 ---------
 
-Compiling is **optional**. You can just as well run the Python script.
+Compiling is **optional**. You can just as well run the Python script without compiling.
 
 Make sure the dependencies, including `pyinstaller`, are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
 
-Compiling was successfully tested under Windows 10 and under Fedora 37 with the following command:
+To compile, run:
+```bash
+cd src
+pyinstaller --noconfirm --clean pyinstaller.spec
+```
 
-- `cd src`
-- `pyinstaller pyinstaller.spec`
-    - clean build without overwrite-confirmations: `pyinstaller --noconfirm --clean pyinstaller.spec`
+The flag `--noconfirm` overwrites existing files, the flag `--clean` triggers a fresh build.
 
 
 File Type Association
@@ -61,7 +71,7 @@ To register S-parameter files with this application under Windows:
     2. Adapt the paths to your Python interpreter, as well as the path where `src/sparamviewer.py` is, in the 1st line.
     3. Double-click any .s#p-file, and select the batch-file `res/sparamviewer.bat` as the application .
 
-Uou have to repeat this step for every type of .s#p-file, e.g. .s1p, .s2p, ...
+Uou have to repeat this step for every type of .s#p-file, e.g. `.s1p`, `.s2p`, etc.
 
 
 Development
