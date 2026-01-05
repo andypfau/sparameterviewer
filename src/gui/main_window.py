@@ -2129,7 +2129,7 @@ class MainWindow(MainWindowUi):
             self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
             self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
 
-            if self.ui_show_legend:
+            if self.plot.plot.get_legend():
                 match Settings.legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
                     case LegendPos.Auto: loc = 0
                     case LegendPos.TopLeft: loc = 2
