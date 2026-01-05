@@ -36,7 +36,6 @@ Roadmap
 - Expressions: `f_arg` parameter for `SParams.map()`.
 - Expressions: add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
 - Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
-- Expressions: log output for equations (so that you can also print some data or status).
 - File type registration script for Windows (using `assoc` and `ftype`).
 
 

@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - new: GUI option to manually choose legend position
+- new: access to Python's `logging` module in expressions
 
 
 0.41b7 (2026-01-02)
