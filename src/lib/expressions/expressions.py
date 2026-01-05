@@ -122,6 +122,7 @@ class ExpressionParser:
             'math': math,
             'cmath': cmath,
             'np': np,
+            'logging': logging,
         }
         
         Networks.default_actions_used = False

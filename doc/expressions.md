@@ -41,6 +41,7 @@ The expressions use [Python](https://docs.python.org/3/) syntax. You have access
     - `math`: [math](https://docs.python.org/3/library/math.html)
     - `cmath`: [cmath](https://docs.python.org/3/library/cmath.html)
     - `np`: [NumPy](https://numpy.org/doc/)
+    - `logging`: [logging](https://docs.python.org/3/library/logging.html)
 - Global functions, see reference below:
     - `sel_nws()`: all selected networks
     - `nw()`: a single specific network
