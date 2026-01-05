@@ -615,7 +615,7 @@ class SParams:
         return self._unary_op(SParam.rename, True, name=name, prefix=prefix, suffix=suffix, pattern=pattern, subs=subs)
     
 
-    def save(self, filename: str):  # TODO: document this command
+    def _save(self, filename: str):
         WILDCARD_NUM = '$NUM'
         WILDCARD_NAME = '$NAME'
 

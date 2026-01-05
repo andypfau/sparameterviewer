@@ -1260,7 +1260,7 @@ class Networks:
         return self._unary_op(Network.rewire, Networks, ports=ports)
 
 
-    def save(self, filename: str):  # TODO: document this command
+    def _save(self, filename: str):
         WILDCARD_NUM = '$NUM'
         WILDCARD_NAME = '$NAME'
 
