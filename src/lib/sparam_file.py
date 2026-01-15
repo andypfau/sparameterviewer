@@ -5,6 +5,7 @@ from .path_ext import PathExt
 from .si import SiValue
 from .citi import CitiReader
 from .utils import ArchiveFileLoader
+from .file_config import FileConfig
 
 import numpy as np
 import skrf
@@ -31,13 +32,27 @@ class SParamFile:
 
         self._nw = None
         self._error = None
+        self._name = name
+        self._short_name = short_name
+        self._name_prefix = path.arch_path_name + '/' if path.arch_path else ''
 
-        if path.arch_path:
-            name_prefix = path.arch_path_name + '/'
+
+    @property
+    def name(self) -> str:
+        if self._name is not None:
+            return self._name
+        elif FileConfig.get_label(str(self.path)):
+            return FileConfig.get_label(str(self.path))
         else:
-            name_prefix = ''
-        self.name = name if name is not None else name_prefix+self.path.name
-        self.short_name = short_name if short_name is not None else name_prefix+os.path.splitext(self.path.name)[0]
+            return self._name_prefix + self.path.name
+    
+
+    @property
+    def short_name(self) -> str:
+        if self._short_name is not None:
+            return self._short_name
+        else:
+            return self._name_prefix + os.path.splitext(self.path.name)[0]
     
 
     def __eq__(self, other) -> bool:

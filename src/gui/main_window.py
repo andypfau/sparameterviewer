@@ -26,7 +26,7 @@ from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser, DefaultAction
 from lib import PathExt
-from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, LegendPos
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, LegendPos, FileConfig
 from lib.expressions.sparams import NumberType
 from info import Info
 
@@ -142,7 +142,12 @@ class MainWindow(MainWindowUi):
 
 
     def show(self):
-        self.ui_show()
+        self.ui_show((Settings.main_win_width, Settings.main_win_height))
+    
+
+    def on_close(self, width: int, height: int):
+        Settings.main_win_width = width
+        Settings.main_win_height = height
 
 
     def apply_settings_to_ui(self):
@@ -1387,6 +1392,28 @@ class MainWindow(MainWindowUi):
                 except Exception as ex:
                     error_dialog('Open With Default Application', f'Unable to open this file item with default application.', f'Try to open <{str(path)}> manually ({ex}).')
             return open_in_default_app
+        def make_relabel(path: PathExt):
+            def relabel():
+                self.ui_filesys_browser.relabel_item(path)
+            return relabel
+        def make_recolor(path: PathExt):
+            def recolor():
+                self.ui_filesys_browser.recolor_item(path)
+            return recolor
+        def make_decolor(path: PathExt):
+            def decolor():
+                FileConfig.clear_color(path)
+                self.schedule_plot_update()
+            return decolor
+        def make_restyle(path: PathExt):
+            def restyle():
+                self.ui_filesys_browser.restyle_item(path)
+            return restyle
+        def make_destyle(path: PathExt):
+            def destyle():
+                FileConfig.clear_style(path)
+                self.schedule_plot_update()
+            return destyle
 
         menu = []
         is_toplevel = path == toplevel_path
@@ -1406,6 +1433,15 @@ class MainWindow(MainWindowUi):
                 menu.append((None, None))
                 menu.append((f'Copy Name', make_copy_name(path)))
                 menu.append((f'Save for Template', make_save_for_template(path)))
+            if not self.ui_filesys_browser.simplified():
+                menu.append((None, None))
+                menu.append((('Change Label...','F2'), make_relabel(path)))
+                menu.append(('Assign Color...', make_recolor(path)))
+                if FileConfig.get_color(path):
+                    menu.append(('Reset Color', make_decolor(path)))
+                menu.append(('Assign Style...', make_restyle(path)))
+                if FileConfig.get_style(path):
+                    menu.append(('Reset Style', make_destyle(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'
             if not self.ui_filesys_browser.simplified():
@@ -2129,7 +2165,7 @@ class MainWindow(MainWindowUi):
             self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
             self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
 
-            if self.plot.plot.get_legend():
+            if self.plot.anything_in_plot and self.plot.plot.get_legend():
                 match Settings.legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
                     case LegendPos.Auto: loc = 0
                     case LegendPos.TopLeft: loc = 2

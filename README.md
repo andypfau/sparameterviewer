@@ -28,7 +28,6 @@ Roadmap
 
 - Expressions: review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
-- GUI: find a way to assign color groups to files.
 - GUI: find a way to set define fixed size for saved/copied plots.
 - GUI: for the documentations, find a nicer representation than plain markdown files.
 - General: "TODO"-comments in code.
@@ -41,4 +40,4 @@ Roadmap
 
 ### Known Issues
 
-- Under Fedora Linux, Gnome freezes when you open a non-Touchstone file, then open the same file again with a proper viewer; reason unknown.
+- The Smith chart is based on Scikit RF, and behaves a bit different from other plots, e.g. it will always display the grid, regardless of whether "Show Grid" is selected or not.

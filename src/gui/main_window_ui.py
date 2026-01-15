@@ -545,8 +545,31 @@ class MainWindowUi(QMainWindow):
         self.on_zoom_clicked(dx=0, dy=-1)
 
 
-    def ui_show(self):
+    def ui_show(self, size: tuple[int,int]|None = None):
+        
+        def get_screen_size() -> tuple[int,int]:
+            frame_center = self.frameGeometry().center()
+            screen = QGuiApplication.screenAt(frame_center)
+            if screen is None:
+                screen = QGuiApplication.primaryScreen()
+            if screen is None:
+                return (9999,9999)
+            screen_geometry = screen.availableGeometry()
+            return screen_geometry.width(), screen_geometry.height()
+
+        if size:
+            (win_width, win_height) = size
+            (screen_width, screen_height) = get_screen_size()
+            if (screen_width >= win_width > 0) and (screen_height >= win_height > 0):
+                self.resize(win_width, win_height)
+        
         super().show()
+    
+
+    def closeEvent(self, event):
+        size = self.size()
+        self.on_close(size.width(), size.height())
+        super().closeEvent(event)
 
 
     def ui_set_color_assignment_options(self, options: list[str]):
@@ -1191,4 +1214,6 @@ class MainWindowUi(QMainWindow):
     def on_traceopacity_changed(self):
         pass
     def on_maxlegend_changed(self):
+        pass
+    def on_close(self, width: int, height: int):
         pass

@@ -16,3 +16,4 @@ from .shortstr import shorten_string_list
 from .clipboard import Clipboard
 from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme, LegendPos
 from .lock import Lock
+from .file_config import FileConfig

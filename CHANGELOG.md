@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.41b9 (2026-01-15)
+--------------------
+
+- new: filesystem viewert context menu items to change label, color and style of plots
+- new: restoring main window size after starting application
+- bugfix: fixed a matpltotlib warning
+
+
 0.41b8 (2026-01-05)
 --------------------
 

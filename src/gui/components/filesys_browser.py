@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from ..helpers.file_filter import FileFilter
+from ..helpers.simple_dialogs import textinput_dialog
 from .path_bar import PathBar
-from lib import AppPaths, PathExt, Settings, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, natural_sort_key, get_callstack_str
+from lib import AppPaths, PathExt, Settings, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, natural_sort_key, get_callstack_str, FileConfig
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
@@ -46,6 +47,7 @@ class FilesysBrowser(QWidget):
             self._last_reported_checked_state = None
             self._model = model
             self._path = path
+            self._custom_name = None
             self._children: list[PathExt]|None = None
             self._type = type
             self._is_toplevel = is_toplevel
@@ -61,15 +63,23 @@ class FilesysBrowser(QWidget):
                 icon = FilesysBrowser._icon_arch
             else:
                 icon = FilesysBrowser._icon_file
-            if self._type == FilesysBrowserItemType.Elision:
-                text = '[...]'
-            else:
-                text = path.final_name
-            super().__init__(icon, text)
+            
+            super().__init__(icon, self._get_name())
             
             if type == FilesysBrowserItemType.File:
                 super().setCheckable(True)
                 super().setCheckState(QtCore.Qt.CheckState.Unchecked)
+        
+        def _get_name(self):
+            if self._type == FilesysBrowserItemType.Elision:
+                return '[...]'
+            elif FileConfig.get_label(self._path) is not None:
+                return FileConfig.get_label(self._path) + f' ({self._path.final_name})'
+            else:
+                return self._path.final_name
+        
+        def refresh_name(self):
+            super().setText(self._get_name())
 
         def __repr__(self) -> str:
             return f'<MyFileItem({self._path})>'
@@ -186,33 +196,66 @@ class FilesysBrowser(QWidget):
             if anything_added:
                 self.filesChanged.emit()
 
+        @override
+        def data(self, index: QModelIndex, role: int = ...):
+            if index.isValid() and role==Qt.ItemDataRole.EditRole:
+                item: FilesysBrowser.MyFileItem = self.itemFromIndex(index)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    return super().data(index, role)
+                path = item.path
+                
+                # make sure the text edit either shows the default label, OR the custom label, but no the processed display string
+                if FileConfig.get_label(path):
+                    return FileConfig.get_label(path)
+                else:
+                    return super().data(index, role)
+
+            return super().data(index, role)
+
+        @override
+        def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+            if index.isValid() and role==Qt.ItemDataRole.EditRole:
+                ok = super().setData(index, value, role)
+                if ok:
+                    item: FilesysBrowser.MyFileItem = self.itemFromIndex(index)
+                    if not isinstance(item, FilesysBrowser.MyFileItem):
+                        return
+                    
+                    # save the change, and trigger a UI update
+                    if value == '':
+                        FileConfig.clear_label(item.path)
+                    else:
+                        FileConfig.set_label(item.path, str(value))
+                    item.refresh_name()
+                    self.checkedChanged.emit()
+                    
+                return ok
+            return super().setData(index, value, role)
+
 
     class MyTreeView(QTreeView):
 
         backClicked = pyqtSignal()
         doubleClicked = pyqtSignal(bool, bool)
-        spacePressed = pyqtSignal(str, bool, bool)
+        keyPressed = pyqtSignal(str, bool, bool)
 
         def keyPressEvent(self, event: QtGui.QKeyEvent):
+            ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
+            shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
             if event.key() == Qt.Key.Key_Space:
-                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
-                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
-                self.spacePressed.emit(' ', ctrl, shift)
+                self.keyPressed.emit(' ', ctrl, shift)
                 return
             elif event.key() == Qt.Key.Key_Plus:
-                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
-                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
-                self.spacePressed.emit('+', ctrl, shift)
+                self.keyPressed.emit('+', ctrl, shift)
                 return
             elif event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
-                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
-                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
-                self.spacePressed.emit('\n', ctrl, shift)
+                self.keyPressed.emit('\n', ctrl, shift)
                 return
             elif event.key() == Qt.Key.Key_Minus:
-                ctrl = Qt.KeyboardModifier.ControlModifier in event.modifiers()
-                shift = Qt.KeyboardModifier.ShiftModifier in event.modifiers()
-                self.spacePressed.emit('-', ctrl, shift)
+                self.keyPressed.emit('-', ctrl, shift)
+                return
+            elif event.key() == Qt.Key.Key_F2:
+                self.keyPressed.emit('F2', ctrl, shift)
                 return
             super().keyPressEvent(event)
 
@@ -263,7 +306,7 @@ class FilesysBrowser(QWidget):
         self._ui_filesys_view.customContextMenuRequested.connect(self._on_contextmenu_requested)
         self._ui_filesys_view.backClicked.connect(self._on_navigate_back)
         self._ui_filesys_view.doubleClicked.connect(self._on_doubleclicked)
-        self._ui_filesys_view.spacePressed.connect(self._on_space_pressed)
+        self._ui_filesys_view.keyPressed.connect(self._on_key_pressed)
         self._ui_pathbar = PathBar()
         self._ui_pathbar.default_mode = PathBar.Mode.Breadcrumbs
         self._ui_pathbar.backClicked.connect(self._on_navigate_back)
@@ -488,6 +531,55 @@ class FilesysBrowser(QWidget):
     def show_context_menu(self, items: list[tuple[str,Callable|list]]):
         point = self._contextmenu_point or QCursor().pos()
         QtHelper.show_popup_menu(self, items, point)
+    
+
+    def _get_item_from_path(self, path: PathExt) -> FilesysBrowser.MyFileItem:
+        def recurse(parent: FilesysBrowser.MyFileItem):
+            if parent is None:
+                return
+            for row_index in range(parent.rowCount()):
+                item = parent.child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                if item.path == path:
+                    item = parent.child(row_index, 0)
+                    if not isinstance(item, QStandardItem):
+                        continue
+                    return item
+                item = recurse(item)
+                if item:
+                    return item
+            return None
+        result = recurse(self._ui_filesys_model.invisibleRootItem())
+        if not result:
+            logging.error(f'Cannot find item from path <{path}>')
+        return result
+    
+    
+    def relabel_item(self, path: PathExt):
+        item = self._get_item_from_path(path)
+        self._ui_filesys_view.edit(item.index())
+    
+    
+    def recolor_item(self, path: PathExt):
+        title = f'Color for <{path.final_name}>'
+        if FileConfig.get_color(path):
+            new_color = QColorDialog.getColor(initial=QColor.fromString(FileConfig.get_color(path)), parent=self, title=title)
+        else:
+            new_color = QColorDialog.getColor(parent=self, title=title)
+        if QColor.isValid(new_color):
+            FileConfig.set_color(path, new_color.name())
+        self.selectionChanged.emit()  # trigger a re-draw
+    
+    
+    def restyle_item(self, path: PathExt):
+        new_style = textinput_dialog('Assign Style', f'Style for <{path.final_name}>:', FileConfig.get_style(path) or '', suggestions=['', '-', '--', ':', '-.'])
+        if new_style != None:
+            if new_style == '':
+                FileConfig.clear_style(path)
+            else:
+                FileConfig.set_style(path, new_style)
+        self.selectionChanged.emit()  # trigger a re-draw
 
 
     def refresh(self):
@@ -757,7 +849,7 @@ class FilesysBrowser(QWidget):
             self._check_items(selected_items, toggle=True, toggle_common=True, toggle_exclusive=shift)
     
 
-    def _on_space_pressed(self, key: str, ctrl: bool, shift: bool):
+    def _on_key_pressed(self, key: str, ctrl: bool, shift: bool):
         selected = self._get_all_selected_items()
         if key==' ':
             self._check_items(selected, toggle=True, toggle_common=not ctrl, toggle_exclusive=shift)
@@ -767,6 +859,11 @@ class FilesysBrowser(QWidget):
             self._check_items(selected)
         elif key=='-':
             self._check_items(selected, modify_to=False)
+        elif key=='F2' and (not ctrl) and (not shift):
+            for item in selected:
+                if item.type == FilesysBrowserItemType.File:
+                    self.relabel_item(item.path)
+                    break
 
 
     @staticmethod

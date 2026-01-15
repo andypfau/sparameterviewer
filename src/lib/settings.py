@@ -161,6 +161,8 @@ class SParamViewerAppSettings(AppSettings):
     select_file_to_check: bool = True
     gui_color_scheme: GuiColorScheme = GuiColorScheme.Default
     legend_position: LegendPos = LegendPos.Auto
+    main_win_width: int = 0
+    main_win_height: int = 0
 
 
 

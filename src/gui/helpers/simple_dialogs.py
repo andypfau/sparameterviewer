@@ -1,7 +1,7 @@
 from .qt_helper import QtHelper
 from lib import AppPaths, Settings
 
-from PyQt6.QtWidgets import QMessageBox, QFileDialog, QCheckBox
+from PyQt6.QtWidgets import QMessageBox, QFileDialog, QCheckBox, QInputDialog
 import logging
 import pathlib
 from typing import Optional
@@ -74,6 +74,21 @@ def custom_buttons_dialog(title: str, text: str, buttons: list[str], informative
         return dialog_buttons[btn]
     else:
         return 0
+
+
+def textinput_dialog(title: str, label: str, default_text: str = '', suggestions: list[str] = []) -> str|None:
+    dialog = QInputDialog()
+    dialog.setWindowTitle(title)
+    dialog.setLabelText(label)
+    dialog.setTextValue(default_text)
+    dialog.setInputMode(QInputDialog.InputMode.TextInput)
+    if len(suggestions) > 0:
+        dialog.setComboBoxItems(suggestions)
+        dialog.setComboBoxEditable(True)
+    if dialog.exec():
+        return dialog.textValue()
+    else:
+        return None
 
 
 def _format_filters(filetypes: list[tuple[str,str]]) -> list[str]:

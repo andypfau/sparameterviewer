@@ -111,6 +111,7 @@ class PlotHelper:
         y_qty: "str", y_fmt: SiFormat, y_log: bool, y2_qty: "str", y2_fmt: SiFormat, z_qty: "str" = None, z_fmt: SiFormat = None,
         smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False, max_legend_items: int = -1):
+        anything_in_plot: bool = False
         
         self.cursors = [
             PlotHelper.Cursor(self, '--'),
@@ -383,6 +384,8 @@ class PlotHelper:
 
     def _add_traces_to_plots(self):
         
+        self.anything_in_plot = False
+
         for item in self.items:
             item.label = item.data.name
 
@@ -434,16 +437,19 @@ class PlotHelper:
                 if self._polar:
                     c = x + 1j*y
                     new_plt = plot.plot(np.angle(c), np.abs(c), style, label=label, color=color, lw=width, alpha=opacity)
+                    self.anything_in_plot = True
                 elif self._smith:
                     c = x + 1j*y
                     from skrf import plotting
                     new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None, color=color, lw=width, alpha=opacity, **PlotHelper._style_to_kwargs(style))
+                    self.anything_in_plot = True
                 else:
                     if self._x_log:
                         x, y = fix_log_x(data=x, other_data=y, name=item.label)
                     if self._y_log and (not use_y2):
                         y, x = fix_log_y(data=y, other_data=x, name=item.label)
                     new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
+                    self.anything_in_plot = True
 
                 color = new_plt[0].get_color() if new_plt is not None else None
                 self.items[item_index].data.color = color
@@ -451,25 +457,27 @@ class PlotHelper:
             except Exception as ex:
                 logging.error(f'Unable to plot item ({ex})')
         
-        if self._smith:
+        if self.anything_in_plot and self._smith:
             assert self._r_smith is not None, 'Expected Smith radius to be set'
             if self._r_smith!=1:
                 # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
                 self.plot.set_xlim((-self._r_smith,+self._r_smith))
                 self.plot.set_ylim((-self._r_smith,+self._r_smith))
-                self.plot.legend()
+                if self.anything_in_plot:
+                    self.plot.legend()
                 
-        if show_legend:
-            self.plot.legend()
-        else:
-            if self.plot:
-                legend = self.plot.get_legend()
-                if legend:
-                    legend.remove()
-            if self.plot2:
-                legend2 = self.plot2.get_legend()
-                if legend2:
-                    legend2.remove()
+        if self.anything_in_plot:
+            if show_legend:
+                self.plot.legend()
+            else:
+                if self.plot:
+                    legend = self.plot.get_legend()
+                    if legend:
+                        legend.remove()
+                if self.plot2:
+                    legend2 = self.plot2.get_legend()
+                    if legend2:
+                        legend2.remove()
     
 
     @staticmethod
