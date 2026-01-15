@@ -2,7 +2,7 @@ S-Parameter Viewer Changelog
 ============================
 
 
-0.41b9 (2026-01-15)
+0.42b1 (2026-01-15)
 --------------------
 
 - new: filesystem viewert context menu items to change label, color and style of plots
