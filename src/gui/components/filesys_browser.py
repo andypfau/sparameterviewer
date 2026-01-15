@@ -38,6 +38,7 @@ class FilesysBrowser(QWidget):
     _icon_file: QIcon = None
     _icon_dir: QIcon = None
     _icon_arch: QIcon = None
+    _icon_filt: QIcon = None
 
 
 
@@ -61,6 +62,8 @@ class FilesysBrowser(QWidget):
                 icon = FilesysBrowser._icon_dir
             elif type == FilesysBrowserItemType.Arch:
                 icon = FilesysBrowser._icon_arch
+            elif type == FilesysBrowserItemType.Elision:
+                icon = FilesysBrowser._icon_filt
             else:
                 icon = FilesysBrowser._icon_file
             
@@ -880,6 +883,7 @@ class FilesysBrowser(QWidget):
         FilesysBrowser._icon_file = ensure_icon_loaded(FilesysBrowser._icon_file, 'filesys_file.svg')
         FilesysBrowser._icon_dir  = ensure_icon_loaded(FilesysBrowser._icon_dir,  'filesys_directory.svg')
         FilesysBrowser._icon_arch = ensure_icon_loaded(FilesysBrowser._icon_arch, 'filesys_archive.svg')
+        FilesysBrowser._icon_filt = ensure_icon_loaded(FilesysBrowser._icon_filt, 'filesys_filter.svg')
 
 
     def _add_to_history(self, from_path: PathExt, to_path: PathExt):
