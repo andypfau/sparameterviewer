@@ -168,6 +168,8 @@ class FilesysBrowser(QWidget):
 
 
     class MyFileItemModel(QStandardItemModel):
+
+        # TODO: use an abstract item model, then collect all data in a custom item, and let the model render the columns
         
         checkedChanged = pyqtSignal()
         filesChanged = pyqtSignal()
