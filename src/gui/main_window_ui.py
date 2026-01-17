@@ -21,12 +21,23 @@ import pathlib
 import enum
 import logging
 import os
+import dataclasses
 import numpy as np
 from typing import Callable, Optional, Union
 
 
 
 class MainWindowUi(QMainWindow):
+
+
+    @dataclasses.dataclass
+    class WindowDimensions:
+        width: int
+        height: int
+        is_windowed: bool
+        splitter_pos: int
+        screen_width: int
+        screen_height: int
 
 
     class Tab(enum.Enum):
@@ -545,30 +556,41 @@ class MainWindowUi(QMainWindow):
         self.on_zoom_clicked(dx=0, dy=-1)
 
 
-    def ui_show(self, size: tuple[int,int]|None = None):
-        
-        def get_screen_size() -> tuple[int,int]:
-            frame_center = self.frameGeometry().center()
-            screen = QGuiApplication.screenAt(frame_center)
-            if screen is None:
-                screen = QGuiApplication.primaryScreen()
-            if screen is None:
-                return (9999,9999)
-            screen_geometry = screen.availableGeometry()
-            return screen_geometry.width(), screen_geometry.height()
+    def _get_screen_size(self) -> tuple[int,int]:
+        frame_center = self.frameGeometry().center()
+        screen = QGuiApplication.screenAt(frame_center)
+        if screen is None:
+            screen = QGuiApplication.primaryScreen()
+        if screen is None:
+            return (9999,9999)
+        screen_geometry = screen.availableGeometry()
+        return screen_geometry.width(), screen_geometry.height()
 
-        if size:
-            (win_width, win_height) = size
-            (screen_width, screen_height) = get_screen_size()
-            if (screen_width >= win_width > 0) and (screen_height >= win_height > 0):
-                self.resize(win_width, win_height)
-        
+
+    def ui_show(self):
         super().show()
+
+
+    def ui_get_dimensions(self) -> MainWindowUi.WindowDimensions:
+        size = self.size()
+        return MainWindowUi.WindowDimensions(
+            size.width(),
+            size.height(),
+            self.windowState() not in (Qt.WindowState.WindowMinimized, Qt.WindowState.WindowMaximized),
+            self._ui_splitter.sizes()[0],
+            *self._get_screen_size()
+        )
+
+
+    def ui_set_dimensions(self, width: int|None = None, height: int|None = None, splitter_pos: int|None = None):
+        if width is not None and height is not None:
+            self.resize(width, height)
+        if splitter_pos is not None:
+            self._ui_splitter.moveSplitter(splitter_pos, 1)
     
 
     def closeEvent(self, event):
-        size = self.size()
-        self.on_close(size.width(), size.height())
+        self.on_close()
         super().closeEvent(event)
 
 
@@ -1215,5 +1237,5 @@ class MainWindowUi(QMainWindow):
         pass
     def on_maxlegend_changed(self):
         pass
-    def on_close(self, width: int, height: int):
+    def on_close(self):
         pass

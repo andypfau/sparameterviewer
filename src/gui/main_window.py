@@ -92,6 +92,7 @@ class MainWindow(MainWindowUi):
         self._last_cursor_trace = ['', '']
         self._smartscale_set_y = False
         self._ref_path_for_template: str|None = None
+        self.restore_window_dimensions = False
 
         super().__init__()
         
@@ -133,6 +134,15 @@ class MainWindow(MainWindowUi):
             self.add_to_most_recent_paths(str(path))
             self.ui_filesys_browser.add_toplevel(path)
         
+        # restore window size, but only if it fits on the screen, and if it previously was on a same-size screen
+        dim = self.ui_get_dimensions()
+        if ((dim.screen_width >= Settings.main_win_width > 0) and
+            (dim.screen_height >= Settings.main_win_height > 0) and
+            (dim.screen_width == Settings.last_screen_width) and
+            (dim.screen_height == Settings.last_screen_height)):
+            self.restore_window_dimensions = True
+            self.ui_set_dimensions(width=Settings.main_win_width, height=Settings.main_win_height, splitter_pos=Settings.main_win_splitter_pos)
+
         self.ui_schedule_oneshot_timer(MainWindow.TIMER_INITIALIZATION_ID, MainWindow.TIMER_INITIALIZATION_TIMEOUT_S, self.finish_initialization)
 
         self.update_most_recent_paths_menu()
@@ -142,12 +152,17 @@ class MainWindow(MainWindowUi):
 
 
     def show(self):
-        self.ui_show((Settings.main_win_width, Settings.main_win_height))
+        self.ui_show()
     
 
-    def on_close(self, width: int, height: int):
-        Settings.main_win_width = width
-        Settings.main_win_height = height
+    def on_close(self):
+        dim = self.ui_get_dimensions()
+        if dim.is_windowed:  # only save if not maximized or minimized
+            Settings.main_win_width = dim.width
+            Settings.main_win_height = dim.height
+            Settings.main_win_splitter_pos = dim.splitter_pos
+            Settings.last_screen_width = dim.screen_width
+            Settings.last_screen_height = dim.screen_height
 
 
     def apply_settings_to_ui(self):
@@ -204,6 +219,8 @@ class MainWindow(MainWindowUi):
 
     def finish_initialization(self):
 
+        # do some startup tasks that only seem to work properly once the main dialog is being displayed
+
         if is_running_from_binary():
             try:
                 import pyi_splash
@@ -221,11 +238,14 @@ class MainWindow(MainWindowUi):
                     pass
             except:
                 pass
-
+        
         if len(self._initial_selection) > 0:
             self.ui_filesys_browser.selected_files = self._initial_selection
         else:
             self.ui_filesys_browser.select_first_file()
+        
+        if self.restore_window_dimensions:
+            self.ui_set_dimensions(width=Settings.main_win_width, height=Settings.main_win_height, splitter_pos=Settings.main_win_splitter_pos)
 
 
     def clear_load_counter(self):
