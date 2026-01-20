@@ -110,7 +110,7 @@ class MainWindow(MainWindowUi):
         self.ui_set_color_assignment_options(list(MainWindow.COLOR_ASSIGNMENT_NAMES.values()))
         self.ui_set_legend_pos_options(list(MainWindow.LEGEND_POS_NAMES.values()))
 
-        self.apply_settings_to_ui()
+        self.apply_settings_to_ui_or_reset()
 
         initial_paths: list[str] = filenames
 
@@ -136,7 +136,8 @@ class MainWindow(MainWindowUi):
         
         # restore window size, but only if it fits on the screen, and if it previously was on a same-size screen
         dim = self.ui_get_dimensions()
-        if ((dim.screen_width >= Settings.main_win_width > 0) and
+        if ((Settings.restore_window_geometry) and
+            (dim.screen_width >= Settings.main_win_width > 0) and
             (dim.screen_height >= Settings.main_win_height > 0) and
             (dim.screen_width == Settings.last_screen_width) and
             (dim.screen_height == Settings.last_screen_height)):
@@ -166,55 +167,59 @@ class MainWindow(MainWindowUi):
 
 
     def apply_settings_to_ui(self):
-        def load_settings():
-            try:
-                self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
-                self.ui_param_selector.setParams(Settings.plotted_params)
-                self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
-                self.ui_param_selector.setUseExpressions(Settings.use_expressions)
-                self.ui_plot_selector.setPlotType(Settings.plot_type)
-                self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
-                self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
-                self.ui_plot_selector.setTdResponse(Settings.td_response)
-                self.ui_plot_selector.setPhaseUnit(Settings.phase_unit)
-                self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
-                self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
-                self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
-                self.ui_plot_selector.setTdWindow(Settings.window_type)
-                self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
-                self.ui_plot_selector.setTdShift(Settings.tdr_shift)
-                self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
-                self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
-                self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
-                self.ui_enable_expressions(Settings.use_expressions)
-                self.ui_show_expressions(not Settings.simplified_no_expressions)
-                self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
-                self.ui_legend_pos = enum_to_string(Settings.legend_position, MainWindow.LEGEND_POS_NAMES)
-                self.ui_semitrans_traces = Settings.plot_semitransparent
-                self.ui_trace_opacity = Settings.plot_semitransparent_opacity
-                self.ui_maxlegend = Settings.max_legend_items
-                self.ui_expression = Settings.expression
-                self.ui_show_legend = Settings.show_legend
-                self.ui_show_grid = Settings.show_grid
-                self.ui_hide_single_item_legend = Settings.hide_single_item_legend
-                self.ui_shorten_legend = Settings.shorten_legend_items
-                self.ui_mark_datapoints = Settings.plot_mark_points
-                self.ui_logx = Settings.log_x
-                self.ui_logy = Settings.log_y
-                self.ui_smart_db = Settings.smart_db_scaling
-                self.ui_layout = Settings.mainwindow_layout
-                self.ui_filesys_browser.show_archives = Settings.extract_zip
-                self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
-                self.ui_use_polar_axis_controls = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
-                return None
-            except Exception as ex:
-                return ex
-        loading_exception = load_settings()
-        if loading_exception:
-            logging.error('Error', f'Unable to load settings ({loading_exception}), trying again with clean settings')
-            loading_exception = load_settings()
-            load_settings()  # load again; this time no re-try
-            logging.error('Error', f'Unable to load settings after reset ({loading_exception}), ignoring')
+        self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
+        self.ui_param_selector.setParams(Settings.plotted_params)
+        self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
+        self.ui_param_selector.setUseExpressions(Settings.use_expressions)
+        self.ui_plot_selector.setPlotType(Settings.plot_type)
+        self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
+        self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
+        self.ui_plot_selector.setTdResponse(Settings.td_response)
+        self.ui_plot_selector.setPhaseUnit(Settings.phase_unit)
+        self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
+        self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
+        self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
+        self.ui_plot_selector.setTdWindow(Settings.window_type)
+        self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
+        self.ui_plot_selector.setTdShift(Settings.tdr_shift)
+        self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
+        self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
+        self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+        self.ui_enable_expressions(Settings.use_expressions)
+        self.ui_show_expressions(not Settings.simplified_no_expressions)
+        self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
+        self.ui_legend_pos = enum_to_string(Settings.legend_position, MainWindow.LEGEND_POS_NAMES)
+        self.ui_semitrans_traces = Settings.plot_semitransparent
+        self.ui_trace_opacity = Settings.plot_semitransparent_opacity
+        self.ui_maxlegend = Settings.max_legend_items
+        self.ui_expression = Settings.expression
+        self.ui_show_legend = Settings.show_legend
+        self.ui_show_grid = Settings.show_grid
+        self.ui_hide_single_item_legend = Settings.hide_single_item_legend
+        self.ui_shorten_legend = Settings.shorten_legend_items
+        self.ui_mark_datapoints = Settings.plot_mark_points
+        self.ui_logx = Settings.log_x
+        self.ui_logy = Settings.log_y
+        self.ui_smart_db = Settings.smart_db_scaling
+        self.ui_layout = Settings.mainwindow_layout
+        self.ui_filesys_browser.show_archives = Settings.extract_zip
+        self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
+        self.ui_use_polar_axis_controls = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
+        self.ui_plot_cursor_readouts = Settings.plot_cursor_readouts
+
+
+    def apply_settings_to_ui_or_reset(self):
+        try:
+            self.apply_settings_to_ui()
+            return
+        except Exception as ex:
+            logging.error('Error', f'Unable to load settings ({ex}), trying again with clean settings')
+
+        try:
+            self.apply_settings_to_ui()
+            return
+        except Exception as ex:
+            logging.error('Error', f'Unable to load settings after reset ({ex}), ignoring')
 
 
     def finish_initialization(self):

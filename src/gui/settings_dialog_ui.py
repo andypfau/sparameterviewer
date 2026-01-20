@@ -64,6 +64,9 @@ class SettingsDialogUi(QDialog):
         self._ui_selecttocheck_check.toggled.connect(self.on_selecttocheck_changed)
         self._ui_guicolorscheme_combo = QComboBox()
         self._ui_guicolorscheme_combo.setToolTip('Global GUI color scheme. Will only be applied after re-starting the application.')
+        self._ui_restore_geometry_check = QCheckBox('Restore main window geometry on startup')
+        self._ui_restore_geometry_check.setToolTip('When starting the application, restore the last window size and splitter position. Can be temporarily disabled by holding the SHIFT key during startup.')
+        self._ui_restore_geometry_check.toggled.connect(self.on_restore_geometry_changed)
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
@@ -71,6 +74,7 @@ class SettingsDialogUi(QDialog):
                 self._ui_simple_noexpr_check,
                 self._ui_simple_plot_check,
                 self._ui_simple_browser_check,
+                self._ui_restore_geometry_check,
                 QtHelper.layout_h('Large S-Param Matrix:', self._ui_largematrix_combo,...),
                 self._ui_selecttocheck_check,
                 QtHelper.layout_h('Color Scheme (requires re-start):', self._ui_guicolorscheme_combo,...),
@@ -178,6 +182,9 @@ class SettingsDialogUi(QDialog):
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
         self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to  expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
+        self._ui_resetall_btn = QPushButton('Reset all Settings')
+        self._ui_resetall_btn.setToolTip('Reset all settings to their default values.')
+        self._ui_resetall_btn.clicked.connect(self.on_reset_all_settings)
         misc_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_grid([
@@ -187,6 +194,7 @@ class SettingsDialogUi(QDialog):
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
                 ]),
                 self._ui_verbose_check,
+                QtHelper.layout_h(self._ui_resetall_btn, ...),
                 ...
             )
         )
@@ -432,6 +440,13 @@ class SettingsDialogUi(QDialog):
 
     
     @property
+    def ui_restore_geometry(self) -> bool:
+        return self._ui_restore_geometry_check.isChecked()
+    @ui_restore_geometry.setter
+    def ui_restore_geometry(self, value: bool):
+        self._ui_restore_geometry_check.setChecked(value)
+    
+    @property
     def ui_ext_ed(self) -> str:
         return self._ui_exted_edit.text()
     @ui_ext_ed.setter
@@ -533,4 +548,8 @@ class SettingsDialogUi(QDialog):
     def on_singletracecolor_changed(self):
         pass
     def on_maxhist_change(self):
+        pass
+    def on_reset_all_settings(self):
+        pass
+    def on_restore_geometry_changed(self):
         pass

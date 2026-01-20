@@ -97,6 +97,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_simplified_browser = Settings.simplified_browser
             self.ui_selecttocheck = Settings.select_file_to_check
             self.ui_maxhist = Settings.path_history_maxsize
+            self.ui_restore_geometry = Settings.restore_window_geometry
             self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
@@ -242,3 +243,10 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_maxhist_change(self):
         Settings.path_history_maxsize = self.ui_maxhist
+
+    def on_reset_all_settings(self):
+        if okcancel_dialog('Reset all Settings', 'All settings will be reset to their default value.', informative_text='This action cannot be undone.'):
+            Settings._reset()
+
+    def on_restore_geometry_changed(self):
+        Settings.restore_window_geometry = self.ui_restore_geometry

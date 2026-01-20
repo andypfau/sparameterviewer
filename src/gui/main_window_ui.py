@@ -571,7 +571,7 @@ class MainWindowUi(QMainWindow):
         super().show()
 
 
-    def ui_get_dimensions(self) -> MainWindowUi.WindowDimensions:
+    def ui_get_dimensions(self) -> WindowDimensions:
         size = self.size()
         return MainWindowUi.WindowDimensions(
             size.width(),
@@ -583,6 +583,12 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_set_dimensions(self, width: int|None = None, height: int|None = None, splitter_pos: int|None = None):
+        
+        keys_pressed = QtGui.QGuiApplication.queryKeyboardModifiers()
+        interrupt_key_pressed = bool(keys_pressed & QtCore.Qt.KeyboardModifier.ShiftModifier)
+        if interrupt_key_pressed:
+            return
+        
         if width is not None and height is not None:
             self.resize(width, height)
         if splitter_pos is not None:
