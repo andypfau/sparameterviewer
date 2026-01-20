@@ -1122,6 +1122,12 @@ class MainWindow(MainWindowUi):
         self.schedule_plot_update()
 
 
+    def on_plot_cursor_readouts(self):
+        Settings.plot_cursor_readouts = self.ui_plot_cursor_readouts
+        self.update_cursor_readout()
+        self.schedule_plot_update()
+
+
     def on_hide_single_legend(self):
         Settings.hide_single_item_legend = self.ui_hide_single_item_legend
         self.schedule_plot_update()
@@ -1335,7 +1341,21 @@ class MainWindow(MainWindowUi):
             if deleted_any:
                 Settings.exprfile_history = history
             self.update_most_recent_exprfile_menu()
-
+        
+        if any_common_elements(('simplified_param_sel', 'plotted_params', 'simplified_no_expressions', 'use_expressions', 'plot_type', 'plot_y_quantitiy', 'plot_y2_quantitiy',
+                'td_response', 'phase_unit', 'phase_processing', 'smith_norm', 'tdr_impedance', 'window_type', 'window_arg', 'tdr_shift', 'tdr_minsize',
+                'simplified_plot_sel', 'simplified_browser', 'use_expressions', 'simplified_no_expressions', 'color_assignment', 'legend_position',
+                'plot_semitransparent', 'plot_semitransparent_opacity', 'max_legend_items', 'expression', 'show_legend', 'show_grid', 'hide_single_item_legend',
+                'shorten_legend_items', 'plot_mark_points', 'log_x', 'log_y', 'smart_db_scaling', 'mainwindow_layout', 'extract_zip'), attributes):
+            try:
+                self.apply_settings_to_ui()
+            except:
+                pass
+            
+        if any_common_elements(('plot_cursor_readouts'), attributes):
+            self.update_cursor_readout()
+            self.schedule_plot_update()
+            
         if any_common_elements(('show_legend','phase_unit','plot_unit','plot_unit2','hide_single_item_legend','shorten_legend_items',
                 'log_x','log_y','expression','window_type','window_arg','tdr_shift','tdr_impedance','tdr_minsize',
                 'plot_mark_points','color_assignment','treat_all_as_complex','singlefile_individualcolor', 'show_grid', 'legend_position'), attributes):
@@ -1553,7 +1573,7 @@ class MainWindow(MainWindowUi):
                 plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
-                cursor.set(x, y, z, True, plot.color)
+                cursor.set(x, y, z, True, plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
 
             self.update_cursor_readout()
 
@@ -1584,7 +1604,7 @@ class MainWindow(MainWindowUi):
                 plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     continue
-                cursor.set(x, y, z, True, plot.color)
+                cursor.set(x, y, z, True, plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
 
             self.update_cursor_readout()
 
@@ -1637,7 +1657,7 @@ class MainWindow(MainWindowUi):
                     plot, x, y, z = self.plot.get_closest_plot_point(self._last_cursor_x[cursor_index], None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                     if plot is None:
                         continue
-                    cursor.set(x, y, z, True, plot.color)
+                    cursor.set(x, y, z, True, plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
 
             self.update_cursor_readout()
 
@@ -1672,7 +1692,7 @@ class MainWindow(MainWindowUi):
                 plot, x, y, z = self.plot.get_closest_plot_point(value, None, name=trace_name, width=plot_width, height=plot_height, interpolate=self.ui_cursor_finex)
                 if plot is None:
                     return
-                cursor.set(x, y, z, True, plot.color)
+                cursor.set(x, y, z, True, plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
 
             self.update_cursor_readout()
 
@@ -1694,7 +1714,7 @@ class MainWindow(MainWindowUi):
 
         try:
             self.plot.cursors[0].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
-            self.plot.cursors[1].enable(self.ui_cursor1_trace != MainWindow.CURSOR_OFF_NAME)
+            self.plot.cursors[1].enable(self.ui_cursor2_trace != MainWindow.CURSOR_OFF_NAME)
 
             snap_y = Settings.cursor_snap == CursorSnap.Point
             
@@ -1729,7 +1749,7 @@ class MainWindow(MainWindowUi):
 
                     if plot is not None:
                         target_cursor = self.plot.cursors[target_cursor_index]
-                        target_cursor.set(x, y, z, enable=True, color=plot.color)
+                        target_cursor.set(x, y, z, enable=True, color=plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
                         
                     if self.ui_cursor_syncx:
                         other_trace_name = self.ui_cursor2_trace if target_cursor_index==0 else self.ui_cursor1_trace
@@ -1737,7 +1757,7 @@ class MainWindow(MainWindowUi):
                         if other_plot is not None:
                             other_cursor_index = 1 - target_cursor_index
                             other_cursor = self.plot.cursors[other_cursor_index]
-                            other_cursor.set(x, y, z, enable=True, color=other_plot.color)
+                            other_cursor.set(x, y, z, enable=True, color=other_plot.color, x_format=self.plot.x_fmt, y_format=self.plot.y_left_fmt, z_format=self.plot.z_fmt)
 
             
             self.update_cursor_readout()
@@ -1749,6 +1769,9 @@ class MainWindow(MainWindowUi):
         if self.ui_tab != MainWindowUi.Tab.Cursors or not self.plot:
             self.ui_set_cursor_readouts()
             return
+        
+        self.plot.cursors[0].plot_readouts = Settings.plot_cursor_readouts
+        self.plot.cursors[1].plot_readouts = Settings.plot_cursor_readouts
 
         readout_x1 = SiValue(0)
         readout_y1 = ''

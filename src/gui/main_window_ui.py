@@ -487,6 +487,7 @@ class MainWindowUi(QMainWindow):
         self._ui_opacity_menuwidget = QtHelper.add_menu_action(self._ui_viewmenu, QtHelper.layout_widget_h('Trace Opacity:', self._ui_opacity_slider))
         self._ui_viewmenu.addSeparator()
         self._ui_menuitem_show_grid = QtHelper.add_menuitem(self._ui_viewmenu, 'Show Grid', self.on_show_grid, checkable=True)
+        self._ui_menuitem_cursor_readouts = QtHelper.add_menuitem(self._ui_viewmenu, 'Show Cursor Readouts in Plot', self.on_plot_cursor_readouts, checkable=True)
         self._ui_viewmenu.addSeparator()
         self._ui_max_legend_spin = QSpinBox()
         self._ui_max_legend_spin.setMinimum(1)
@@ -888,6 +889,14 @@ class MainWindowUi(QMainWindow):
     
 
     @property
+    def ui_plot_cursor_readouts(self) -> bool:
+        return self._ui_menuitem_cursor_readouts.isChecked()
+    @ui_plot_cursor_readouts.setter
+    def ui_plot_cursor_readouts(self, value):
+        self._ui_menuitem_cursor_readouts.setChecked(value)
+    
+
+    @property
     def ui_shorten_legend(self) -> bool:
         return self._ui_short_legend_button.isChecked()
     @ui_shorten_legend.setter
@@ -1158,6 +1167,8 @@ class MainWindowUi(QMainWindow):
     def on_show_legend(self):
         pass
     def on_show_grid(self):
+        pass
+    def on_plot_cursor_readouts(self):
         pass
     def on_hide_single_legend(self):
         pass

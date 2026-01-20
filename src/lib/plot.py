@@ -9,6 +9,7 @@ import numpy as np
 import logging
 import matplotlib
 import matplotlib.lines
+import matplotlib.text
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 import pandas as pd
@@ -42,16 +43,19 @@ class PlotHelper:
             self.color = color
             self.use_2nd_axis = use_2nd_axis
             self.axis_changed = False
+            self.plot_readouts = False
 
             self.x, self.y, self.z = 0, 0, None
 
             self._is_set = False
             self._hl: matplotlib.lines.Line2D = None
             self._vl: matplotlib.lines.Line2D = None
+            self._text: matplotlib.text.Text = None
         
 
-        def set(self, x: float, y: float, z: float, enable: bool = True, color: object = None, use_2nd_axis: bool = False):
+        def set(self, x: float, y: float, z: float, enable: bool = True, color: object = None, use_2nd_axis: bool = False, x_format: SiFormat = None, y_format: SiFormat = None, z_format: SiFormat = None):
             self.x, self.y, self.z = x, y, z
+            self.x_format, self.y_format, self.z_format = x_format, y_format, z_format
             self._is_set = True
             self.enabled = enable
             self.color = color
@@ -78,10 +82,43 @@ class PlotHelper:
                     self._vl.set_visible(False)
                     self._vl.remove()
                     self._vl = None
+                if self._text:
+                    self._text.set_visible(False)
+                    self._text.remove()
+                    self._text = None
             
             if self.enabled and self._is_set:
 
                 plot = self.plot.plot2 if self.use_2nd_axis else self.plot.plot
+                
+                if self.plot_readouts:
+                    def get_plot_bg_color(opacity: float = 1):
+                        bgcol = self.plot.plot.get_facecolor()
+                        if isinstance(bgcol, tuple) and len(bgcol)==4:
+                            bgcol = (bgcol[0], bgcol[1], bgcol[2], opacity)  # make semi-transparent
+                        return bgcol
+
+                    (x0,x1) = self.plot.plot.axes.get_xlim()
+                    (y0,y1) = self.plot.plot.axes.get_ylim()
+                    if not self._text:
+                        self._text = plot.text(0, 0, '')
+                    if self.z is not None:
+                        text1 = self.z_format.format(self.z) if self.z_format is not None else f'{self.z:4g}'
+                        text2 = self.x_format.format(self.x) if self.x_format is not None else f'{self.x:4g}'
+                    else:
+                        text1 = self.x_format.format(self.x) if self.x_format is not None else f'{self.x:4g}'
+                        text2 = self.y_format.format(self.y) if self.y_format is not None else f'{self.y:4g}'
+                    self._text.set_position((self.x + (x1-x0)*0.01, self.y + (y1-y0)*0.01))
+                    self._text.set_text(f'{text1} / {text2}')
+                    self._text.set_horizontalalignment('left' if self.x <= x0+(x1-x0)*0.67 else 'right')
+                    self._text.set_verticalalignment('bottom' if self.y <= y0+(y1-y0)*0.90 else 'top')
+                    self._text.set_fontsize('small')
+                    self._text.set_backgroundcolor(get_plot_bg_color(opacity=0.5))
+                    self._text.set_color(self.color)
+                    self._text.set_visible(True)
+                else:
+                    if self._text:
+                        self._text.set_visible(False)
 
                 if not self._hl:
                     self._hl = plot.axhline(self.y, linewidth=LINEWIDTH)
@@ -105,6 +142,8 @@ class PlotHelper:
                     self._hl.set_visible(False)
                 if self._vl:
                     self._vl.set_visible(False)
+                if self._text:
+                    self._text.set_visible(False)
     
 
     def __init__(self, figure: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFormat, x_log: bool,

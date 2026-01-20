@@ -2,10 +2,19 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.42b2 (2026-01-20)
+--------------------
+
+- new: option to show cursor readout in the plot
+- new: setting to enable window restore
+- enhancement: improved the window size restore mechanism
+- bugfix: pasting formatted text into the expression editor now drops the formatting, and properly applies syntax highlighting
+
+
 0.42b1 (2026-01-15)
 --------------------
 
-- new: filesystem viewert context menu items to change label, color and style of plots
+- new: filesystem viewer context menu items to change label, color and style of plots
 - new: restoring main window size after starting application
 - bugfix: fixed a matpltotlib warning
 
