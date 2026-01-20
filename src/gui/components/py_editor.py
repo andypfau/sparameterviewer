@@ -84,6 +84,8 @@ class PyEditor(QTextEdit):
         self._ui_highlighter = PyEditor.PythonSyntaxHighlighter(self.document())
         self._inactive = False
 
+        self.setAcceptRichText(False)  # this control takes care of syntax highlighting, so only accept unformatted text
+
         self._update_color_scheme()
     
 
