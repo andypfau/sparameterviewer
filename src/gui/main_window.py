@@ -1124,8 +1124,7 @@ class MainWindow(MainWindowUi):
 
     def on_plot_cursor_readouts(self):
         Settings.plot_cursor_readouts = self.ui_plot_cursor_readouts
-        self.update_cursor_readout()
-        self.schedule_plot_update()
+        self.update_cursors()
 
 
     def on_hide_single_legend(self):
@@ -1829,6 +1828,8 @@ class MainWindow(MainWindowUi):
             self._last_cursor_trace[1] = ''
         
         self.ui_set_cursor_readouts(readout_x1, readout_y1, readout_x2, readout_y2, readout_dx, readout_dy)
+        self.plot.cursors[0].update()
+        self.plot.cursors[1].update()
         self.ui_plot.draw()
     
 

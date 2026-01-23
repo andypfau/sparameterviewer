@@ -970,10 +970,17 @@ class MainWindowUi(QMainWindow):
 
 
     def ui_set_cursor_trace_list(self, traces: list[str]):
+        self._ui_cursor1_trace_combo.currentIndexChanged.disconnect(self.on_cursor1_trace_change)
+        self._ui_cursor2_trace_combo.currentIndexChanged.disconnect(self.on_cursor2_trace_change)
         for combo in [self._ui_cursor1_trace_combo, self._ui_cursor2_trace_combo]:
+            currentText = combo.currentText()
             combo.clear()
             for trace in traces:
                 combo.addItem(trace)
+            if currentText:
+                combo.setCurrentText(currentText)
+        self._ui_cursor1_trace_combo.currentIndexChanged.connect(self.on_cursor1_trace_change)
+        self._ui_cursor2_trace_combo.currentIndexChanged.connect(self.on_cursor2_trace_change)
 
 
     @property
