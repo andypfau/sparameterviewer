@@ -346,13 +346,61 @@ def enum_to_string(value, lut: dict):
 
 
 def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,float]:
-    BASE_QUANTILE_PERCENT = 25  # attempt to show 75% of the data
+
+    QUANT_FOOT, QUANT_MIDDLE, QUANT_HEAD = 0.25, 0.5, 0.67
+    LONG_TAIL_HEAD_POS_PERCENT = 80
+    MAX_LONGTAIL_RANGE_DB = 80
     MIN_RANGE_DB = 15
     ZERO_EXTENSION_FACTOR = 2.0
 
-    def nice_range(lo, hi):
-        assert hi > lo, f'Expected hi>lo, got {hi} and {lo}'
-        range = hi - lo
+    # go over each trace, find out how to scale each one of them
+    top, base, bottom = -1e99, +1e99, +1e99
+    for db_values in all_db_values:
+        this_top = np.max(db_values)
+        (this_foot,this_middle,this_head) = np.quantile(db_values, [QUANT_FOOT, QUANT_MIDDLE, QUANT_HEAD])
+        this_bottom = np.min(db_values)
+        this_height = this_top - this_bottom
+        head_pos = (this_head-this_bottom)/this_height
+        
+        top = max(top, this_top)
+        bottom = min(bottom, this_bottom)
+        has_long_tail = head_pos >= LONG_TAIL_HEAD_POS_PERCENT/100
+        if has_long_tail:
+            # baseline lies very high, which may look like having a "long tail" (like many return-loss traces do) -> scale to base to hide the tail
+            if this_foot < this_top - MAX_LONGTAIL_RANGE_DB:
+                this_base = this_top - MAX_LONGTAIL_RANGE_DB  # do not show excessively much
+            else:
+                this_base = this_foot
+            base = min(base, this_base)
+        else:
+            # baseline is not particularly high, which may look like a "flat" trace -> use the bottom
+            base = min(base, this_bottom)
+    
+    full_height = top - bottom
+    if full_height < MIN_RANGE_DB:
+        # range is small anyway, no smart scaling needed
+        return False, 0, 0
+
+    # attempt to apply a smarter range by using the estimated "base", not the actual minimum value
+    bottom = base
+    full_height = top - bottom
+
+    if top < 0:
+        height_with_zero = 0 - bottom
+        if height_with_zero <= ZERO_EXTENSION_FACTOR*full_height:
+            # increasing the top a little bit would show the zero-line -> include the zero-line
+            top = 0
+            full_height = top - bottom
+    elif bottom > 0:
+        height_with_zero = top - 0
+        if height_with_zero <= ZERO_EXTENSION_FACTOR*full_height:
+            # decreasing the bottom little bit would show the zero-line -> include the zero-line
+            bottom = 0
+            full_height = top - bottom
+
+    def nice_range(bottom, top):
+        assert top > bottom, f'Expected hi>lo, got {top} and {bottom}'
+        range = top - bottom
         if range > 100:
             scale, margin = 10, 1
         elif range > 50:
@@ -361,47 +409,11 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
             scale, margin = 2, 1
         else:
             scale, margin = 1, 0.5
-        nlo = math.floor(lo / scale) * scale - margin
-        nhi = math.ceil(hi / scale) * scale + margin
-        return nlo, nhi
+        nice_bottom = math.floor(bottom / scale) * scale - margin
+        nice_top = math.ceil(top / scale) * scale + margin
+        return nice_bottom, nice_top
 
-    tops, bottoms, bases = [], [], []
-    for db_values in all_db_values:
-        top = np.max(db_values)
-        base = np.quantile(db_values, BASE_QUANTILE_PERCENT/100.0)
-        bottom = np.min(db_values)
-        tops.append(top)
-        bottoms.append(bottom)
-
-        # if we can show the majority of the data' distribution in 25% of the range,
-        #   the user is likely inclined to zoom to crop off the lower end anyway
-        has_long_tail = (top - (top-bottom)*0.25) < (top - base)
-        if has_long_tail:
-            bases.append(base)
-    
-    if len(tops)<1 or len(bases)<1 or len(bottoms)<1:
-        return False, 0, 0
-
-    top = np.max(tops)
-    base = np.median(bases)
-    bottom = np.min(bottoms)
-    if top < base or base < bottom:
-        return False, 0, 0
-
-    full_range = top - bottom
-    if full_range < MIN_RANGE_DB:
-        return False, 0, 0
-    
-    y0, y1 = base, top
-    if top <= 0:
-        y_range = y1 - y0
-        y_range_with_zero = 0 - y0
-        if y_range_with_zero <= ZERO_EXTENSION_FACTOR*y_range:
-            y1 = 0
-
-    nice_y0, nice_y1 = nice_range(y0, y1)
-    
-    return True, nice_y0, nice_y1
+    return True, *nice_range(bottom, top)
 
 
 def get_subset(arr, n: int):
