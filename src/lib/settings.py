@@ -115,7 +115,7 @@ class SParamViewerAppSettings(AppSettings):
     log_y: bool = False
     plot_semitransparent: bool = False
     plot_semitransparent_opacity: float = 0.15
-    max_legend_items: int = -1
+    max_legend_items: int = 25
     use_expressions: bool = False
     expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
