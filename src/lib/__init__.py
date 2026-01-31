@@ -9,7 +9,6 @@ from .utils import get_unique_short_filename, is_windows, open_file_in_default_v
 from .utils import ArchiveFileLoader
 from .expressions import ExpressionParser, DefaultAction
 from .apppaths import AppPaths
-from .spreadsheet import SpreadsheetGen
 from .bodefano import BodeFano
 from .circles import StabilityCircle
 from .shortstr import shorten_string_list
