@@ -2,6 +2,15 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.42b3 (2026-01-31)
+--------------------
+
+- enhancement: initial selection of 1st file when command-line argument was a directory or an archive
+- enhancement: more information in about-dialog
+- new: setting to control logging to file
+- new: added icon to executable
+
+
 0.42b2 (2026-01-20)
 --------------------
 
