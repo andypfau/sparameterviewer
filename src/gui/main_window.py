@@ -125,14 +125,21 @@ class MainWindow(MainWindowUi):
             # still no initial paths -> use default directory
             initial_paths = [AppPaths.get_default_file_dir()]
 
-        self._initial_selection = []
+        self._initial_expansion: list[PathExt] = []
+        self._initial_selection: list[PathExt] = []
+
         for path_str in initial_paths:
             path = PathExt(path_str)
             if path.is_file():
+                if is_ext_supported_archive(path.suffix):
+                    self._initial_expansion.append(path)
                 self._initial_selection.append(path)
-                path = path.parent
-            self.add_to_most_recent_paths(str(path))
-            self.ui_filesys_browser.add_toplevel(path)
+                self.add_to_most_recent_paths(str(path.parent))
+                self.ui_filesys_browser.add_toplevel(path.parent)
+            else:  # is a directory
+                self._initial_selection.append(path)
+                self.add_to_most_recent_paths(str(path))
+                self.ui_filesys_browser.add_toplevel(path)
         
         # restore window size, but only if it fits on the screen, and if it previously was on a same-size screen
         dim = self.ui_get_dimensions()
@@ -243,6 +250,9 @@ class MainWindow(MainWindowUi):
                     pass
             except:
                 pass
+        
+        if len(self._initial_expansion) > 0:
+            self.ui_filesys_browser.expand_items(self._initial_expansion)
         
         if len(self._initial_selection) > 0:
             self.ui_filesys_browser.selected_files = self._initial_selection

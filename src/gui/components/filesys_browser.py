@@ -49,13 +49,13 @@ class FilesysBrowser(QWidget):
             self._model = model
             self._path = path
             self._custom_name = None
-            self._children: list[PathExt]|None = None
             self._type = type
             self._is_toplevel = is_toplevel
             self._filter: FileFilter = filter
             
             # assume any directory or archive has children; this allows us to postpone the directory scan to as late as possible
             self._has_children = type in [FilesysBrowserItemType.Dir, FilesysBrowserItemType.Arch]
+            self._first_file: PathExt|None = None
             self._children_added = False
             
             if type == FilesysBrowserItemType.Dir:
@@ -133,6 +133,8 @@ class FilesysBrowser(QWidget):
                     if not self._filter.matches(path):
                         filtered_out_any = True
                         continue
+                    if self._first_file is None:
+                        self._first_file = path
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, path, FilesysBrowserItemType.File), QStandardItem('')))
                 if filtered_out_any:
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Elision), QStandardItem('Some files were hidden by filtering')))
@@ -144,6 +146,8 @@ class FilesysBrowser(QWidget):
                     if not self._filter.matches(file):
                         filtered_out_any = True
                         continue
+                    if self._first_file is None:
+                        self._first_file = file
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, file, FilesysBrowserItemType.File), QStandardItem('')))
                 if filtered_out_any:
                     super().appendRow((FilesysBrowser.MyFileItem(self._model, self._path, FilesysBrowserItemType.Elision), QStandardItem('Some files were hidden by filtering')))
@@ -400,6 +404,10 @@ class FilesysBrowser(QWidget):
                         # de-select, otherwise the next multi-selection that the user does might behave in an unexpected way
                         self._ui_filesys_view.selectionModel().select(item.index(), QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
                 else:
+                    if item.path in selected_paths:
+                        # request to select a dir/arch -> try to select 1st file instead
+                        if item._first_file is not None:
+                            selected_paths.append(item._first_file)  # add to list, will be checked during subsequent recursion
                     recurse(item)
         try:
             self._inhibit_triggers = True
@@ -407,6 +415,29 @@ class FilesysBrowser(QWidget):
         finally:
             self._inhibit_triggers = False
         self.selectionChanged.emit()
+
+
+    def expand_items(self, paths: list[PathExt]):
+        supported_types = [FilesysBrowserItemType.Dir]
+        if Settings.extract_zip:
+            supported_types.append(FilesysBrowserItemType.Arch)
+        
+        def recurse(parent: FilesysBrowser.MyFileItem):
+            if parent is None:
+                return
+            for row_index in range(parent.rowCount()):
+                item = parent.child(row_index, 0)
+                if not isinstance(item, FilesysBrowser.MyFileItem):
+                    continue
+                if (item.type in supported_types) and (item.path in paths):
+                    self._ui_filesys_view.expand(item.index())
+                else:
+                    recurse(item)
+        try:
+            self._inhibit_triggers = True
+            recurse(self._ui_filesys_model.invisibleRootItem())
+        finally:
+            self._inhibit_triggers = False
     
 
     @property
