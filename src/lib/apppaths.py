@@ -59,6 +59,16 @@ class AppPaths:
 
 
     @staticmethod
+    def get_changelog() -> str:
+        return os.path.join(AppPaths._get_root_dir(), 'CHANGELOG.md')
+
+
+    @staticmethod
+    def get_license() -> str:
+        return os.path.join(AppPaths._get_root_dir(), 'LICENSE')
+
+
+    @staticmethod
     def get_settings_dir(settings_format_version_str: str) -> str:
         return os.path.join(
             QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation),

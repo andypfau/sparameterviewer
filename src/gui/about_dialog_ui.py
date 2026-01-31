@@ -32,11 +32,17 @@ class AboutDialogUi(QDialog):
         self._ui_expand_link.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         self._ui_expand_link.linkActivated.connect(self._ui_link_clicked)
         
-        binary_loc = os.path.abspath(sys.argv[0])
+        executable_loc = os.path.abspath(sys.argv[0])
         settings_loc = os.path.abspath(Settings.settings_file_path)
+        docs_loc = os.path.abspath(AppPaths.get_doc_dir())
+        changelog_loc = os.path.abspath(AppPaths.get_changelog())
+        license_loc = os.path.abspath(AppPaths.get_license())
+        log_loc = os.path.abspath(AppPaths.get_log_path())
         self._ui_more_text = QTextEdit()
-        self._ui_more_text.setText(f'Binary location: <{binary_loc}>\nSettings location: <{settings_loc}>')
+        self._ui_more_text.setText(f'Help: <{docs_loc}>\nChangelog: <{changelog_loc}>\nLicense: <{license_loc}>\nExecutable: <{executable_loc}>\nSettings: <{settings_loc}>\nLog: <{log_loc}>')
         self._ui_more_text.setReadOnly(True)
+        self._ui_more_text.setWordWrapMode(QtGui.QTextOption.WrapMode.NoWrap)
+        self._ui_more_text.setMinimumSize(250, 80)
         self._ui_more_text.setVisible(False)
 
         image_path = pathlib.Path(AppPaths.get_resource_dir()) / 'sparamviewer.png'
