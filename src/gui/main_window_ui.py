@@ -588,6 +588,7 @@ class MainWindowUi(QMainWindow):
         keys_pressed = QtGui.QGuiApplication.queryKeyboardModifiers()
         interrupt_key_pressed = bool(keys_pressed & QtCore.Qt.KeyboardModifier.ShiftModifier)
         if interrupt_key_pressed:
+            logging.debug('Skipping window geometry restore (user pressed key)')
             return
         
         if width is not None and height is not None:
