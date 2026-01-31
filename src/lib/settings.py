@@ -168,6 +168,7 @@ class SParamViewerAppSettings(AppSettings):
     main_win_height: int = -1
     main_win_splitter_pos: int = -1
     plot_cursor_readouts: bool = True
+    log_to_file: bool = True
 
 
 

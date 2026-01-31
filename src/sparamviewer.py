@@ -20,13 +20,18 @@ if __name__ == '__main__':
     LogHandler.inst()  # trigger initialization
 
     try:
-        # add a second logger that logs critical errors to file
-        logToFile = logging.FileHandler(os.path.join(AppPaths.get_log_path()))
-        logToFile.setFormatter(logging.Formatter(LOG_FORMAT))
-        logToFile.setLevel(logging.ERROR)
-        logging.getLogger().addHandler(logToFile)
-    except Exception as ex:
-        pass # ignore
+        log_to_file = Settings.log_to_file
+    except:
+        log_to_file = True
+    if log_to_file:
+        try:
+            # add a second logger that logs critical errors to file
+            logToFile = logging.FileHandler(os.path.join(AppPaths.get_log_path()))
+            logToFile.setFormatter(logging.Formatter(LOG_FORMAT))
+            logToFile.setLevel(logging.ERROR)
+            logging.getLogger().addHandler(logToFile)
+        except Exception as ex:
+            pass # ignore
 
     try:
         # disable log stuff I am not interested in

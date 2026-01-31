@@ -182,6 +182,9 @@ class SettingsDialogUi(QDialog):
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
         self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to  expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
+        self._ui_logtofile_check = QCheckBox('Log to File')
+        self._ui_logtofile_check.setToolTip('Save critical log entries to a log file (only takes effect after re-starting the application).')
+        self._ui_logtofile_check.toggled.connect(self.on_logtofile_changed)
         self._ui_resetall_btn = QPushButton('Reset all Settings')
         self._ui_resetall_btn.setToolTip('Reset all settings to their default values.')
         self._ui_resetall_btn.clicked.connect(self.on_reset_all_settings)
@@ -193,7 +196,7 @@ class SettingsDialogUi(QDialog):
                         ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
                         ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
                 ]),
-                self._ui_verbose_check,
+                QtHelper.layout_h(self._ui_verbose_check, self._ui_logtofile_check, ...),
                 QtHelper.layout_h(self._ui_resetall_btn, ...),
                 ...
             )
@@ -343,6 +346,13 @@ class SettingsDialogUi(QDialog):
     def ui_verbose(self, value: bool):
         self._ui_verbose_check.setChecked(value)
 
+    
+    @property
+    def ui_logtofile(self) -> bool:
+        return self._ui_logtofile_check.isChecked()
+    @ui_logtofile.setter
+    def ui_logtofile(self, value: bool):
+        self._ui_logtofile_check.setChecked(value)
     
     @property
     def ui_selecttocheck(self) -> bool:
@@ -524,6 +534,8 @@ class SettingsDialogUi(QDialog):
     def on_allcomplex_changed(self):
         pass
     def on_verbose_changed(self):
+        pass
+    def on_logtofile_changed(self):
         pass
     def on_logxneg_changed(self):
         pass

@@ -88,6 +88,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_all_complex = Settings.treat_all_as_complex
             self.ui_singletrace_individualcolor = Settings.singlefile_individualcolor
             self.ui_verbose = Settings.verbose
+            self.ui_logtofile = Settings.log_to_file
             self.ui_mainwin_layout = enum_to_string(Settings.mainwindow_layout, SettingsDialog.MAINWINLAYOUT_NAMES)
             self.ui_largematrix_layout = enum_to_string(Settings.large_matrix_behavior, SettingsDialog.LARGEMATRIX_NAMES)
             self.ui_guicolorscheme = enum_to_string(Settings.gui_color_scheme, SettingsDialog.GUICOLORSCHEME_NAMES)
@@ -196,6 +197,10 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_verbose_changed(self):
         Settings.verbose = self.ui_verbose
+
+    
+    def on_logtofile_changed(self):
+        Settings.log_to_file = self.ui_logtofile
 
 
     def on_logxneg_changed(self):
