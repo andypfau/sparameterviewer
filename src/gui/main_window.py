@@ -357,6 +357,8 @@ class MainWindow(MainWindowUi):
                         result.append(line)
                 return result
             new_lines = '\n'.join([*expressions, *comment_lines(self.ui_expression.splitlines())])
+            print(f'~~ Setting expresions to """{new_lines}"""')
+            Settings.expression = new_lines
             self.ui_expression = new_lines
             self.ui_param_selector.setUseExpressions(True)
             Settings.use_expressions = True

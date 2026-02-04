@@ -4,9 +4,12 @@
 samples/*
 src/dist
 src/build
+src/pipenv/dist
+src/pipenv/build
 share
 .vscode
 src/gui/*_pygubu.py
 src/env/Pipfile.lock
 *.patch
 doc/html/*
+automation/*

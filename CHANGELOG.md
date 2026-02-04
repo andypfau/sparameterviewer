@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.42b4 (2026-02-04)
+--------------------
+
+- bugfix: fixed some glitchy behavior of the expression editor and expression-templates
+
+
 0.42b3 (2026-01-31)
 --------------------
 

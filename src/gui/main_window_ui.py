@@ -958,6 +958,8 @@ class MainWindowUi(QMainWindow):
         return self._ui_editor.toPlainText()
     @ui_expression.setter
     def ui_expression(self, expression: str):
+        if expression == self._ui_editor.toPlainText():
+            return  # that would just unneccessarily move the cursor, which is annoying
         self._ui_editor.setText(expression)
         self._ui_editor.document().setDefaultFont(self._ui_editor_font)
 
