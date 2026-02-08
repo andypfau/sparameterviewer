@@ -100,3 +100,39 @@ class NoiseCircle(SParameterCircle):
     
     def _get_center_and_radius(self) -> tuple[complex,float]:
         return self.center, self.radius
+
+
+
+class BilateralPowerGainCircle(SParameterCircle):
+
+    def __init__(self, network: "skrf.Network", frequency_hz: float, g_lin: float, typ: str):
+
+        assert typ in ['GA', 'GP']
+        
+        n_ports = network.number_of_ports
+        if n_ports != 2:
+            raise ValueError(f'Gain circles are only defined for 2-port network, but the network {network.name} has {n_ports} port(s)')
+
+        f_min, f_max = min(network.f), max(network.f)
+        if (frequency_hz < f_min) or (frequency_hz > f_max):
+            raise ValueError(f'The requested frequency is outside of the frequency range of the network ({SiValue(f_min,"Hz")} to {SiValue(f_max,"Hz")})')
+        
+        nw = network.interpolate(skrf.Frequency(frequency_hz,frequency_hz,1,unit='hz'))
+        s11: complex = nw.s[0,0,0]
+        s21: complex = nw.s[0,1,0]
+        s12: complex = nw.s[0,0,1]
+        s22: complex = nw.s[0,1,1]
+        k: float = nw.stability[0]
+
+        if typ == 'GP':
+            # operating power gain is the same equation as available power gain, but with S11 and S22 swapped
+            s11, s22 = s22, s11
+        
+        # see <https://cc.ee.ntu.edu.tw/~thc/course_meng/chap10.pdf>
+        delta = s11*s22 - s12*s21
+        self.center = (g_lin * (s11 - s22.conjugate()*delta).conjugate()) / (1 + g_lin * (abs(s11)**2 - abs(delta)**2))
+        self.radius = math.sqrt(1 - 2 * k * abs(s12*s21) * g_lin + (abs(s12*s21)**2) * (g_lin**2)) / (1 + g_lin * (abs(s11)**2 - abs(delta)**2))
+        
+    
+    def _get_center_and_radius(self) -> tuple[complex,float]:
+        return self.center, self.radius

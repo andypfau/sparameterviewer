@@ -1,12 +1,13 @@
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
-from ..circles import StabilityCircle, NoiseCircle
+from ..circles import StabilityCircle, NoiseCircle, BilateralPowerGainCircle
 from ..sparam_helpers import get_sparam_name, get_port_index, parse_quick_param
 from .sparams import SParam, SParams, NumberType
 from .helpers import format_call_signature, DefaultAction
 from ..utils import sanitize_filename, get_subset, p2db
 from ..citi import CitiWriter
 from ..si import SiValue
+from ..settings import Settings
 from info import Info
 
 import math
@@ -498,9 +499,6 @@ class Network:
 
     def plot_noise(self, db: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
         
-        if not hasattr(db, '__len__'):
-            db = [db]
-        
         def _plot_noise(db, f):
             nonlocal n_points, label, style, color, width, opacity
             try:
@@ -510,21 +508,86 @@ class Network:
                 final_label = label if label is not None else f'{self.name} NF {db} dB {SiValue(f,"Hz")}'
                 SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'noise') 
             except:
-                pass  # ignore this, contintue with other circles
+                pass  # ignore this, continue with other circles
         
+        if not hasattr(db, '__len__'):
+            db = [db]
+
         if f is not None and n is None:
             if not hasattr(f, '__len__'):
                 f = [f]
-            for f1 in f:
-                for db1 in db:
-                    _plot_noise(db1, f1)
-        elif f is None:
-            n = n if n is not None else 1
-            for f1 in get_subset(self.nw.f, n):
-                for db1 in db:
-                    _plot_noise(db1, f1)
+        elif f is None and n is not None:
+            f = get_subset(self.nw.f, n)
         else:
             raise ValueError('plot_noise(): need either argument f or n')
+        
+        for f1 in f:
+            for db1 in db:
+                _plot_noise(db1, f1)
+    
+
+    def plot_ga(self, ga: "float|np.ndarray" = 0.0, f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+                
+        def _plot_ga(f, ga):
+            nonlocal n_points, label, style, color, width, opacity
+            try:
+                ga_lin = 10**(-ga/10)
+                gain_circle = BilateralPowerGainCircle(self.nw, f, ga_lin, 'GA')
+                data = gain_circle.get_plot_data(n_points)
+                freq = np.full([n_points], f)
+                final_label = label if label is not None else f'{self.name} GA {ga:g} dB {SiValue(f,"Hz")}'
+                SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'GA')
+            except Exception as ex:
+                if Settings.verbose:
+                    logging.error(f'plot_ga(): {ex}')
+                pass  # ignore this, contintue with other circles
+        
+        if not hasattr(ga, '__len__'):
+            ga = [ga]
+
+        if f is not None and n is None:
+            if not hasattr(f, '__len__'):
+                f = [f]
+        elif f is None and n is not None:
+            f = get_subset(self.nw.f, n)
+        else:
+            raise ValueError('plot_ga(): need either argument f or n')
+
+        for ga1 in ga:
+            for f1 in f:
+                _plot_ga(f1, ga1)
+    
+
+    def plot_gp(self, gp: "float|np.ndarray" = 0.0, f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None, color: "str|None" = None, width: "float|None" = None, opacity: "float|None" = None):
+                
+        def _plot_ga(f, gp):
+            nonlocal n_points, label, style, color, width, opacity
+            try:
+                gp_lin = 10**(-gp/10)
+                gain_circle = BilateralPowerGainCircle(self.nw, f, gp_lin, 'GP')
+                data = gain_circle.get_plot_data(n_points)
+                freq = np.full([n_points], f)
+                final_label = label if label is not None else f'{self.name} GP {gp:g} dB {SiValue(f,"Hz")}'
+                SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'GP')
+            except Exception as ex:
+                if Settings.verbose:
+                    logging.error(f'plot_ga(): {ex}')
+                pass  # ignore this, contintue with other circles
+        
+        if not hasattr(gp, '__len__'):
+            gp = [gp]
+
+        if f is not None and n is None:
+            if not hasattr(f, '__len__'):
+                f = [f]
+        elif f is None and n is not None:
+            f = get_subset(self.nw.f, n)
+        else:
+            raise ValueError('plot_gp(): need either argument f or n')
+
+        for gp1 in gp:
+            for f1 in f:
+                _plot_ga(f1, gp1)
     
 
     def mag(self):
@@ -709,15 +772,13 @@ class Network:
         if f is not None and n is None:
             if not hasattr(f, '__len__'):
                 f = [f]
-            for f1 in f:
-                _plot_stab(f1)
-        elif f is None:
-            n = n if n is not None else 1
-            for f1 in get_subset(self.nw.f, n):
-                _plot_stab(f1)
+        elif f is None and n is not None:
+            f = get_subset(self.nw.f, n)
         else:
             raise ValueError('plot_stab(): need either argument f or n')
-        
+
+        for f1 in f:
+            _plot_stab(f1)
         
     
     def quick(self, *items):
@@ -1099,7 +1160,12 @@ class Networks:
         self._unary_op(Network.plot_noise, None, db=db, f=f, n=n, n_points=n_points, label=label, style=style)
     
 
-    # TODO: constant-gain circles
+    def plot_ga(self, ga: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        self._unary_op(Network.plot_ga, None, f=f, n=n, ga=ga, n_points=n_points, label=label, style=style)
+    
+
+    def plot_gp(self, gp: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
+        self._unary_op(Network.plot_gp, None, f=f, n=n, gp=gp, n_points=n_points, label=label, style=style)
 
     
     def mag(self):
