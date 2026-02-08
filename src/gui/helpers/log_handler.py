@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import override, Callable
+from lib.settings import Settings
 
 import dataclasses
 import logging
 import time
+from typing import override, Callable
 
 
 
@@ -18,6 +19,7 @@ class LogHandler(logging.StreamHandler):
         file: str
         level: int
         level_name: str
+        module: str
     
 
     _instance: LogHandler|None = None
@@ -42,7 +44,7 @@ class LogHandler(logging.StreamHandler):
     @override
     def emit(self, record: logging.LogRecord):
         """ implementation of logging.Handler.emit()"""
-        entry = LogHandler.Record(time.monotonic()-self._t_start, record.msg, record.filename, record.levelno, record.levelname)
+        entry = LogHandler.Record(time.monotonic()-self._t_start, record.msg, record.filename, record.levelno, record.levelname, record.module)
         self._records.append(entry)
         self._notify(entry)
 
@@ -57,7 +59,12 @@ class LogHandler(logging.StreamHandler):
     
 
     def get_formatted_messages(self, level=logging.INFO) -> list[str]:
-        return [f'{record.timestamp:09.3f}, {str(record.level_name).capitalize()}: {record.message}' for record in self.get_records(level)]
+        def format(record: LogHandler.Record) -> str:
+            if Settings.verbose:
+                return f'{record.timestamp:09.3f}, {record.module}, {str(record.level_name).capitalize()}: {record.message}'
+            else:
+                return f'{record.timestamp:09.3f}, {str(record.level_name).capitalize()}: {record.message}'
+        return [format(record) for record in self.get_records(level)]
 
 
     def _notify(self, record: LogHandler.Record|None):
