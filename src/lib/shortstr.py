@@ -4,7 +4,7 @@ import logging
 
 
 
-def shorten_string_list(strings: list[str], elide_str: str = '…', target_len: int = 25) -> list[str]:
+def shorten_string_list(strings: list[str], elide_str: str = '…', target_len: int = 5) -> list[str]:
     """
     Shorten a list of strings, such that all strings are still distinct (at least if they were distinct before).
 
