@@ -253,6 +253,7 @@ class MainWindow(MainWindowUi):
         
         if len(self._initial_expansion) > 0:
             self.ui_filesys_browser.expand_items(self._initial_expansion)
+            self.on_filesys_files_changed()  # when loading archives, they are not properly initialized... this is a workaround for that
         
         if len(self._initial_selection) > 0:
             self.ui_filesys_browser.selected_files = self._initial_selection
