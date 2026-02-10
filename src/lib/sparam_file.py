@@ -60,7 +60,7 @@ class SParamFile:
             if self.path != other.path:
                 return False
             return True
-        return super.__eq__(self, other)
+        return super.__eq__(other)
     
 
     def _load(self):
