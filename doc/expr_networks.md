@@ -643,6 +643,54 @@ nw('bpf.s2p').quick(21)
 
 
 
+### iter()
+
+```python
+iter()
+```
+
+Returns an iterator, where each element is another `Networks` object, but each one containing exactly one file.
+
+Example:
+```python
+# this would basicaly do the same as nws().s(21).plot(), but using a for-loop
+for nw in nws().iter():
+    nw.s(21).plot()
+```
+
+
+
+### slice()
+
+```python
+slice(pattern='.*', others=False)
+```
+
+Shows a dropdown-box in the GUI next to the expression editor, that you can use to "flick through" groups of networks.
+
+How it works:
+* You provide a regular expression (`pattern`), and for each S-parameter dataset, it searches that expression in all S-parameter names.
+* All matched expressions are then shown in the slicer dropdown-box.
+* It then only returns those S-parameter datasets which match the current dropdown-box selection.
+
+For `pattern`, you can also provide a list of strings, which are then searched for individually.
+
+Note that the user interface only has one single slicer control element, so this method can only be used once in the entire script.
+
+Example:
+```python
+nws().slice('.pf').sel_params().plot()
+```
+In this example, using the provided sample files, the regular expression `'.pf'` would match "lpf", "hpf" and "hpf". ThHose 3 strings would then be displayed in the dropdown-box, and you can quickly flick through them.
+
+Another example:
+```python
+nws().slice('(open|short|load)',others=True).sel_params().plot()
+```
+Shows the items "open", "short" and "load", and additionally shows an item in the dropdown-box that matches all other networks (because of `others=True`).
+
+
+
 ## Unary Operators
 
 ### Inversion

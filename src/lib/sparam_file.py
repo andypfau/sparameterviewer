@@ -34,7 +34,6 @@ class SParamFile:
         self._error = None
         self._name = name
         self._short_name = short_name
-        self._name_prefix = path.arch_path_name + '/' if path.arch_path else ''
 
 
     @property
@@ -43,16 +42,20 @@ class SParamFile:
             return self._name
         elif FileConfig.get_label(str(self.path)):
             return FileConfig.get_label(str(self.path))
+        elif self.path.is_in_arch():
+            return self.path.arch_path_name
         else:
-            return self._name_prefix + self.path.name
+            return self.path.name
     
 
     @property
     def short_name(self) -> str:
         if self._short_name is not None:
             return self._short_name
+        elif self.path.is_in_arch():
+            return os.path.splitext(self.path.arch_path_name)[0]
         else:
-            return self._name_prefix + os.path.splitext(self.path.name)[0]
+            return os.path.splitext(self.path.name)[0]
     
 
     def __eq__(self, other) -> bool:

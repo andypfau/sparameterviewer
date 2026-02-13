@@ -1,8 +1,7 @@
-import matplotlib.axes
 from .main_window_ui import MainWindowUi
 from .helpers.log_handler import LogHandler
 from .helpers.file_filter import FileFilter
-from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog, custom_buttons_dialog
+from .helpers.simple_dialogs import info_dialog, warning_dialog, error_dialog, exception_dialog, okcancel_dialog, yesno_dialog, open_directory_dialog, open_file_dialog, save_file_dialog, custom_buttons_dialog, textinput_dialog
 from .helpers.help import show_help
 from .components.param_selector import ParamSelector
 from .components.plot_widget import PlotWidget
@@ -20,7 +19,7 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale, open_file_in_default_viewer
+from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale, open_file_in_default_viewer, shorten_string_list, natural_sort_key
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
@@ -40,6 +39,7 @@ import numpy as np
 import re
 import os
 import scipy.signal
+import matplotlib.axes
 from typing import Optional, Callable
 
 
@@ -324,6 +324,9 @@ class MainWindow(MainWindowUi):
 
         comment_existing_expr = Settings.comment_existing_expr
 
+        def const_all_files():
+            return [f'nw(\'{self.get_nw_name_for_template(file)}\')' for file in self.files]
+        
         def const_selected_files():
             return [f'nw(\'{self.get_nw_name_for_template(file.path)}\')' for file in self.get_selected_files()]
         
@@ -358,7 +361,6 @@ class MainWindow(MainWindowUi):
                         result.append(line)
                 return result
             new_lines = '\n'.join([*expressions, *comment_lines(self.ui_expression.splitlines())])
-            print(f'~~ Setting expresions to """{new_lines}"""')
             Settings.expression = new_lines
             self.ui_expression = new_lines
             self.ui_param_selector.setUseExpressions(True)
@@ -548,7 +550,10 @@ class MainWindow(MainWindowUi):
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f'{nw}.sel_params().norm(at_f=10e9).plot()  # normalize at given frequency' for nw in selected_files]
+            f_str = textinput_dialog('Frequency', 'Normalization frequency:', '1e9')
+            if not f_str:
+                return
+            expressions = [f'{nw}.sel_params().norm(at_f={f_str}).plot()  # normalize at given frequency' for nw in selected_files]
             set_expression(*expressions)
         
         def mixed_mode():
@@ -598,14 +603,6 @@ class MainWindow(MainWindowUi):
                 return
             expressions = [f'({nw} ** Comp.LineStub(len=0.1, stub_gamma=+1)).plot_sel_params()  # add a transmission line stub' for nw in selected_files]
             set_expression(*expressions)
-
-        def all_selected():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'{nw}.sel_params().plot()' for nw in selected_files]
-            set_expression(*expressions)
         
         def z():
             set_expression('sel_nws().z(any,any).plot()  # Z-parameters')
@@ -622,6 +619,29 @@ class MainWindow(MainWindowUi):
         def t():
             set_expression('sel_nws().t(any,any).plot()  # scattering transfer parameters')
             setup_plot(PlotType.Cartesian)
+        
+        def add_slicer():
+            pattern = textinput_dialog('Slicer', 'Slicer pattern:', '.*')
+            if not pattern:
+                return
+            expressions = [f'nws().slice(\'{pattern}\').sel_params().plot()  # show slicer']
+            set_expression(*expressions)
+        
+        def all_networks():
+            expressions = [f'nws().sel_params().plot()  # just plot all available networks']
+            set_expression(*expressions)
+        
+        def all_networks_explicit():
+            expressions = [f'{nw}.sel_params().plot()' for nw in const_all_files()]
+            set_expression(*expressions)
+        
+        def selected_networks():
+            expressions = [f'sel_nws().sel_params().plot()  # just plot all selected networks']
+            set_expression(*expressions)
+        
+        def selected_networks_explicit():
+            expressions = [f'{nw}.sel_params().plot()' for nw in const_selected_files()]
+            set_expression(*expressions)
         
         def invoke_template(template_fn, ctrl, shift):
             nonlocal comment_existing_expr
@@ -643,8 +663,6 @@ class MainWindow(MainWindowUi):
                 ('S11, S21, S22', quick112122),
                 ('S11, S21, S12, S22', quick11211222),
                 ('S11, S21, S22, S31, S32, S33', quick112122313233),
-                (None, None),
-                ('Plot Selected Networks Explicitly', all_selected),
             ]),
             ('Other Parameters', [
                 ('Z-Matrix (Impedance)', z),
@@ -699,6 +717,13 @@ class MainWindow(MainWindowUi):
                 ('Min, Max, Peak-Peak', stat_minmax),
                 ('Mean and Stddev', stat_meansdev),
                 ('Robust Mean and Stddev', stat_rmeansdev),
+            ]),
+            ('Miscellaneous', [
+                ('All Available Networks', all_networks),
+                ('All Available Networks (via Explicit Name)', all_networks_explicit),
+                ('Currently Selected Networks', selected_networks),
+                ('Currently Selected Networks (via Explicit Name)', selected_networks_explicit),
+                ('Select Networks via Slicer', add_slicer),
             ]),
         ], call_wrapper=invoke_template)
 
@@ -1316,6 +1341,14 @@ class MainWindow(MainWindowUi):
         self.ui_param_selector.setUseExpressions(True)
         Settings.use_expressions = True
         self.ui_enable_expressions(True)
+        self.schedule_plot_update()
+
+
+    def on_expr_slicer_change(self):
+        if self.ui_tab != MainWindowUi.Tab.Expressions:
+            return
+        if Settings.simplified_no_expressions:
+            return
         self.schedule_plot_update()
 
     
@@ -2026,20 +2059,51 @@ class MainWindow(MainWindowUi):
             generated_lines = [f'sel_nws().s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
             self.generated_expressions = '\n'.join(generated_lines)
 
+            using_slicer = False
+            def slicer_fn_wrapper(show: bool, options: list[str]) -> tuple[int,str]:
+                nonlocal using_slicer
+                
+                if not show:
+                    return
+                    
+                if len(options) <= 1:
+                    if Settings.verbose:
+                        logging.debug(f'Ignoring slice with less than two options ({options})')
+                        if len(options) < 1:
+                            return 0, None
+                        return 0, options[0]
+                
+                if using_slicer:
+                    raise RuntimeError(f'Slicer is already in use; cannot show another one')
+                using_slicer = True
+                
+                options_unique = list(set(options))
+                options_sorted = sorted(options_unique, key=lambda s: natural_sort_key(s))
+                options_short = shorten_string_list(options_sorted, target_len=50)
+                
+                index,_ = self.ui_expr_slicer(show, options_short)
+                assert 0 <= index < len(options_sorted)
+                value = options_sorted[index]
+                
+                return index, value
+            
             param_selector_is_in_use = True
             if use_expressions:
 
                 Settings.expression = self.ui_expression
-                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list)  
+                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)  
                 param_selector_is_in_use = result.default_actions_used
 
             else:
 
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list)  
+                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
+
+            if not using_slicer:
+                self.ui_expr_slicer(False, [])  # if slicer is not used, hide it from the GUI
 
             singlefile_colorizing = False
             if Settings.singlefile_individualcolor:
@@ -2256,4 +2320,4 @@ class MainWindow(MainWindowUi):
 
         finally:
             self.ui_schedule_oneshot_timer(MainWindow.TIMER_CLEAR_LOAD_COUNTER_ID, MainWindow.TIMER_CLEAR_LOAD_COUNTER_TIMEOUT_S, self.clear_load_counter, retrigger_behavior='postpone')
-            self.ready = True
+            self.ready = True, 

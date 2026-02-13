@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
 from ..circles import StabilityCircle, NoiseCircle, BilateralPowerGainCircle
@@ -18,7 +20,7 @@ import re
 import os
 import logging
 from types import NoneType
-from typing import overload, Callable
+from typing import overload, Callable, Generator
 
 
 
@@ -952,6 +954,8 @@ class Networks:
     default_actions: "list[DefaultAction]" = []
     default_actions_used: bool = False
 
+    slicer_fn: "Callable[[bool,list[str]], tuple[int,str]r]" = None
+
 
     def __init__(self, nws: "list[skrf.Network]|list[Network]|list[SParamFile]" = None):
         def cast(obj):
@@ -1066,6 +1070,47 @@ class Networks:
             return f'<Networks({len(self.nws)}x Network, 1st is {self.nws[0]})>'
         else:
             return '<Networks(empty)>'
+    
+
+    def iter(self) -> Generator[Networks,None,None]:
+        for nw in self.nws:
+            yield Networks(nws=[nw])
+    
+
+    def slice(self, pattern: str|list[str] = '.*', others=False) -> Generator[Networks,None,None]:
+        
+        GROUP_SEPAERATOR, PLACEHOLDER_OTHERS = ', ', '---'
+
+        assert Networks.slicer_fn is not None
+
+        if not isinstance(pattern, (list,tuple,set)):
+            pattern = (pattern,)
+
+        def get_matching_string(s: str) -> str:
+            nonlocal others, pattern
+            groups = []
+            for regex in pattern:
+                m = re.search(regex, s, re.I)
+                if m:
+                    groups.append(m.group(0))
+            if len(groups) < 1:
+                if others:
+                    return PLACEHOLDER_OTHERS
+                return None
+            return GROUP_SEPAERATOR.join(groups)
+
+
+        names = [nw.name for nw in self.nws]
+        matches = [name for name in [get_matching_string(name) for name in names] if name]
+
+        if Settings.verbose:
+            matches_str = ', '.join(f'"{m}"' for m in sorted(list(set(matches))))
+            logging.debug(f'Networks.slice(): found matches [{matches_str}]')
+
+        _, slicer_value = Networks.slicer_fn(True, matches)
+        matching_nws = [nw for nw in self.nws if get_matching_string(nw.name) == slicer_value]
+
+        return Networks(matching_nws)
     
 
     def sel_params(self) -> SParams:

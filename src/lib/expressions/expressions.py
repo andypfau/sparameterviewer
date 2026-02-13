@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from ..sparam_file import SParamFile, PathExt
-from ..bodefano import BodeFano
-from ..circles import StabilityCircle
 from ..sparam_helpers import parse_quick_param
+from ..utils import natural_sort_key
 from .networks import Networks
 from .sparams import SParam, SParams, NumberType
 from .components import Components
@@ -30,12 +31,14 @@ class ExpressionParser:
         selected_networks: "list[SParamFile]",
         default_actions: "list[DefaultAction]",
         ref_nw_name: "str|None",
-        plot_fn: "callable[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str,NumberType]"):
+        plot_fn: "Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str,NumberType], None]",
+        slicer_fn: "Callable[[bool,list[str]], tuple[int,str]]") -> ExpressionParser.Result:
 
         SParam._plot_fn = plot_fn
+        Networks.slicer_fn = slicer_fn
         Networks.default_actions = default_actions
 
-        def select_networks(network_list: "list[SParamFile]", pattern: str, single: bool):
+        def _select_networks(network_list: "list[SParamFile]", pattern: str, single: bool):
             nws = []
             if pattern is None and not single:
                 nws = [nw for nw in network_list]
@@ -51,22 +54,23 @@ class ExpressionParser:
                 if pattern is not None:
                     if len(nws) == 0:
                         logging.info(f'The pattern "{pattern}" didn\'t match any networks; returning empty Networks object)')
+            nws = sorted(nws, key=lambda nw: natural_sort_key(nw.path.final_name))
             return Networks(nws)
-        
+
         def sel_nws(pattern: str = None) -> Networks:
-            return select_networks(selected_networks, pattern, single=False)
+            return _select_networks(selected_networks, pattern, single=False)
         
         def nws(pattern: str = None) -> Networks:
-            return select_networks(available_networks, pattern, single=False)
+            return _select_networks(available_networks, pattern, single=False)
         
         def nw(pattern: str) -> Networks:
-            return select_networks(available_networks, pattern, single=True)
+            return _select_networks(available_networks, pattern, single=True)
 
         def saved_nw() -> Networks:
             if ref_nw_name is None:
                 logging.warning(f'saved_nw(): no network was saved for this purpose; returning empty object')
                 return Networks([]) 
-            return select_networks(available_networks, ref_nw_name, single=True)
+            return _select_networks(available_networks, ref_nw_name, single=True)
 
         def quick(*items):
             for (e,i) in [parse_quick_param(item) for item in items]:

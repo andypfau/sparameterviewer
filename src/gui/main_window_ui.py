@@ -300,6 +300,15 @@ class MainWindowUi(QMainWindow):
         self._ui_help_button.clicked.connect(self.on_help_button)
         self._ui_editor_font = QtHelper.make_font(family=QtHelper.get_monospace_font())
         self._ui_editor = PyEditor()
+        
+        self._ui_expr_slicer_label = QLabel('Slice:')
+        self._ui_expr_slicer_label.setVisible(False)
+        self._ui_expr_slicer = QComboBox()
+        self._ui_expr_slicer.setVisible(False)
+        self._ui_expr_slicer.setToolTip('Select Expression Slice (from Networks.slicer() method)')
+        self._ui_expr_slicer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self._ui_expr_slicer.currentTextChanged.connect(self.on_expr_slicer_change)
+
         self._ui_expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_update_button,
@@ -309,9 +318,15 @@ class MainWindowUi(QMainWindow):
                 5,
                 self._ui_save_expr_button,
                 self._ui_load_expr_button,
+                5,
+                #self._ui_expr_slicer_label,
+                #self._ui_expr_slicer,
                 ...
             ),
-            self._ui_editor
+            QtHelper.layout_v(
+                QtHelper.layout_h( self._ui_expr_slicer_label, self._ui_expr_slicer),
+                self._ui_editor,
+            ),
         ))
         
         self._ui_cursors_tab = QWidget()
@@ -694,6 +709,32 @@ class MainWindowUi(QMainWindow):
             if self.ui_tab == MainWindowUi.Tab.Expressions:
                 self.ui_tab = MainWindowUi.Tab.Files
             self._ui_tabs.removeTab(1)
+    
+
+    def ui_expr_slicer(self, show: bool, options: list[str]) -> tuple[int,str]:
+
+        if (not show) or (len(options) == 0):
+            self._ui_expr_slicer.setVisible(False)
+            self._ui_expr_slicer_label.setVisible(False)
+            return 0, None
+
+        self._ui_expr_slicer.currentTextChanged.disconnect(self.on_expr_slicer_change)
+
+        index = self._ui_expr_slicer.currentIndex()
+        self._ui_expr_slicer.clear()
+        for option in options:
+            self._ui_expr_slicer.addItem(option)
+        if index >= len(options):
+            index = len(options) - 1
+        elif index < 0:
+            index = 0
+        self._ui_expr_slicer.setCurrentIndex(index)
+
+        self._ui_expr_slicer.currentTextChanged.connect(self.on_expr_slicer_change)
+        self._ui_expr_slicer.setVisible(True)
+        self._ui_expr_slicer_label.setVisible(True)
+
+        return index, options[index]
 
     
     def ui_show_abort_button(self, value: bool):
@@ -1199,6 +1240,8 @@ class MainWindowUi(QMainWindow):
     def on_turnon_expressions(self):
         pass
     def on_update_expressions(self):
+        pass
+    def on_expr_slicer_change(self):
         pass
     def on_update_plot(self):
         pass
