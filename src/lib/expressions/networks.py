@@ -131,10 +131,10 @@ class Network:
 
         def interpolate_f(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
             all_freqs = np.array(sorted(list(set([*a.f, *b.f]))))
-            f_new = skrf.Frequency.from_f(all_freqs, unit='Hz')
+            f_new = np.array(all_freqs)
             assert a.number_of_ports == b.number_of_ports, f'Expected both networks to have the same number of ports during interpolation step, got {a.number_of_ports} and {b.number_of_ports}'
-            a_new = Network._get_interpolated_sparams(a.nw, f_new)
-            b_new = Network._get_interpolated_sparams(b.nw, f_new)
+            a_new = Network._get_interpolated_sparams(a, f_new)
+            b_new = Network._get_interpolated_sparams(b, f_new)
             return a_new, b_new
 
         nw_a, nw_b = a.nw.copy(), b.nw.copy()
@@ -150,15 +150,17 @@ class Network:
         
         def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
             current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
+            print(f'~~ interpolating {len(current_f)}x{len(current_mag)} to {len(new_f)}')
             interp_mag = np.interp(new_f, current_f, current_mag)
             interp_pha = np.interp(new_f, current_f, current_pha)
+            print(f'~~ interpolation done.')
             return interp_mag * np.exp(1j*interp_pha)
         
         s_new = np.ndarray([len(f),nw.nports,nw.nports], dtype=complex)
         for ep in range(nw.nports):
             for ip in range(nw.nports):
                 s_new[:,ep,ip] = interpolate_param(nw.s[:,ep,ip], nw.f, f)
-        return skrf.Network(s=s_new, name=nw.name, z0=nw.z0, f=f, f_unit='Hz')
+        return skrf.Network(s=s_new, name=nw.name, z0=nw.z0[0,0], f=f, f_unit='Hz')
 
     
     def _interpolate(self, f: np.ndarray) -> "Network":

@@ -33,12 +33,19 @@ class FilterDialogUi(QDialog):
             self.setText(path.final_name)
 
 
-    def __init__(self, parent, select_mode: bool):
+    def __init__(self, parent, mode: str):
         super().__init__(parent)
         self._result = FilterDialogUi.Action.Select
-        self._select_mode = select_mode
 
-        self.setWindowTitle('Select Files' if select_mode else 'Filter Files')
+        if mode == 'filter':
+            self.setWindowTitle('Filter Files')
+        elif mode == 'check':
+            self.setWindowTitle('Select Files')
+        elif mode == 'slice':
+            self.setWindowTitle('Slice Files')
+        else:
+            raise ValueError()
+        
         QtHelper.set_dialog_icon(self)
         self.setModal(True)
         self.setSizeGripEnabled(True)
@@ -58,12 +65,15 @@ class FilterDialogUi(QDialog):
         self._ui_regex_radio.toggled.connect(self.on_search_mode_change)
 
         self._ui_files_list = QListView()
-        if self._select_mode:
+        if mode == 'check':
             self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
             self._ui_files_list.setToolTip('Files that match your search are selected here. You may manually change the selection.')
-        else:
+        elif mode == 'filter':
             self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
             self._ui_files_list.setToolTip('Files that match your search are selected here. Note that files in un-opened directories or archives are not shown here yet.')
+        elif mode == 'slice':
+            self._ui_files_list.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+            self._ui_files_list.setToolTip('File name parts that match your slice pattern are selected here. Files that do not match are shown below.')
         self._ui_files_list.setMinimumSize(200, 100)
         self._ui_files_model = QtGui.QStandardItemModel()
         self._ui_files_list.setModel(self._ui_files_model)
@@ -80,10 +90,16 @@ class FilterDialogUi(QDialog):
         """)
 
         self.ui_select_button = QtHelper.make_button(self, '', self._on_select, icon='filter_select.svg')
-        self.ui_select_button.setToolTip('Only select these files' if self._select_mode else 'Only show these files')
+        if mode == 'select':
+            self.ui_select_button.setToolTip('Only select these files')
+        if mode == 'filter':
+            self.ui_select_button.setToolTip('Only show these files')
+        elif mode == 'slice':
+            self.ui_select_button.setToolTip('Apply slicer')
+
         self.ui_select_button.setMinimumWidth(50)
         self.ui_select_button.setDefault(True)
-        if self._select_mode:
+        if mode == 'check':
             self.ui_add_button = QtHelper.make_button(self, '', self._on_add, icon='filter_add.svg')
             self.ui_add_button.setToolTip('Additionally check these files')
             self.ui_remove_button = QtHelper.make_button(self, '', self._on_remove, icon='filter_subtract.svg')
@@ -98,7 +114,7 @@ class FilterDialogUi(QDialog):
                 self.ui_toggle_button,
                 ...,
             )
-        else:
+        if mode == 'filter':
             self.ui_select_inv_button = QtHelper.make_button(self, '', self._on_filter_inv, icon='filter_select-inv.svg')
             self.ui_select_inv_button.setToolTip('Hide all files except these')
             self.ui_off_button = QtHelper.make_button(self, '', self._on_filter_off, icon='filter_filter-off.svg')
@@ -107,6 +123,15 @@ class FilterDialogUi(QDialog):
                 self.ui_select_button,
                 15,
                 self.ui_select_inv_button,
+                self.ui_off_button,
+                ...,
+            )
+        elif mode == 'slice':
+            self.ui_off_button = QtHelper.make_button(self, '', self._on_filter_off, icon='filter_filter-off.svg')
+            self.ui_off_button.setToolTip('Turn slicing off (always show all files)')
+            button_layout = QtHelper.layout_h(
+                self.ui_select_button,
+                15,
                 self.ui_off_button,
                 ...,
             )

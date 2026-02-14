@@ -8,16 +8,15 @@ class FileFilter:
     def __init__(self, filter: str = None, regex: bool = False, full_match: bool = False, negate: bool = False):
         self._filter, self._regex, self._full_match, self._negate = filter, regex, full_match, negate
         
+        self._compiled_regex: "re.Pattern|None"
         if filter is None or filter == '':
-            self._fn = lambda name: True
+            self._regex_str = None
+            self._compiled_regex = None
         else:
             if not regex:
                 filter = self._wildcard_to_regex(filter)
-            compiled_regex = re.compile(filter, re.IGNORECASE)
-            if self._full_match:
-                self._fn = lambda name: bool(compiled_regex.match(name)) != negate
-            else:
-                self._fn = lambda name: bool(compiled_regex.search(name)) != negate
+            self._regex_str = filter
+            self._compiled_regex = re.compile(filter, re.IGNORECASE)
     
     def __eq__(self, other):
         if not isinstance(other, FileFilter):
@@ -55,6 +54,10 @@ class FileFilter:
         return self._filter
     
     @property
+    def regex_str(self) -> str:
+        return self._regex_str
+    
+    @property
     def regex(self) -> bool:
         return self._regex
     
@@ -68,7 +71,25 @@ class FileFilter:
     
     @property
     def active(self) -> bool:
-        return self._fn is not None
+        return self._compiled_regex is not None
+
+    def _match(self, s: str) -> "re.Match|None":
+        assert self._compiled_regex is not None
+        if self._full_match:
+            return self._compiled_regex.match(s)
+        else:
+            return self._compiled_regex.search(s)
 
     def matches(self, path: PathExt) -> bool:
-        return self._fn(path.final_name)
+        if self._compiled_regex is None:
+            return True
+        return bool(self._match(path.final_name)) != self._negate
+
+    def get_match(self, path: PathExt) -> tuple[PathExt,bool,str|None]:
+        if self._compiled_regex is None:
+            return path, True, None
+        m = self._match(path.final_name)
+        if m:
+            return path, not self._negate, m.group(0)
+        else:
+            return path, self._negate, None

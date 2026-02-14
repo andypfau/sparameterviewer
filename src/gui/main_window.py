@@ -92,6 +92,7 @@ class MainWindow(MainWindowUi):
         self._last_cursor_trace = ['', '']
         self._smartscale_set_y = False
         self._ref_path_for_template: str|None = None
+        self._file_slice_filter: FileFilter|None = None
         self.restore_window_dimensions = False
 
         super().__init__()
@@ -778,7 +779,7 @@ class MainWindow(MainWindowUi):
     
 
     def on_show_filter(self):
-        result = FilterDialog(self, select_mode=False).show_modal_dialog(list(sorted(self.files.keys())))
+        result = FilterDialog(self, FilterDialog.Mode.Filter).show_modal_dialog(list(sorted(self.files.keys())))
         if result.action == FilterDialogUi.Action.Cancel:
             self.ui_file_filter_enabled = False
             self.ui_filesys_browser.filter = FileFilter()
@@ -788,7 +789,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_show_filesel(self):
-        result = FilterDialog(self, select_mode=True).show_modal_dialog(list(sorted(self.files.keys())))
+        result = FilterDialog(self, FilterDialog.Mode.Check).show_modal_dialog(list(sorted(self.files.keys())))
         currently_selected = self.ui_filesys_browser.selected_files
         match result.action:
             case FilterDialogUi.Action.Select:
@@ -799,6 +800,20 @@ class MainWindow(MainWindowUi):
                 self.ui_filesys_browser.selected_files = list(set(currently_selected) - set(result.files))
             case FilterDialogUi.Action.Toggle:
                 self.ui_filesys_browser.selected_files = list(set(currently_selected) ^ set(result.files))
+
+
+    def on_show_slicer(self):
+        result = FilterDialog(self, FilterDialog.Mode.Slice).show_modal_dialog(list(sorted(self.files.keys())))
+        if result.action == FilterDialogUi.Action.Cancel:
+            self.ui_file_slicer_enabled = False
+            self._file_slice_filter = None
+        else:
+            self.ui_file_slicer_enabled = result.filter.active
+            if result.filter.active:
+                self._file_slice_filter = result.filter
+            else:
+                self._file_slice_filter = None
+        self.schedule_plot_update()
     
 
     def on_load_dir(self):
@@ -2056,7 +2071,15 @@ class MainWindow(MainWindowUi):
                     if params & Parameters.S22:
                         actions.append(DefaultAction([22], dict(), [], plot_kwargs_rl))
             
-            generated_lines = [f'sel_nws().s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
+            if self._file_slice_filter:
+                filter_str = self._file_slice_filter.regex_str.replace('\'', '\'\'')
+                nw_statement = f'nws().slice(r\'{filter_str}\',others=True)'
+            else:
+                nw_statement = 'sel_wns()'
+            generated_lines = [f'{nw_statement}.s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
+            print()
+            print(generated_lines)
+            print()
             self.generated_expressions = '\n'.join(generated_lines)
 
             using_slicer = False

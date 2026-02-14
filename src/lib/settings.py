@@ -141,6 +141,7 @@ class SParamViewerAppSettings(AppSettings):
     search_regex: bool = False
     last_filter_dialog_str: str = ''
     last_select_dialog_str: str = ''
+    last_slice_dialog_str: str = ''
     last_dir_filedialog: str = ''
     last_dir_dirdialog: str = ''
     cursor_snap: CursorSnap = CursorSnap.Point
