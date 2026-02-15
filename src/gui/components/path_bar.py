@@ -101,12 +101,16 @@ class PathBar(QWidget):
         self._default_mode = PathBar.Mode.Breadcrumbs
 
         self._ui_toggle_breadcrumbs_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_breadcrumbs, icon='path_breadcrumbs.svg', tooltip='Show Breadcrumb Bar')
+        self._ui_toggle_breadcrumbs_button.setToolTip('Toggle path to clickable breadcrumb-bar')
         self._ui_toggle_text_button = QtHelper.make_toolbutton(self, None, self._on_switch_to_text, icon='path_text.svg', tooltip='Show Text Editor')
         self._ui_dir_select_dialog_button = QtHelper.make_toolbutton(self, None, self._on_open_dir_select_dialog, icon='path_browse.svg', tooltip='Navigate to Directory...')
+        self._ui_toggle_text_button.setToolTip('Toggle path to editable text')
         self._ui_add_dir_button = QtHelper.make_toolbutton(self, None, self._on_add_dir_select_dialog, icon='path_add.svg', tooltip='Add another Directory...')
         self._ui_add_dir_button.setVisible(False)
+        self._ui_add_dir_button.setToolTip('Add another directory')
         self._ui_close_button = QtHelper.make_toolbutton(self, None, self._on_close_dir, icon='path_close.svg')
         self._ui_close_button.setVisible(False)
+        self._ui_close_button.setToolTip('Remove the currently selected directory')
         self._ui_breadcrumb = PathBar.MyWidget()
         self._ui_breadcrumb.setContentsMargins(0, 0, 0, 0)
         self._ui_breadcrumb.setVisible(False)

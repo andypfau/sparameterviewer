@@ -781,10 +781,10 @@ class MainWindow(MainWindowUi):
     def on_show_filter(self):
         result = FilterDialog(self, FilterDialog.Mode.Filter).show_modal_dialog(list(sorted(self.files.keys())))
         if result.action == FilterDialogUi.Action.Cancel:
-            self.ui_file_filter_enabled = False
+            self.ui_file_filter_active = False
             self.ui_filesys_browser.filter = FileFilter()
         else:
-            self.ui_file_filter_enabled = result.filter.active
+            self.ui_file_filter_active = result.filter.active
             self.ui_filesys_browser.filter = result.filter
 
 
@@ -805,14 +805,20 @@ class MainWindow(MainWindowUi):
     def on_show_slicer(self):
         result = FilterDialog(self, FilterDialog.Mode.Slice).show_modal_dialog(list(sorted(self.files.keys())))
         if result.action == FilterDialogUi.Action.Cancel:
-            self.ui_file_slicer_enabled = False
+            self.ui_file_slicer_active = False
             self._file_slice_filter = None
         else:
-            self.ui_file_slicer_enabled = result.filter.active
+            self.ui_file_slicer_active = result.filter.active
             if result.filter.active:
                 self._file_slice_filter = result.filter
             else:
                 self._file_slice_filter = None
+        self.schedule_plot_update()
+    
+    
+    def on_close_slicer(self):
+        self.ui_file_slicer_active = False
+        self._file_slice_filter = None
         self.schedule_plot_update()
     
 
@@ -1360,10 +1366,6 @@ class MainWindow(MainWindowUi):
 
 
     def on_expr_slicer_change(self):
-        if self.ui_tab != MainWindowUi.Tab.Expressions:
-            return
-        if Settings.simplified_no_expressions:
-            return
         self.schedule_plot_update()
 
     
@@ -1432,7 +1434,7 @@ class MainWindow(MainWindowUi):
 
 
     def on_filesys_elision_doubleclick(self):
-        self.ui_file_filter_enabled = False
+        self.ui_file_filter_active = False
         self.ui_filesys_browser.filter = FileFilter()
     
 
@@ -1487,7 +1489,7 @@ class MainWindow(MainWindowUi):
             return savefortemplate
         def make_deactivate_filters():
             def deactivate_filters():
-                self.ui_file_filter_enabled = False
+                self.ui_file_filter_active = False
                 self.ui_filesys_browser.filter = FileFilter()
             return deactivate_filters
         def make_open_in_default_app(path: PathExt):
@@ -2071,23 +2073,21 @@ class MainWindow(MainWindowUi):
                     if params & Parameters.S22:
                         actions.append(DefaultAction([22], dict(), [], plot_kwargs_rl))
             
+            def make_expression_lines(nw_statement) -> list[str]:
+                return [f'{nw_statement}.s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
+            
+            generated_lines = make_expression_lines('sel_nws()')
             if self._file_slice_filter:
                 filter_str = self._file_slice_filter.regex_str.replace('\'', '\'\'')
-                nw_statement = f'nws().slice(r\'{filter_str}\',others=True)'
-            else:
-                nw_statement = 'sel_wns()'
-            generated_lines = [f'{nw_statement}.s({make_args_str(*a.s_args,**a.s_kwargs)}).plot({make_args_str(*a.plot_args,**a.plot_kwargs)})' for a in actions]
-            print()
-            print(generated_lines)
-            print()
+                generated_lines.extend(make_expression_lines(f'nws().slice(r\'{filter_str}\')'))
             self.generated_expressions = '\n'.join(generated_lines)
 
             using_slicer = False
-            def slicer_fn_wrapper(show: bool, options: list[str]) -> tuple[int,str]:
+            def slicer_fn_wrapper(show: bool, options: list[str]) -> tuple[int,str|None]:
                 nonlocal using_slicer
                 
                 if not show:
-                    return
+                    return 0, None
                     
                 if len(options) <= 1:
                     if Settings.verbose:
@@ -2104,7 +2104,7 @@ class MainWindow(MainWindowUi):
                 options_sorted = sorted(options_unique, key=lambda s: natural_sort_key(s))
                 options_short = shorten_string_list(options_sorted, target_len=50)
                 
-                index,_ = self.ui_expr_slicer(show, options_short)
+                index,_ = self.ui_expr_slicer(show, options_short, closable=not use_expressions)
                 assert 0 <= index < len(options_sorted)
                 value = options_sorted[index]
                 
@@ -2126,7 +2126,8 @@ class MainWindow(MainWindowUi):
                     self.ui_plot.clear()
 
             if not using_slicer:
-                self.ui_expr_slicer(False, [])  # if slicer is not used, hide it from the GUI
+                self.ui_expr_slicer(False, [], False)  # if slicer is not used, hide it from the GUI
+            self.ui_file_slicer_enabled = not use_expressions
 
             singlefile_colorizing = False
             if Settings.singlefile_individualcolor:

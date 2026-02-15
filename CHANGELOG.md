@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - new: `Networks.slice()` to a dropdown-box in the GUI next to the expression editor, that you can use to "flick through" groups of networks
+- new: GUI controls for slicing
 - new: `Networks.iter()` to iterate over networks one-by-one
 
 

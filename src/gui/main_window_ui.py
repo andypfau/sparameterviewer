@@ -262,8 +262,28 @@ class MainWindowUi(QMainWindow):
         self._ui_ribbon.setContentsMargins(0, 0, 0, 0)
         self._ui_ribbon.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+        self._ui_expr_slicer_label = QLabel('Slice:')
+        self._ui_expr_slicer_label.setVisible(False)
+        self._ui_expr_slicer_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self._ui_expr_slicer = QComboBox()
+        self._ui_expr_slicer.setVisible(False)
+        self._ui_expr_slicer.setToolTip('Select Expression Slice (from Networks.slicer() method)')
+        self._ui_expr_slicer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self._ui_expr_slicer.currentTextChanged.connect(self.on_expr_slicer_change)
+        self._ui_slicer_close_button = QtHelper.make_toolbutton(self, None, self.on_close_slicer, icon='path_close.svg')
+        self._ui_slicer_close_button.setVisible(False)
+        self._ui_slicer_close_button.setToolTip('Disable slicing')
+
         self._ui_plot = PlotWidget()
         self._ui_plot.setMinimumSize(150, 100)
+        self._ui_plot.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._ui_plot_container = QWidget()
+        self._ui_plot_container.setLayout(
+            QtHelper.layout_v(
+                QtHelper.layout_h(self._ui_expr_slicer_label, self._ui_expr_slicer, self._ui_slicer_close_button),
+                self._ui_plot,
+            )
+        )
         
         self._ui_tabs = QTabWidget()
 
@@ -303,14 +323,6 @@ class MainWindowUi(QMainWindow):
         self._ui_editor_font = QtHelper.make_font(family=QtHelper.get_monospace_font())
         self._ui_editor = PyEditor()
         
-        self._ui_expr_slicer_label = QLabel('Slice:')
-        self._ui_expr_slicer_label.setVisible(False)
-        self._ui_expr_slicer = QComboBox()
-        self._ui_expr_slicer.setVisible(False)
-        self._ui_expr_slicer.setToolTip('Select Expression Slice (from Networks.slicer() method)')
-        self._ui_expr_slicer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self._ui_expr_slicer.currentTextChanged.connect(self.on_expr_slicer_change)
-
         self._ui_expressions_tab.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_update_button,
@@ -321,14 +333,9 @@ class MainWindowUi(QMainWindow):
                 self._ui_save_expr_button,
                 self._ui_load_expr_button,
                 5,
-                #self._ui_expr_slicer_label,
-                #self._ui_expr_slicer,
                 ...
             ),
-            QtHelper.layout_v(
-                QtHelper.layout_h( self._ui_expr_slicer_label, self._ui_expr_slicer),
-                self._ui_editor,
-            ),
+            self._ui_editor,
         ))
         
         self._ui_cursors_tab = QWidget()
@@ -446,7 +453,7 @@ class MainWindowUi(QMainWindow):
             self._ui_main_container.layout().addWidget(self._ui_ribbon)
             self._ui_main_container.layout().addWidget(self._ui_splitter)
             self._ui_splitter.replaceWidget(0, self._ui_tabs)
-            self._ui_splitter.replaceWidget(1, self._ui_plot)
+            self._ui_splitter.replaceWidget(1, self._ui_plot_container)
             self._ui_splitter.setStretchFactor(0, 1)
             self._ui_splitter.setStretchFactor(1, 2)
             self._ui_splitter.setOrientation(QtCore.Qt.Orientation.Horizontal)
@@ -454,7 +461,7 @@ class MainWindowUi(QMainWindow):
         elif self._layout == MainWindowLayout.Vertical:
             self._ui_main_container.layout().addWidget(self._ui_ribbon)
             self._ui_main_container.layout().addWidget(self._ui_splitter)
-            self._ui_splitter.replaceWidget(0, self._ui_plot)
+            self._ui_splitter.replaceWidget(0, self._ui_plot_container)
             self._ui_splitter.replaceWidget(1, self._ui_tabs)
             self._ui_splitter.setStretchFactor(0, 2)
             self._ui_splitter.setStretchFactor(1, 1)
@@ -465,7 +472,7 @@ class MainWindowUi(QMainWindow):
             self._ui_secondary_container.layout().addWidget(self._ui_ribbon)
             self._ui_secondary_container.layout().addWidget(self._ui_tabs)
             self._ui_splitter.replaceWidget(0, self._ui_secondary_container)
-            self._ui_splitter.replaceWidget(1, self._ui_plot)
+            self._ui_splitter.replaceWidget(1, self._ui_plot_container)
             self._ui_splitter.setStretchFactor(0, 1)
             self._ui_splitter.setStretchFactor(1, 2)
             self._ui_splitter.setOrientation(QtCore.Qt.Orientation.Horizontal)
@@ -713,11 +720,12 @@ class MainWindowUi(QMainWindow):
             self._ui_tabs.removeTab(1)
     
 
-    def ui_expr_slicer(self, show: bool, options: list[str]) -> tuple[int,str]:
+    def ui_expr_slicer(self, show: bool, options: list[str], closable: bool = False) -> tuple[int,str]:
 
         if (not show) or (len(options) == 0):
             self._ui_expr_slicer.setVisible(False)
             self._ui_expr_slicer_label.setVisible(False)
+            self._ui_slicer_close_button.setVisible(False)
             return 0, None
 
         self._ui_expr_slicer.currentTextChanged.disconnect(self.on_expr_slicer_change)
@@ -735,6 +743,8 @@ class MainWindowUi(QMainWindow):
         self._ui_expr_slicer.currentTextChanged.connect(self.on_expr_slicer_change)
         self._ui_expr_slicer.setVisible(True)
         self._ui_expr_slicer_label.setVisible(True)
+        self._ui_slicer_close_button.setVisible(closable)
+
 
         return index, options[index]
 
@@ -835,18 +845,28 @@ class MainWindowUi(QMainWindow):
 
 
     @property
-    def ui_file_filter_enabled(self) -> bool:
+    def ui_file_filter_active(self) -> bool:
         return self._ui_filter_button.isChecked()
-    @ui_file_filter_enabled.setter
-    def ui_file_filter_enabled(self, value: bool):
+    @ui_file_filter_active.setter
+    def ui_file_filter_active(self, value: bool):
         self._ui_filter_button.setChecked(value)
 
 
     @property
     def ui_file_slicer_enabled(self) -> bool:
-        return self._ui_slice_button.isChecked()
+        return self._ui_slice_button.isEnabled()
     @ui_file_slicer_enabled.setter
     def ui_file_slicer_enabled(self, value: bool):
+        self._ui_slice_button.setEnabled(value)
+        if not value:
+            self._ui_slice_button.setChecked(False)
+
+
+    @property
+    def ui_file_slicer_active(self) -> bool:
+        return self._ui_slice_button.isChecked()
+    @ui_file_slicer_active.setter
+    def ui_file_slicer_active(self, value: bool):
         self._ui_slice_button.setChecked(value)
 
 
@@ -1197,6 +1217,8 @@ class MainWindowUi(QMainWindow):
         pass
     def on_show_slicer(self):
         pass
+    def on_close_slicer(self):
+        pass
     def on_load_dir(self):
         pass
     def on_reload_all_files(self):
@@ -1248,8 +1270,6 @@ class MainWindowUi(QMainWindow):
     def on_unitcircle(self):
         pass
     def on_smart_db(self):
-        pass
-    def on_turnon_expressions(self):
         pass
     def on_update_expressions(self):
         pass
