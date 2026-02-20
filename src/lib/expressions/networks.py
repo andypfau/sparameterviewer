@@ -1211,10 +1211,12 @@ class Networks:
         self._unary_op(Network.plot_noise, None, db=db, f=f, n=n, n_points=n_points, label=label, style=style)
     
 
+    # TODO: test this, then document it
     def plot_ga(self, ga: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_ga, None, f=f, n=n, ga=ga, n_points=n_points, label=label, style=style)
     
 
+    # TODO: test this, then document it
     def plot_gp(self, gp: "float|np.ndarray", f: "float|np.ndarray" = None, n: int = None, n_points=101, label: "str|None" = None, style: "str|None" = None):
         self._unary_op(Network.plot_gp, None, f=f, n=n, gp=gp, n_points=n_points, label=label, style=style)
 
