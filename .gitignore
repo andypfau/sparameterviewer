@@ -13,3 +13,4 @@ src/env/Pipfile.lock
 *.patch
 doc/html/*
 automation/*
+experiments/*
