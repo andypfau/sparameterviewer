@@ -30,10 +30,11 @@ class SParamFile:
         self.path: PathExt = path if isinstance(path,PathExt) else PathExt(path)
         self.tag = tag
 
-        self._nw = None
-        self._error = None
-        self._name = name
-        self._short_name = short_name
+        self._nw: skrf.Network = None
+        self._error: str = None
+        self._name: str = name
+        self._short_name: str = short_name
+        self._metadata: str = None
 
 
     @property
@@ -58,12 +59,17 @@ class SParamFile:
             return os.path.splitext(self.path.name)[0]
     
 
+    @property
+    def metadata(self) -> str|None:
+        return self._metadata
+    
+
     def __eq__(self, other) -> bool:
         if isinstance(other, SParamFile):
             if self.path != other.path:
                 return False
             return True
-        return super.__eq__(other)
+        return super().__eq__(other)
     
 
     def _load(self):
@@ -77,10 +83,11 @@ class SParamFile:
 
         def load(path: str):
             try:
+                metadata = None
                 ext = os.path.splitext(path)[1].lower()
                 if ext in ['.cti', '.citi']:
                     citi = CitiReader(path)
-                    nw = citi.get_network(None, {}, select_default=True)
+                    nw, metadata = citi.get_network(None, {}, select_default=True)
                 
                 else:
                     try:
@@ -122,10 +129,12 @@ class SParamFile:
                 assert nw.s.shape[2] >= 1, f'Expected ingress port dimension of S-matrix to be at least one, got {nw.s.shape[2]} ({path})'
                     
                 self._nw = nw
+                self._metadata = metadata
             except Exception as ex:
                 logging.exception(f'Unable to load network from "{path}" ({ex})')
                 self._error = str(ex)
                 self._nw = None
+                self._metadata = None
         
         if self.path.is_in_arch():
             from .utils import ArchiveFileLoader
@@ -230,6 +239,11 @@ class SParamFile:
             info += 'File comment:\n'
             for comm_line in comm.splitlines():
                 info += '  ' + comm_line.strip() + '\n'
+            info += '\n'
+        if self.metadata:
+            info += 'File meta data:\n'
+            for meta_line in self.metadata.splitlines():
+                info += '  ' + meta_line.strip() + '\n'
             info += '\n'
         info += f'Ports: {n_ports}, reference impedance: {z0}\n'
 

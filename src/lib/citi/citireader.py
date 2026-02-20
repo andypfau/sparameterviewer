@@ -57,7 +57,7 @@ class CitiReader:
             logging.error(f'Unable to read comments form {self.filename} ({ex})')
             return []
 
-    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "skrf.Network":
+    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "tuple[skrf.Network,str]":
 
         if frequency_coord is None:
             frequency_coord = self.guess_frequency_coord_name()
@@ -103,13 +103,13 @@ class CitiReader:
             else:
                 return None, None
 
-        variables_used = []
+        variable_mapping = {}
         for data_name in self.datas:
 
             egress_port, ingress_port = parse_sparam_name(data_name)
             if egress_port is None or ingress_port is None:
                 continue
-            variables_used.append(data_name)
+            variable_mapping[data_name] = (egress_port, ingress_port)
             
             dict_key = (egress_port,ingress_port)
             highest_port = max(highest_port, max(egress_port, ingress_port))
@@ -144,22 +144,24 @@ class CitiReader:
         
         comments.extend(self.comments)
         
-        comments.append('CITI coordinates:')
+        metadata_lines = []
+        metadata_lines.append('CITI coordinates:')
         for cname in self._citi.coords:
             cdata = self._citi.coords[cname].data
             usage_str = 'used as frequency coordinate' if frequency_coord==cname else 'ignored'
             coord_sel_str = ''
             if cname in at_coords:
                 coord_sel_str = f', using coordinate value {at_coords[cname]} (data: {cdata})'
-            comments.append(f'- {cname}: {len(cdata)} × {cdata.dtype}, {usage_str}{coord_sel_str}')
+            metadata_lines.append(f'- "{cname}": {len(cdata)} × {cdata.dtype}, {usage_str}{coord_sel_str}')
         
-        comments.append('CITI data variables:')
+        metadata_lines.append('CITI data variables:')
         for vname in self._citi.data_vars:
             vdata = self._citi.data_vars[vname]
-            usage_str = 'used as S-parameter' if vname in variables_used else 'ignored'
-            comments.append(f'- {vname}: {len(vdata)} × {vdata.dtype}, {usage_str}')
+            usage_str = f'used as S-parameter [{variable_mapping[vname][0]},{variable_mapping[vname][1]}]' if vname in variable_mapping else 'ignored'
+            metadata_lines.append(f'- "{vname}": {len(vdata)} × {vdata.dtype}, {usage_str}')
         
         comment = '\n'.join([comment for comment in comments if comment])
+        metadata = '\n'.join(metadata_lines)
 
         nw = skrf.Network(f=f, f_unit='Hz', name=name, s=s_matrix, comments=comment)
-        return nw
+        return nw, metadata
