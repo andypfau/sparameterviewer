@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .helpers.file_filter import FileFilter
 from .filter_dialog_ui import FilterDialogUi
 from lib import Settings, PathExt, natural_sort_key
