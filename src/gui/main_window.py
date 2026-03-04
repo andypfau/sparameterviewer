@@ -2296,6 +2296,7 @@ class MainWindow(MainWindowUi):
                     self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
 
                 if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plots)>=1:
+                    # TODO: when manual X-axis range is chosen, only hand in the Y-values of the part of the trace that is currently visible on screen
                     do_smart_scaling, smart_y0, smart_y = choose_smart_db_scale([plot.data.y.values for plot in self.plot.plots if plot.currently_used_axis==1])
                     if do_smart_scaling:
                         self.ui_yaxis_range.low, self.ui_yaxis_range.high = smart_y0, smart_y
