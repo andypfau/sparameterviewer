@@ -27,6 +27,7 @@ Roadmap
 ### Missing Features
 
 - Smart scaling: when using a custom X-axis range, smart scaling of the Y-axis should only look at the current extent of the X-axis, not the whole (i.e. partially not shown) data.
+- GUI: add "color by command", where each "plot()" statement gets its own color assinged.
 - Samples: a CITI file.
 - Expressions: review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
