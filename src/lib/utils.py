@@ -345,13 +345,36 @@ def enum_to_string(value, lut: dict):
     return lut[value]
 
 
-def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,float]:
+def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[float,float]:
 
     QUANT_FOOT, QUANT_MIDDLE, QUANT_HEAD = 0.25, 0.5, 0.67
     LONG_TAIL_HEAD_POS_PERCENT = 80
     MAX_LONGTAIL_RANGE_DB = 80
     MIN_RANGE_DB = 15
     ZERO_EXTENSION_FACTOR = 2.0
+
+    def nice_range(bottom, top):
+        assert top >= bottom, f'Expected hi>lo, got {top} and {bottom}'
+        range = top - bottom
+        if range == 0:
+            return bottom-1, top+1
+        if range > 100:
+            scale, margin = 10, 1
+        elif range > 50:
+            scale, margin = 5, 1
+        elif range > 20:
+            scale, margin = 2, 1
+        elif range > 2:
+            scale, margin = 1, 0.5
+        elif range > 0.5:
+            scale, margin = 0.2, 0.1
+        elif range > 0.2:
+            scale, margin = 0.1, 0.05
+        else:
+            scale, margin = 0.02, 0.01
+        nice_bottom = math.floor(bottom / scale) * scale - margin
+        nice_top = math.ceil(top / scale) * scale + margin
+        return nice_bottom, nice_top
 
     # go over each trace, find out how to scale each one of them
     top, base, bottom = -1e99, +1e99, +1e99
@@ -378,8 +401,8 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
     
     full_height = top - bottom
     if full_height < MIN_RANGE_DB:
-        # range is small anyway, no smart scaling needed
-        return False, 0, 0
+        # range is small anyway, just show the whole thing
+        return False, *nice_range(bottom, top)
 
     # attempt to apply a smarter range by using the estimated "base", not the actual minimum value
     bottom = base
@@ -397,21 +420,6 @@ def choose_smart_db_scale(all_db_values: list[np.ndarray]) -> tuple[bool,float,f
             # decreasing the bottom little bit would show the zero-line -> include the zero-line
             bottom = 0
             full_height = top - bottom
-
-    def nice_range(bottom, top):
-        assert top > bottom, f'Expected hi>lo, got {top} and {bottom}'
-        range = top - bottom
-        if range > 100:
-            scale, margin = 10, 1
-        elif range > 50:
-            scale, margin = 5, 1
-        elif range > 20:
-            scale, margin = 2, 1
-        else:
-            scale, margin = 1, 0.5
-        nice_bottom = math.floor(bottom / scale) * scale - margin
-        nice_top = math.ceil(top / scale) * scale + margin
-        return nice_bottom, nice_top
 
     return True, *nice_range(bottom, top)
 

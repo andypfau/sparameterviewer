@@ -2292,13 +2292,21 @@ class MainWindow(MainWindowUi):
                     self.plot.plot.set_ylim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
 
             else:  # something Cartesian
+                fixed_x_range, x_range_start, x_range_end = False, -1e99, +1e99
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
                     self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
+                    fixed_x_range, x_range_start, x_range_end = True, self.ui_xaxis_range.low, self.ui_xaxis_range.high
 
                 if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plots)>=1:
-                    # TODO: when manual X-axis range is chosen, only hand in the Y-values of the part of the trace that is currently visible on screen
-                    do_smart_scaling, smart_y0, smart_y = choose_smart_db_scale([plot.data.y.values for plot in self.plot.plots if plot.currently_used_axis==1])
-                    if do_smart_scaling:
+                    def get_y_range(x, y):
+                        if fixed_x_range:
+                            idx = (x >= x_range_start) & (x <= x_range_end)
+                            return y[idx]
+                        else:
+                            return y
+                    all_y_values = [get_y_range(plot.data.x.values,plot.data.y.values) for plot in self.plot.plots if plot.currently_used_axis==1]
+                    do_smart_scaling, smart_y0, smart_y = choose_smart_db_scale(all_y_values)
+                    if do_smart_scaling or fixed_x_range:  # when using a fixed X-range, then apply the smart scaling, because it best reflects the curreent X-range
                         self.ui_yaxis_range.low, self.ui_yaxis_range.high = smart_y0, smart_y
                         self.plot.plot.set_ylim(smart_y0, smart_y, auto=False)
                         self._smartscale_set_y = True

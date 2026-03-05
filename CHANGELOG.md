@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.43b2 (2026-03-05)
+--------------------
+
+- enhancement: smart dB scaling is only applied to the visible X-axis range of data
+
+
 0.43b1 (2026-02-13)
 --------------------
 
