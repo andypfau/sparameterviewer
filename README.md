@@ -27,7 +27,6 @@ Roadmap
 ### Missing Features
 
 - GUI: add "color by command", where each "plot()" statement gets its own color assinged.
-- Samples: a CITI file.
 - Expressions: review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to set define fixed size for saved/copied plots.
