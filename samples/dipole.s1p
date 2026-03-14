@@ -1,5 +1,11 @@
 ! 1-Port simulation of a dipole, length 150 mm, wire diameter 1 mm, copper, gap 1 mm
-# GHz S MA R 50
+[Version] 2.0
+# GHz S MA
+[Number of Ports] 1
+[Number of Frequencies] 1003
+[Reference] 50.0
+[Network Data]
+!freq magS11 angS11
 0.02                 0.999991563    -0.404291968
 0.02998                        1    -0.606357297
 0.03996                        1    -0.809172696
