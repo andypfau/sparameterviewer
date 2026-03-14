@@ -104,7 +104,10 @@ Supported File Formats
 ----------------------
 
 - Touchtone files (.s1p, .s2p, etc.): standard S-parameter files.
-- CITI files (.cti or .citi): a data format for n-dimensional data. Since there is no hard specification on the variable names, the following names are assumed (case-insensitive):
-    - Frequency: `f`, `Freq` or `Frequency`.
-    - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
-- Zip files (.zip): touchstone and CITI files inside of .zip-files can be extracted as well (can be configured in the settings dialog).
+    - The [scikit-rf](https://scikit-rf.readthedocs.io/en/latest/) Python package is used to read Touchstone files. Should support Touchstone 1.0, 1.1 and 2.0.
+- CITI files (.cti or .citi): a data format for n-dimensional data.
+    - The [CITIfile](https://pypi.org/project/CITIfile/) Python package is used to read CITI files. Should support CITI 1.0 and 1.01.
+    - Since there seems to be no hard specification on the variable names, the following names are assumed (case-insensitive):
+        - Frequency: `f`, `Freq` or `Frequency`.
+        - S-parameters: `Sij`, `Si,j`, `S(ij)`, `S(i,j)`, `S[ij]` or `S[i,j]` (where `ij` or `i,j` are the port numbers `i` and `j`), e.g. "S21" or "S[2,1]".
+- Zip files (.zip): Touchstone and CITI files inside of .zip-files can be extracted as well (can be configured in the settings dialog).
