@@ -7,9 +7,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
-import pathlib
-import os
-import enum
+import math
 
 
 
@@ -42,6 +40,12 @@ class SiValueEdit(QLineEdit):
                 self._on_escape_pressed()
             elif event.key() == Qt.Key.Key_Return:
                 self._on_return_pressed()
+            elif event.key() == Qt.Key.Key_Up:
+                self._on_scroll_event(+1)
+                return  # no further handling of this keystroke
+            elif event.key() == Qt.Key.Key_Down:
+                self._on_scroll_event(-1)
+                return  # no further handling of this keystroke
         return super().keyPressEvent(event)
 
     
@@ -49,6 +53,10 @@ class SiValueEdit(QLineEdit):
         self._edit_in_progress = False
         self._update_text_from_value()
         return super().focusOutEvent(event)
+    
+    
+    def wheelEvent(self, event: QtGui.QWheelEvent):
+        self._on_scroll_event(1 if event.angleDelta().y() > 0 else -1)
     
 
     def _update_text_from_value(self):
@@ -90,6 +98,34 @@ class SiValueEdit(QLineEdit):
             return
         
         # was already parsed when text was changed
+        self._update_text_from_value()
+        self.selectAll()
+    
+
+    def _on_scroll_event(self, direction: int):
+        assert direction in [-1, 0, +1]
+
+        MIN_DELTA = 1e-15  # one femto
+
+        value = self._value.value
+        
+        if value == 0:
+            new_value = MIN_DELTA * direction
+
+        else:
+            lowest_digit_exponent = 10**math.floor(math.log10(abs(value)))
+
+            if direction < 0 and value > 0 and value - lowest_digit_exponent < MIN_DELTA:
+                new_value = 0
+            elif direction > 0 and value < 0 and value + lowest_digit_exponent > -MIN_DELTA:
+                new_value = 0
+            else:
+                new_value = value + lowest_digit_exponent * direction
+        
+        self._value.value = new_value
+        if not self._event_lock.locked:
+            self.valueChanged.emit()
+        QtHelper.indicate_error(self, False)
         self._update_text_from_value()
         self.selectAll()
 
