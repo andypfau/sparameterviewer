@@ -1,4 +1,4 @@
-from .sparam_file import PathExt
+from .path_ext import PathExt
 import os
 import sys
 import string
@@ -298,9 +298,9 @@ def get_unique_id() -> int:
 
 
 def window_has_argument(window: str) -> bool:
-    if window in ['dpss', 'exponential', 'general_gaussian', 'taylor']:
-        raise RuntimeError(f'The window function "{window}" more than one argumentsy')
-    if window in ['general_cosine', 'general_hamming', 'kaiser', 'kaiser_bessel_derived', 'tukey']:
+    if window in ['dpss', 'exponential', 'general_gaussian', 'taylor', 'dpss']:
+        raise RuntimeError(f'The window function "{window}" more than one argument')
+    if window in ['general_cosine', 'general_hamming', 'kaiser', 'kaiser_bessel_derived', 'tukey', 'gaussian', 'chebwin']:
         return True
     return False
 

@@ -4,6 +4,7 @@ import math
 import cmath
 import scipy
 import re
+from .utils import window_has_argument
 
 
 def _get_mixed_port_names(nw: skrf.Network) -> list[tuple[str,int]]:
@@ -111,12 +112,12 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0,
     
     f_dc,sp_dc = ensure_equidistant_freq_from_dc(f, spar)
 
-    if window_type in ['tukey', 'kaiser', 'gaussian', 'general_cosine', 'general_hamming', 'dpss', 'chebwin']:
-        window = (window_type, window_arg)
+    if window_has_argument(window_type):
+        window_arg = (window_type, window_arg)
     else:
-        window = window_type
+        window_arg = (window_type,)
     
-    win_2sided = scipy.signal.get_window(window, 2*len(sp_dc))
+    win_2sided = scipy.signal.get_window(window_arg, 2*len(sp_dc))
     win = win_2sided[len(sp_dc):]
 
     sp_windowed = sp_dc * win
