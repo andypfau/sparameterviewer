@@ -17,11 +17,10 @@ python ../sparamviewer.py
 
 Alternatively, install the packets `pipenv pyenv`, then use the environment:
 ```bash
-cd src/pipenv
 python -m pipenv shell
 python ../sparamviewer.py
 ``` 
-Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") the "`[requires]`" section in <`srv/pipenv/Pipfile`>.
+Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") the "`[requires]`" section in <`Pipfile`>.
 
 Optionally, compile it, see next section.
 
