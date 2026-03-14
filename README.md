@@ -31,6 +31,7 @@ Roadmap
 - GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
 - GUI: find a way to set define fixed size for saved/copied plots.
 - GUI: for the documentations, find a nicer representation than plain markdown files.
+- Samples: differential S-parameter sample file (e.g. Touchstone 2.0 format)
 - General: "TODO"-comments in code.
 - File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - Expressions: `f_arg` parameter for `SParams.map()`.
