@@ -115,10 +115,20 @@ class SiValueEdit(QLineEdit):
         else:
             lowest_digit_exponent = 10**math.floor(math.log10(abs(value)))
 
-            if direction < 0 and value > 0 and value - lowest_digit_exponent < MIN_DELTA:
-                new_value = 0
-            elif direction > 0 and value < 0 and value + lowest_digit_exponent > -MIN_DELTA:
-                new_value = 0
+            if value > 0 and direction < 0:
+                if value == +MIN_DELTA:
+                    new_value = 0
+                elif value - lowest_digit_exponent < +MIN_DELTA:
+                    new_value = max(+MIN_DELTA, value - lowest_digit_exponent / 10)
+                else:
+                    new_value = max(+MIN_DELTA, value - lowest_digit_exponent)
+            elif value < 0 and direction > 0:
+                if value == -MIN_DELTA:
+                    new_value = 0
+                elif value + lowest_digit_exponent > -MIN_DELTA:
+                    new_value = min(-MIN_DELTA, value + lowest_digit_exponent / 10)
+                else:
+                    new_value = min(-MIN_DELTA, value + lowest_digit_exponent)
             else:
                 new_value = value + lowest_digit_exponent * direction
         
