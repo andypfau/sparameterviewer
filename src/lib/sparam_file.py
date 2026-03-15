@@ -230,10 +230,21 @@ class SParamFile:
         comm = '' if self.nw.comments is None else self.nw.comments
         n_ports = self.nw.s.shape[1]
         
-        if (self.nw.z0 == self.nw.z0[0,0]).all():
-            z0 = str(SiValue(self.nw.z0[0,0],'Ohm'))
+        if self.nw.z0.ndim == 2:  # should be [frequencies,ports]
+            print(self.nw.z0)
+            if (self.nw.z0 == self.nw.z0[0,0]).all():
+                z0 = str(SiValue(self.nw.z0[0,0],'Ω'))
+            elif (self.nw.z0 == self.nw.z0[:,[0]]).all():
+                # different for each frequency, but ports are identical
+                z0 = 'different for each frequency, first frequency is ' + str(SiValue(self.nw.z0[0,0],'Ω'))
+            elif (self.nw.z0 == self.nw.z0[[0],:]).all():
+                # different for each port, but frequencies are identical
+                z0 = ', '.join([str(SiValue(z,'Ω')) + f' (port {i+1})' for i,z in enumerate(self.nw.z0[0,:])])
+            else:
+                # no pattern
+                z0 = 'different for each frequency, first frequency is ' + ', '.join([str(SiValue(z,'Ω')) + f' (port {i+1})' for i,z in enumerate(self.nw.z0[0,:])])
         else:
-            z0 = 'different for each port and/or frequency'
+            z0 = 'unknown'
         
         if len(comm)>0:
             info += 'File comment:\n'
