@@ -1,4 +1,7 @@
-# Generate dummy-networks of various port counts for testing purposes. These networks should be more-or-less passive.
+"""
+Generate dummy-networks of various port counts for testing purposes.
+These networks should be reciprocal, but are neither lossless nor passive.
+"""
 
 
 
@@ -11,7 +14,7 @@ import numpy as np
 
 
 
-DIR = 'samples'
+TARGET_DIR = 'samples'
 
 N_POINTS = 301
 FREQ_RANGE = (10e6, 10e9)
@@ -24,7 +27,7 @@ NOISE_DB = -60
 with tempfile.TemporaryDirectory() as tempdir:
     print(f'Working inside temporary directory <{tempdir}>...')
     
-    zip_path = os.path.join(os.path.abspath(DIR), 'dummy_n-ports.zip')
+    zip_path = os.path.join(os.path.abspath(TARGET_DIR), 'dummy_n-ports.zip')
     print(f'Creating <{zip_path}>...')
     with zipfile.ZipFile(zip_path, 'w') as zfp:
 
