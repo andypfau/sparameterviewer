@@ -664,7 +664,7 @@ class Network:
 
     def reciprocity(self):
         if self.nw.nports < 2:
-            raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.ame} (only valid for 2-port or higher networks)')
+            raise RuntimeError(f'Network.reciprocity(): cannot calculate reciprocity of {self.name} (only valid for 2-port or higher networks)')
         s = self.nw.s
         
         # A network is reciprocal if S^T = S (see e.g. Pozar, 1.9), This function returns, per frequency,
