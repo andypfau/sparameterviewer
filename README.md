@@ -26,6 +26,10 @@ Roadmap
 
 ### Missing Features
 
+- At least under Fedora, clicking in the S-matrix feels wonky. Example: take a 4-port file, hold CTRL, click 11, then 22, then 33 -> when clicking 33, all items are de-selected.
+- Verification:
+    - Verify that the time-domain response is correct (compare e.g. against ADS).
+    - Verify that mixed-mode S-parameters are displayed correctly (e.g. SDD21 and SDD12 are shown as expected).
 - GUI:
     - Add "color by command", where each "plot()" statement gets its own color assinged.
     - Find a way to present the large matrix in a bigger form, e.g. as a dialog.
@@ -37,8 +41,7 @@ Roadmap
     - Add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
     - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Networks:
-    - Differential S-parameter sample file (e.g. Touchstone 2.0 format)
-    - Show port impedances if not equal on all ports in info dialog.
+    - Mixed-mode S-parameter sample file (e.g. Touchstone 2.0 format).
     - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General: "TODO"-comments in code.
 
