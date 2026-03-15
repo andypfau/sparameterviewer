@@ -26,18 +26,21 @@ Roadmap
 
 ### Missing Features
 
-- GUI: add "color by command", where each "plot()" statement gets its own color assinged.
-- Expressions: review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
-- GUI: find a way to present the large matrix in a bigger form, e.g. as a dialog.
-- GUI: find a way to set define fixed size for saved/copied plots.
-- GUI: for the documentations, find a nicer representation than plain markdown files.
-- Samples: differential S-parameter sample file (e.g. Touchstone 2.0 format)
+- GUI:
+    - Add "color by command", where each "plot()" statement gets its own color assinged.
+    - Find a way to present the large matrix in a bigger form, e.g. as a dialog.
+    - Find a way to set define fixed size for saved/copied plots.
+    - For the documentations, find a nicer representation than plain markdown files.
+- Expressions:
+    - Review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
+    - `f_arg` parameter for `SParams.map()`.
+    - Add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
+    - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
+- Networks:
+    - Differential S-parameter sample file (e.g. Touchstone 2.0 format)
+    - Show port impedances if not equal on all ports in info dialog.
+    - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General: "TODO"-comments in code.
-- File handling: show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
-- Expressions: `f_arg` parameter for `SParams.map()`.
-- Expressions: add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
-- Expressions: function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
-- File type registration script for Windows (using `assoc` and `ftype`).
 
 
 ### Known Issues
