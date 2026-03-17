@@ -26,7 +26,6 @@ Roadmap
 
 ### Missing Features
 
-- At least under Fedora, clicking in the S-matrix feels wonky. Example: take a 4-port file, hold CTRL, click 11, then 22, then 33 -> when clicking 33, all items are de-selected.
 - Verification:
     - Verify that the time-domain response is correct (compare e.g. against ADS).
     - Verify that mixed-mode S-parameters are displayed correctly (e.g. SDD21 and SDD12 are shown as expected).

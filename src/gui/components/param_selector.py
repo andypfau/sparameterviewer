@@ -449,10 +449,12 @@ class ParamSelector(QWidget):
         else:
             return Parameters.Custom
     
-
+    
     def params(self) -> Parameters:
         return self._guess_params_from_data(self.paramMask())
     def setParams(self, value: Parameters):
+        if value == self._guess_params_from_data(self.paramMask()):
+            return
         self._ui_grid.data = self._make_mask(value)
         self._update_simple_params_from_params(value)
     
@@ -470,6 +472,8 @@ class ParamSelector(QWidget):
     def paramMask(self) -> np.ndarray:
         return self._ui_grid.data
     def setParamMask(self, value: np.ndarray):
+        if np.array_equal(value, self._ui_grid.data):
+            return
         self._ui_grid.data = value
         self._update_simple_params_from_params(self._guess_params_from_data(value))
     
