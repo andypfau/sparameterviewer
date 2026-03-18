@@ -248,9 +248,9 @@ class PlotSelector(QWidget):
         self._update_control_values()
     
 
-    def tdResponse(self) -> TdResponse:
+    def tdResponse(self) -> TdrResponse:
         return self._td_response
-    def setTdResponse(self, value: TdResponse):
+    def setTdResponse(self, value: TdrResponse):
         self._td_response = value
         self._update_control_values()
     
@@ -372,7 +372,7 @@ class PlotSelector(QWidget):
                 else:
                     self._ui_simple_y2_combo.setCurrentText(str(PlotSelector.SimplifiedY2.Off))
             elif self._plot_type == PlotType.TimeDomain:
-                if self._td_response == TdResponse.ImpulseResponse:
+                if self._td_response == TdrResponse.ImpulseResponse:
                     self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Impulse))
                 else:
                     self._ui_simple_y_combo.setCurrentText(str(PlotSelector.SimplifiedY.Step))
@@ -504,13 +504,13 @@ class PlotSelector(QWidget):
 
 
     def _on_select_impulse(self):
-        self._td_response = TdResponse.ImpulseResponse
+        self._td_response = TdrResponse.ImpulseResponse
         self._update_control_values()
         self.valueChanged.emit()
 
 
     def _on_select_step(self):
-        self._td_response = TdResponse.StepResponse
+        self._td_response = TdrResponse.StepResponse
         self._update_control_values()
         self.valueChanged.emit()
 
@@ -577,12 +577,12 @@ class PlotSelector(QWidget):
                 enable_2nd = False
             case str(PlotSelector.SimplifiedY.Impulse):
                 self._plot_type = PlotType.TimeDomain
-                self._td_response = TdResponse.ImpulseResponse
+                self._td_response = TdrResponse.ImpulseResponse
                 self._td_z = False
                 enable_2nd = False
             case str(PlotSelector.SimplifiedY.Step):
                 self._plot_type = PlotType.TimeDomain
-                self._td_response = TdResponse.StepResponse
+                self._td_response = TdrResponse.StepResponse
                 self._td_z = False
                 enable_2nd = False
             case _:

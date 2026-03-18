@@ -2230,13 +2230,6 @@ class MainWindow(MainWindowUi):
                     if number_type in [NumberType.VectorLike]:
                         tdr_t, tdr_wave = tdr.get(f, sp, z0)
                         self.plot.add(tdr_t, tdr_wave, None, name, style, **kwargs)
-                        # t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
-                        # if tdr_z:
-                        #     lev[lev==0] = 1e-20 # avoid division by zero in the next step
-                        #     imp = z0 * (1+lev) / (1-lev) # convert to impedance
-                        #     self.plot.add(t, np.real(imp), None, name, style, **kwargs)
-                        # else:
-                        #     self.plot.add(t, lev, None, name, style, **kwargs)
                     else:
                         if Settings.verbose:
                             logging.info(f'The trace "{name}" is vector-like; omitting from time-domain transformed chart')

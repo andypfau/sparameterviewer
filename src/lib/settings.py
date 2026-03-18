@@ -109,7 +109,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_type: PlotType = PlotType.Cartesian
     plot_y_quantitiy: YQuantity = YQuantity.Decibels
     plot_y2_quantitiy: YQuantity = YQuantity.Off
-    td_response = TdResponse = TdrResponse.StepResponse
+    td_response: TdrResponse = TdrResponse.StepResponse
     smith_norm: SmithNorm = SmithNorm.Impedance
     phase_processing: PhaseProcessing = PhaseProcessing.Off
     show_legend: bool = True
