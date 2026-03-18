@@ -74,16 +74,9 @@ def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float 
     return f_equidistant, sp_complete
 
 
-def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
-
-    if f[0] == 0:
-        return ensure_equidistant_freq(f, sp) # DC is already included
-    if f[0] < 0:
-        raise RuntimeError('Cannot handle S-parameters with negative frequencies')
-    if len(f) < 2:
-        raise RuntimeError('Cannot extrapolate S-parameters to DC: at least two frequency samples are required')
-    
+def _ensure_equidistant_freq_from_dc_ieee370(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
     # Extrapolation method: see IEEE370, Annex T
+    assert f[0] > 0 and len(f) >= 2
 
     f1, f2 = f[0], f[1]
     h1, h2 = sp[0], sp[1]
@@ -96,16 +89,54 @@ def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray) -> "tuple(np.
     f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-h2.imag, -h1.imag, 0, h1.imag, h2.imag]
     int_im = scipy.interpolate.interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
 
-    extend = f[0] / f[-1]
-    n = max(10, int(math.ceil(len(f)*extend)))
+    df = f[0] / f[-1]
+    n = max(10, int(math.ceil(len(f)*df)))
     f_int = np.linspace(0, f[0]*(n-1)/n, n)
 
-    sp_re_int = [int_re(f) for f in f_int]
-    sp_im_int = [int_im(f) for f in f_int]
-    sp_int = np.array([r+1j*i for r,i in zip(sp_re_int,sp_im_int)])
+    sp_int = int_re(f_int) + 1j*int_im(f_int)
 
     f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
     return ensure_equidistant_freq(f_complete, sp_complete)
+
+
+def _ensure_equidistant_freq_from_dc_phasesnap(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
+    # Extrapolation method: extrapolate gain, extrapolate phase to 0 or 180°
+    assert f[0] > 0 and len(f) >= 2
+
+    int_mag = scipy.interpolate.interp1d(f, abs(sp), kind='cubic', bounds_error=False, fill_value='extrapolate')
+    
+    sp_pha = np.unwrap(np.angle(sp))
+    int_pha = scipy.interpolate.interp1d(f, sp_pha, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    dc_pha_extrap = int_pha(0)
+    dc_pha_guessed = round(dc_pha_extrap / math.pi) * math.pi  # must be 0 or 180° (no complex phase allowed)
+    int_pha = scipy.interpolate.interp1d([0,*f], [dc_pha_guessed,*sp_pha], kind='cubic', bounds_error=False, fill_value='extrapolate')
+
+    df = f[0] / f[-1]
+    n = max(10, int(math.ceil(len(f)*df)))
+    f_int = np.linspace(0, f[0]*(n-1)/n, n)
+
+    sp_int = int_mag(f_int) * np.exp(1j * int_pha(f_int))
+
+    f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
+    return ensure_equidistant_freq(f_complete, sp_complete)
+
+
+# TODO: make method selection a GUI option
+def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray, method: str = 'IEEE370') -> "tuple(np.ndarray,np.ndarray)":
+
+    if f[0] == 0:
+        return ensure_equidistant_freq(f, sp) # DC is already included
+    if f[0] < 0:
+        raise RuntimeError('Cannot handle S-parameters with negative frequencies')
+    if len(f) < 2:
+        raise RuntimeError('Cannot extrapolate S-parameters to DC: at least two frequency samples are required')
+    
+    if method=='IEEE370':
+        return _ensure_equidistant_freq_from_dc_ieee370(f, sp)
+    elif method=='PhaseSnap':
+        return _ensure_equidistant_freq_from_dc_phasesnap(f, sp)
+    else:
+        raise NotImplementedError()
 
 
 def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0, step_response: bool = False, window_type: str = 'boxcar', window_arg: float = None, min_size: int = 0) -> "tuple(np.ndarray,np.ndarray)":
