@@ -2,6 +2,17 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.44b1 (2026-03-18)
+--------------------
+
+- new: additional DC extrapolation algorithm for TDR
+- enhancement: better sample files
+- enhancement: use arrow buttons our mouse wheel to change SI-value textbox
+- bugfix: fixed TR time axis
+- bugfix: changed quicky clicking behavior of the parameter selector in 3x3 or higher grids
+- change: removed the .zip-file from samples; you can generate it with the Python scripts
+
+
 0.43b2 (2026-03-05)
 --------------------
 
