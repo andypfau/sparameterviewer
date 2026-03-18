@@ -131,6 +131,10 @@ class MainWindow(MainWindowUi):
 
         for path_str in initial_paths:
             path = PathExt(path_str)
+            if not path.exists():
+                path = path.parent
+                if not path.exists():
+                    continue
             if path.is_file():
                 if is_ext_supported_archive(path.suffix):
                     self._initial_expansion.append(path)
