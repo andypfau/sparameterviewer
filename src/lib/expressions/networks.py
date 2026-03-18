@@ -150,10 +150,8 @@ class Network:
         
         def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
             current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
-            print(f'~~ interpolating {len(current_f)}x{len(current_mag)} to {len(new_f)}')
             interp_mag = np.interp(new_f, current_f, current_mag)
             interp_pha = np.interp(new_f, current_f, current_pha)
-            print(f'~~ interpolation done.')
             return interp_mag * np.exp(1j*interp_pha)
         
         s_new = np.ndarray([len(f),nw.nports,nw.nports], dtype=complex)
