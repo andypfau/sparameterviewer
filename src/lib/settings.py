@@ -14,9 +14,15 @@ class SmithNorm(enum.StrEnum):
     Impedance = 'impedance'
     Admittance = 'admittance'
 
-class TdResponse(enum.StrEnum):
+class TdrResponse(enum.StrEnum):
     ImpulseResponse = 'impulse'
     StepResponse = 'step'
+
+class TdrDcExtrapolation(enum.StrEnum):
+    Off = 'off'
+    IEEE370 = 'IEEE370'
+    Polar = 'polar'
+    Polar2 = 'polar2'
 
 class YQuantity(enum.StrEnum):
     Off = 'none'
@@ -103,7 +109,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_type: PlotType = PlotType.Cartesian
     plot_y_quantitiy: YQuantity = YQuantity.Decibels
     plot_y2_quantitiy: YQuantity = YQuantity.Off
-    td_response = TdResponse = TdResponse.StepResponse
+    td_response = TdResponse = TdrResponse.StepResponse
     smith_norm: SmithNorm = SmithNorm.Impedance
     phase_processing: PhaseProcessing = PhaseProcessing.Off
     show_legend: bool = True
@@ -120,6 +126,7 @@ class SParamViewerAppSettings(AppSettings):
     expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
     window_type: str = 'kaiser'
     window_arg: float = 35.0
+    tdr_extrapolation: TdrDcExtrapolation = TdrDcExtrapolation.IEEE370
     tdr_shift: float = 100e-12
     tdr_impedance: bool = False
     tdr_minsize: int = 1024*8

@@ -19,13 +19,14 @@ import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
-from lib import sparam_to_timedomain, group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale, open_file_in_default_viewer, shorten_string_list, natural_sort_key
+from lib import group_delay, v2db, start_process, shorten_path, is_ext_supported_archive, is_ext_supported_file, find_files_in_archive, get_unique_id, any_common_elements, string_to_enum, enum_to_string, is_running_from_binary, choose_smart_db_scale, open_file_in_default_viewer, shorten_string_list, natural_sort_key
 from lib import SiValue
 from lib import SParamFile
 from lib import PlotHelper
 from lib import ExpressionParser, DefaultAction
 from lib import PathExt
-from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdResponse, SmithNorm, LegendPos, FileConfig
+from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdrResponse, SmithNorm, LegendPos, FileConfig, TdrResponse
+from lib import TDR
 from lib.expressions.sparams import NumberType
 from info import Info
 
@@ -195,6 +196,7 @@ class MainWindow(MainWindowUi):
         self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
         self.ui_plot_selector.setTdShift(Settings.tdr_shift)
         self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
+        self.ui_plot_selector.setTdExtrapolation(Settings.tdr_extrapolation)
         self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
         self.ui_enable_expressions(Settings.use_expressions)
@@ -760,6 +762,7 @@ class MainWindow(MainWindowUi):
         Settings.window_arg = self.ui_plot_selector.tdWindowArg()
         Settings.tdr_shift = self.ui_plot_selector.tdShift()
         Settings.tdr_minsize = self.ui_plot_selector.tdMinisize()
+        Settings.tdr_extrapolation = self.ui_plot_selector.tdExtrapolation()
         Settings.smith_norm = self.ui_plot_selector.smithNorm()
         Settings.tdr_impedance = self.ui_plot_selector.tdImpedance()
         Settings.plot_y_quantitiy = self.ui_plot_selector.yQuantity()
@@ -1942,18 +1945,20 @@ class MainWindow(MainWindowUi):
             def map_opacity(x):
                 return max(1e-3, min(1, x**2))  # tjis mapping makes adjustment of small values easier
 
+            tdr = TDR()
             params = self.ui_param_selector.params()
             params_mask = self.ui_param_selector.paramMask() if params==Parameters.Custom else None
             use_expressions = self.ui_param_selector.useExpressions()
             plot_type = self.ui_plot_selector.plotType()
             y_qty = self.ui_plot_selector.yQuantity()
             y2_qty = self.ui_plot_selector.y2Quantity()
-            tdr_z = self.ui_plot_selector.tdImpedance()
-            tdr_resp = self.ui_plot_selector.tdResponse()
-            tdr_shift = self.ui_plot_selector.tdShift()
-            window_type = self.ui_plot_selector.tdWindow()
-            window_arg = self.ui_plot_selector.tdWindowArg()
-            tdr_minsize = self.ui_plot_selector.tdMinisize()
+            tdr.dc_extrapolation = None if self.ui_plot_selector.tdExtrapolation()=='off' else self.ui_plot_selector.tdExtrapolation()
+            tdr.padded_length = self.ui_plot_selector.tdMinisize()
+            tdr.window = self.ui_plot_selector.tdWindow()
+            tdr.window_args = (self.ui_plot_selector.tdWindowArg(), )
+            tdr.shift_s = self.ui_plot_selector.tdShift()
+            tdr.step_response = self.ui_plot_selector.tdResponse() == TdrResponse.StepResponse
+            tdr.convert_to_impedance = self.ui_plot_selector.tdImpedance()
             phase_unit = self.ui_plot_selector.phaseUnit()
             phase_processing = self.ui_plot_selector.phaseProcessing()
             smith_norm = self.ui_plot_selector.smithNorm()
@@ -1975,9 +1980,9 @@ class MainWindow(MainWindowUi):
                 typ = 'y' if smith_norm==SmithNorm.Admittance else 'z'
                 self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFormat(), x_log=False, y_qty='', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
             elif plot_type == PlotType.TimeDomain:
-                resp_name = 'Step Response' if tdr_resp==TdResponse.StepResponse else 'Impulse Response'
+                resp_name = 'Step Response' if tdr.step_response else 'Impulse Response'
                 xq,xf,xl = 'Time',SiFormat(unit='s',signed=True),False
-                if tdr_z:
+                if tdr.convert_to_impedance:
                     yq,yf,yl = resp_name,SiFormat(unit='Ω', signed=True),False
                 else:
                     yq,yf,yl = resp_name,SiFormat(signed=True),False
@@ -2223,13 +2228,15 @@ class MainWindow(MainWindowUi):
                             logging.info(f'The trace "{name}" is not vector-like; omitting from {chart_type_str} chart')
                 elif plot_type == PlotType.TimeDomain:
                     if number_type in [NumberType.VectorLike]:
-                        t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
-                        if tdr_z:
-                            lev[lev==0] = 1e-20 # avoid division by zero in the next step
-                            imp = z0 * (1+lev) / (1-lev) # convert to impedance
-                            self.plot.add(t, np.real(imp), None, name, style, **kwargs)
-                        else:
-                            self.plot.add(t, lev, None, name, style, **kwargs)
+                        tdr_t, tdr_wave = tdr.get(f, sp, z0)
+                        self.plot.add(tdr_t, tdr_wave, None, name, style, **kwargs)
+                        # t,lev = sparam_to_timedomain(f, sp, step_response=tdr_resp==TdResponse.StepResponse, shift=tdr_shift, window_type=window_type, window_arg=window_arg, min_size=tdr_minsize)
+                        # if tdr_z:
+                        #     lev[lev==0] = 1e-20 # avoid division by zero in the next step
+                        #     imp = z0 * (1+lev) / (1-lev) # convert to impedance
+                        #     self.plot.add(t, np.real(imp), None, name, style, **kwargs)
+                        # else:
+                        #     self.plot.add(t, lev, None, name, style, **kwargs)
                     else:
                         if Settings.verbose:
                             logging.info(f'The trace "{name}" is vector-like; omitting from time-domain transformed chart')

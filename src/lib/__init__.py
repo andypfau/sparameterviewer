@@ -1,4 +1,4 @@
-from .sparam_helpers import get_sparam_name, get_port_index, sparam_to_timedomain
+from .sparam_helpers import get_sparam_name, get_port_index
 from .si import SiValue, SiFormat, SiRange
 from .path_ext import PathExt
 from .sparam_file import SParamFile
@@ -13,6 +13,7 @@ from .bodefano import BodeFano
 from .circles import StabilityCircle
 from .shortstr import shorten_string_list
 from .clipboard import Clipboard
-from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme, LegendPos
+from .settings import SParamViewerAppSettings, Settings, PlotType, SmithNorm, TdrResponse, YQuantity, PhaseProcessing, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, Parameters, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme, LegendPos, TdrDcExtrapolation, TdrResponse
 from .lock import Lock
 from .file_config import FileConfig
+from .tdr import TDR

@@ -7,6 +7,7 @@ from ..utils import sanitize_filename, db2v, v2db
 from ..citi import CitiWriter
 from ..settings import Settings
 from ..file_config import FileConfig
+from ..sparam_helpers import ensure_equidistant_freq_from_dc
 from .helpers import format_call_signature
 
 import skrf, math, os
@@ -61,22 +62,6 @@ class SParam:
             param_type if param_type is not None else self.param_type,
             number_type if number_type is not None else self.number_type
         )
-    
-
-    @staticmethod
-    def _adapt_OLD(a: "SParam", b: "SParam") -> "tuple[np.ndarray,np.ndarray,np.ndarray]":
-        if len(a.f)==len(b.f):
-            if all(af==bf for af,bf in zip(a.f, b.f)):
-                return a,b
-        f_min = max(min(a.f), min(b.f))
-        f_max = min(max(a.f), max(b.f))
-        f_new = np.array([f for f in a.f if f_min<=f<=f_max])
-        freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
-        a_nw = skrf.Network(f=a.f, s=a.s, f_unit='Hz').interpolate(freq_new)
-        b_nw = skrf.Network(f=b.f, s=b.s, f_unit='Hz').interpolate(freq_new)
-        a_s = np.array(np.ndarray.flatten(a_nw.s))
-        b_s = np.array(np.ndarray.flatten(b_nw.s))
-        return freq_new.f, a_s, b_s
     
 
     @staticmethod
@@ -242,6 +227,11 @@ class SParam:
         if len(new)<1:
             raise Exception('SParam.crop_f(): frequency out of range')
         new_f, new_s = zip(*new)
+        return self._modified_copy(f=new_f, s=new_s)
+
+
+    def extrapolate_to_dc(self, method: str):
+        new_f, new_s = ensure_equidistant_freq_from_dc(self.f, self.s, method=method)
         return self._modified_copy(f=new_f, s=new_s)
         
     
@@ -506,6 +496,11 @@ class SParams:
 
     def interpolate(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None) -> SParams:
         return self.interpolate_lin(f_start, f_end, n)
+
+
+    # TODO: docs
+    def extrapolate_to_dc(self, method='IEEE370') -> SParams: 
+        return self._unary_op(SParam.extrapolate_to_dc, True, method=method)
 
 
     def _fill_interpolation_params(self, f_start: float|None = None, f_end: float|None = None, n: int|None = None):

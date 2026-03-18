@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..helpers.qt_helper import QtHelper
 from ..components.sivalue_edit import SiValueEdit
-from lib import AppPaths, PathExt, PhaseUnit, PlotType, YQuantity, PhaseProcessing, SmithNorm, TdResponse, SiRange, SiFormat, SiValue, window_has_argument
+from lib import AppPaths, PathExt, PhaseUnit, PlotType, YQuantity, PhaseProcessing, SmithNorm, TdrResponse, SiRange, SiFormat, SiValue, window_has_argument
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
@@ -80,6 +80,13 @@ class PlotSelector(QWidget):
     }
 
 
+    EXTRAPOLATION_NAMES = {
+        'off': 'Off',
+        'IEEE370': 'IEEE370',
+        'polar': 'Polar',
+    }
+
+
     def __init__(self, parent = None):
         super().__init__(parent)
 
@@ -87,10 +94,11 @@ class PlotSelector(QWidget):
         self._y1 = YQuantity.Decibels
         self._y2 = YQuantity.Off
         self._phase_processing = PhaseProcessing.Off
-        self._td_response = TdResponse.StepResponse
+        self._td_response = TdrResponse.StepResponse
         self._smith_norm = SmithNorm.Impedance
         self._phase_unit = PhaseUnit.Degrees
         self._td_z = False
+        self._td_extrapolation = 'IEEE370'
         self._td_window = 'boxcar'
         self._td_window_arg = 0
         self._td_shift = 0
@@ -163,6 +171,13 @@ class PlotSelector(QWidget):
         self._menu = QMenu()
         self._ui_degrees_menuitem = QtHelper.add_menuitem(self._menu, 'Phase in Degrees', self._on_phaseunit_change, checkable=True)
         self._menu.addSeparator()
+        
+        self._ui_td_extrap_combo = QComboBox()
+        for name in PlotSelector.EXTRAPOLATION_NAMES.values():
+            self._ui_td_extrap_combo.addItem(name)
+        self._ui_td_extrap_combo.currentTextChanged.connect(self._on_change_extrap_window)
+        self._ui_td_extrap_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Extrap.:', self._ui_td_extrap_combo, ...))
+
         self._ui_td_window_combo = QComboBox()
         for name in PlotSelector.WINDOW_NAMES.values():
             self._ui_td_window_combo.addItem(name)
@@ -254,6 +269,13 @@ class PlotSelector(QWidget):
         self._update_control_values()
     
 
+    def tdExtrapolation(self) -> str:
+        return self._td_extrapolation
+    def setTdExtrapolation(self, value: str):
+        self._td_extrapolation = value
+        self._update_control_values()
+    
+
     def tdWindowArg(self) -> float:
         return self._td_window_arg
     def setTdWindowArg(self, value: float):
@@ -316,6 +338,7 @@ class PlotSelector(QWidget):
         self._ui_tdz_menuitem.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_arg_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain and window_has_argument(self._td_window))
+        self._ui_td_extrap_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_minsize_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_shift_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
 
@@ -376,8 +399,8 @@ class PlotSelector(QWidget):
             self._ui_imag_button.setChecked(self._y1 == YQuantity.Imag or self._y1 == YQuantity.RealImag)
             self._ui_phase_button.setChecked(self._y2 == YQuantity.Phase)
             self._ui_gdelay_button.setChecked(self._y2 == YQuantity.GroupDelay)
-            self._ui_impulse_button.setChecked(self._td_response == TdResponse.ImpulseResponse)
-            self._ui_step_button.setChecked(self._td_response == TdResponse.StepResponse)
+            self._ui_impulse_button.setChecked(self._td_response == TdrResponse.ImpulseResponse)
+            self._ui_step_button.setChecked(self._td_response == TdrResponse.StepResponse)
             self._ui_impeance_button.setChecked(self._smith_norm == SmithNorm.Impedance)
             self._ui_admittance_button.setChecked(self._smith_norm == SmithNorm.Admittance)
             self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
@@ -385,6 +408,7 @@ class PlotSelector(QWidget):
 
         self._ui_degrees_menuitem.setChecked(self._phase_unit == PhaseUnit.Degrees)
         self._ui_tdz_menuitem.setChecked(self._td_z)
+        self._ui_td_extrap_combo.setCurrentText(PlotSelector.EXTRAPOLATION_NAMES[self._td_extrapolation])
         self._ui_td_window_combo.setCurrentText(PlotSelector.WINDOW_NAMES[self._td_window])
         self._ui_td_window_arg_spinner.setValue(self._td_window_arg)
         self._ui_td_minsize_combo.setCurrentText(PlotSelector.TD_MINSIZE_NAMES[self._td_minsize])
@@ -616,6 +640,17 @@ class PlotSelector(QWidget):
 
     def _on_change_td_z(self):
         self._td_z = self._ui_tdz_menuitem.isChecked()
+        if self.plotType() != PlotType.TimeDomain:
+            return
+        self.valueChanged.emit()
+    
+
+    def _on_change_extrap_window(self):
+        for method, name in PlotSelector.EXTRAPOLATION_NAMES.items():
+            if name == self._ui_td_extrap_combo.currentText():
+                self._td_extrapolation = method
+                break
+        self._update_control_enabled()
         if self.plotType() != PlotType.TimeDomain:
             return
         self.valueChanged.emit()

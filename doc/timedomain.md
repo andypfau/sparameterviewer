@@ -3,8 +3,10 @@ Time-Domain Transformation
 
 The impulse response is calculated as follows:
 
-1. Extrapolate frequency axis to DC.
-    - The algorithm from [IEEE370](https://standards.ieee.org/ieee/370/6165/), Annex T is used.
+1. Extrapolate frequency axis to DC. Three algorithms are available:
+    - No extrapolation. Requires a slow DFT algorithm.
+    - Extrapolation using [IEEE370, Annex T](https://standards.ieee.org/ieee/370/6165/).
+    - Extrapolation in polar coordinates. May work better for electrally long networks.
 2. Interpolate frequency axis to get equidistant scaling.
     - Interpolation is done in polar domain (i.e. interpolation of magnitude and of unwrapped phase separately).
 3. Apply window function.

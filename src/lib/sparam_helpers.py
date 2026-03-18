@@ -49,6 +49,32 @@ def get_port_index(nw: skrf.Network, mode: str, number: int) -> int:
     raise RuntimeError(f'Cannot find port {mode}{number} in network {nw.name}')
 
 
+def irndft(f: np.ndarray, s: np.ndarray, n_samples: int = None, t_total: float = None) -> tuple[np.ndarray,np.ndarray]:
+    """ Inverse real-valued non-equidistant DFT """
+    assert len(f) >= 2 and len(f) == len(s)
+    
+    if n_samples is None:
+        f_max, f_span = f[-1], f[-1] - f[0]
+        n_freqs_onesided = round(len(f) * f_max/f_span)
+        n_samples = (n_freqs_onesided - 1) * 2
+    
+    if t_total is None:
+        f_min, f_step_min = f[0], np.min(np.diff(f))
+        assert f_step_min > 0
+        if f_min > 0:
+            t_total = max(1/f_min, 1/f_step_min)  
+        else:
+            t_total = 1/f_step_min
+    
+    t = np.linspace(0, t_total*(n_samples-1)/n_samples, n_samples)
+
+    # wave[i] = Σ_j s[j] * e^(2jπ * t[i] * f[j])
+    twopi_t_f = np.tensordot(1j * math.tau * t, f, axes=0)
+    wave = np.sum(s * np.exp(twopi_t_f), axis=1)
+    
+    return t, np.real(wave) / len(wave) * 2
+
+
 def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float = 1e-3, max_abs_error = 1.0) -> "tuple(np.ndarray,np.ndarray)":
 
     f_min, f_max = f[0], f[-1]
@@ -74,19 +100,19 @@ def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float 
     return f_equidistant, sp_complete
 
 
-def _ensure_equidistant_freq_from_dc_ieee370(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
-    # Extrapolation method: see IEEE370, Annex T
+def extrapolate_to_dc_ieee370(f: np.ndarray, sp: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+    """ Extrapolation accoridng to IEEE370, Annex T """
     assert f[0] > 0 and len(f) >= 2
 
     f1, f2 = f[0], f[1]
-    h1, h2 = sp[0], sp[1]
+    sp1, sp2 = sp[0], sp[1]
 
     # real part: assume mirrored mirrorring Y-axis, use 2nd degree polynomial for interpolation
-    f_re, sp_re = [-f2, -f1, +f1, +f2], [h2.real, h1.real, h1.real, h2.real]
+    f_re, sp_re = [-f2, -f1, +f1, +f2], [sp2.real, sp1.real, sp1.real, sp2.real]
     int_re = scipy.interpolate.interp1d(f_re, sp_re, kind='quadratic', bounds_error=False, fill_value='extrapolate')
 
     # real part: assume negative mirrorring across Y-axis (complex conjugate), use 3rd degree polynomial for interpolation
-    f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-h2.imag, -h1.imag, 0, h1.imag, h2.imag]
+    f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-sp2.imag, -sp1.imag, 0, sp1.imag, sp2.imag]
     int_im = scipy.interpolate.interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
 
     df = f[0] / f[-1]
@@ -96,33 +122,40 @@ def _ensure_equidistant_freq_from_dc_ieee370(f: np.ndarray, sp: np.ndarray) -> "
     sp_int = int_re(f_int) + 1j*int_im(f_int)
 
     f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
-    return ensure_equidistant_freq(f_complete, sp_complete)
+    return f_complete, sp_complete
 
 
-def _ensure_equidistant_freq_from_dc_phasesnap(f: np.ndarray, sp: np.ndarray) -> "tuple(np.ndarray,np.ndarray)":
-    # Extrapolation method: extrapolate gain, extrapolate phase to 0 or 180°
+def extrapolate_to_dc_polar(f: np.ndarray, sp: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+    """ Extrapolation in polar coordinates """
     assert f[0] > 0 and len(f) >= 2
 
-    int_mag = scipy.interpolate.interp1d(f, abs(sp), kind='cubic', bounds_error=False, fill_value='extrapolate')
+    mag, pha = np.abs(sp), np.unwrap(np.angle(sp))
     
-    sp_pha = np.unwrap(np.angle(sp))
-    int_pha = scipy.interpolate.interp1d(f, sp_pha, kind='cubic', bounds_error=False, fill_value='extrapolate')
-    dc_pha_extrap = int_pha(0)
-    dc_pha_guessed = round(dc_pha_extrap / math.pi) * math.pi  # must be 0 or 180° (no complex phase allowed)
-    int_pha = scipy.interpolate.interp1d([0,*f], [dc_pha_guessed,*sp_pha], kind='cubic', bounds_error=False, fill_value='extrapolate')
+    # extrapolate phase to DC
+    interp_pha = scipy.interpolate.interp1d(f, pha, kind='linear', bounds_error=False, fill_value='extrapolate')
+    dc_phase_extrap = interp_pha(0)
+    
+    # subtract DC-phase, so that we can assume the overall phase crosses the point (0 Hz, 0°)
+    pha -= dc_phase_extrap
+    
+    # magnitude: just use cubic interpolation/extrapolation, do not make any further assumptions
+    interp_mag = scipy.interpolate.interp1d(f, mag, kind='cubic', bounds_error=False, fill_value='extrapolate')
+
+    # phase: assume negative mirrorring across Y-axis (phase crosses zero), use 3rd degree polynomial for interpolation
+    f_pha, sp_pha = [*(-np.flip(f)), 0, *f], [*(-np.flip(pha)), 0, *pha]
+    interp_pha = scipy.interpolate.interp1d(f_pha, sp_pha, kind='cubic', bounds_error=False, fill_value='extrapolate')
 
     df = f[0] / f[-1]
     n = max(10, int(math.ceil(len(f)*df)))
     f_int = np.linspace(0, f[0]*(n-1)/n, n)
 
-    sp_int = int_mag(f_int) * np.exp(1j * int_pha(f_int))
+    sp_int = interp_mag(f_int) * np.exp(1j * (interp_pha(f_int) + dc_phase_extrap))  # don't forget to add the DC phase again (we subtracted it above!)
 
     f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
-    return ensure_equidistant_freq(f_complete, sp_complete)
+    return f_complete, sp_complete
 
 
-# TODO: make method selection a GUI option
-def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray, method: str = 'IEEE370') -> "tuple(np.ndarray,np.ndarray)":
+def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray, method: str = 'IEEE370') -> tuple[np.ndarray,np.ndarray]:
 
     if f[0] == 0:
         return ensure_equidistant_freq(f, sp) # DC is already included
@@ -132,52 +165,12 @@ def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray, method: str =
         raise RuntimeError('Cannot extrapolate S-parameters to DC: at least two frequency samples are required')
     
     if method=='IEEE370':
-        return _ensure_equidistant_freq_from_dc_ieee370(f, sp)
-    elif method=='PhaseSnap':
-        return _ensure_equidistant_freq_from_dc_phasesnap(f, sp)
+        f, sp = extrapolate_to_dc_ieee370(f, sp)
+    elif method=='polar':
+        f, sp = extrapolate_to_dc_polar(f, sp)
     else:
         raise NotImplementedError()
-
-
-def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0, step_response: bool = False, window_type: str = 'boxcar', window_arg: float = None, min_size: int = 0) -> "tuple(np.ndarray,np.ndarray)":
-    
-    f_dc,sp_dc = ensure_equidistant_freq_from_dc(f, spar)
-
-    if window_has_argument(window_type):
-        window_arg = (window_type, window_arg)
-    else:
-        window_arg = (window_type,)
-    
-    win_2sided = scipy.signal.get_window(window_arg, 2*len(sp_dc))
-    win = win_2sided[len(sp_dc):]
-
-    sp_windowed = sp_dc * win
-    
-    next_pow_of_2 = 1
-    while next_pow_of_2 < max(len(sp_windowed), min_size):
-        next_pow_of_2 *= 2
-    n_missing = next_pow_of_2 - len(sp_windowed)
-    correction_factor = next_pow_of_2 / len(sp_windowed)  # padding increases the highest frequency!
-    sp_padded = np.concatenate([sp_windowed, np.zeros([n_missing], dtype=sp_windowed.dtype)])
-
-    f_nyq = max(f) * correction_factor
-    f_sa = 2.0 * f_nyq
-    sa_period = 1.0 / f_sa
-
-    ir_unshifted = np.fft.irfft(sp_padded)
-    ir_unshifted_gaincorrected = ir_unshifted * correction_factor
-    
-    n_shift = round(shift / sa_period)
-    ir = np.roll(ir_unshifted_gaincorrected, n_shift)
-    
-    t_tot = (len(ir)-1) * sa_period
-    t = np.linspace(0, t_tot, len(ir))
-
-    if step_response:
-        sr = np.cumsum(ir) / correction_factor
-        return t, sr
-    else:
-        return t, ir
+    return ensure_equidistant_freq(f, sp)
 
 
 def parse_quick_param(param: any) -> tuple[int,int]:
