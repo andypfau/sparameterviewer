@@ -131,18 +131,16 @@ def sparam_to_timedomain(f: np.ndarray, spar: np.ndarray, *, shift: float = 0.0,
 
     f_nyq = max(f) * correction_factor
     f_sa = 2.0 * f_nyq
+    sa_period = 1.0 / f_sa
 
     ir_unshifted = np.fft.irfft(sp_padded)
     ir_unshifted_gaincorrected = ir_unshifted * correction_factor
     
-    sa_period = 1.0 / f_sa
     n_shift = round(shift / sa_period)
-    ir_shifted = np.roll(ir_unshifted_gaincorrected, n_shift)
-    ir = ir_shifted[:len(ir_shifted)//2+n_shift]
+    ir = np.roll(ir_unshifted_gaincorrected, n_shift)
     
-    t_tot = (len(ir_unshifted)-1) * sa_period
+    t_tot = (len(ir)-1) * sa_period
     t = np.linspace(0, t_tot, len(ir))
-    t -= shift
 
     if step_response:
         sr = np.cumsum(ir) / correction_factor
