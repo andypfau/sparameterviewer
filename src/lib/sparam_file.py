@@ -231,7 +231,6 @@ class SParamFile:
         n_ports = self.nw.s.shape[1]
         
         if self.nw.z0.ndim == 2:  # should be [frequencies,ports]
-            print(self.nw.z0)
             if (self.nw.z0 == self.nw.z0[0,0]).all():
                 z0 = str(SiValue(self.nw.z0[0,0],'Ω'))
             elif (self.nw.z0 == self.nw.z0[:,[0]]).all():
