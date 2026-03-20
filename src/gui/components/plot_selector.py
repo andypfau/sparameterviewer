@@ -349,7 +349,8 @@ class PlotSelector(QWidget):
         self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
         
         self._ui_degrees_menuitem.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_tdz_menuitem.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_extrap_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_interp_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_arg_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain and window_has_argument(self._td_window))
         self._ui_td_extrap_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
