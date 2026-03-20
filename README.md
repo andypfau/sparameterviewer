@@ -27,7 +27,6 @@ Roadmap
 ### Missing Features
 
 - Verification:
-    - Verify that the time-domain response is correct (compare e.g. against ADS).
     - Verify that mixed-mode S-parameters are displayed correctly (e.g. SDD21 and SDD12 are shown as expected).
 - GUI:
     - Add "color by command", where each "plot()" statement gets its own color assinged.
@@ -42,7 +41,8 @@ Roadmap
 - Networks:
     - Mixed-mode S-parameter sample file (e.g. Touchstone 2.0 format).
     - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
-- General: "TODO"-comments in code.
+- General:
+    - "TODO"-comments in code.
 
 
 ### Known Issues
