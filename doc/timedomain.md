@@ -19,7 +19,7 @@ The time-domain response is calculated as follows:
     - Increase this setting to get finer interpolation of the time axis.
 5. Apply inverse FFT.
     - The result is the time-domain impulse response.
-    - If extrapolation was skipped, a slower DFT algorithm is used.
+    - Only possible if the spectrum starts at DC, and frequencies are equidistant; otherwise, a slower DFT algorithm is used. Use extrapolation and interpolation to ensure using the faster FFT algorithm is possible.
 6. Shift samples.
     - The amount of shift can be chosen in the menu.
     - If this setting is chosen too small, the vertical dimension of the time-domain transformation may be incorrect. Increase this setting until the time-domain signal appears to be "stable".
