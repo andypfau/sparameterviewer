@@ -1,8 +1,7 @@
 import skrf
 import numpy as np
 import math
-import cmath
-import scipy
+import scipy.interpolate
 import re
 from .utils import window_has_argument
 
@@ -75,102 +74,151 @@ def irndft(f: np.ndarray, s: np.ndarray, n_samples: int = None, t_total: float =
     return t, np.real(wave) / len(wave) * 2
 
 
-def ensure_equidistant_freq(f: np.ndarray, sp: np.ndarray, max_rel_error: float = 1e-3, max_abs_error = 1.0) -> "tuple(np.ndarray,np.ndarray)":
+def check_freqs_dc_and_equidist(f: np.ndarray) -> tuple[bool,bool]:
+    """ Checks if the given frequencies start at DC, and are equidistant """
+    assert len(f) >= 2
+    f_steps = np.diff(f)
+    starts_at_dc = bool(f[0] == 0)
+    is_equidistant = np.allclose(f_steps, f_steps[0])
+    return starts_at_dc, is_equidistant
 
-    f_min, f_max = f[0], f[-1]
+
+def get_missing_freq_dc_and_equidist(f: np.ndarray, max_rel_error: float = 1e-6) -> tuple[bool,np.ndarray]:
+    """ Returns (True,ndarray) if the returned array can be appended at the beginning of the frequencies to make them
+    equidistant, and start at DC; otherwise, returns (False,empty_ndarray) """
+    starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+    
+    if starts_at_dc and is_equidistant:
+        return True, np.array([])  # no missing frequencies
+    if starts_at_dc or not is_equidistant:
+        return False, np.array([])  # cannot be fixed by just adding frequencies from DC
+    
+    f_first, f_step = f[0], f[1] - f[0]
+    n_steps = round(f_first / f_step)
+    f_first_stepped = n_steps * f_step
+    f_error = abs(f_first - f_first_stepped)
+    if f_error > f_step * max_rel_error:
+        return False, np.array([])  # cannot be fixed by just adding frequencies from DC
+    
+    return True, np.linspace(0, f_first-f_step, n_steps, dtype=f.dtype)
+
+
+def interpolate_freq(f: np.ndarray, s: np.ndarray, f_new: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+    mag, pha = np.abs(s), np.unwrap(np.angle(s))
+
+    pha_fn = scipy.interpolate.make_interp_spline(f, pha, k=3)
+    mag_fn = scipy.interpolate.make_interp_spline(f, mag, k=3)
+    
+    s_new = mag_fn(f_new) * np.exp(1j * (pha_fn(f_new)))
+    return f_new, s_new
+
+
+def interpolate_equidistant_freq(f: np.ndarray, s: np.ndarray, max_rel_error: float = 1e-6, max_abs_error = 1e-3) -> tuple[np.ndarray,np.ndarray]:
+
+    f_min, f_max, f_step = f[0], f[-1], f[1]-f[0]
     f_equidistant = np.linspace(f_min, f_max, len(f))
 
     error = f - f_equidistant
     max_error = max(np.abs(error))
-    if max_error < f_max*max_rel_error and max_abs_error:
-        return f, sp # already good enough
+    if max_error <= f_step*max_rel_error and max_error <= max_abs_error:
+        return f, s # already good enough
 
     if len(f) < 2:
         raise RuntimeError('Cannot interpolate S-parameters: at least two frequency samples are required')
     
-    get_interpolator = lambda f,x: scipy.interpolate.interp1d(f, x, kind='cubic', bounds_error=False, fill_value='extrapolate')
-    
-    pha, mag = np.unwrap(np.angle(sp)), np.abs(sp)
-    pha_fn, mag_fn = get_interpolator(f, pha), get_interpolator(f, mag)
-    
-    pha_int = [pha_fn(f) for f in f_equidistant]
-    mag_int = [mag_fn(f) for f in f_equidistant]
-    sp_complete = np.array([cmath.rect(m,p) for m,p in zip(mag_int,pha_int)])
-    
-    return f_equidistant, sp_complete
+    f_equidistant, s_equidistant = interpolate_freq(f, s, f_equidistant)
+    return f_equidistant, s_equidistant
 
 
-def extrapolate_to_dc_ieee370(f: np.ndarray, sp: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc_ieee370(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None) -> tuple[np.ndarray,np.ndarray]:
     """ Extrapolation accoridng to IEEE370, Annex T """
+    if f_extrapolate is None:
+        f_extrapolate = np.array([0])
     assert f[0] > 0 and len(f) >= 2
 
     f1, f2 = f[0], f[1]
-    sp1, sp2 = sp[0], sp[1]
+    s1, s2 = s[0], s[1]
 
     # real part: assume mirrored mirrorring Y-axis, use 2nd degree polynomial for interpolation
-    f_re, sp_re = [-f2, -f1, +f1, +f2], [sp2.real, sp1.real, sp1.real, sp2.real]
-    int_re = scipy.interpolate.interp1d(f_re, sp_re, kind='quadratic', bounds_error=False, fill_value='extrapolate')
+    f_re, s_re = [-f2, -f1, +f1, +f2], [s2.real, s1.real, s1.real, s2.real]
+    int_re = scipy.interpolate.make_interp_spline(f_re, s_re, k=2)
 
     # real part: assume negative mirrorring across Y-axis (complex conjugate), use 3rd degree polynomial for interpolation
-    f_im, sp_im = [-f2, -f1, 0, +f1, +f2], [-sp2.imag, -sp1.imag, 0, sp1.imag, sp2.imag]
-    int_im = scipy.interpolate.interp1d(f_im, sp_im, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    f_im, p_im = [-f2, -f1, 0, +f1, +f2], [-s2.imag, -s1.imag, 0, s1.imag, s2.imag]
+    int_im = scipy.interpolate.make_interp_spline(f_im, p_im, k=3)
 
-    df = f[0] / f[-1]
-    n = max(10, int(math.ceil(len(f)*df)))
-    f_int = np.linspace(0, f[0]*(n-1)/n, n)
+    s_int = int_re(f_extrapolate) + 1j*int_im(f_extrapolate)
 
-    sp_int = int_re(f_int) + 1j*int_im(f_int)
-
-    f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
-    return f_complete, sp_complete
+    f_complete, s_complete = np.concatenate([f_extrapolate, f]), np.concatenate([s_int, s])
+    return f_complete, s_complete
 
 
-def extrapolate_to_dc_polar(f: np.ndarray, sp: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None) -> tuple[np.ndarray,np.ndarray]:
     """ Extrapolation in polar coordinates """
+    if f_extrapolate is None:
+        f_extrapolate = np.array([0])
     assert f[0] > 0 and len(f) >= 2
 
-    mag, pha = np.abs(sp), np.unwrap(np.angle(sp))
+    mag, pha = np.abs(s), np.unwrap(np.angle(s))
     
     # extrapolate phase to DC
     interp_pha = scipy.interpolate.interp1d(f, pha, kind='linear', bounds_error=False, fill_value='extrapolate')
     dc_phase_extrap = interp_pha(0)
+    dc_phase_real_guess = round(dc_phase_extrap / math.pi) * math.pi
     
-    # subtract DC-phase, so that we can assume the overall phase crosses the point (0 Hz, 0°)
-    pha -= dc_phase_extrap
-    
-    # magnitude: just use cubic interpolation/extrapolation, do not make any further assumptions
-    interp_mag = scipy.interpolate.interp1d(f, mag, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    # magnitude: just extrapolate down to DC, do not make any further assumptions
+    interp_mag = scipy.interpolate.make_interp_spline(f, mag, k=3)
 
-    # phase: assume negative mirrorring across Y-axis (phase crosses zero), use 3rd degree polynomial for interpolation
-    f_pha, sp_pha = [*(-np.flip(f)), 0, *f], [*(-np.flip(pha)), 0, *pha]
-    interp_pha = scipy.interpolate.interp1d(f_pha, sp_pha, kind='cubic', bounds_error=False, fill_value='extrapolate')
+    # phase: assume real-value for DC phase
+    f_pha, s_pha = np.concatenate([[0], f]), np.concatenate([[dc_phase_real_guess], pha])
+    interp_pha = scipy.interpolate.make_interp_spline(f_pha, s_pha, k=3)
 
-    df = f[0] / f[-1]
-    n = max(10, int(math.ceil(len(f)*df)))
-    f_int = np.linspace(0, f[0]*(n-1)/n, n)
+    s_extrap = interp_mag(f_extrapolate) * np.exp(1j * (interp_pha(f_extrapolate)))  # don't forget to add the DC phase again (we subtracted it above!)
 
-    sp_int = interp_mag(f_int) * np.exp(1j * (interp_pha(f_int) + dc_phase_extrap))  # don't forget to add the DC phase again (we subtracted it above!)
-
-    f_complete, sp_complete = np.concatenate([f_int, f]), np.concatenate([sp_int, sp])
-    return f_complete, sp_complete
+    f_complete, s_complete = np.concatenate([f_extrapolate, f]), np.concatenate([s_extrap, s])
+    return f_complete, s_complete
 
 
-def ensure_equidistant_freq_from_dc(f: np.ndarray, sp: np.ndarray, method: str = 'IEEE370') -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, method: str = 'IEEE370') -> tuple[np.ndarray,np.ndarray]:
 
-    if f[0] == 0:
-        return ensure_equidistant_freq(f, sp) # DC is already included
     if f[0] < 0:
         raise RuntimeError('Cannot handle S-parameters with negative frequencies')
     if len(f) < 2:
         raise RuntimeError('Cannot extrapolate S-parameters to DC: at least two frequency samples are required')
     
     if method=='IEEE370':
-        f, sp = extrapolate_to_dc_ieee370(f, sp)
+        f, s = extrapolate_to_dc_ieee370(f, s, f_extrapolate)
     elif method=='polar':
-        f, sp = extrapolate_to_dc_polar(f, sp)
-    else:
-        raise NotImplementedError()
-    return ensure_equidistant_freq(f, sp)
+        f, s = extrapolate_to_dc_polar(f, s, f_extrapolate)
+    return f, s
+
+
+def ensure_equidistant_to_dc(f: np.ndarray, s: np.ndarray, method: str = 'IEEE370') -> tuple[np.ndarray,np.ndarray]:
+
+    starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+    if starts_at_dc and is_equidistant:
+        return f, s
+    
+    if starts_at_dc:
+        return interpolate_equidistant_freq(f, s)
+    
+    can_fix, f_missing = get_missing_freq_dc_and_equidist(f)
+    if can_fix:
+        f, s = extrapolate_to_dc(f, s, f_missing, method=method)
+        assert check_freqs_dc_and_equidist(f) == (True,True)
+        return f, s
+    
+    # find a frequency grid, such that it can be extrapolated to DC in an equidistant way
+    df_mean = (f[-1] - f[0]) / len(f)
+    n_steps = round((f[-1] - 0) / df_mean)
+    f_new = np.linspace(0, f[-1], n_steps)
+    f_extrap = f_new[f_new < f[0]]
+    f_interp = f_new[f_new >= f[0]]
+
+    f, s = interpolate_freq(f, s, f_interp)
+    f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=method)
+    assert check_freqs_dc_and_equidist(f) == (True,True)
+    return f, s
 
 
 def parse_quick_param(param: any) -> tuple[int,int]:

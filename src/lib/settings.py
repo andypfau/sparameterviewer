@@ -127,6 +127,7 @@ class SParamViewerAppSettings(AppSettings):
     window_type: str = 'kaiser'
     window_arg: float = 35.0
     tdr_extrapolation: TdrDcExtrapolation = TdrDcExtrapolation.IEEE370
+    tdr_interpolation: bool = True
     tdr_shift: float = 100e-12
     tdr_impedance: bool = False
     tdr_minsize: int = 1024*8

@@ -5,7 +5,7 @@ import cmath
 import scipy
 import re
 from .utils import window_has_argument
-from .sparam_helpers import ensure_equidistant_freq_from_dc, irndft
+from .sparam_helpers import check_freqs_dc_and_equidist, get_missing_freq_dc_and_equidist, extrapolate_to_dc, interpolate_freq, interpolate_equidistant_freq, irndft
 
 
 
@@ -14,6 +14,7 @@ class TDR:
 
     def __init__(self):
         self.dc_extrapolation: str|None = 'IEEE370'
+        self.interpolation: bool = True
         self.window: str = 'boxcar'
         self.window_args: tuple[float] = tuple()
         self.padded_length: int = 0
@@ -25,25 +26,69 @@ class TDR:
     def get(self, f: np.ndarray, s: np.ndarray, z0: float = 50) -> tuple[np.ndarray,np.ndarray]:
         if len(f) < 2 or len(f) != len(s):
             raise ValueError('For TDR, at least 2 frequency points are needed')
-        f, s, equidist_from_dc = self._extrapolate_to_dc(f, s)
+        f, s, equidistant_from_dc = self._interpolate_extrapolate(f, s)
         s = self._apply_window(s)
-        f, s, padding_factor = self._add_padding(f, s, need_power_of_2=equidist_from_dc)
-        t, w = self._get_impulse_response(f, s, equidist_from_dc)
+        f, s, padding_factor = self._add_padding(f, s, need_power_of_2=equidistant_from_dc)
+        t, w = self._get_impulse_response(f, s, equidistant_from_dc)
         t, w = self._shift(t, w)
         t, w = self._process_step_response(t, w, z0, padding_factor)
         return t, w
 
 
-    def _extrapolate_to_dc(self, f: np.ndarray, s: np.ndarray) -> tuple[np.ndarray,np.ndarray,bool]:
+    def _interpolate_extrapolate(self, f: np.ndarray, s: np.ndarray) -> tuple[np.ndarray,np.ndarray,bool]:
+
+        starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+        if starts_at_dc and is_equidistant:
+            #print(f'~~ already DC and equidist')
+            return f, s, True
+        
+        if starts_at_dc:
+            if self.interpolation:
+                #print(f'~~ DC OK, interpolating')
+                f, s = interpolate_equidistant_freq(f, s)
+                return f, s, True
+            #print(f'~~ DC OK, but skipping because interpolation is disabled')
+            return f, s, False
         
         if self.dc_extrapolation is None:
-            assert len(f) >= 2
-            f_dc, f_step1 = f[0], f[1] - f[0]
-            f_steps = np.diff(f)
-            equidist_from_dc = (f_dc == 0) and (np.allclose(f_step1, f_steps))
-            return f, s, equidist_from_dc
+            if self.interpolation:
+                #print(f'~~ DC missing, only interpolating')
+                f, s = interpolate_equidistant_freq(f, s)
+                return f, s, False
+            else:
+                #print(f'~~ DC missing, interpolation is disabled')
+                return f, s, False
         
-        f, s = ensure_equidistant_freq_from_dc(f, s, method=self.dc_extrapolation)
+        assert self.dc_extrapolation is not None  # was checked above
+
+        can_fix, f_missing = get_missing_freq_dc_and_equidist(f)
+        if can_fix:
+            #print(f'~~ extrapolationg, while interpolation is not needed')
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation)
+            assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
+            return f, s, True
+        
+        if not self.interpolation:
+            #print(f'~~ interpolation disabled, just adding some points towards DC')
+
+            f_first, f_step = f[0], f[1] - f[0]
+            n_steps = round(f_first / f_step)
+            f_missing = np.linspace(0, f_first-f_step, n_steps, dtype=f.dtype)
+            
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation)
+
+            return f,s, False
+
+        # find a frequency grid, such that it can be extrapolated to DC in an equidistant way
+        #print(f'~~ regenerating entire frequency grid')
+        df_mean = (f[-1] - f[0]) / len(f)
+        n_steps = round((f[-1] - 0) / df_mean)
+        f_new = np.linspace(0, f[-1], n_steps)
+        f_extrap = f_new[f_new < f[0]]
+
+        f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=self.dc_extrapolation)
+        f, s = interpolate_freq(f, s, f_new)
+        assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
         return f, s, True
 
 
@@ -61,14 +106,20 @@ class TDR:
         
         n_missing = n_target - len(s)
         if n_missing < 1:
+            #print(f'~~ no padding needed')
             return f, s, 1.0
         
         padding_factor = n_target / len(s)  # padding increases the highest spectrum frequency!
         
+        #print(f'~~ padding with {n_missing} zeros...')
+        starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+        #print(f'~~ check before: {starts_at_dc=}, {is_equidistant=}')
         f_end, f_step = f[-1], f[-1] - f[-2]
-        f_extended = np.concatenate([f, np.linspace(f_end+f_step, f_end+f_step*(1+n_missing), n_missing)])
-        s_padded = np.concatenate([s, np.zeros([n_missing], dtype=s.dtype)])
-        return f_extended, s_padded, padding_factor
+        f = np.concatenate([f, np.linspace(f_end+f_step, f_end+f_step*n_missing, n_missing)])
+        s = np.concatenate([s, np.zeros([n_missing], dtype=s.dtype)])
+        starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+        #print(f'~~ check after: {starts_at_dc=}, {is_equidistant=}')
+        return f, s, padding_factor
 
 
     def _apply_window(self, s: np.ndarray) -> np.ndarray:
@@ -84,33 +135,40 @@ class TDR:
         return sp_windowed
 
 
-    def _get_impulse_response(self, f: np.ndarray, s: np.ndarray, equidist_from_dc: bool) -> tuple[np.ndarray,np.ndarray]:
-        
-        if equidist_from_dc:
-            use_fft = True
-        else:
-            f_steps = np.diff(f)
-            starts_at_dc = f[0] == 0
-            is_equidistant = np.allclose(f_steps, f_steps[0])
-            if is_equidistant:
-                if starts_at_dc:
-                    use_fft = True  # data already starts at DC and is equidistant
-                else:
-                    f_first, f_step = f[0], f[1] - f[0]
-                    n_steps = round(f_first / f_step)
-                    f_first_stepped = n_steps * f_step
-                    f_error = abs(f_first - f_first_stepped)
-                    if f_error < f_step / 1e6:
-                        # just add zeros, then we are reasonably close to DC and equidistant
-                        f = np.concatenate([np.linspace(0, f_first-f_step, n_steps, dtype=f.dtype), f])
-                        s = np.concatenate([np.zeros([n_steps], dtype=s.dtype), s])
-                        use_fft = True
-                    else:
-                        use_fft = False  # cannot use FFT
-            else:
-                use_fft = False  # cannot use FFT
+    def _get_impulse_response(self, f: np.ndarray, s: np.ndarray, use_fft: bool) -> tuple[np.ndarray,np.ndarray]:
+
+        def can_use_fft(f: np.ndarray, s: np.ndarray) -> tuple[bool,np.ndarray,np.ndarray]:
+            
+            starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+            
+            if not is_equidistant:
+                #print('~~ not equidistant, using DFT')
+                return False, f, s  # not equidistant, cannot use FFT
+            
+            if not starts_at_dc:
+                can_fix, f_missing = get_missing_freq_dc_and_equidist(f)
+                if not can_fix:
+                    #print('~~ equidistant, but not from DC, using DFT')
+                    return False, f, s  # equidistant, but doesn't start at DC, cannot use FFT
+                
+                # just add zeros, then we are reasonably close to DC and equidistant
+                f = np.concatenate([f_missing, f])
+                s = np.concatenate([np.zeros([len(f_missing)], dtype=s.dtype), s])
+                
+                #print('~~ added zeros to make equidistant and from DC, using FFT')
+                return True, f, s
+            
+            #print('~~ verified equidistant and from DC, using FFT')
+            return True, f, s  # data starts at DC and is equidistant, can use FFT
+
+        if not use_fft:
+            use_fft, f, s = can_use_fft(f, s)
         
         if use_fft:
+
+            starts_at_dc, is_equidistant = check_freqs_dc_and_equidist(f)
+            if not (starts_at_dc and is_equidistant):
+                raise RuntimeError('Expected frequencies to be equidistant from zero')
 
             w = np.fft.irfft(s)
             

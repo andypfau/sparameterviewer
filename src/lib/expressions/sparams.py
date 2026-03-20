@@ -7,7 +7,7 @@ from ..utils import sanitize_filename, db2v, v2db
 from ..citi import CitiWriter
 from ..settings import Settings
 from ..file_config import FileConfig
-from ..sparam_helpers import ensure_equidistant_freq_from_dc
+from ..sparam_helpers import interpolate_equidistant_freq, extrapolate_to_dc, ensure_equidistant_to_dc
 from .helpers import format_call_signature
 
 import skrf, math, os
@@ -231,8 +231,8 @@ class SParam:
 
 
     def extrapolate_to_dc(self, method: str):
-        new_f, new_s = ensure_equidistant_freq_from_dc(self.f, self.s, method=method)
-        return self._modified_copy(f=new_f, s=new_s)
+        f, s = ensure_equidistant_to_dc(self.f, self.s, method=method)
+        return self._modified_copy(f=f, s=s)
         
     
     def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParam":

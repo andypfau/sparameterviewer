@@ -76,6 +76,8 @@ class PlotSelector(QWidget):
         'kaiser': 'Kaiser',
         'flattop': 'Flat-Top',
         'blackman': 'Blackman',
+        'blackmanharris': 'Blackman-Harris',
+        'bartlett': 'Bartlett',
         'tukey': 'Tukey',
     }
 
@@ -99,6 +101,7 @@ class PlotSelector(QWidget):
         self._phase_unit = PhaseUnit.Degrees
         self._td_z = False
         self._td_extrapolation = 'IEEE370'
+        self._td_interpolation = True
         self._td_window = 'boxcar'
         self._td_window_arg = 0
         self._td_shift = 0
@@ -149,7 +152,8 @@ class PlotSelector(QWidget):
         self._ui_detrend_button = QtHelper.make_toolbutton(self, None, self._on_select_detrend, icon='plot_phase-detrend.svg', tooltip='Unwrap and De-Trend Phase', checked=False)
         self._ui_impulse_button = QtHelper.make_toolbutton(self, None, self._on_select_impulse, icon='plot_tdr-impulse.svg', tooltip='Show Impulse Response', checked=False)
         self._ui_step_button = QtHelper.make_toolbutton(self, None, self._on_select_step, icon='plot_tdr-step.svg', tooltip='Show Step Response', checked=False)
-        self._ui_impeance_button = QtHelper.make_toolbutton(self, None, self._on_select_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', checked=False)
+        self._ui_tdr_z_button = QtHelper.make_toolbutton(self, None, self._on_select_tdr_z, icon='plot_impedance.svg', tooltip='Convert Y-Axis to Impedance', checked=False)
+        self._ui_smith_z_button = QtHelper.make_toolbutton(self, None, self._on_select_smith_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', checked=False)
         self._ui_admittance_button = QtHelper.make_toolbutton(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', checked=False)
         self._ui_advancedmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
         self._ui_advanced.setLayout(QtHelper.layout_v(
@@ -159,7 +163,7 @@ class PlotSelector(QWidget):
             ..., margins=0, spacing=default_spacing),
             wide_spacing,
             QtHelper.layout_h(
-                self._ui_impeance_button, self._ui_admittance_button, self._ui_db_button, self._ui_mag_button, self._ui_real_button, self._ui_imag_button, self._ui_impulse_button, self._ui_step_button, medium_spacing,
+                self._ui_smith_z_button, self._ui_admittance_button, self._ui_db_button, self._ui_mag_button, self._ui_real_button, self._ui_imag_button, self._ui_impulse_button, self._ui_step_button, medium_spacing, self._ui_tdr_z_button, medium_spacing,
             ..., margins=0, spacing=default_spacing),
             QtHelper.layout_h(
                 self._ui_phase_button, self._ui_unwrap_button, self._ui_detrend_button, self._ui_gdelay_button,
@@ -169,15 +173,18 @@ class PlotSelector(QWidget):
         self.setLayout(QtHelper.layout_v(self._ui_simple, self._ui_advanced, margins=0, spacing=0))
 
         self._menu = QMenu()
+        #self._menu.setTearOffEnabled(True)
         self._ui_degrees_menuitem = QtHelper.add_menuitem(self._menu, 'Phase in Degrees', self._on_phaseunit_change, checkable=True)
         self._menu.addSeparator()
         
         self._ui_td_extrap_combo = QComboBox()
         for name in PlotSelector.EXTRAPOLATION_NAMES.values():
             self._ui_td_extrap_combo.addItem(name)
-        self._ui_td_extrap_combo.currentTextChanged.connect(self._on_change_extrap_window)
+        self._ui_td_extrap_combo.currentTextChanged.connect(self._on_change_extrap)
         self._ui_td_extrap_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Extrap.:', self._ui_td_extrap_combo, ...))
-
+        self._ui_td_interp_check = QCheckBox('Interpolate')
+        self._ui_td_interp_check.stateChanged.connect(self._on_change_interp)
+        self._ui_td_interp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h(self._ui_td_interp_check, ...))
         self._ui_td_window_combo = QComboBox()
         for name in PlotSelector.WINDOW_NAMES.values():
             self._ui_td_window_combo.addItem(name)
@@ -196,7 +203,6 @@ class PlotSelector(QWidget):
         self._ui_td_shift_text = SiValueEdit(self, si=SiValue(0, 's'))
         self._ui_td_shift_text.valueChanged.connect(self._on_change_td_shift)
         self._ui_td_shift_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('Shift:', self._ui_td_shift_text, ...))
-        self._ui_tdz_menuitem = QtHelper.add_menuitem(self._menu, 'Convert to Impedance', self._on_change_td_z, checkable=True)
         self._ui_simplemenu_button.setMenu(self._menu)
         self._ui_simplemenu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._ui_advancedmenu_button.setMenu(self._menu)
@@ -276,6 +282,13 @@ class PlotSelector(QWidget):
         self._update_control_values()
     
 
+    def tdInterpolation(self) -> bool:
+        return self._td_interpolation
+    def setTdInterpolation(self, value: bool):
+        self._td_interpolation = value
+        self._update_control_values()
+    
+
     def tdWindowArg(self) -> float:
         return self._td_window_arg
     def setTdWindowArg(self, value: float):
@@ -331,7 +344,8 @@ class PlotSelector(QWidget):
         self._ui_detrend_button.setVisible(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
         self._ui_step_button.setVisible(self._plot_type == PlotType.TimeDomain)
         self._ui_impulse_button.setVisible(self._plot_type == PlotType.TimeDomain)
-        self._ui_impeance_button.setVisible(self._plot_type == PlotType.Smith)
+        self._ui_tdr_z_button.setVisible(self._plot_type == PlotType.TimeDomain)
+        self._ui_smith_z_button.setVisible(self._plot_type == PlotType.Smith)
         self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
         
         self._ui_degrees_menuitem.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
@@ -401,14 +415,15 @@ class PlotSelector(QWidget):
             self._ui_gdelay_button.setChecked(self._y2 == YQuantity.GroupDelay)
             self._ui_impulse_button.setChecked(self._td_response == TdrResponse.ImpulseResponse)
             self._ui_step_button.setChecked(self._td_response == TdrResponse.StepResponse)
-            self._ui_impeance_button.setChecked(self._smith_norm == SmithNorm.Impedance)
+            self._ui_tdr_z_button.setChecked(self._td_z)
+            self._ui_smith_z_button.setChecked(self._smith_norm == SmithNorm.Impedance)
             self._ui_admittance_button.setChecked(self._smith_norm == SmithNorm.Admittance)
             self._ui_unwrap_button.setChecked(self._phase_processing == PhaseProcessing.Unwrap)
             self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
 
         self._ui_degrees_menuitem.setChecked(self._phase_unit == PhaseUnit.Degrees)
-        self._ui_tdz_menuitem.setChecked(self._td_z)
         self._ui_td_extrap_combo.setCurrentText(PlotSelector.EXTRAPOLATION_NAMES[self._td_extrapolation])
+        self._ui_td_interp_check.setChecked(self._td_interpolation)
         self._ui_td_window_combo.setCurrentText(PlotSelector.WINDOW_NAMES[self._td_window])
         self._ui_td_window_arg_spinner.setValue(self._td_window_arg)
         self._ui_td_minsize_combo.setCurrentText(PlotSelector.TD_MINSIZE_NAMES[self._td_minsize])
@@ -515,7 +530,14 @@ class PlotSelector(QWidget):
         self.valueChanged.emit()
 
 
-    def _on_select_z(self):
+    def _on_select_tdr_z(self):        
+        self._td_z = self._ui_tdr_z_button.isChecked()
+        if self.plotType() != PlotType.TimeDomain:
+            return
+        self.valueChanged.emit()
+
+
+    def _on_select_smith_z(self):
         self._smith_norm = SmithNorm.Impedance
         self._update_control_values()
         self.valueChanged.emit()
@@ -636,20 +658,21 @@ class PlotSelector(QWidget):
         if self.plotType() != PlotType.Cartesian or self.y2Quantity() != YQuantity.Phase:
             return
         self.valueChanged.emit()
-    
+        
 
-    def _on_change_td_z(self):
-        self._td_z = self._ui_tdz_menuitem.isChecked()
-        if self.plotType() != PlotType.TimeDomain:
-            return
-        self.valueChanged.emit()
-    
-
-    def _on_change_extrap_window(self):
+    def _on_change_extrap(self):
         for method, name in PlotSelector.EXTRAPOLATION_NAMES.items():
             if name == self._ui_td_extrap_combo.currentText():
                 self._td_extrapolation = method
                 break
+        self._update_control_enabled()
+        if self.plotType() != PlotType.TimeDomain:
+            return
+        self.valueChanged.emit()
+        
+
+    def _on_change_interp(self):
+        self._td_interpolation = self._ui_td_interp_check.isChecked()
         self._update_control_enabled()
         if self.plotType() != PlotType.TimeDomain:
             return
