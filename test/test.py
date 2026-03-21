@@ -75,7 +75,7 @@ class SParamViewerTest(MyTests):
         super().__init__(methodName)
 
 
-    def get_dummy_plot_data(self, n: int) -> "list[PlotData]":
+    def get_dummy_plot_data(self, n: int) -> "list[PlotData]":  # TODO: remove this method?
         result = []
         for i in range(n):
             result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFormat(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFormat(),[i+4,i+5,i+6]),None,'-',None))
@@ -206,7 +206,7 @@ class SParamViewerTest(MyTests):
 class TdrTests(MyTests):
 
 
-    def test_sms_roundtrip_skrf(self):
+    def test_line3_port1(self):
         nw = skrf.Network(self.sample_dir.joinpath('line-line-line.s2p'))
         
         tdr = TDR()
@@ -218,9 +218,10 @@ class TdrTests(MyTests):
         tdr.convert_to_impedance = True
         t, z = tdr.get(nw.f, nw.s[:,0,0], nw.z0[0,0])
 
-        z_line1 = z[np.argmin(np.abs(t - 0.5e-9))]
-        z_line2 = z[np.argmin(np.abs(t - 1.5e-9))]
-        z_line3 = z[np.argmin(np.abs(t - 2.5e-9))]
+        LINE_LEN = 500e-12 * 2
+        z_line1 = z[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
+        z_line2 = z[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
+        z_line3 = z[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
 
         # note that each cascaded line shadows-off the next one, so the
         #   impedance error accumulates quickly; to compensate for that,
@@ -229,6 +230,32 @@ class TdrTests(MyTests):
         self.assertAlmostEqual(z_line1,  50, delta=0.05)
         self.assertAlmostEqual(z_line2, 100, delta=0.50)
         self.assertAlmostEqual(z_line3,  50, delta=5.00)
+
+
+    def test_line3_port2(self):
+        nw = skrf.Network(self.sample_dir.joinpath('line-line-line.s2p'))
+        
+        tdr = TDR()
+        tdr.dc_extrapolation = 'polar'
+        tdr.interpolation = True
+        tdr.shift_s = 500e-12  # must shift a bit more, because the 100 Ω port is immediately hit by a 50 Ω line
+        tdr.window = 'blackman'
+        tdr.step_response = True
+        tdr.convert_to_impedance = True
+        t, z = tdr.get(nw.f, nw.s[:,1,1], nw.z0[0,1])
+
+        LINE_LEN = 500e-12 * 2
+        z_line1 = z[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
+        z_line2 = z[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
+        z_line3 = z[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
+
+        # on this side, the shadowing effect is even more severe, which means
+        #   we have to accept huge deltas; maybe I should just calculate the
+        #   exact value...
+        
+        self.assertAlmostEqual(z_line1,  50, delta=0.5)
+        self.assertAlmostEqual(z_line2, 100, delta=10.0)
+        self.assertAlmostEqual(z_line3,  50, delta=50.0)
 
 
 
