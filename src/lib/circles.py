@@ -1,3 +1,4 @@
+from .network_ext import NetworkExt
 from .si import SiValue
 
 import numpy as np
@@ -32,7 +33,7 @@ class SParameterCircle(ABC):
 
 class StabilityCircle(SParameterCircle):
 
-    def __init__(self, network: "skrf.Network", frequency_hz: float, port: int = 2):
+    def __init__(self, network: "NetworkExt", frequency_hz: float, port: int = 2):
 
         n_ports = network.number_of_ports
         if n_ports != 2:
@@ -71,7 +72,7 @@ class StabilityCircle(SParameterCircle):
 
 class NoiseCircle(SParameterCircle):
 
-    def __init__(self, network: "skrf.Network", frequency_hz: float, nf_db: float):
+    def __init__(self, network: "NetworkExt", frequency_hz: float, nf_db: float):
 
         n_ports = network.number_of_ports
         if n_ports != 2:
@@ -105,7 +106,7 @@ class NoiseCircle(SParameterCircle):
 
 class BilateralPowerGainCircle(SParameterCircle):
 
-    def __init__(self, network: "skrf.Network", frequency_hz: float, g_lin: float, typ: str):
+    def __init__(self, network: "NetworkExt", frequency_hz: float, g_lin: float, typ: str):
 
         assert typ in ['GA', 'GP']
         

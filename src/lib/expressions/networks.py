@@ -10,6 +10,7 @@ from ..utils import sanitize_filename, get_subset, p2db
 from ..citi import CitiWriter
 from ..si import SiValue
 from ..settings import Settings
+from ..network_ext import NetworkExt
 from info import Info
 
 import math
@@ -27,8 +28,8 @@ from typing import overload, Callable, Generator
 class Network:
 
     
-    def __init__(self, nw: "Network|skrf.Network|SParamFile" = None, name: str = None, original_files: "set[PathExt]" = None):
-        self._nw: skrf.Network = None
+    def __init__(self, nw: "Network|NetworkExt|SParamFile" = None, name: str = None, original_files: "set[PathExt]" = None):
+        self._nw: NetworkExt = None
         self.original_files: set[PathExt] = original_files or set()
         
         if isinstance(nw, SParamFile):
@@ -41,7 +42,7 @@ class Network:
             self.original_files |= nw.original_files
             if name is None:
                 name = nw._name
-        elif isinstance(nw, skrf.Network):
+        elif isinstance(nw, NetworkExt):
             self._nw = nw
             if name is None:
                 name = nw.name
@@ -114,22 +115,22 @@ class Network:
     
 
     @property
-    def nw(self) -> skrf.Network:
+    def nw(self) -> NetworkExt:
         self._ensure_ready()
         return self._nw
     
 
     @staticmethod
-    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[skrf.Network,skrf.Network]":
+    def _get_adapted_networks(a: "Network", b: "Network") -> "tuple[NetworkExt,NetworkExt]":
 
         Network._calculate_with_respect_to(a, b)
         
-        def crop_ports(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
+        def crop_ports(a: "NetworkExt", b: "NetworkExt") -> "tuple[NetworkExt,NetworkExt]":
             max_ports = max(a.number_of_ports, b.number_of_ports)
             a.s, b.s = a.s[:,0:max_ports,0:max_ports], b.s[:,0:max_ports,0:max_ports]
             return a, b
 
-        def interpolate_f(a: "skrf.Network", b: "skrf.Network") -> "tuple[skrf.Network,skrf.Network]":
+        def interpolate_f(a: "NetworkExt", b: "NetworkExt") -> "tuple[NetworkExt,NetworkExt]":
             all_freqs = np.array(sorted(list(set([*a.f, *b.f]))))
             f_new = np.array(all_freqs)
             assert a.number_of_ports == b.number_of_ports, f'Expected both networks to have the same number of ports during interpolation step, got {a.number_of_ports} and {b.number_of_ports}'
@@ -146,7 +147,7 @@ class Network:
     
 
     @staticmethod
-    def _get_interpolated_sparams(nw: skrf.Network, f: np.ndarray) -> skrf.Network:
+    def _get_interpolated_sparams(nw: NetworkExt, f: np.ndarray) -> NetworkExt:
         
         def interpolate_param(current_s: np.ndarray, current_f: np.ndarray, new_f: np.ndarray) -> np.ndarray:
             current_mag, current_pha = np.abs(current_s), np.unwrap(np.angle(current_s))
@@ -158,7 +159,7 @@ class Network:
         for ep in range(nw.nports):
             for ip in range(nw.nports):
                 s_new[:,ep,ip] = interpolate_param(nw.s[:,ep,ip], nw.f, f)
-        return skrf.Network(s=s_new, name=nw.name, z0=nw.z0[0,0], f=f, f_unit='Hz')
+        return NetworkExt(s=s_new, name=nw.name, z0=nw.z0[0,:], f=f, f_unit='Hz')
 
     
     def _interpolate(self, f: np.ndarray) -> "Network":
@@ -270,23 +271,22 @@ class Network:
 
         ep_filter, ip_filter = None, None
         match (egress_port, ingress_port):
+            case None, None:
+                pass
             case int(), None:
-                (ep_filter, ip_filter) = parse_quick_param(egress_port)
+                ep_filter, ip_filter = self.nw.get_indices(egress_port, prefix=param_prefix)
+                ep_filter, ip_filter = ep_filter+1, ip_filter+1
             case str(), None:
-                if m := re.match(r'^([CDS])([CDS])([0-9])?([0-9])$', egress_port.upper()):
-                    egress_mode, ingress_mode, egress_mixedport, ingress_mixedport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
-                    ep_filter, ip_filter = get_port_index(self.nw,egress_mode,egress_mixedport)+1, get_port_index(self.nw,ingress_mode,ingress_mixedport)+1
-                elif m := re.match(r'^([CDS])([CDS])([0-9]+)[,;]?([0-9]+)$', egress_port.upper()):
-                    egress_mode, ingress_mode, egress_mixedport, ingress_mixedport = m.group(1), m.group(2), int(m.group(3)), int(m.group(4))
-                    ep_filter, ip_filter = get_port_index(self.nw,egress_mode,egress_mixedport)+1, get_port_index(self.nw,ingress_mode,ingress_mixedport)+1
-                else:
-                    (ep_filter, ip_filter) = parse_quick_param(egress_port)
+                ep_filter, ip_filter = self.nw.get_indices(egress_port, prefix=param_prefix)
+                ep_filter, ip_filter = ep_filter+1, ip_filter+1
             case int(), int():
                 ep_filter, ip_filter = egress_port, ingress_port
             case int(), any:
                 ep_filter = egress_port
             case any, int():
                 ip_filter = ingress_port
+            case _:
+                raise ValueError(f'Unknown port format: <{egress_port},{ingress_port}>')
 
         for ep in range(1, self.nw.number_of_ports+1):
             for ip in range(1, self.nw.number_of_ports+1):
@@ -304,7 +304,8 @@ class Network:
                 if rev_il_only and not (ep<ip):
                     continue
                 
-                param_name = get_sparam_name(self.nw, ep, ip, prefix=param_prefix)
+                #param_name = get_sparam_name(self.nw, ep, ip, prefix=param_prefix)
+                param_name = self.nw.indices_to_str(ep-1, ip-1, prefix=param_prefix)
                 if name is not None:
                     param_label = name
                 else:
@@ -367,7 +368,7 @@ class Network:
             raise Exception('Network.crop_f(): frequency out of range')
         new_f = self.nw.f[idx0:idx1+1]
         new_s = self.nw.s[idx0:idx1+1,:,:]
-        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
+        new_nw = NetworkExt(name=self.name, f=new_f, s=new_s, f_unit='Hz', z0=self.nw.z0[0,:])
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -375,15 +376,8 @@ class Network:
         idx = np.argmin(np.abs(f - self.nw.f))
         new_f = self.nw.f[idx]
         new_s = self.nw.s[idx,:,:]
-        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
-        return Network(new_nw, original_files=self.original_files)
-    
-
-    def at_f(self, f: float) -> "Network":
-        idx = np.argmin(np.abs(f - self.nw.f))
-        new_f = self.nw.f[idx]
-        new_s = self.nw.s[idx,:,:]
-        new_nw = skrf.Network(name=self.name, f=new_f, s=new_s, f_unit='Hz')
+        new_z0 = self.nw.s[idx,:]
+        new_nw = NetworkExt(name=self.name, f=new_f, s=new_s, f_unit='Hz', z0=new_z0)
         return Network(new_nw, original_files=self.original_files)
 
 
@@ -424,7 +418,7 @@ class Network:
         else:
             name_suffix = 'Term. Stub'
         
-        new_nw = skrf.Network(name=f'{self.name} {name_suffix}', f=self.nw.f, s=new_s, f_unit='Hz')
+        new_nw = NetworkExt(name=f'{self.name} {name_suffix}', f=self.nw.f, s=new_s, f_unit='Hz', z0=self.nw.z0)
         return Network(new_nw, original_files=self.original_files)
     
 
@@ -717,7 +711,7 @@ class Network:
     
 
     def flip(self) -> "Network":
-        return Network(skrf.Network(name=self.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz'), name='~'+self.name, original_files=self.original_files)
+        return Network(NetworkExt(name=self.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz', z0=self.nw.z0), name='~'+self.name, original_files=self.original_files)
     
 
     def invert(self) -> "Network":
@@ -788,32 +782,17 @@ class Network:
             SParams(self.s(e,i)).plot()
     
     
-    def set_modes(self, port_modes: list[str]) -> "Network":
-        """
-        Interpret the ports of the network as a mixed-mode network.
-        Argument <port_modes>: list of modes for each port, e.g.
-            ["C","C","D","D"], which means:
-            - objects's port 1 is common mode of network's port 1
-            - objects's port 2 is common mode of network's port 2
-            - objects's port 3 is differential mode of network's port 1
-            - objects's port 4 is differential mode of network's port 2
-        """
-
-        if len(port_modes) != self.nw.number_of_ports:
-            raise ValueError(f'Invalid number of port modes (expected {self.nw.number_of_ports}, got {len(port_modes)})')
-        
-        for i,mode in enumerate(port_modes):
-            mode_uc = mode.upper()
-            if mode_uc not in ['S','C','D']:
-                raise ValueError(f'Invalid port mode: "{mode}" (expected one of "S", "C", "D")')
-            port_modes[i] = mode_uc
-        
+    def def_ports(self, ports: list[str]|str) -> "Network":
         new_nw = self.nw.copy()
-        new_nw.port_modes = port_modes
+        
+        if isinstance(ports, str):
+            ports = list([s.strip() for s in ports.split(',')])
+        new_nw.ports = ports
+        
         return Network(new_nw, original_files=self.original_files)
     
 
-    def s2m(self, ports: list[str]|str) -> "Network":
+    def s2m(self, ports: list[str]|str = None) -> "Network":
         """
         Convert a single-ended network into a mixed-mode network.
         Argument <ports>: list of ports of the single-ended input network, e.g.
@@ -823,37 +802,17 @@ class Network:
             - objects's port 3 is negative terminal of network's port 1
             - objects's port 4 is negative terminal of network's port 2
         """
-        new_nw = self.nw.copy()
         
-        if isinstance(ports, str):
-            ports = [s.strip() for s in ports.split(',')]
-        if len(ports) != self.nw.number_of_ports:
-            raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
+        nw_new = self.nw.copy()
+        
+        if ports is not None:
+            if isinstance(ports, str):
+                ports = list([s.strip() for s in ports.split(',')])
+            nw_new.ports = ports
+        
+        nw_new_mix = nw_new.to_mixed()
 
-        old_indices = []
-        for se_port_str in ports:
-            try:
-                m = re.match(r'^([pn])(\d+)$', se_port_str.lower())
-                if not m:
-                    raise ValueError()
-            except:
-                raise ValueError(f'Expecting a list like e.g. ["p1","p2","n1","n2"], got {len(ports)}')
-            df_port = int(m.group(2))
-            df_index = 2*(df_port-1)
-            if m.group(1) == 'n':
-                df_index += 1
-            # expected order for a 4-port: pos1, neg1, pos2, neg2, ...
-            if df_index in old_indices:
-                raise ValueError(f'Duplicate port <{se_port_str}>')
-            old_indices.append(df_index)
-        if len(old_indices) != new_nw.nports:
-            raise RuntimeError(f'Unable to change network input terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-        new_indices = np.arange(0, new_nw.nports, step=1)
-        new_nw.renumber(old_indices, new_indices)
-
-        new_nw.se2gmm(new_nw.nports // 2)
-        assert new_nw.nports % 2 == 0, f'Expected number of ports to be an even number, got {new_nw.nports}'
-        return Network(new_nw, original_files=self.original_files)
+        return Network(nw_new_mix, original_files=self.original_files)
     
 
     def m2s(self, ports: list[str]|str) -> "Network":
@@ -866,37 +825,17 @@ class Network:
             - object's port 3 is differential mode of network's port 2
             - object's port 4 is common mode of network's port 2
         """
-
-        new_nw = self.nw.copy()
         
-        if isinstance(ports, str):
-            ports = [s.strip() for s in ports.split(',')]
-        if len(ports) != self.nw.number_of_ports:
-            raise ValueError(f'Invalid number of port definitions (expected {self.nw.number_of_ports}, got {len(ports)})')
+        nw_new = self.nw.copy()
+        
+        if ports is not None:
+            if isinstance(ports, str):
+                ports = list([s.strip() for s in ports.split(',')])
+            nw_new.ports = ports
+        
+        nw_new_se = nw_new.to_singleended()
 
-        old_indices = []
-        for df_port_str in ports:
-            try:
-                m = re.match(r'^([cd])(\d+)$', df_port_str.lower())
-                if not m:
-                    raise ValueError()
-            except:
-                raise ValueError(f'Expecting a list like e.g. ["d1","c1","d2","c2"], got {len(ports)}')
-            df_port = int(m.group(2))
-            df_index = df_port-1
-            if m.group(1) == 'c':
-                df_index += new_nw.nports//2
-            # expected order for a 4-port: <diff1, diff2, ..., comm1, comm2, ...
-            if df_index in old_indices:
-                raise ValueError(f'Duplicate port <{df_port_str}>')
-            old_indices.append(df_index)
-        if len(old_indices) != new_nw.nports:
-            raise RuntimeError(f'Unable to change network output terminal order, expected {new_nw.nports} items in list, got {len(old_indices)}')
-        new_indices = np.arange(0, new_nw.nports, step=1)
-        new_nw.renumber(old_indices, new_indices)
-
-        new_nw.gmm2se(new_nw.nports // 2)
-        return Network(new_nw, original_files=self.original_files)
+        return Network(nw_new_se, original_files=self.original_files)
 
 
     def renorm(self, z: "complex|list[complex]") -> "Network":
@@ -949,7 +888,7 @@ class Network:
 class Networks:
     
 
-    available_networks: "list[skrf.Network]"
+    available_networks: "list[NetworkExt]"
 
     default_actions: "list[DefaultAction]" = []
     default_actions_used: bool = False
@@ -959,13 +898,13 @@ class Networks:
     last_slice_match_str: str|None = None
 
 
-    def __init__(self, nws: "list[skrf.Network]|list[Network]|list[SParamFile]" = None):
+    def __init__(self, nws: "list[NetworkExt]|list[Network]|list[SParamFile]" = None):
         def cast(obj):
             if isinstance(obj, Network):
                 return obj
             elif isinstance(obj, SParamFile):
                 return Network(obj)
-            elif isinstance(obj, skrf.Network):
+            elif isinstance(obj, NetworkExt):
                 return Network(obj)
             else:
                 raise ValueError(f'Internal error: Network object initiliazed with invalid object ({obj})')
@@ -1357,15 +1296,15 @@ class Networks:
         self._unary_op(Network.quick, None, *items)
         
     
-    def set_modes(self, port_modes: list[str]) -> "Networks":
-        return self._unary_op(Network.set_modes, Networks, port_modes=port_modes)
+    def def_ports(self, ports: list[str]|str) -> "Networks":
+        return self._unary_op(Network.def_ports, Networks, ports=ports)
         
     
-    def m2s(self, ports: list[str]|str) -> "Networks":
+    def m2s(self, ports: list[str]|str = None) -> "Networks":
         return self._unary_op(Network.m2s, Networks, ports=ports)
         
     
-    def s2m(self, ports: list[str]|str) -> "Networks":
+    def s2m(self, ports: list[str]|str = None) -> "Networks":
         return self._unary_op(Network.s2m, Networks, ports=ports)
     
 

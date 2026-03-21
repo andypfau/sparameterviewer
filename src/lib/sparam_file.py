@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import os
+from .network_ext import NetworkExt
 from .path_ext import PathExt
 from .si import SiValue
 from .citi import CitiReader
-from .utils import ArchiveFileLoader
+from .utils import ArchiveFileLoader, strip_common
 from .file_config import FileConfig
 
 import numpy as np
-import skrf
 import logging
 import datetime
 import os
@@ -18,7 +18,7 @@ from typing import Callable
 
 
 class SParamFile:
-    """Wrapper for a skrf.Network"""
+    """Wrapper for a NetworkExt"""
 
 
     before_load: Callable[[PathExt],bool] = None
@@ -30,7 +30,7 @@ class SParamFile:
         self.path: PathExt = path if isinstance(path,PathExt) else PathExt(path)
         self.tag = tag
 
-        self._nw: skrf.Network = None
+        self._nw: NetworkExt = None
         self._error: str = None
         self._name: str = name
         self._short_name: str = short_name
@@ -91,7 +91,7 @@ class SParamFile:
                 
                 else:
                     try:
-                        nw = skrf.network.Network(path)
+                        nw = NetworkExt(path)
                     except ValueError:
                         # I found this bizarre file in my collection where each line is preceeded with a space... attempt to fix that...
                         fixed = False
@@ -109,7 +109,7 @@ class SParamFile:
                             temp_path = os.path.join(temp_dir, name)
                             with open(temp_path, 'w') as fp:
                                 fp.writelines(lines)
-                            nw = skrf.network.Network(temp_path)
+                            nw = NetworkExt.Network(temp_path)
 
                     # I think there is a bug in skrf; I only get the 1st comment line
                     # As a workaround, read the comments manually
@@ -117,9 +117,9 @@ class SParamFile:
                     with open(path, 'r') as fp:
                         for line in fp.readlines():
                             if line.startswith('!'):
-                                comments_lines.append(line[1:].strip())
+                                comments_lines.append(line[1:-1])
                     if len(comments_lines) > 0:
-                        nw.comments = '\n'.join(comments_lines)
+                        nw.comments = '\n'.join(strip_common(comments_lines))
                 
                 assert nw.number_of_ports >= 1, f'Expected at least one port, got {nw.number_of_ports} ports ({path})'
                 assert len(nw.f) >= 1, f'Expected at least one frequency point, got {len(nw.f)} points ({path})'
@@ -151,7 +151,7 @@ class SParamFile:
 
     
     @property
-    def nw(self) -> "skrf.Network":
+    def nw(self) -> "NetworkExt":
         self._load()
         return self._nw
     
@@ -235,20 +235,20 @@ class SParamFile:
                 z0 = str(SiValue(self.nw.z0[0,0],'Ω'))
             elif (self.nw.z0 == self.nw.z0[:,[0]]).all():
                 # different for each frequency, but ports are identical
-                z0 = 'different for each frequency, first frequency is ' + str(SiValue(self.nw.z0[0,0],'Ω'))
+                z0 = 'different for each frequency, first frequency is ' + str(SiValue(self.nw.z0[0,0],'Ω')) + ' (note that this software only uses the first frequencie\'s impedance)'
             elif (self.nw.z0 == self.nw.z0[[0],:]).all():
                 # different for each port, but frequencies are identical
                 z0 = ', '.join([str(SiValue(z,'Ω')) + f' (port {i+1})' for i,z in enumerate(self.nw.z0[0,:])])
             else:
                 # no pattern
-                z0 = 'different for each frequency, first frequency is ' + ', '.join([str(SiValue(z,'Ω')) + f' (port {i+1})' for i,z in enumerate(self.nw.z0[0,:])])
+                z0 = 'different for each frequency, first frequency is ' + ', '.join([str(SiValue(z,'Ω')) + f' (port {i+1})' for i,z in enumerate(self.nw.z0[0,:])]) + ' (note that this software only uses the first frequencie\'s impedance)'
         else:
             z0 = 'unknown'
         
         if len(comm)>0:
             info += 'File comment:\n'
-            for comm_line in comm.splitlines():
-                info += '  ' + comm_line.strip() + '\n'
+            for comm_line in strip_common(comm.splitlines()):
+                info += '  ' + comm_line + '\n'
             info += '\n'
         if self.metadata:
             info += 'File meta data:\n'

@@ -1,3 +1,4 @@
+from .network_ext import NetworkExt
 import numpy as np
 import math
 import skrf
@@ -40,7 +41,7 @@ class BodeFano:
 
 
     @staticmethod
-    def from_network(network: skrf.Network, port: int,
+    def from_network(network: NetworkExt, port: int,
             f_integration_start_hz: float, f_integration_stop_hz: float,
             f_target_start_hz: float, f_target_stop_hz: float):
         f = network.f

@@ -3,10 +3,11 @@ import numpy as np
 import math
 import scipy.interpolate
 import re
+from .network_ext import NetworkExt
 from .utils import window_has_argument
 
 
-def _get_mixed_port_names(nw: skrf.Network) -> list[tuple[str,int]]:
+def _get_mixed_port_names(nw: NetworkExt) -> list[tuple[str,int]]:
     result = []
     port_numbers = dict()
     for i in range(nw.number_of_ports):
@@ -19,7 +20,7 @@ def _get_mixed_port_names(nw: skrf.Network) -> list[tuple[str,int]]:
     return result
 
 
-def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = 'S') -> str:
+def get_sparam_name(nw: NetworkExt, egress: int, ingress: int, prefix: str = 'S') -> str:
 
     is_mixed_mode = 'C' in nw.port_modes or 'D' in nw.port_modes
 
@@ -40,7 +41,7 @@ def get_sparam_name(nw: skrf.Network, egress: int, ingress: int, prefix: str = '
             return f'{prefix}{egress},{ingress}'
 
 
-def get_port_index(nw: skrf.Network, mode: str, number: int) -> int:
+def get_port_index(nw: NetworkExt, mode: str, number: int) -> int:
     assert mode in ['S','D','C'], f'Expected mode to be one of "S", "D", "C", got "{mode}"'
     for i,(m,n) in enumerate(_get_mixed_port_names(nw)):
         if m==mode and n==number:

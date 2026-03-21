@@ -1,4 +1,5 @@
 from CITIfile import read_citifile
+from ..network_ext import NetworkExt
 
 import numpy as np
 import skrf
@@ -57,7 +58,7 @@ class CitiReader:
             logging.error(f'Unable to read comments form {self.filename} ({ex})')
             return []
 
-    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "tuple[skrf.Network,str]":
+    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "tuple[NetworkExt,str]":
 
         if frequency_coord is None:
             frequency_coord = self.guess_frequency_coord_name()
@@ -163,5 +164,5 @@ class CitiReader:
         comment = '\n'.join([comment for comment in comments if comment])
         metadata = '\n'.join(metadata_lines)
 
-        nw = skrf.Network(f=f, f_unit='Hz', name=name, s=s_matrix, comments=comment)
+        nw = NetworkExt(f=f, f_unit='Hz', name=name, s=s_matrix, comments=comment)
         return nw, metadata

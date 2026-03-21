@@ -548,25 +548,58 @@ nw("amp.s2p").plot_stab(n=10)  # use the Smith chart to plot this!
 
 
 
+### def_ports()
+
+```python
+def_ports(ports):
+```
+
+Defines the types of each port. This information is used for:
+- displaying the correct parameter (e.g. "SDD21") name when plotting,
+- single-ended to mixed-mode conversion (`s2m()`; can also be provided as an argument to that function instead),
+- mixed-mode ro single-ended conversion (`m2s()`; can also be provided as an argument to that function instead).
+
+Valid types are:
+- `"S"`: single-ended port.
+- `"P"`: single-ended port, which is the positive terminal of a differential port.
+- `"N"`: single-ended port, which is the negative terminal of a differential port.
+- `"D"`: differential-mode terminal of a differential port.
+- `"C"`: common-mode terminal of a differential port.
+
+It is expected that you provide as many arguments are the file network has terminals. You may provide these either as a list, or as a comma-separated string, e.g.:
+- `["P1", "P2", "N1", "N2"]` or
+- `"P1,P2,N1,N2"`
+
+If the ports are not defined explicitly, the ports are deduced from the file contents (which may not work for older file formats), or all ports are assumed to be single-ended.
+
+Example:
+```python
+nw("diff_amp.s4p").def_ports("P1,P2,N1,N2").plot_sel_params()
+# when you now select e.g. "21", the plot will have the name "SPP21"
+
+nw("some_mixed_mode_file.s4p").def_ports("D1,D2,C1,C2").plot_sel_params()
+# when you now select e.g. "21", the plot will have the name "SDD21"
+```
+
+
 ### s2m()
 
 ```python
-s2m(ports):
+s2m(ports=None):
 ```
 
 Single-ended to mixed-mode conversion.
 
-The expected port order for the single-ended network is <pos1, neg1, pos2, neg2, ...>.
+The positive and negative terminals of ports must be defined either via `def_ports()`, or by providing the ports as an argument to `s2m()` (in the same format as for `def_ports()`). If not specified, and if the ports cannot be deduced from the file, all ports are assumed to be single-ended, and no conversion is done.
 
-You may define your own mapping; e.g. if your data is <pos1, pos2, neg1, neg2>, you can provide the argument `["p1","p2","n1","n2"]`. Alternatively, you can provide the argument as a single string `"p1,p2,n1,n2"`.
-
-The generated mixed-mode network has port order <diff1, diff2, ..., comm1, comm2, ...>.
+The generated mixed-mode network has port order <diff1, diff2, ..., comm1, comm2, ..., single1, single2, ...>. It is recommended to use parameter names, such as `"SDD21"`, to get the correct parameter.
 
 Example:
 ```python
-amp_se = nw("diff_amp.s4p")
-amp_mx = amp_se.s2m("P1,P2,N1,N2")  # the single-ended ports are: positive 1, positive 2, negative 1, positive 2
-amp_mx.s("DD21").plot()  # plot SDD21
+nw("diff_amp.s4p").s2m("P1,P2,N1,N2").plot_sel_params()
+
+# this line does the same
+nw("diff_amp.s4p").def_ports("P1,P2,N1,N2").s2m().plot_sel_params()
 ```
 
 
@@ -579,18 +612,16 @@ m2s([inp=<ports>][, outp=<ports>]):
 
 Mixed-mode to single-ended conversion.
 
-The expected port order for the single-ended network is <diff1, diff2, ..., comm1, comm_2, ..>.
+The differential and common-mode terminals of ports must be defined either via `def_ports()`, or by providing the ports as an argument to `m2s()` (in the same format as for `def_ports()`). If not specified, and if the ports cannot be deduced from the file, all ports are assumed to be single-ended, and no conversion is done.
 
-You may define your own mapping; e.g. if your data is <diff1, diff2, comm1, comm2>, you can provide the argument `["d1","d2","c1","c2"]`. Alternatively, you can provide the argument as a single string `"d1,d2,c1,c2"`.
-
-The generated mixed-mode network has port order <pos1, neg1, pos2, neg2, ...>.
+The generated single-eded network has port order <pos1, pos2, neg1, neg2, ..., single1, single2, ...>.
 
 Example:
 ```python
-amp_se = nw("diff_amp.s4p")
-amp_mx = amp_se.s2m("P1,P2,N1,N2")  # see example of s2m()
-amp_se2 = amp_mx.m2s("D1,D2,C1,C2")  # he diff. ports are: diff. 1, diff. 2, CM 1, CM 2
-amp_se2.s(21).plot()  # plot SDD21
+nw("some_mixed_mode_file.s4p").m2s("D1,D2,C1,C2").plot_sel_params()
+
+# this line does the same
+nw("some_mixed_mode_file.s4p").def_ports("D1,D2,C1,C2").s2m().plot_sel_params()
 ```
 
 

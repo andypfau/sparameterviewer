@@ -8,6 +8,7 @@ from ..citi import CitiWriter
 from ..settings import Settings
 from ..file_config import FileConfig
 from ..sparam_helpers import interpolate_equidistant_freq, extrapolate_to_dc, ensure_equidistant_to_dc
+from ..network_ext import NetworkExt
 from .helpers import format_call_signature
 
 import skrf, math, os
@@ -96,7 +97,7 @@ class SParam:
         f_new = np.array([f for f in f_all if f_min<=f<=f_max])
 
         freq_new = skrf.Frequency.from_f(f_new, unit='Hz')
-        nws_new = [skrf.Network(f=sparam.f, s=sparam.s, f_unit='Hz').interpolate(freq_new) for sparam in sparams]
+        nws_new = [NetworkExt(f=sparam.f, s=sparam.s, f_unit='Hz').interpolate(freq_new) for sparam in sparams]
         s_new = [np.array(np.ndarray.flatten(nw.s)) for nw in nws_new]
         return freq_new.f, s_new
     
@@ -288,7 +289,7 @@ class SParam:
 
         s = np.ndarray([len(self.f),1,1], dtype=complex)
         s[:,0,0] = self.s
-        nw = skrf.Network(s=s, f=self.f, f_unit='Hz', z0=self.z0, comment=self.name)
+        nw = NetworkExt(s=s, f=self.f, f_unit='Hz', z0=self.z0, comment=self.name)
         
         if ext=='.cti' or ext=='.citi':
             CitiWriter().write(nw, filename)

@@ -26,8 +26,6 @@ Roadmap
 
 ### Missing Features
 
-- Verification:
-    - Verify that mixed-mode S-parameters are displayed correctly (e.g. SDD21 and SDD12 are shown as expected).
 - GUI:
     - Add "color by command", where each "plot()" statement gets its own color assinged.
     - Find a way to present the large matrix in a bigger form, e.g. as a dialog.

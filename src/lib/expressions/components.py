@@ -5,6 +5,7 @@ import copy
 import numpy as np
 import scipy.constants
 from typing import override
+from ..network_ext import NetworkExt
 from .networks import Network, Networks
 from lib.si import SiValue
 
@@ -13,7 +14,7 @@ from lib.si import SiValue
 class ParametricNetwork(Network):
 
     @staticmethod
-    def _make_series_element(f: np.ndarray, z: np.ndarray, z0: float, name:str) -> skrf.Network:
+    def _make_series_element(f: np.ndarray, z: np.ndarray, z0: float, name:str) -> NetworkExt:
         
         if f is None or z0 is None:
             raise RuntimeError('Cannot dynamically calculate component: no frequency/impedance context given')
@@ -22,7 +23,7 @@ class ParametricNetwork(Network):
         s = np.ndarray([len(f), 2, 2], dtype=complex)
         s[:,0,0] = s[:,1,1] =    z / (z + 2*z0)
         s[:,1,0] = s[:,0,1] = 2*z0 / (z + 2*z0)
-        return skrf.Network(name=name, f=f, s=s, f_unit='Hz', z0=z0)
+        return NetworkExt(name=name, f=f, s=s, f_unit='Hz', z0=z0)
 
 
     def interpolate(self, f_start_or_vector_or_reference: "np.ndarray|float|Network", f_stop: float = None, f_step: float = None, n: int = None, scale='lin', z0=50)-> "ParametricNetwork":
@@ -238,7 +239,7 @@ class Line(ParametricNetwork):
         else:
             assert self._topo == 'series'
         
-        self._nw = skrf.Network(name=name, f=f, s=s, f_unit='Hz')
+        self._nw = NetworkExt(name=name, f=f, s=s, z0=z0, f_unit='Hz')
         self._name = name
 
 
@@ -254,7 +255,7 @@ class Phase(ParametricNetwork):
         s = np.zeros([len(f),2,2], dtype=complex)
         s[:,0,1] = np.exp(1j*math.tau * (self._shift_deg/360))
         s[:,1,0] = np.exp(1j*math.tau * (self._shift_deg/360))
-        self._nw = skrf.Network(name=self._name, f=f, s=s, f_unit='Hz')
+        self._nw = NetworkExt(name=self._name, f=f, s=s, f_unit='Hz', z0=z0)
 
 
 
@@ -268,7 +269,7 @@ class Thru(ParametricNetwork):
         s = np.zeros([len(f),2,2], dtype=complex)
         s[:,0,1] = 1
         s[:,1,0] = 1
-        self._nw = skrf.Network(name=self._name, f=f, s=s, f_unit='Hz')
+        self._nw = NetworkExt(name=self._name, f=f, s=s, f_unit='Hz', z0=z0)
 
 
 
@@ -285,7 +286,7 @@ class Iso(ParametricNetwork):
             s[:,0,1] = 1
         else:
             s[:,1,0] = 1
-        self._nw = skrf.Network(name=self._name, f=f, s=s, f_unit='Hz')
+        self._nw = NetworkExt(name=self._name, f=f, s=s, f_unit='Hz', z0=z0)
 
 
 
@@ -321,7 +322,7 @@ class Term(ParametricNetwork):
         s = np.zeros([len(f),2,2], dtype=complex)
         s[:,0,0] = gamma
         s[:,1,1] = gamma
-        self._nw = skrf.Network(name=name, f=f, s=s, f_unit='Hz')
+        self._nw = NetworkExt(name=name, f=f, s=s, f_unit='Hz', z0=z0)
         self._name = name
 
 

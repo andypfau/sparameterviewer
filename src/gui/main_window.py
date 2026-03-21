@@ -564,12 +564,20 @@ class MainWindow(MainWindowUi):
             expressions = [f'{nw}.sel_params().norm(at_f={f_str}).plot()  # normalize at given frequency' for nw in selected_files]
             set_expression(*expressions)
         
-        def mixed_mode():
+        def to_mixed_mode():
             selected_files = dynamic_selected_files()
             if len(selected_files) < 1:
                 error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
                 return
-            expressions = [f"{nw}.s2m(['p1','p2','n1','n2']).s('dd21').plot()  # single-ended to mixed-mode" for nw in selected_files]
+            expressions = [f"{nw}.s2m('P1,P2,N1,N2').plot_sel_params()  # single-ended to mixed-mode" for nw in selected_files]
+            set_expression(*expressions)
+
+        def to_single_ended():
+            selected_files = dynamic_selected_files()
+            if len(selected_files) < 1:
+                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
+                return
+            expressions = [f"{nw}.m2s('D1,D2,C1,C2').plot_sel_params()  # mixed-mode to single-ended" for nw in selected_files]
             set_expression(*expressions)
 
         def z_renorm():
@@ -718,7 +726,9 @@ class MainWindow(MainWindowUi):
                 ('Normalize at Given Frequency', normalize_to_f),
                 ('Normalize to Reference Network', normalize_to_ref),
                 (None, None),
-                ('Single-Ended to Mixed-Mode', mixed_mode),
+                ('Single-Ended to Mixed-Mode', to_mixed_mode),
+                ('Mixed-Mode to Single-Ended', to_single_ended),
+                (None, None),
                 ('Impedance Renormalization', z_renorm),
             ]),
             ('Statistics', [

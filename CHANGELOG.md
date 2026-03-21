@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b1 (2026-03-21)
+--------------------
+
+- change: reworked the underlying code that handles single-ended and mixed-mode parameters
+
+
 0.44b1 (2026-03-18)
 --------------------
 

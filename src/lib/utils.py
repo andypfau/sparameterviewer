@@ -441,3 +441,16 @@ def get_subset(arr, n: int):
         return [arr[max(0,min(n_all-1,round((n_all-1)*i/(n-1))))] for i in range(n)]  # equidistant samples
     else:
         return arr  # all items
+
+
+def strip_common(str_or_lines: str|list[str]) -> str|list[str]:
+    if isinstance(str_or_lines, str):
+        return '\n'.join(strip_common(str_or_lines.splitlines()))
+    
+    max_header = 999999
+    for line in str_or_lines:
+        m = re.match(r'^(\s+).*', line)
+        if m:
+            max_header = max(max_header, len(m.group(1)))
+    
+    return list([line[:max_header] for line in str_or_lines])

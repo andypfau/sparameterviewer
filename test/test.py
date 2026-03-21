@@ -3,7 +3,7 @@ sys.path.append(os.path.abspath('../src'))
 
 
 from lib import PlotData, PlotDataQuantity, SiFormat, ExpressionParser
-from lib import SParamFile
+from lib import SParamFile, NetworkExt
 from lib.expressions.networks import Network, Networks
 from lib.expressions.sparams import SParam, SParams
 
@@ -39,7 +39,7 @@ def get_dummy_sparam_file(n_ports: int) -> "SParamFile":
     filename = f'/tmp/{n_ports}-port.s{n_ports}p'
     frequencies = np.geomspace(1e6,10e9,N_FREQUENCIES)
     sparams = np.random.rand(N_FREQUENCIES,n_ports,n_ports) + 1j*np.random.rand(N_FREQUENCIES,n_ports,n_ports)
-    network = skrf.Network(f=frequencies, s=sparams, f_unit='Hz')
+    network = NetworkExt(f=frequencies, s=sparams, f_unit='Hz')
     return SParamFile(filename, network)
 
 
