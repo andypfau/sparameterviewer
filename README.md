@@ -41,6 +41,7 @@ Roadmap
     - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General:
     - "TODO"-comments in code.
+    - More unit tests.
 
 
 ### Known Issues
