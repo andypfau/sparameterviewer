@@ -54,7 +54,7 @@ class NetworkExtPort:
     
 
     def __str__(self) -> str:
-        return f'{self._mode}{self._number}>'
+        return f'{self._mode}{self._number}'
     
 
     @staticmethod
