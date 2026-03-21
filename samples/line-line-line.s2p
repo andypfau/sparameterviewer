@@ -1,4 +1,16 @@
-! 2-Port simulation of three lossless lines, impedances 50 Ω / 100 Ω / 50 Ω, each 500 ps in length, port 1 is 50 Ω, port 2 is 100 Ω
+! 2-Port simulation of three lines:
+!   Port 1:    50 Ω
+!   1st Line:  50 Ω, 500 ps, lossless
+!   2nd Line: 100 Ω, 500 ps, lossless
+!   3rd Line:  50 Ω, 500 ps, lossless
+!   Port 2:   100 Ω
+! This model can be used to verify the TDR functionality, when showing step
+!   response as impedance. Both for S11 and S22, you expect to see 50 Ω for
+!   1 ns, then ≈100 Ω for 1 ns, then ≈50 Ω again. Especially for S22, you
+!   may need to adjust the shifting to get the start of the impedance profile
+!   right. The frequency mesh does not start at DC, and cannot be extrapolated
+!   to DC in an equidistant way, so this file also shows the effect of the
+!   different extrapolation/interpolation methods.
 [Version] 2.0
 # HZ S RI R 50
 [Number of Ports] 2
