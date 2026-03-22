@@ -114,7 +114,8 @@ class PlotHelper:
                     self._text.set_verticalalignment('bottom' if self.y <= y0+(y1-y0)*0.90 else 'top')
                     self._text.set_fontsize('small')
                     self._text.set_backgroundcolor(get_plot_bg_color(opacity=0.5))
-                    self._text.set_color(self.color)
+                    if self.color is not None:
+                        self._text.set_color(self.color)
                     self._text.set_visible(True)
                 else:
                     if self._text:
