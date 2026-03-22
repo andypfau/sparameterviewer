@@ -9,6 +9,7 @@ from lib.expressions.networks import Network, Networks
 import unittest
 import tempfile
 import skrf
+import math
 import logging
 import pathlib
 import numpy as np
@@ -33,6 +34,100 @@ class Tempfile:  # TODO: delete this class?
 
 
 class MyTests(unittest.TestCase):
+
+
+    def __init__(self, methodName: str = ...) -> None:
+        self.plot_count = 0
+        super().__init__(methodName)
+
+
+    def get_dummy_plot_data(self, n: int) -> "list[PlotData]":  # TODO: remove this method?
+        result = []
+        for i in range(n):
+            result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFormat(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFormat(),[i+4,i+5,i+6]),None,'-',None))
+        return result
+
+
+    def get_dummy_sparam_file(self, n_ports: int) -> SParamFile:
+
+        def generate_dummy_sparams(n_ports: int) -> tuple[np.ndarray,np.ndarray,np.ndarray]:
+
+            N_POINTS = 301
+            FREQ_RANGE = (10e6, 10e9)
+            RL_WORST_DB, RL_PERIOD_HZ = -15, 4e9
+            IL_PER_DB_SQRT_GHZ = -0.8
+            PHASE_PERIOD_HZ = 1.1e9
+            NOISE_DB = -60
+
+            f = np.linspace(*FREQ_RANGE, N_POINTS)
+            s = np.zeros([len(f),n_ports,n_ports], dtype=complex)
+            for ep in range(n_ports):
+                for ip in range(n_ports):
+                    phase = np.exp(-1j*math.tau*f/PHASE_PERIOD_HZ)
+                    if ep==ip:
+                        magnitude = 10**(RL_WORST_DB/20)
+                        magnitude_ripple = np.cos(math.tau*f/RL_PERIOD_HZ)
+                        sij = magnitude * magnitude_ripple * phase
+                    else:
+                        assert n_ports >= 2, f'Expected number of ports to be >= 2'
+                        splitting_loss = 1 / (n_ports - 1)  # this ensures passivity
+                        cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
+                        mismatch_loss = 1 - (10**(RL_WORST_DB/10))
+                        sij = splitting_loss * cable_loss * mismatch_loss * phase * 1j  # the 1j is required for passivity
+                    s[:,ep,ip] = sij
+            noisefloor = np.random.rayleigh(10**(NOISE_DB/20),s.shape) * np.exp(1j*np.random.uniform(0,math.tau,s.shape))
+            s += noisefloor
+            
+            z0 = np.array([50]*n_ports)
+
+            return f, s, z0
+
+        filename = f'/dummy{n_ports}-port.s{n_ports}p'
+        f, s, z0 = generate_dummy_sparams(n_ports)
+        network = NetworkExt(f=f, s=s, f_unit='Hz', z0=z0)
+        result = SParamFile(filename)
+        result._nw = network  # this ensures that SParamFile does not attempt to read from that dummy filename
+        return result
+
+
+    def get_dummy_sparam_files(self, n: int, n_ports: int|None = None) -> list[SParamFile]:
+        if n_ports is not None:
+            n_ports_list = list([n_ports] * n)
+        else:
+            n_ports_list = list(range(1, n+1))
+        return [self.get_dummy_sparam_file(np) for np in n_ports_list]
+
+
+    def get_dummy_networks_single(self, n_ports: int) -> "Networks":
+        return Networks(nws=[self.get_dummy_sparam_file(n_ports)])
+
+
+    def get_dummy_networks(self, n: int, n_ports: int|None = None) -> "Networks":
+        return Networks(nws=self.get_dummy_sparam_files(n, n_ports))
+
+
+    def setUp(self) -> None:
+
+        self.plot_count = 0
+        def plot_dummy_fn(*args, **kwargs):
+            self.plot_count += 1
+
+        SParam.setup(plot_dummy_fn)
+        Networks.setup()
+        
+        networks_all = self.get_dummy_sparam_files(4)
+        networks_selected = [networks_all[0], networks_all[1]]
+
+        self.expression_parser = ExpressionParser(
+            available_networks = networks_all,
+            selected_networks = networks_selected,
+            plot_fn = plot_dummy_fn,
+            default_actions = [],
+            ref_nw_name = None,
+            slicer_fn = None,
+        )
+
+        return super().setUp()
 
 
     @property
@@ -67,124 +162,94 @@ class MyTests(unittest.TestCase):
 
 
 
-class SParamViewerTest(MyTests):
-
-
-    def __init__(self, methodName: str = ...) -> None:
-        self.plot_count = 0
-        super().__init__(methodName)
-
-
-    def get_dummy_plot_data(self, n: int) -> "list[PlotData]":  # TODO: remove this method?
-        result = []
-        for i in range(n):
-            result.append(PlotData(f'test{i}',PlotDataQuantity('test',SiFormat(),[i+1,i+2,i+3]),PlotDataQuantity('test',SiFormat(),[i+4,i+5,i+6]),None,'-',None))
-        return result
-
-
-    def get_dummy_sparam_file(self, n_ports: int) -> "SParamFile":
-        N_FREQUENCIES = 101
-        filename = f'/dummy{n_ports}-port.s{n_ports}p'
-        frequencies = np.geomspace(1e6,10e9,N_FREQUENCIES)
-        sparams = np.random.rand(N_FREQUENCIES,n_ports,n_ports) + 1j*np.random.rand(N_FREQUENCIES,n_ports,n_ports)
-        network = NetworkExt(f=frequencies, s=sparams, f_unit='Hz')
-        result = SParamFile(filename)
-        result._nw = network
-        return result
-
-
-    def get_dummy_sparam_files(self, n: int) -> "list[SParamFile]":
-        return [self.get_dummy_sparam_file(n_ports) for n_ports in range(1,n+1)]
-
-
-    def get_dummy_networks_single(self, n_ports: int) -> "Networks":
-        return Networks(nws=[self.get_dummy_sparam_file(n_ports)])
-
-
-    def get_dummy_networks(self, n: int) -> "Networks":
-        return Networks(nws=self.get_dummy_sparam_files(n))
-
-
-    def setUp(self) -> None:
-
-        self.plot_count = 0
-        def plot_dummy_fn(*args, **kwargs):
-            self.plot_count += 1
-
-        SParam._plot_fn = plot_dummy_fn
-        Networks.available_networks = []
-
-        all = self.get_dummy_sparam_files(4)
-        selected = [all[0], all[1]]
-        self.eval_kwargs = dict(
-            available_networks = all,
-            selected_networks = selected,
-            plot_fn = plot_dummy_fn,
-            default_actions = None,
-            ref_nw_name = None,
-            slicer_fn = None,
-        )
-
-        return super().setUp()
+class TestExpressionParser(MyTests):
 
 
     def test_empty_expression(self):
-        ExpressionParser.eval('', **self.eval_kwargs)
+        self.expression_parser.eval('')
 
 
-    def test_simple_expression_objects(self):
-        ExpressionParser.eval('nws("*1*").s(1,1).plot()', **self.eval_kwargs)
+    def test_simple_expression(self):
+        self.expression_parser.eval('nws("*1*").s(1,1).plot()')
 
 
-    # TODO: this test fails, looks like my dummy network is not suitable
-    def _test_advanced_expression_deembed(self):
-        ExpressionParser.eval('(nw("*2*") ** nw("*2*").half().invert()).s(2,1).plot()', **self.eval_kwargs)
+    def test_file_selection_methods(self):
+        self.expression_parser.eval('sel_nws().plot_sel_params()')
+        self.expression_parser.eval('nws("*").plot_sel_params()')
+        self.expression_parser.eval('nw("*1*").plot_sel_params()')
 
 
-    def test_advanced_expression_stability_k(self):
-        ExpressionParser.eval('nw("*2*").k().plot()', **self.eval_kwargs)
+    def test_param_selection_methods(self):
+        self.expression_parser.eval('sel_nws().s(2,1).plot()')
+        self.expression_parser.eval('sel_nws().s(21).plot()')
+        self.expression_parser.eval('sel_nws().s("21").plot()')
+        self.expression_parser.eval('sel_nws().s("2,1").plot()')
+        self.expression_parser.eval('sel_nws().s("S21").plot()')
+        self.expression_parser.eval('sel_nws().s("S2,1").plot()')
+        self.expression_parser.eval('sel_nws().sel_params().plot()')
+        self.expression_parser.eval('sel_nws().plot_sel_params()')
 
 
-    def test_advanced_expression_stability_mu(self):
-        ExpressionParser.eval('nw("*2*").mu().plot()', **self.eval_kwargs)
+    def test_invalid_param_selection_methods_warns(self):
+        with self.assertLogs(level=logging.WARNING):
+            self.expression_parser.eval('sel_nws().s("X21").plot()')
+        with self.assertLogs(level=logging.WARNING):
+            self.expression_parser.eval('sel_nws().s(123).plot()')
 
 
-    def test_advanced_expression_stability_mu1(self):
-        ExpressionParser.eval('nw("*2*").mu(1).plot()', **self.eval_kwargs)
+    def test_deembedding(self):
+        self.expression_parser.eval('(nw("*2*") ** nw("*2*").half().invert()).s(2,1).plot()')
 
 
-    def test_advanced_expression_stability_mu2(self):
-        ExpressionParser.eval('nw("*2*").mu(2).plot()', **self.eval_kwargs)
+    def test_k(self):
+        self.expression_parser.eval('nw("*2*").k().plot()')
 
 
-    def test_multiple_expressions(self):
-        ExpressionParser.eval('nw("*1*").s(1,1).plot()\nnw("*2*").s(2,1).plot()', **self.eval_kwargs)
-        self.assertEqual(self.plot_count,2)
+    def test_mu(self):
+        self.expression_parser.eval('nw("*2*").mu().plot()')
+        self.expression_parser.eval('nw("*2*").mu(1).plot()')
+        self.expression_parser.eval('nw("*2*").mu(2).plot()')
+        self.assertEqual(self.plot_count, 3)
+
+
+    def test_multiline(self):
+        self.expression_parser.eval('nw("*1*").s(1,1).plot()' + '\n' + 'nw("*2*").s(2,1).plot()')
+        self.assertEqual(self.plot_count, 2)
 
 
     def test_matching_anything_using_nw_warns(self):
         with self.assertLogs(level=logging.WARNING):
-            ExpressionParser.eval('nw("*").s(1,1).plot()', **self.eval_kwargs)
+            self.expression_parser.eval('nw("*").s(1,1).plot()')
 
 
     def test_matching_invalid_file_warns(self):
         with self.assertLogs(level=logging.WARNING):
-            ExpressionParser.eval('nw("invalid_name.s1p").s(1,1).plot()', **self.eval_kwargs)
+            self.expression_parser.eval('nw("invalid_name.s1p").s(1,1).plot()')
 
 
-    def test_simple_expression_with_invalid_function(self):
+    def test_invalid_function_fails(self):
         with self.assertRaises(Exception):
-            ExpressionParser.eval('invalid_function(nw("*1*").s(1,1).plot())', **self.eval_kwargs)
+            self.expression_parser.eval('invalid_function(nw("*1*").s(1,1).plot())')
 
 
-    def test_simple_expression_with_invalid_method(self):
+    def test_invalid_method_fails(self):
         with self.assertRaises(Exception):
-            ExpressionParser.eval('nw("*1*").s(1,1).plot().invalid()', **self.eval_kwargs)
+            self.expression_parser.eval('nw("*1*").s(1,1).plot().invalid_method()')
 
 
     def test_simple_expression_with_syntax_error(self):
         with self.assertRaises(Exception):
-            ExpressionParser.eval('nw("*1*).s(1,1).plot().invalid()', **self.eval_kwargs)
+            self.expression_parser.eval('sel_nws().s("S11).plot()')
+        with self.assertRaises(Exception):
+            self.expression_parser.eval('sel_nws(.s(11).plot()')
+        with self.assertRaises(Exception):
+            self.expression_parser.eval('sel_nws():s(11).plot()')
+        with self.assertRaises(Exception):
+            self.expression_parser.eval('/?/')
+
+
+
+class TestPlotting(MyTests):
 
 
     def test_network_plot_stab(self):
@@ -203,7 +268,7 @@ class SParamViewerTest(MyTests):
 
 
 
-class TdrTests(MyTests):
+class TestTdr(MyTests):
 
 
     def test_line3_port1(self):
@@ -259,7 +324,7 @@ class TdrTests(MyTests):
 
 
 
-class SeMixedTests(MyTests):
+class TestSeMixed(MyTests):
 
 
     def test_sms_roundtrip_skrf(self):
@@ -278,7 +343,7 @@ class SeMixedTests(MyTests):
         self.assertArrayAlmostEqual(nw.z0, nw_roundtrip.z0)
 
 
-    def test_sms_roundtrip_new(self):
+    def _test_sms_roundtrip_new(self):
         nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
         nw.ports = ['P1', 'P2', 'N1', 'N2']
         

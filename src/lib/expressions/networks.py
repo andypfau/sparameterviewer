@@ -220,10 +220,10 @@ class Network:
 
 
     def sel_params(self) -> list[SParam]:
-        Networks.default_actions_used = True
+        Networks._default_actions_used = True
         params: list[SParam] = []
         unique_param_names = set()
-        for action in Networks.default_actions:
+        for action in Networks._default_actions:
             for param in self.s(*action.s_args, **action.s_kwargs):
                 if param.param_type not in unique_param_names:
                     params.append(param)
@@ -886,19 +886,38 @@ class Network:
 
 
 class Networks:
+
+    
+    SlicerFnType = Callable[[bool,list[str]],tuple[int,str]]
     
 
-    available_networks: "list[NetworkExt]"
+    _default_actions: list[DefaultAction] = []
+    _default_actions_used: bool = False
 
-    default_actions: "list[DefaultAction]" = []
-    default_actions_used: bool = False
+    _slicer_fn: SlicerFnType = None
 
-    slicer_fn: "Callable[[bool,list[str]], tuple[int,str]r]" = None
+    _last_slice_match_str: str|None = None
 
-    last_slice_match_str: str|None = None
+    _setup_complete: bool = False
+
+
+    @staticmethod
+    def setup(default_actions: list[DefaultAction] = [], slicer_fn: "Callable[[bool,list[str]], tuple[int,str]r]" = None):
+        Networks._default_actions = default_actions
+        Networks._default_actions_used = False
+        Networks._slicer_fn = slicer_fn
+        Networks._setup_complete = True
+    
+
+    @staticmethod
+    def get_and_clear_default_actions_used() -> bool:
+        result = Networks._default_actions_used
+        Networks._default_actions_used = False
+        return result
 
 
     def __init__(self, nws: "list[NetworkExt]|list[Network]|list[SParamFile]" = None):
+        assert Networks._setup_complete, 'Networks.setup() was not called'
         def cast(obj):
             if isinstance(obj, Network):
                 return obj
@@ -1022,7 +1041,7 @@ class Networks:
         
         GROUP_SEPAERATOR, PLACEHOLDER_OTHERS = ', ', '---'
 
-        assert Networks.slicer_fn is not None
+        assert Networks._slicer_fn is not None
 
         if not isinstance(pattern, (list,tuple,set)):
             pattern = (pattern,)
@@ -1046,11 +1065,11 @@ class Networks:
 
         if Settings.verbose:
             match_str = ', '.join(f'"{m}"' for m in sorted(list(set(matches))))
-            if match_str != Networks.last_slice_match_str:
-                Networks.last_slice_match_str = match_str
+            if match_str != Networks._last_slice_match_str:
+                Networks._last_slice_match_str = match_str
                 logging.debug(f'Networks.slice(): found matches [{match_str}]')
 
-        _, slicer_value = Networks.slicer_fn(True, matches)
+        _, slicer_value = Networks._slicer_fn(True, matches)
         matching_nws = [nw for nw in self.nws if get_matching_string(nw.name) == slicer_value]
 
         return Networks(matching_nws)
@@ -1287,8 +1306,8 @@ class Networks:
 
 
     def plot_sel_params(self) -> None:
-        Networks.default_actions_used = True
-        for action in Networks.default_actions:
+        Networks._default_actions_used = True
+        for action in Networks._default_actions:
             self.s(*action.s_args, **action.s_kwargs).plot(*action.plot_args, **action.plot_kwargs)
 
 

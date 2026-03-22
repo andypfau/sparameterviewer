@@ -245,7 +245,7 @@ class NetworkExt(skrf.Network):
             # treat as plain indices
             if index >= 11 and index <= 99:
                 ep, ip = index // 10, index % 10
-            elif index >= 101 and index <= 9999:
+            elif index >= 1010 and index <= 9999:
                 ep, ip = index // 100, index % 100
             else:
                 raise ValueError(f'Index {index} out of range')

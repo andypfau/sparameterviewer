@@ -43,11 +43,21 @@ class NumberType(enum.Enum):
 
 class SParam:
 
+    PlotFnType = Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str,NumberType], None]
 
-    _plot_fn: Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,PathExt,str,NumberType], None]
+    _plot_fn: PlotFnType
+    
+    _setup_complete: bool = False
+
+
+    @staticmethod
+    def setup(plot_fn: PlotFnType):
+        SParam._plot_fn = plot_fn
+        SParam._setup_complete = True
 
 
     def __init__(self, name: str, f: np.ndarray, s: np.ndarray, z0: float, original_files: set[PathExt] = None, param_type: str|None=None, number_type: NumberType = NumberType.VectorLike):
+        assert SParam._setup_complete, 'SParam.setup() was not called'
         assert len(f) == len(s), f'Expected frequency and S vecors to have same length, got {len(f)} and {len(s)}'
         self.name, self.f, self.s, self.z0, self.number_type = name, f, s, z0, number_type
         self.original_files, self.param_type = original_files or set(), param_type

@@ -19,26 +19,41 @@ from typing import Callable
 
 class ExpressionParser:
 
-    
+
     @dataclasses.dataclass
     class Result:
         default_actions_used: bool
 
 
-    @staticmethod
-    def eval(code: str,
-        available_networks: "list[SParamFile]",
-        selected_networks: "list[SParamFile]",
-        default_actions: "list[DefaultAction]",
-        ref_nw_name: "str|None",
-        plot_fn: "Callable[[np.ndarray,np.ndarray,complex,str,str,str,float,float,PathExt,str,NumberType], None]",
-        slicer_fn: "Callable[[bool,list[str]], tuple[int,str]]") -> ExpressionParser.Result:
+    def __init__(self,
+            available_networks: list[SParamFile],
+            selected_networks: list[SParamFile],
+            default_actions: list[DefaultAction],
+            ref_nw_name: str|None,
+            plot_fn: SParam.PlotFnType,
+            slicer_fn: Networks.SlicerFnType):
+        
+        self._available_networks = available_networks
+        self._selected_networks = selected_networks
+        self._ref_nw_name = ref_nw_name
+        
+        SParam.setup(plot_fn)
+        Networks.setup(default_actions, slicer_fn)
 
-        SParam._plot_fn = plot_fn
-        Networks.slicer_fn = slicer_fn
-        Networks.default_actions = default_actions
+    
+    def eval(self, code: str) -> ExpressionParser.Result:
 
-        def _select_networks(network_list: "list[SParamFile]", pattern: str, single: bool):
+        Networks.get_and_clear_default_actions_used()
+        vars_global, vars_local = self.get_vars()
+        exec(code, vars_global, vars_local)
+        default_actions_used = Networks.get_and_clear_default_actions_used()
+
+        return ExpressionParser.Result(default_actions_used)
+
+
+    def get_vars(self) -> tuple[dict,dict]:
+
+        def _select_networks(network_list: "list[SParamFile]", pattern: str|None, single: bool):
             nws = []
             if pattern is None and not single:
                 nws = [nw for nw in network_list]
@@ -57,20 +72,20 @@ class ExpressionParser:
             nws = sorted(nws, key=lambda nw: natural_sort_key(nw.path.final_name))
             return Networks(nws)
 
-        def sel_nws(pattern: str = None) -> Networks:
-            return _select_networks(selected_networks, pattern, single=False)
+        def sel_nws(pattern: str|None = None) -> Networks:
+            return _select_networks(self._selected_networks, pattern, single=False)
         
-        def nws(pattern: str = None) -> Networks:
-            return _select_networks(available_networks, pattern, single=False)
+        def nws(pattern: str|None = None) -> Networks:
+            return _select_networks(self._available_networks, pattern, single=False)
         
         def nw(pattern: str) -> Networks:
-            return _select_networks(available_networks, pattern, single=True)
+            return _select_networks(self._available_networks, pattern, single=True)
 
         def saved_nw() -> Networks:
-            if ref_nw_name is None:
+            if self._ref_nw_name is None:
                 logging.warning(f'saved_nw(): no network was saved for this purpose; returning empty object')
                 return Networks([]) 
-            return _select_networks(available_networks, ref_nw_name, single=True)
+            return _select_networks(self._available_networks, self._ref_nw_name, single=True)
 
         def quick(*items):
             for (e,i) in [parse_quick_param(item) for item in items]:
@@ -98,7 +113,7 @@ class ExpressionParser:
                 sparam_list: list[SParam] = []
                 for s in sparams:
                     if len(s.sps) == 1:
-                        sparam_list.extend(s.sps[0])
+                        sparam_list.append(s.sps[0])
                     else:
                         sparam_list.append(s.sps[i])
                 number_type = NumberType.min(*[s.number_type for s in sparam_list])
@@ -110,7 +125,6 @@ class ExpressionParser:
                 result.append(SParam('mapped', f_adapted, s_result, sparams[0].sps[0].z0, number_type))  # TODO: better name and Z0
             
             return SParams(result)
-            
 
         vars_global = {}
         vars_local = {
@@ -128,8 +142,5 @@ class ExpressionParser:
             'np': np,
             'logging': logging,
         }
-        
-        Networks.default_actions_used = False
-        exec(code, vars_global, vars_local)
 
-        return ExpressionParser.Result(Networks.default_actions_used)
+        return vars_global, vars_local

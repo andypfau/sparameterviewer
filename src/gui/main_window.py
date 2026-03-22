@@ -2133,16 +2133,17 @@ class MainWindow(MainWindowUi):
                 return index, value
             
             param_selector_is_in_use = True
+            expression_parser = ExpressionParser(self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)
             if use_expressions:
 
                 Settings.expression = self.ui_expression
-                result = ExpressionParser.eval(self.ui_expression, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)  
+                result = expression_parser.eval(self.ui_expression)
                 param_selector_is_in_use = result.default_actions_used
 
             else:
 
                 try:
-                    ExpressionParser.eval(self.generated_expressions, self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)
+                    expression_parser.eval(self.generated_expressions)
                 except Exception as ex:
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
