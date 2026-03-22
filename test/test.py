@@ -271,8 +271,19 @@ class TestPlotting(MyTests):
 class TestTdr(MyTests):
 
 
+    def Z2Γ(self, z: complex, z0: complex) -> complex:
+        return (z - z0) / (z +z0)
+
+    def Z2T(self, z: complex, z0: complex) -> complex:
+        return 1 + self.Z2Γ(z, z0)
+    
+    def Γ2Z(self, Γ: complex, z0: complex) -> complex:
+        return z0 * (1 + Γ) / (1 - Γ)
+
+
     def test_line3_port1(self):
         nw = skrf.Network(self.sample_dir.joinpath('line-line-line.s2p'))
+        self.assertArrayAlmostEqual(nw.z0[0,:], [50,100])
         
         tdr = TDR()
         tdr.dc_extrapolation = 'polar'
@@ -281,24 +292,25 @@ class TestTdr(MyTests):
         tdr.window = 'blackman'
         tdr.step_response = True
         tdr.convert_to_impedance = True
-        t, z = tdr.get(nw.f, nw.s[:,0,0], nw.z0[0,0])
+        t, z11 = tdr.get(nw.f, nw.s[:,0,0], nw.z0[0,0])
 
         LINE_LEN = 500e-12 * 2
-        z_line1 = z[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
-        z_line2 = z[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
-        z_line3 = z[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
+        z_line1 = z11[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
+        z_line2 = z11[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
+        z_line3 = z11[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
 
-        # note that each cascaded line shadows-off the next one, so the
-        #   impedance error accumulates quickly; to compensate for that,
-        #   an increasingly larger delta has to be accepted
+        wave1 = 0
+        wave2 = wave1 + self.Z2Γ(100,50)
+        wave3 = wave2 + self.Z2T(100,50) * self.Z2Γ(50,100) * self.Z2T(50,100)
         
-        self.assertAlmostEqual(z_line1,  50, delta=0.05)
-        self.assertAlmostEqual(z_line2, 100, delta=0.50)
-        self.assertAlmostEqual(z_line3,  50, delta=5.00)
+        self.assertAlmostEqual(z_line1, self.Γ2Z(wave1,50), delta=0.05)
+        self.assertAlmostEqual(z_line2, self.Γ2Z(wave2,50), delta=0.05)
+        self.assertAlmostEqual(z_line3, self.Γ2Z(wave3,50), delta=0.05)
 
 
     def test_line3_port2(self):
         nw = skrf.Network(self.sample_dir.joinpath('line-line-line.s2p'))
+        self.assertArrayAlmostEqual(nw.z0[0,:], [50,100])
         
         tdr = TDR()
         tdr.dc_extrapolation = 'polar'
@@ -307,20 +319,22 @@ class TestTdr(MyTests):
         tdr.window = 'blackman'
         tdr.step_response = True
         tdr.convert_to_impedance = True
-        t, z = tdr.get(nw.f, nw.s[:,1,1], nw.z0[0,1])
+        t, z22 = tdr.get(nw.f, nw.s[:,1,1], nw.z0[0,1])
 
         LINE_LEN = 500e-12 * 2
-        z_line1 = z[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
-        z_line2 = z[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
-        z_line3 = z[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
+        z_line1 = z22[np.argmin(np.abs(t - (0.5*LINE_LEN + tdr.shift_s)))]
+        z_line2 = z22[np.argmin(np.abs(t - (1.5*LINE_LEN + tdr.shift_s)))]
+        z_line3 = z22[np.argmin(np.abs(t - (2.5*LINE_LEN + tdr.shift_s)))]
 
-        # on this side, the shadowing effect is even more severe, which means
-        #   we have to accept huge deltas; maybe I should just calculate the
-        #   exact value...
+        wave1 = self.Z2Γ(50,100)
+        wave2 = wave1 + self.Z2T(50,100) * self.Z2Γ(100,50) * self.Z2T(100,50)
+        wave3 = wave2 +  \
+            self.Z2T(50,100) * self.Z2T(100,50) * self.Z2Γ(50,100) * self.Z2T(50,100) * self.Z2T(100,50) +  \
+            self.Z2T(50,100) * self.Z2Γ(100,50) * self.Z2Γ(100,50) * self.Z2Γ(100,50) * self.Z2T(100,50)
         
-        self.assertAlmostEqual(z_line1,  50, delta=0.5)
-        self.assertAlmostEqual(z_line2, 100, delta=10.0)
-        self.assertAlmostEqual(z_line3,  50, delta=50.0)
+        self.assertAlmostEqual(z_line1, self.Γ2Z(wave1,100), delta=0.05)
+        self.assertAlmostEqual(z_line2, self.Γ2Z(wave2,100), delta=0.05)
+        self.assertAlmostEqual(z_line3, self.Γ2Z(wave3,100), delta=0.05)
 
 
 
