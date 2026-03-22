@@ -5,8 +5,9 @@ class CitiWriter:
     def write(nw: skrf.Network, filename: str):
         with open(filename,'w') as fp:
             fp.write('CITIFILE A.01.01\n')
-            for comment in nw.comments.splitlines():
-                fp.write(f'# {comment}\n')
+            if nw.comments:
+                for comment in nw.comments.splitlines():
+                    fp.write(f'# {comment}\n')
             fp.write('NAME DATA\n')
             fp.write(f'VAR FREQ MAG {len(nw.f)}\n')
             for ip in range(nw.nports):

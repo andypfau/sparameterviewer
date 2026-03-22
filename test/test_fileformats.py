@@ -1,7 +1,9 @@
 from testlib import MyTestCase
-from lib import SParamFile
-import pathlib
-import numpy as np
+from lib import SParamFile, PathExt, CitiWriter
+import os
+import skrf
+import zipfile
+import tempfile
 
 
 
@@ -41,3 +43,31 @@ class TestFileFormats(MyTestCase):
         self.assertIsInstance(f.nw.comments, str)
         self.assertTrue('Simulation of a' in f.nw.comments)  # should be in 1st line
         self.assertTrue('P1 and P2 are the thru ports' in f.nw.comments)  # should be in a later line
+
+
+    def test_load_from_zip(self):
+        with tempfile.TemporaryDirectory() as wdir:
+            
+            nw1name = 'test.s1p'
+            nw1path = os.path.join(wdir, nw1name)
+            nw = skrf.Network(f=[0,1e9,2e9], f_unit='Hz', s=[[[1]], [[0.5]], [[0]]], z0=50)
+            nw.write_touchstone(nw1path)
+
+            nw2name = 'test.cti'
+            nw2path = os.path.join(wdir, nw2name)
+            CitiWriter().write(nw, nw2path)
+
+            zippath = os.path.join(wdir, 'test.zip')
+            with zipfile.ZipFile(zippath, 'w') as zf:
+                zf.write(nw1path, nw1name)
+                zf.write(nw2path, nw2name)
+            
+            os.remove(nw1path)
+            os.remove(nw2path)
+
+            for nwname in [nw1name, nw2name]:
+                f = SParamFile(PathExt(zippath, arch_path=nwname))
+                self.assertEqual(f.nw.number_of_ports, 1)
+                self.assertEqual(len(f.nw.f), 3)
+                self.assertArrayAlmostEqual(f.nw.z0_simple, [50])
+                self.assertArrayEqual(f.nw.port_modes, ['S'])
