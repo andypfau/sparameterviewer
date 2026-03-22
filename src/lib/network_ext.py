@@ -59,11 +59,11 @@ class NetworkExtPort:
 
     @staticmethod
     def parse(s: str, index: int|None = None) -> NetworkExtPort:
-        m = re.match(r'([PNDC])?(\d+)', s.upper(), re.I)
+        m = re.match(r'([SPNDC])?(\d+)', s.upper(), re.I)
         if not m:
             raise ValueError(f'Cannot parse "{s}')
         match m.group(1):
-            case None: mode = NetworkExtPortMode.se
+            case 'S'|None: mode = NetworkExtPortMode.se
             case 'P': mode = NetworkExtPortMode.pos
             case 'N': mode = NetworkExtPortMode.neg
             case 'D': mode = NetworkExtPortMode.df
@@ -181,6 +181,16 @@ class NetworkExt(skrf.Network):
             raise ValueError(f'Expected there to be {expected_n_diff_ports} differential tuples, got {len(diff_port_pairs)}')
         if not all([len(indices)==2 for indices in diff_port_pairs.values()]):
             raise ValueError(f'Expected differential indices to be 2-tuples, got {diff_port_pairs}')
+        
+    
+    def _parse_ports_list(self, ports: Iterable[NetworkExtPort]|Iterable[str]) -> list[NetworkExtPort]:
+        def parse_port(p,i):
+            if isinstance(p, str):
+                return NetworkExtPort.parse(p,i)
+            if isinstance(p, NetworkExtPort):
+                return p
+            raise ValueError()
+        return list([parse_port(port,index) for index,port in enumerate(ports)])
     
 
     @property
@@ -189,54 +199,37 @@ class NetworkExt(skrf.Network):
         return list(self._ports)
     @ports.setter
     def ports(self, value: Iterable[NetworkExtPort]|Iterable[str]):
-        def parse_port(p,i):
-            if isinstance(p, str):
-                return NetworkExtPort.parse(p,i)
-            if isinstance(p, NetworkExtPort):
-                return p
-            raise ValueError()
-        parsed_ports = [parse_port(port,index) for index,port in enumerate(value)]
-        
+        parsed_ports = self._parse_ports_list(value)
         self._verify_ports(parsed_ports)
-
         self._ports = [*parsed_ports]
 
-        port_modes_str = ''
+        port_modes_list = []
         for index in range(self.number_of_ports):
             for port in self._ports:
                 if port._index == index:
                     match port._mode:
-                        case NetworkExtPortMode.se:
-                            port_modes_str += 'S'
-                        case NetworkExtPortMode.pos:
-                            port_modes_str += 'S'
-                        case NetworkExtPortMode.neg:
-                            port_modes_str += 'S'
+                        case NetworkExtPortMode.se|NetworkExtPortMode.pos|NetworkExtPortMode.neg:
+                            port_modes_list.append('S')
                         case NetworkExtPortMode.df:
-                            port_modes_str += 'D'
+                            port_modes_list.append('D')
                         case NetworkExtPortMode.cm:
-                            port_modes_str += 'C'
+                            port_modes_list.append('C')
                         case _:
                             raise ValueError()
                     break
-        self.port_modes = np.array(port_modes_str)
+        self.port_modes = np.array(port_modes_list)
     
 
     @property
     def is_singleended(self) -> bool:
         return not any([p._mode in [NetworkExtPortMode.cm, NetworkExtPortMode.df] for p in self.ports])
-    
-
-    @property
-    def has_posneg_pairs(self) -> bool:
-        return any([p._mode in [NetworkExtPortMode.pos, NetworkExtPortMode.neg] for p in self.ports])
 
 
     @property
     def is_mixed(self) -> bool:
         any_df_or_cm = any([p._mode in [NetworkExtPortMode.cm, NetworkExtPortMode.df] for p in self.ports])
         any_pos_or_neg = any([p._mode in [NetworkExtPortMode.pos, NetworkExtPortMode.neg] for p in self.ports])
-        return any_df_or_cm and not any_pos_or_neg
+        return any_df_or_cm and (not any_pos_or_neg)
 
 
     def get_indices(self, index: str|int|tuple[int,int], prefix: str = '') -> tuple[int,int]:
@@ -315,12 +308,43 @@ class NetworkExt(skrf.Network):
         mode2, port2 = get_mode_and_port(ingress_index)
         separator = ',' if port1>=10 or port2>=10 else ''
         return f'{prefix}{mode1}{mode2}{port1}{separator}{port2}'
+    
+
+    def reorder_ports(self, ports_new: Iterable[NetworkExtPort]|Iterable[str], ports_current: Iterable[NetworkExtPort]|Iterable[str]|None = None) -> NetworkExt:
+        parsed_ports_new = self._parse_ports_list(ports_new)
+        
+        if ports_current is not None:
+            parsed_ports_current = self._parse_ports_list(ports_current) if ports_current is not None else list(self._ports)
+        else:
+            parsed_ports_current = self._ports
+        
+        indices_current, indices_new = [], []
+        for i,port in enumerate(parsed_ports_new):
+            indices_new.append(i)
+            found = False
+            for current_port in parsed_ports_current:
+                if current_port._mode == port._mode and current_port._number == port._number:
+                    found = True
+                    indices_current.append(current_port._index)
+                    break
+            if not found:
+                raise RuntimeError(f'Cannot find definition of port {port}')
+
+        result_nw = self.copy()
+        if indices_current != indices_new:
+            result_nw.renumber(indices_new, indices_current)
+            result_nw.ports = parsed_ports_new
+        return result_nw
 
 
     def to_singleended(self) -> NetworkExt:
         self._verify_ports(self._ports)
-        if not self.is_mixed:
-            raise RuntimeError(f'Cannot convert network to single-ended')
+        any_df_or_cm = any([p._mode in [NetworkExtPortMode.cm, NetworkExtPortMode.df] for p in self.ports])
+        any_pos_or_neg = any([p._mode in [NetworkExtPortMode.pos, NetworkExtPortMode.neg] for p in self.ports])
+        if any_pos_or_neg:
+            raise RuntimeError(f'Cannot convert network to single-ended (network already contains at least one positive or negative terminal, which are part of a differential port in single-ended mode)')
+        if not any_df_or_cm:
+            return self.copy()  # nothing to do
         
         se_ports = [p for p in self._ports if p._mode == NetworkExtPortMode.se]
         df_ports = [p for p in self._ports if p._mode == NetworkExtPortMode.df]
@@ -328,34 +352,38 @@ class NetworkExt(skrf.Network):
         assert len(df_ports) + len(cm_ports) + len(se_ports) == self.number_of_ports
         assert len(df_ports) == len(cm_ports)
 
-        ordered_indices = list(range(self.number_of_ports))
-        cm_df_se_indices = list([p._index for p in [*df_ports, *cm_ports, *se_ports]])
-        result = self.copy()
+        # port order mided-mode: D1, D2, D3, ..., C1, C2, C3, ..., S1, S2, ...
+        # port order single-ended: P1, N1, P2, N2, P3, N3, ..., S1, S2, ...
+        # see also <https://scikit-rf.readthedocs.io/en/latest/api/generated/skrf.network.Network.gmm2se.html>
 
-        if ordered_indices != cm_df_se_indices:
-            result.renumber(cm_df_se_indices,ordered_indices)
-        
+        result = self.reorder_ports([*df_ports, *cm_ports, *se_ports])
         result.gmm2se(p=len(df_ports))
 
-        pos_neg_ports: list[NetworkExtPort] = []
-        for pport in df_ports:
-            pos_neg_ports.append(NetworkExtPort(NetworkExtPortMode.pos, pport.number, len(pos_neg_ports)))
-        for pport in df_ports:
-            pos_neg_ports.append(NetworkExtPort(NetworkExtPortMode.neg, pport.number, len(pos_neg_ports)))
-        for sport in se_ports:
-            pos_neg_ports.append(NetworkExtPort(NetworkExtPortMode.se, sport.number, len(pos_neg_ports)))
-        result.ports = pos_neg_ports
+        final_ports: list[NetworkExtPort] = []
+        next_port_number = 1
+        for _ in range(len(df_ports)):
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.pos, next_port_number, len(final_ports)))
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.neg, next_port_number, len(final_ports)))
+            next_port_number += 1
+        for _ in range(len(se_ports)//2):
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.se, next_port_number, len(final_ports)))
+        result.ports = final_ports
 
         return result
 
 
     def to_mixed(self) -> NetworkExt:
         self._verify_ports(self._ports)
-        if not self.is_singleended:
-            raise RuntimeError(f'Cannot convert network to mixed-mode')
-        if not self.has_posneg_pairs:
-            warnings.warn(f'Cannot convert to mixed mode (no positive or negative port terminals defined)')
-            return self.copy()
+        any_df_or_cm = any([p._mode in [NetworkExtPortMode.cm, NetworkExtPortMode.df] for p in self.ports])
+        any_pos_or_neg = any([p._mode in [NetworkExtPortMode.pos, NetworkExtPortMode.neg] for p in self.ports])
+        if any_df_or_cm:
+            raise RuntimeError(f'Cannot convert network to mixed-mode (network already contains at least one differential- or common-mode terminal)')
+        if not any_pos_or_neg:
+            return self.copy()  # nothing to do
+        
+        # port order single-ended: P1, N1, P2, N2, P3, N3, ..., S1, S2, ...
+        # port order mided-mode: D1, D2, D3, ..., C1, C2, C3, ..., S1, S2, ...
+        # see also <https://scikit-rf.readthedocs.io/en/latest/api/generated/skrf.network.Network.se2gmm.html>
         
         se_ports = [p for p in self._ports if p._mode == NetworkExtPortMode.se]
         pos_ports = [p for p in self._ports if p._mode == NetworkExtPortMode.pos]
@@ -364,22 +392,16 @@ class NetworkExt(skrf.Network):
         assert len(pos_neg_ports) + len(se_ports) == self.number_of_ports
         assert len(pos_ports) == len(neg_ports)
 
-        ordered_indices = list(range(self.number_of_ports))
-        pos_neg_se_indices = list([p._index for p in [*pos_neg_ports, *se_ports]])
-        result = self.copy()
-
-        if ordered_indices != pos_neg_se_indices:
-            result.renumber(pos_neg_se_indices,ordered_indices)
-        
+        result = self.reorder_ports([*pos_neg_ports, *se_ports])  # TODO: this is wrong!
         result.se2gmm(p=len(pos_ports))
 
-        df_cm_ports: list[NetworkExtPort] = []
+        final_ports: list[NetworkExtPort] = []
         for pport in pos_ports:
-            df_cm_ports.append(NetworkExtPort(NetworkExtPortMode.df, pport.number, len(df_cm_ports)))
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.df, pport.number, len(final_ports)))
         for pport in pos_ports:
-            df_cm_ports.append(NetworkExtPort(NetworkExtPortMode.cm, pport.number, len(df_cm_ports)))
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.cm, pport.number, len(final_ports)))
         for sport in se_ports:
-            df_cm_ports.append(NetworkExtPort(NetworkExtPortMode.se, sport.number, len(df_cm_ports)))
-        result.ports = df_cm_ports
+            final_ports.append(NetworkExtPort(NetworkExtPortMode.se, sport.number, len(final_ports)))
+        result.ports = final_ports
 
         return result

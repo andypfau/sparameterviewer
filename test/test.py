@@ -343,9 +343,35 @@ class TestSeMixed(MyTests):
         self.assertArrayAlmostEqual(nw.z0, nw_roundtrip.z0)
 
 
-    def _test_sms_roundtrip_new(self):
+    def test_invalid_s2m_fails(self):
         nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
-        nw.ports = ['P1', 'P2', 'N1', 'N2']
+        nw.ports = 'D1 D2 C1 C2'.split(' ')  # doesn't actually apply to the network, doesn't matter
+        with self.assertRaises(RuntimeError):
+            nw.to_mixed()  # should fail, because we defined that the network already has D/C ports
+
+
+    def test_unneccessary_s2m_ok(self):
+        nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
+        nw.ports = 'S1 S2 S3 S4'.split(' ')
+        nw.to_mixed()  # should do nothing
+
+
+    def test_invalid_m2s_fails(self):
+        nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
+        nw.ports = 'P1 P2 N1 N2'.split(' ')
+        with self.assertRaises(RuntimeError):
+            nw.to_singleended()  # should fail, because the network does not have D/C ports
+
+
+    def test_unneccessary_m2s_ok(self):
+        nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
+        nw.ports = 'S1 S2 S3 S4'.split(' ')
+        nw.to_singleended()  # should do nothing
+
+
+    def test_sms_roundtrip_new(self):
+        nw = NetworkExt(self.sample_dir.joinpath('diff_amp.s4p'))
+        nw.ports = 'P1 P2 N1 N2'.split(' ')
         
         nw_mixed = nw.to_mixed()
         self.assertEqual(nw.number_of_ports, nw_mixed.number_of_ports)
@@ -354,14 +380,15 @@ class TestSeMixed(MyTests):
         self.assertEqual(str(nw_mixed.ports[2]), 'C1')
         self.assertEqual(str(nw_mixed.ports[3]), 'C2')
 
-        nw_roundtrip = nw_mixed.to_singleended()
+        nw_roundtrip = nw_mixed.to_singleended().reorder_ports('P1 P2 N1 N2'.split(' '))
         self.assertEqual(nw.number_of_ports, nw_roundtrip.number_of_ports)
         self.assertEqual(str(nw_roundtrip.ports[0]), 'P1')
         self.assertEqual(str(nw_roundtrip.ports[1]), 'P2')
         self.assertEqual(str(nw_roundtrip.ports[2]), 'N1')
         self.assertEqual(str(nw_roundtrip.ports[3]), 'N2')
+
         self.assertArrayAlmostEqual(nw.f, nw_roundtrip.f)
-        self.assertArrayAlmostEqual(nw.s, nw_roundtrip.s)  # TODO: this fails; no idea why, skrf.Network works as expected...
+        self.assertArrayAlmostEqual(nw.s, nw_roundtrip.s)
         self.assertArrayAlmostEqual(nw.z0, nw_roundtrip.z0)
 
 
