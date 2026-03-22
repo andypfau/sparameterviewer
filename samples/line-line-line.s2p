@@ -1,9 +1,10 @@
-! 2-Port simulation of three lines:
-!   Port 1:    50 Ω
-!   1st Line:  50 Ω, 500 ps, lossless
-!   2nd Line: 100 Ω, 500 ps, lossless
-!   3rd Line:  50 Ω, 500 ps, lossless
-!   Port 2:   100 Ω
+! 2-Port simulation of three cascaded transmission lines.
+! Setup:
+!         500 ps  500 ps  500 ps  
+!   50 Ω   50 Ω   100 Ω    50 Ω   100 Ω
+!           __       __       __
+!   1 o---()__)----()__)----()__)---o 2
+! 
 ! This model can be used to verify the TDR functionality, when showing step
 !   response as impedance. Both for S11 and S22, you expect to see 50 Ω for
 !   1 ns, then ≈100 Ω for 1 ns, then ≈50 Ω again. Especially for S22, you

@@ -1,10 +1,10 @@
 ! 4-Port simulation of a differential amplifier
 ! Ports:
-!       +-------+
-!   1 --|       |-- 2
-!       |In  Out|
-!   3 --|       |-- 4
-!       +-------+
+!        +-------+
+!   1 o--| +   + |--o 2
+!        |In  Out|
+!   3 o--| -   - |--o 4
+!        +-------+
 ! This network can be used to verify the single-ended to differential conversion:
 !   nw("diff_amp.s4p").s2m("P1,P2,N1,N2").plot_sel_params()
 [Version] 2.0
