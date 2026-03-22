@@ -5,6 +5,8 @@ from lib import get_unique_id, any_common_elements, window_has_argument
 from lib import natural_sort_key, format_minute_seconds, string_to_enum, enum_to_string, strip_common
 from lib import get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10
 from lib import find_files_in_archive, load_file_from_archive
+import math
+import numpy as np
 
 
 
@@ -14,7 +16,17 @@ class TestUtils(MyTestCase):
     def test_db(self):
         self.assertAlmostEqual(v2db(0.1), -20)
         self.assertAlmostEqual(v2db(0.1j), -20)
+        self.assertAlmostEqual(v2db(0.5-0.5j), -3.01, delta=0.01)
         self.assertAlmostEqual(db2v(-20), 0.1)
+
+
+    def test_group_delay(self):
+        n = 10
+        f = np.linspace(0, 1e9, n)
+        s = np.exp(1j * np.linspace(0, math.tau, n))
+        f_gd, gd = group_delay(f, s)
+        self.assertArrayAlmostEqual(f_gd, np.linspace(1e9/(n-1), 1e9, n-1))
+        self.assertArrayAlmostEqual(gd, np.full([n-1], -math.tau/1e9))
 
 
     def test_natural_sort(self):
