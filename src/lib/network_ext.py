@@ -392,7 +392,7 @@ class NetworkExt(skrf.Network):
         assert len(pos_neg_ports) + len(se_ports) == self.number_of_ports
         assert len(pos_ports) == len(neg_ports)
 
-        result = self.reorder_ports([*pos_neg_ports, *se_ports])  # TODO: this is wrong!
+        result = self.reorder_ports([*pos_neg_ports, *se_ports])
         result.se2gmm(p=len(pos_ports))
 
         final_ports: list[NetworkExtPort] = []
