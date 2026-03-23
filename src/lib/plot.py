@@ -2,7 +2,7 @@ from .si import SiValue, SiFormat
 from .plot_data import PlotData, PlotDataQuantity
 from .shortstr import shorten_string_list
 from .utils import natural_sort_key
-from .settings import Settings, LogNegativeHandling
+from .settings import Settings, LogNegativeHandling, LegendPos
 
 import math
 import numpy as np
@@ -12,6 +12,7 @@ import matplotlib.lines
 import matplotlib.text
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
+import matplotlib.axes
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional
@@ -26,7 +27,7 @@ class ItemToPlot:
     color: str
     width: float
     opacity: float
-    label: str = None
+    label: str|None = None
 
 
 
@@ -89,17 +90,17 @@ class PlotHelper:
             
             if self.enabled and self._is_set:
 
-                plot = self.plot.plot2 if self.use_2nd_axis else self.plot.plot
+                plot = self.plot._plot2 if self.use_2nd_axis else self.plot._plot
                 
                 if self.plot_readouts:
                     def get_plot_bg_color(opacity: float = 1):
-                        bgcol = self.plot.plot.get_facecolor()
+                        bgcol = self.plot._plot.get_facecolor()
                         if isinstance(bgcol, tuple) and len(bgcol)==4:
                             bgcol = (bgcol[0], bgcol[1], bgcol[2], opacity)  # make semi-transparent
                         return bgcol
 
-                    (x0,x1) = self.plot.plot.axes.get_xlim()
-                    (y0,y1) = self.plot.plot.axes.get_ylim()
+                    (x0,x1) = self.plot._plot.axes.get_xlim()
+                    (y0,y1) = self.plot._plot.axes.get_ylim()
                     if not self._text:
                         self._text = plot.text(0, 0, '')
                     if self.z is not None:
@@ -151,7 +152,8 @@ class PlotHelper:
         y_qty: "str", y_fmt: SiFormat, y_log: bool, y2_qty: "str", y2_fmt: SiFormat, z_qty: "str" = None, z_fmt: SiFormat = None,
         smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False, max_legend_items: int = -1):
-        anything_in_plot: bool = False
+        
+        self._anything_in_plot = False
         
         self.cursors = [
             PlotHelper.Cursor(self, '--'),
@@ -180,21 +182,64 @@ class PlotHelper:
         self._use_two_yaxes = None
         self._axes_swapped = None
         self._r_smith = None
+        self._preferred_legend_position = LegendPos.Auto
         
         self._figure.clf()
         
-        self.x_range = [+1e99,-1e99]
-        self.y_range = [+1e99,-1e99]
-        self.z_range = [+1e99,-1e99]
-        self.items: list[ItemToPlot] = []
+        self._x_range = [+1e99,-1e99]
+        self._y_range = [+1e99,-1e99]
+        self._z_range = [+1e99,-1e99]
+        self._items: list[ItemToPlot] = []
 
-        self.plot: pyplot.Axes = None
-        self.plot2: pyplot.Axes = None
+        self._plot: pyplot.Axes = None
+        self._plot2: pyplot.Axes = None
+    
+
+    @property
+    def xaxis_range(self) -> tuple[float,float]:
+        return self._plot.get_xlim()
+    def set_xaxis_range(self, lo: float, hi: float):
+        self._plot.set_xlim(lo, hi, auto=False)
+    def set_xaxis_autorange(self):
+        self._plot.set_xlim(auto=True)
+    def attach_xaxis_range_listener(self, callback_fn):
+        def make_callback_fn(callback_fn):
+            def wrapped(axes: matplotlib.axes._axes.Axes):
+                lo, hi = axes.get_xlim()
+                callback_fn(lo, hi)
+            return wrapped
+        self._plot.callbacks.connect('xlim_changed', make_callback_fn(callback_fn))
+
+    @property
+    def yaxis_range(self) -> tuple[float,float]:
+        return self._plot.get_ylim()
+    def set_yaxis_range(self, lo: float, hi: float):
+        self._plot.set_ylim(lo, hi, auto=False)
+    def set_yaxis_autorange(self):
+        self._plot.set_ylim(auto=True)
+    def attach_yaxis_range_listener(self, callback_fn):
+        def make_callback_fn(callback_fn):
+            def wrapped(axes: matplotlib.axes._axes.Axes):
+                lo, hi = axes.get_ylim()
+                callback_fn(lo, hi)
+            return wrapped
+        self._plot.callbacks.connect('ylim_changed', make_callback_fn(callback_fn))
+    
+
+    def show_grid(self, show: bool = True):
+        self._plot.grid(visible=show)
+
+    @property
+    def preferred_legend_position(self) -> LegendPos:
+        return self._preferred_legend_position
+    @preferred_legend_position.setter
+    def preferred_legend_position(self, value: LegendPos):
+        self._preferred_legend_position = value
 
 
     @property
-    def plots(self) -> list[ItemToPlot]:
-        return [item for item in self.items]
+    def plot_items(self) -> list[ItemToPlot]:
+        return [item for item in self._items]
 
 
     @property
@@ -264,7 +309,7 @@ class PlotHelper:
         best_index = None
         best_plot = None
 
-        for plot in self.items:
+        for plot in self._items:
             if name is not None:
                 if plot.data.name != name:
                     continue
@@ -323,12 +368,12 @@ class PlotHelper:
                 logging.info(f'Ignoring plot "{name}" (contains zero points)')
             return
         
-        self.x_range = [min(self.x_range[0],min(x)), max(self.x_range[1],max(x))]
-        self.y_range = [min(self.y_range[0],min(y)), max(self.y_range[1],max(y))]
+        self._x_range = [min(self._x_range[0],min(x)), max(self._x_range[1],max(x))]
+        self._y_range = [min(self._y_range[0],min(y)), max(self._y_range[1],max(y))]
         if z is not None:
-            self.z_range = [min(self.z_range[0],min(z)), max(self.z_range[1],max(z))]
+            self._z_range = [min(self._z_range[0],min(z)), max(self._z_range[1],max(z))]
 
-        self.items.append(
+        self._items.append(
             ItemToPlot(
                 PlotData(
                     name, 
@@ -343,6 +388,7 @@ class PlotHelper:
                 color,
                 width,
                 opacity,
+                None
             )
         )
     
@@ -359,32 +405,32 @@ class PlotHelper:
     def _prepare_plots_and_axes(self):
         def get_r_max():
             r_max = 0
-            for item in self.items:
+            for item in self._items:
                 r_this = max(np.sqrt(np.power(item.data.x.values,2) + np.power(item.data.y.values,2)))
                 r_max = max(r_max, r_this)
             return r_max
 
-        self.plot2 = None
+        self._plot2 = None
         if self._polar:
-            self.plot = self._figure.add_subplot(111, projection='polar')
+            self._plot = self._figure.add_subplot(111, projection='polar')
             r_max = get_r_max()
             if r_max <= 1:
-                self.plot.set_ylim((0,1))
+                self._plot.set_ylim((0,1))
             self._use_two_yaxes = False
         elif self._smith:
             from skrf import plotting
-            self.plot = self._figure.add_subplot(111)
+            self._plot = self._figure.add_subplot(111)
             r_max = get_r_max()
             self._r_smith = 1 if r_max<=1 else r_max*1.05
-            plotting.smith(ax=self.plot, chart_type=self._smith_type, ref_imm=self._smith_z, draw_labels=True, smithR=self._r_smith)
+            plotting.smith(ax=self._plot, chart_type=self._smith_type, ref_imm=self._smith_z, draw_labels=True, smithR=self._r_smith)
             self._use_two_yaxes = False
         else:
-            anything_on_primary_yaxis = any([not item.prefer_seconary_yaxis for item in self.items])
-            anything_on_secondary_yaxis = any([item.prefer_seconary_yaxis for item in self.items])
+            anything_on_primary_yaxis = any([not item.prefer_seconary_yaxis for item in self._items])
+            anything_on_secondary_yaxis = any([item.prefer_seconary_yaxis for item in self._items])
             self._use_two_yaxes = anything_on_primary_yaxis and anything_on_secondary_yaxis
-            self.plot = self._figure.add_subplot(111)
+            self._plot = self._figure.add_subplot(111)
             if self._use_two_yaxes:
-                self.plot2 = self.plot.twinx()
+               self._plot2 = self._plot.twinx()
         
     
     def _get_log_data_fn(self, mode: LogNegativeHandling):
@@ -424,39 +470,39 @@ class PlotHelper:
 
     def _add_traces_to_plots(self):
         
-        self.anything_in_plot = False
+        self._anything_in_plot = False
 
-        for item in self.items:
+        for item in self._items:
             item.label = item.data.name
 
         show_legend = self._show_legend
-        if len(self.items) <= 1 and self._hide_single_item_legend:
-            if len(self.items)==1 and Settings.verbose:
+        if len(self._items) <= 1 and self._hide_single_item_legend:
+            if len(self._items)==1 and Settings.verbose:
                 logging.info(f'Hiding legend (option to hide legend for a single item is active)')
             show_legend = False
-        if self._max_legend_items >= 0 and len(self.items) > self._max_legend_items:
+        if self._max_legend_items >= 0 and len(self._items) > self._max_legend_items:
             show_legend = False
 
         if self._shorten_legend and show_legend:
-            labels = [item.label for item in self.items]
+            labels = [item.label for item in self._items]
             labels = shorten_string_list(labels)
-            for label,item in zip(labels,self.items):
+            for label,item in zip(labels,self._items):
                 item.label = label
         
-        self.items = sorted(self.items, key=lambda item: natural_sort_key(item.label))
+        self._items = sorted(self._items, key=lambda item: natural_sort_key(item.label))
 
-        for item_index,item in enumerate(self.items):
+        for item_index,item in enumerate(self._items):
             try:
                 if item.prefer_seconary_yaxis and self._use_two_yaxes:
                     use_y2 = True
-                    plot = self.plot2
-                    self.items[item_index].currently_used_axis = 2
-                    self.items[item_index].data.y.format = self._y2_fmt
-                    self.items[item_index].data.y.name = self._y2_qty
+                    plot = self._plot2
+                    self._items[item_index].currently_used_axis = 2
+                    self._items[item_index].data.y.format = self._y2_fmt
+                    self._items[item_index].data.y.name = self._y2_qty
                 else:
                     use_y2 = False
-                    plot = self.plot
-                    self.items[item_index].currently_used_axis = 1
+                    plot = self._plot
+                    self._items[item_index].currently_used_axis = 1
             
                 x, y, style, color, width, opacity, label = item.data.x.values, item.data.y.values, item.style, item.color, item.width, item.opacity, item.label
 
@@ -477,45 +523,56 @@ class PlotHelper:
                 if self._polar:
                     c = x + 1j*y
                     new_plt = plot.plot(np.angle(c), np.abs(c), style, label=label, color=color, lw=width, alpha=opacity)
-                    self.anything_in_plot = True
+                    self._anything_in_plot = True
                 elif self._smith:
                     c = x + 1j*y
                     from skrf import plotting
                     new_plt = plotting.plot_smith(s=c, ax=plot, chart_type='z', show_legend=True, label=label, title=None, color=color, lw=width, alpha=opacity, **PlotHelper._style_to_kwargs(style))
-                    self.anything_in_plot = True
+                    self._anything_in_plot = True
                 else:
                     if self._x_log:
                         x, y = fix_log_x(data=x, other_data=y, name=item.label)
                     if self._y_log and (not use_y2):
                         y, x = fix_log_y(data=y, other_data=x, name=item.label)
                     new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
-                    self.anything_in_plot = True
+                    self._anything_in_plot = True
 
                 color = new_plt[0].get_color() if new_plt is not None else None
-                self.items[item_index].data.color = color
+                self._items[item_index].data.color = color
             
             except Exception as ex:
                 logging.error(f'Unable to plot item ({ex})')
         
-        if self.anything_in_plot and self._smith:
+        if self._anything_in_plot and self._smith:
             assert self._r_smith is not None, 'Expected Smith radius to be set'
             if self._r_smith!=1:
                 # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
-                self.plot.set_xlim((-self._r_smith,+self._r_smith))
-                self.plot.set_ylim((-self._r_smith,+self._r_smith))
-                if self.anything_in_plot:
-                    self.plot.legend()
+                self._plot.set_xlim((-self._r_smith,+self._r_smith))
+                self._plot.set_ylim((-self._r_smith,+self._r_smith))
+                if self._anything_in_plot:
+                    self._plot.legend()
                 
-        if self.anything_in_plot:
+        if self._anything_in_plot:
             if show_legend:
-                self.plot.legend()
+                match self._preferred_legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+                    case LegendPos.Auto: loc = 0
+                    case LegendPos.TopLeft: loc = 2
+                    case LegendPos.Top: loc = 9
+                    case LegendPos.TopRight: loc = 1
+                    case LegendPos.Left: loc = 6
+                    case LegendPos.Center: loc = 10
+                    case LegendPos.Right: loc = 7
+                    case LegendPos.BottomLeft: loc = 3
+                    case LegendPos.Bottom: loc = 8
+                    case LegendPos.BottomRight: loc = 4
+                self._plot.legend(loc=loc)
             else:
-                if self.plot:
-                    legend = self.plot.get_legend()
+                if self._plot:
+                    legend = self._plot.get_legend()
                     if legend:
                         legend.remove()
-                if self.plot2:
-                    legend2 = self.plot2.get_legend()
+                if self._plot2:
+                    legend2 = self._plot2.get_legend()
                     if legend2:
                         legend2.remove()
     
@@ -545,58 +602,58 @@ class PlotHelper:
         
         if self._use_two_yaxes:
             y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y_qty, self._y_fmt, self._y_log, self._y2_qty, self._y2_fmt
-            self.plot2.grid(False)  # two grids in one plot are just confusing
+            self._plot2.grid(False)  # two grids in one plot are just confusing
         else:
-            self._axes_swapped = any([item.currently_used_axis==1 and item.prefer_seconary_yaxis for item in self.items])
+            self._axes_swapped = any([item.currently_used_axis==1 and item.prefer_seconary_yaxis for item in self._items])
             if self._axes_swapped:
                 # data for axis 2 was displayed on axis 1, so we nee to use the other unit
                 y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y2_qty, self._y2_fmt, False, None, None
             else:
                 y_qty, y_fmt, y_log, y2_qty, y2_fmt = self._y_qty, self._y_fmt, self._y_log, None, None
         
-        if self._x_qty is not None and self.plot is not None:
-            x_highest_abs_value = max(abs(self.plot.get_xlim()[0]), abs(self.plot.get_xlim()[1]))
+        if self._x_qty is not None and self._plot is not None:
+            x_highest_abs_value = max(abs(self._plot.get_xlim()[0]), abs(self._plot.get_xlim()[1]))
             if self._x_fmt.prefixed and not self._x_log:
                 x_scale, x_prefix = SiFormat.get_scale(x_highest_abs_value)
             else:
                 x_scale, x_prefix = 1, ''
             parts = [s for s in [f'{self._x_qty}', f'{x_prefix}{self._x_fmt.unit}'] if s!='']
-            self.plot.set_xlabel(' / '.join(parts))
+            self._plot.set_xlabel(' / '.join(parts))
             @ticker.FuncFormatter
             def x_axis_formatter(value, _):
                 return f'{value/x_scale:.{self._x_fmt.digits}g}'
                 #return str(Si(value, si_fmt=x_format))
-            self.plot.xaxis.set_major_formatter(x_axis_formatter)
+            self._plot.xaxis.set_major_formatter(x_axis_formatter)
         
-        if y_qty is not None and self.plot is not None:
-            y_highest_abs_value = max(abs(self.plot.get_ylim()[0]), abs(self.plot.get_ylim()[1]))
+        if y_qty is not None and self._plot is not None:
+            y_highest_abs_value = max(abs(self._plot.get_ylim()[0]), abs(self._plot.get_ylim()[1]))
             if y_fmt.prefixed and not y_log:
                 y_scale, y_prefix = SiFormat.get_scale(y_highest_abs_value)
             else:
                 y_scale, y_prefix = 1, ''
             parts = [s for s in [f'{y_qty}', f'{y_prefix}{y_fmt.unit}'] if s!='']
-            self.plot.set_ylabel(' / '.join(parts))
+            self._plot.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
             def y_axis_formatter(value, _):
                 return f'{value/y_scale:.{y_fmt.digits}g}'
                 #return str(Si(value, si_fmt=y_format))
-            self.plot.yaxis.set_major_formatter(y_axis_formatter)
+            self._plot.yaxis.set_major_formatter(y_axis_formatter)
 
-        if y2_qty is not None and self.plot2 is not None:
-            y2_highest_abs_value = max(abs(self.plot2.get_ylim()[0]), abs(self.plot2.get_ylim()[1]))
+        if y2_qty is not None and self._plot2 is not None:
+            y2_highest_abs_value = max(abs(self._plot2.get_ylim()[0]), abs(self._plot2.get_ylim()[1]))
             if y2_fmt.prefixed:
                 y2_scale, y2_prefix = SiFormat.get_scale(y2_highest_abs_value)
             else:
                 y2_scale, y2_prefix = 1, ''
             parts = [s for s in [f'{y2_qty}', f'{y2_prefix}{y2_fmt.unit}'] if s!='']
-            self.plot2.set_ylabel(' / '.join(parts))
+            self._plot2.set_ylabel(' / '.join(parts))
             @ticker.FuncFormatter
             def y2_axis_formatter(value, _):
                 return f'{value/y2_scale:.{y2_fmt.digits}g}'
                 #return str(Si(value, si_fmt=y2_format))
-            self.plot2.yaxis.set_major_formatter(y2_axis_formatter)
+            self._plot2.yaxis.set_major_formatter(y2_axis_formatter)
 
-        if self._x_log and self.plot is not None:
-            self.plot.set_xscale('log')
-        if y_log and self.plot is not None:
-            self.plot.set_yscale('log')
+        if self._x_log and self._plot is not None:
+            self._plot.set_xscale('log')
+        if y_log and self._plot is not None:
+            self._plot.set_yscale('log')

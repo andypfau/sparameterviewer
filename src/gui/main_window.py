@@ -1069,7 +1069,7 @@ class MainWindow(MainWindowUi):
             if (initial_selection is None) and (file in all_selected_files):
                 initial_selection = i
             datasets.append(file)
-        for plot in self.plot.plots:
+        for plot in self.plot.plot_items:
             datasets.append(plot.data)
         
         TabularDialog(self).show_modal_dialog(datasets=datasets, initial_selection=initial_selection)
@@ -1256,7 +1256,7 @@ class MainWindow(MainWindowUi):
     def on_lock_xaxis(self):
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_xaxis_range.both_are_wildcard:
-            (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.plot.get_xlim()
+            (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.xaxis_range
         else:
             self.ui_xaxis_range.both_are_wildcard = True
         self.schedule_plot_update()
@@ -1267,7 +1267,7 @@ class MainWindow(MainWindowUi):
         self.ui_smart_db = False
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_yaxis_range.both_are_wildcard:
-            (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
+            (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.yaxis_range
             self.ui_smart_db = False
         else:
             self.ui_yaxis_range.both_are_wildcard = True
@@ -1283,7 +1283,7 @@ class MainWindow(MainWindowUi):
         self.ui_smart_db = False
         self.ui_plot_tool = PlotWidget.Tool.Off
         if self.ui_xaxis_range.both_are_wildcard or self.ui_yaxis_range.both_are_wildcard:
-            (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+            (self.ui_xaxis_range.low, self.ui_xaxis_range.high), (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.xaxis_range, self.plot.yaxis_range
             self.ui_smart_db = False
         else:
             self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
@@ -1306,7 +1306,7 @@ class MainWindow(MainWindowUi):
         if dx != 0:
             self.ui_smart_db = False
             if self.ui_xaxis_range.both_are_wildcard:
-                (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.plot.get_xlim()
+                (self.ui_xaxis_range.low, self.ui_xaxis_range.high) = self.plot.xaxis_range
                 self.ui_smart_db = False
             else:
                 mid, extent = (self.ui_xaxis_range.low+self.ui_xaxis_range.high)/2, self.ui_xaxis_range.high-self.ui_xaxis_range.low
@@ -1316,7 +1316,7 @@ class MainWindow(MainWindowUi):
         if dy != 0:
             self.ui_smart_db = False
             if self.ui_yaxis_range.both_are_wildcard:
-                (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.plot.get_ylim()
+                (self.ui_yaxis_range.low, self.ui_yaxis_range.high) = self.plot.yaxis_range
                 self.ui_smart_db = False
             else:
                 mid, extent = (self.ui_yaxis_range.low+self.ui_yaxis_range.high)/2, self.ui_yaxis_range.high-self.ui_yaxis_range.low
@@ -1327,16 +1327,14 @@ class MainWindow(MainWindowUi):
             self.schedule_plot_update()
     
 
-    def on_user_change_xaxis(self, axes: matplotlib.axes._axes.Axes):
-        (lo, hi) = axes.get_xlim()
+    def on_user_change_xaxis(self, lo: float, hi: float):
         if lo is None or hi is None:
             self.ui_xaxis_range.both_are_wildcard = True
         else:
             self.ui_xaxis_range.low, self.ui_xaxis_range.high = lo, hi
     
 
-    def on_user_change_yaxis(self, axes: matplotlib.axes._axes.Axes):
-        (lo, hi) = axes.get_ylim()
+    def on_user_change_yaxis(self, lo: float, hi: float):
         if lo is None or hi is None:
             self.ui_yaxis_range.both_are_wildcard = True
         else:
@@ -1724,7 +1722,7 @@ class MainWindow(MainWindowUi):
         if self.ui_tab == MainWindowUi.Tab.Cursors:
             self.ui_plot_tool = PlotWidget.Tool.Off
 
-            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.data.name for plots in self.plot.plots]])
+            self.ui_set_cursor_trace_list([MainWindow.CURSOR_OFF_NAME, *[plots.data.name for plots in self.plot.plot_items]])
             self.ui_cursor1_trace = self._last_cursor_trace[0]
             self.ui_cursor2_trace = self._last_cursor_trace[1]
 
@@ -1752,7 +1750,7 @@ class MainWindow(MainWindowUi):
     def _get_plot_dimensions(self) -> tuple[float,float]:
         if self.plot:
             try:
-                xlim, ylim = self.plot.plot.get_xlim(), self.plot.plot.get_ylim()
+                xlim, ylim = self.plot.xaxis_range, self.plot.yaxis_range
                 return xlim[1]-xlim[0], ylim[1]-ylim[0]
             except:
                 pass
@@ -2301,60 +2299,47 @@ class MainWindow(MainWindowUi):
             
             if plot_type == PlotType.Polar:
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
-                    self.plot.plot.set_xlim(auto=True)
-                    self.plot.plot.set_ylim(max(0,self.ui_xaxis_range.low), self.ui_xaxis_range.high, auto=False)
+                    self.plot.set_xaxis_autorange()
+                    self.plot.set_yaxis_range(max(0,self.ui_xaxis_range.low), self.ui_xaxis_range.high)
 
             elif plot_type == PlotType.Smith:
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
-                    self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
-                    self.plot.plot.set_ylim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
+                    self.plot.set_xaxis_range(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
+                    self.plot.set_yaxis_range(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
 
             else:  # something Cartesian
                 fixed_x_range, x_range_start, x_range_end = False, -1e99, +1e99
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
-                    self.plot.plot.set_xlim(self.ui_xaxis_range.low, self.ui_xaxis_range.high, auto=False)
+                    self.plot.set_yaxis_range(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
                     fixed_x_range, x_range_start, x_range_end = True, self.ui_xaxis_range.low, self.ui_xaxis_range.high
 
-                if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plots)>=1:
+                if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plot_items)>=1:
                     def get_y_range(x, y):
                         if fixed_x_range:
                             idx = (x >= x_range_start) & (x <= x_range_end)
                             return y[idx]
                         else:
                             return y
-                    all_y_values = [get_y_range(plot.data.x.values,plot.data.y.values) for plot in self.plot.plots if plot.currently_used_axis==1]
+                    all_y_values = [get_y_range(plot.data.x.values,plot.data.y.values) for plot in self.plot.plot_items if plot.currently_used_axis==1]
                     do_smart_scaling, smart_y0, smart_y = choose_smart_db_scale(all_y_values)
                     if do_smart_scaling or fixed_x_range:  # when using a fixed X-range, then apply the smart scaling, because it best reflects the curreent X-range
                         self.ui_yaxis_range.low, self.ui_yaxis_range.high = smart_y0, smart_y
-                        self.plot.plot.set_ylim(smart_y0, smart_y, auto=False)
+                        self.plot.set_yaxis_range(smart_y0, smart_y)
                         self._smartscale_set_y = True
                     else:
                         if self._smartscale_set_y:
                             (self.ui_yaxis_range.low_is_wildcard, self.ui_yaxis_range.high_is_wildcard) = (True, True)
-                            self.plot.plot.set_ylim(auto=True)
+                            self.plot.set_yaxis_autorange()
                         self._smartscale_set_y = False
                 else:
                     if self.plot_axes_are_valid and not self.ui_yaxis_range.both_are_wildcard:
-                        self.plot.plot.set_ylim(self.ui_yaxis_range.low, self.ui_yaxis_range.high, auto=False)
+                        self.plot.set_yaxis_range(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
-            self.plot.plot.grid(visible=Settings.show_grid)
+            self.plot.show_grid(Settings.show_grid)
+            self.plot.preferred_legend_position = Settings.legend_position
 
-            self.plot.plot.callbacks.connect('xlim_changed', self.on_user_change_xaxis)
-            self.plot.plot.callbacks.connect('ylim_changed', self.on_user_change_yaxis)
-
-            if self.plot.anything_in_plot and self.plot.plot.get_legend():
-                match Settings.legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
-                    case LegendPos.Auto: loc = 0
-                    case LegendPos.TopLeft: loc = 2
-                    case LegendPos.Top: loc = 9
-                    case LegendPos.TopRight: loc = 1
-                    case LegendPos.Left: loc = 6
-                    case LegendPos.Center: loc = 10
-                    case LegendPos.Right: loc = 7
-                    case LegendPos.BottomLeft: loc = 3
-                    case LegendPos.Bottom: loc = 8
-                    case LegendPos.BottomRight: loc = 4
-                self.plot.plot.legend(loc=loc)
+            self.plot.attach_xaxis_range_listener(self.on_user_change_xaxis)
+            self.plot.attach_yaxis_range_listener(self.on_user_change_yaxis)
 
             self.ui_plot.draw()
 
