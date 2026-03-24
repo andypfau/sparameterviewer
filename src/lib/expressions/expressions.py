@@ -1,17 +1,18 @@
 from __future__ import annotations
+from importlib.resources import path
 
 from ..sparam_file import SParamFile, PathExt
 from ..sparam_helpers import parse_quick_param
-from ..utils import natural_sort_key
+from ..utils import natural_sort_key, make_filename_matcher
 from .networks import Networks
 from .sparams import SParam, SParams, NumberType
 from .components import Components
 from .helpers import DefaultAction
 
+import os
 import math
 import cmath
 import numpy as np
-import fnmatch
 import logging
 import dataclasses
 from typing import Callable
@@ -55,12 +56,11 @@ class ExpressionParser:
 
         def _select_networks(network_list: "list[SParamFile]", pattern: str|None, single: bool):
             nws = []
-            if pattern is None and not single:
-                nws = [nw for nw in network_list]
+            if pattern is not None:
+                matcher = make_filename_matcher(pattern)
+                nws = [nw for nw in network_list if matcher(nw.path)]
             else:
-                for nw in network_list:
-                    if pattern is None or fnmatch.fnmatch(nw.path.final_name, pattern):
-                        nws.append(nw)
+                nws = [nw for nw in network_list]
             if single:
                 if len(nws) != 1:
                     logging.warning(f'The pattern "{pattern}" matched {len(nws)} networks, but need exactly one')
@@ -69,6 +69,7 @@ class ExpressionParser:
                 if pattern is not None:
                     if len(nws) == 0:
                         logging.info(f'The pattern "{pattern}" didn\'t match any networks; returning empty Networks object)')
+            
             nws = sorted(nws, key=lambda nw: natural_sort_key(nw.path.final_name))
             return Networks(nws)
 
@@ -136,7 +137,7 @@ class ExpressionParser:
             'nws': nws,
             'sel_nws': sel_nws,
             'quick': quick,
-            'map': map,
+            'map': map,  # TODO: document in `expressions.md`?
             'math': math,
             'cmath': cmath,
             'np': np,

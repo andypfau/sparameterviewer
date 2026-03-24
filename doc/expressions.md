@@ -51,7 +51,7 @@ The expressions use [Python](https://docs.python.org/3/) syntax. You have access
 - Classes:
     - `Networks`: [representation of one or more network files](./expr_networks.md)
     - `SParams`: [representation of data from networks](./expr_networks.md)
-    - `Comps`: [parameteric network components](./expr_components.md)
+    - `Comp`: [parameteric network components](./expr_components.md)
 
 
 
@@ -83,7 +83,50 @@ nws(pattern=None)
 
 If no pattern is provided, returns a `Networks` object that contains *all available* networks in the Filesystem Browser.
 
-If a pattern is provided, returns a `Networks` object that contains all networks that match the given pattern, e.g. `'*.s2p'`. Note that this returns an empty `Networks` object if the pattern does not match anything (instead of raising an error).
+If a pattern is provided, returns a `Networks` object that contains all available networks that match the given pattern. Wildcards `*`, `*` and `?` are supported, e.g. `'*.s2p'`. See examples below.
+
+Notes:
+-  This function returns an empty `Networks` object if the pattern does not match anything (instead of raising an error).
+- "Available" networks in this context means that all files are considered which are currently shown in the filesystem browser. If a file matches that is currently not loaded, it will be loaded.
+
+Examples, using the samples provided with this software:
+```python
+nws("amp.s2p").plot_sel_params()  # matches "amp.s2p"
+nws("amp.*").plot_sel_params()    # matches "amp.s2p"
+nws("*amp*").plot_sel_params()    # matches "amp.s2p" and "diff_amp.s4p"
+nws("*").plot_sel_params()        # matches all sample files: "amp.s2p", "att_10db.s2p", ...
+```
+
+#### Full Path Matching
+
+When the pattern contains the system's path separator, the pattern is comared agains the whole file path, otherwise only against the filename.
+
+In this case, the wildcard `*` does *not* match the path separator itself, whereas the now additionally available wildcard `**` does. Thus, you can use `**` for recursive file matching. See examples below.
+
+Under Linux, the path separator should be `/`, while under Windows, it should be `\\` (note that Python requires the backslash to be [escaped](https://docs.python.org/3/reference/lexical_analysis.html#escape-sequences), hence the double-backslash).
+
+Example file structure (Linux nomenclature):
+```
+/
+    sparameterviewer/
+        samples/
+            amp.s2p
+            att_10db_s2p
+            diff_ap.s4p
+            dummy_n-ports.zip
+                dummy_termination.s1p
+                dummy_2-way-divider.s2p
+                dummy_3-way-divider.s3p
+```
+
+Example patterns:
+- `"*"`: matches all files (there is no `/` in the pattern, so it only checks against the filename)
+- `"amp*"`: matches only "amp.s2p" and "diff_amp.s4p" 
+- `"dummy*"`: matches only "dummy_termination.s1p", "dummy_2-way-divider.s2p", "dummy_3-way-divider.s3p"
+- `"*/samples/*"`: matches only "amp.s2p" and "diff_amp.s4p" (because the `*` is not recursive)
+- `"*/samples/**"`: matches all six files (because the `**` is recursive)
+- `"dummy_n-ports.zip/*"`: matches only "dummy_termination.s1p", "dummy_2-way-divider.s2p", "dummy_3-way-divider.s3p"
+
 
 
 ### sel_nws()

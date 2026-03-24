@@ -5,7 +5,14 @@ from .sparam_file import SParamFile
 from .plot_data import PlotData, PlotDataQuantity
 from .plot import PlotHelper
 from .appsettings import AppSettings
-from .utils import get_unique_short_filename, is_windows, open_file_in_default_viewer, group_delay, v2db, db2v, start_process, is_running_from_binary, shorten_path, natural_sort_key, get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10, is_ext_supported, is_ext_supported_file, is_ext_supported_archive, find_files_in_archive, load_file_from_archive, get_unique_id, get_callstack_str, any_common_elements, format_minute_seconds, window_has_argument, string_to_enum, enum_to_string, choose_smart_db_scale, strip_common
+from .utils import get_unique_short_filename, shorten_path, is_ext_supported, is_ext_supported_file, is_ext_supported_archive
+from .utils import group_delay, v2db, db2v, choose_smart_db_scale
+from .utils import get_unique_id, any_common_elements, window_has_argument, factorize_int
+from .utils import natural_sort_key, format_minute_seconds, string_to_enum, enum_to_string, strip_common
+from .utils import get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10
+from .utils import find_files_in_archive, load_file_from_archive
+from .utils import file_pattern_to_regex, make_filename_matcher
+from .utils import is_windows, get_callstack_str, open_file_in_default_viewer, start_process, is_running_from_binary
 from .utils import ArchiveFileLoader
 from .expressions import ExpressionParser, DefaultAction
 from .apppaths import AppPaths

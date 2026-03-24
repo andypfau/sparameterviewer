@@ -1,10 +1,13 @@
 from testlib import MyTestCase
 from lib import get_unique_short_filename, shorten_path, is_ext_supported, is_ext_supported_file, is_ext_supported_archive
 from lib import group_delay, v2db, db2v, choose_smart_db_scale
-from lib import get_unique_id, any_common_elements, window_has_argument
+from lib import get_unique_id, any_common_elements, window_has_argument, factorize_int
 from lib import natural_sort_key, format_minute_seconds, string_to_enum, enum_to_string, strip_common
 from lib import get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10
 from lib import find_files_in_archive, load_file_from_archive
+from lib import make_filename_matcher
+from lib import PathExt
+import os
 import math
 import numpy as np
 
@@ -62,3 +65,61 @@ class TestUtils(MyTestCase):
     def test_common_elements(self):
         self.assertTrue(any_common_elements([1,2,3],[3,4,5]))
         self.assertFalse(any_common_elements([1,2,3],[4,5,6]))
+    
+
+    def test_factorize_int(self):
+        self.assertArrayEqual(sorted(factorize_int(7)), [7])
+        self.assertArrayEqual(sorted(factorize_int(10)), [2,5])
+        self.assertArrayEqual(sorted(factorize_int(23)), [23])
+        self.assertArrayEqual(sorted(factorize_int(25)), [5,5])
+        self.assertArrayEqual(sorted(factorize_int(1001)), [7,11,13])
+
+
+
+class TestFilenameMatching(MyTestCase):
+
+
+    def pattern_test(self, pattern: str, expected_result: list[str]):
+        TEST_PATHS = [
+            '/tmp/samples/amp.s2p',
+            '/tmp/samples/diff_amp.s4p',
+            '/tmp/samples/att_10db.s2p',
+            '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p',
+            '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p',
+            '/tmp/samples/subdir1/amp.s2p',
+            '/tmp/samples/subdir2/amp.s2p',
+            '/tmp/others/amp.s2p',        
+        ]
+
+        test_paths = [s.replace('/', os.sep) for s in TEST_PATHS]
+        pattern = pattern.replace('/', os.sep)
+        expected_result = [s.replace('/', os.sep) for s in expected_result]
+
+        matcher = make_filename_matcher(pattern)
+        matches = [p for p in test_paths if matcher(PathExt(p))]
+        self.assertArrayEqual(matches, expected_result)
+
+
+    def test_wildcard(self):
+        self.pattern_test('*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+        self.pattern_test('**/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+    
+
+    def test_name(self):
+        self.pattern_test('*.s2p', ['/tmp/samples/amp.s2p', '/tmp/samples/att_10db.s2p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+        self.pattern_test('*.s3p', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p'])
+    
+
+    def test_single_path(self):
+        self.pattern_test('*/samples/*', [])
+    
+
+    def test_recursive_path(self):
+        self.pattern_test('**/samples/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p'])
+        self.pattern_test('*/tmp/samples/**', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p'])
+        self.pattern_test('**/*.zip/*', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
+        self.pattern_test('**/*.zip/**', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
+    
+
+    def test_specific_path(self):
+        self.pattern_test('*/tmp/samples/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p'])

@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b2 (2026-03-24)
+--------------------
+
+- new: expressions can match paths
+
+
 0.45b1 (2026-03-21)
 --------------------
 

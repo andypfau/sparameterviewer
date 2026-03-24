@@ -12,6 +12,7 @@ import zipfile
 import logging
 import tempfile
 import traceback
+from typing import Callable
 
 
 
@@ -454,3 +455,108 @@ def strip_common(str_or_lines: str|list[str]) -> str|list[str]:
             max_header = max(max_header, len(m.group(1)))
     
     return list([line[:max_header] for line in str_or_lines])
+
+
+def factorize_int(number: int) -> list[int]:
+    if number < 1:
+        raise ValueError(f'Cannot factor a number less than one')
+    if number == 1:
+        return [1]
+
+    factors: list[int] = []
+    
+    while number % 2 == 0:
+        factors.append(2)
+        number //= 2
+        
+    i = 3
+    max_factor = int(math.sqrt(number)) + 1
+    while i <= max_factor and number > 1:
+        while number % i == 0:
+            factors.append(i)
+            number //= i
+            max_factor = int(math.sqrt(number)) + 1
+        i += 2
+    
+    if number > 1:
+        factors.append(number)
+        
+    return factors
+
+
+def find_optimum_grid(i: int) -> tuple[int,int]:
+    """"
+    Finds the optimum grid for a given number.
+    The optimum grid is defined as having the minimum circumference,
+      and as close to a square as possible.
+
+    Examples:
+        - 8 -> (3,3)  (could also be e.g. 2x4 or 1x8, but that would not be very square)
+        - 9 -> (3,3)  (perfect square)
+    """
+    # TODO: for 5 it returns 3x3 instead of 2x3... I think I should also weight in the wasted cells somehow
+
+    assert i >= 1
+    root = int(math.ceil(math.sqrt(i)))
+    solutions = []
+    for x in range(root, 0, -1):
+        if x*x == i:
+            return x, x  # perfect square
+        if x*x >= i:
+            solutions.append((x, x))
+        y = i // x
+        if x*y >= i:
+            solutions.append((x, y))
+    assert len(solutions) >= 1
+    
+    def rectangle_circumference(solution):
+        return 2*solution[0] + 2*solution[1]
+    def aspect_ratio(solution):
+        return solution[0]/solution[1]
+    
+    lowest_circumference = min([rectangle_circumference(s) for s in solutions])
+    solutions = [s for s in solutions if rectangle_circumference(s)==lowest_circumference]
+
+    return sorted(solutions, key=lambda s: abs(aspect_ratio(s)-1))[0]
+
+
+def file_pattern_to_regex(pattern: str) -> str:
+    sep = os.sep
+    if sep == '\\':
+       sep = '\\\\'
+    tokens = re.split(r'([*?]+)', pattern)
+    result = []
+    for token in tokens:
+        if '?' in token or '*' in token:
+            if token == '?':
+                result.append('.')
+            elif token == '*':
+                result.append(f'[^{sep}]*')
+            elif token == '**':
+                result.append(f'.*')
+            else:
+                raise ValueError(f'Invalid token "{token}" in pattern "{pattern}". Only "*", "**", and "?" are allowed as wildcard tokens.')
+        else:
+            result.append(re.escape(token))
+    return ''.join(result) + '$'
+
+
+def make_filename_matcher(pattern: str) -> Callable[tuple[PathExt],bool]:
+    
+    regex = file_pattern_to_regex(pattern)
+    
+    def match_full_path(path: PathExt) -> bool:
+        match = re.match(regex, path.full_path, re.I)
+        if match is None:
+            return False
+        if match.group(0).endswith(os.path.basename(path)):  # make sure we also matched the filename itself
+            return True
+        return False
+    
+    def match_name_only(path: PathExt) -> bool:
+        return bool(re.match(regex, path.final_name, re.I) is not None)
+    
+    if os.sep in pattern:
+        return match_full_path
+    else:
+        return match_name_only
