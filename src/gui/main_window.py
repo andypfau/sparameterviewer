@@ -2310,7 +2310,7 @@ class MainWindow(MainWindowUi):
             else:  # something Cartesian
                 fixed_x_range, x_range_start, x_range_end = False, -1e99, +1e99
                 if self.plot_axes_are_valid and not self.ui_xaxis_range.both_are_wildcard:
-                    self.plot.set_yaxis_range(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
+                    self.plot.set_xaxis_range(self.ui_xaxis_range.low, self.ui_xaxis_range.high)
                     fixed_x_range, x_range_start, x_range_end = True, self.ui_xaxis_range.low, self.ui_xaxis_range.high
 
                 if plot_type == PlotType.Cartesian and y_qty == YQuantity.Decibels and smart_db_scaling and len(self.plot.plot_items)>=1:
