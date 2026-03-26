@@ -1,14 +1,12 @@
 **/__pycache__
 **/sparamviewer.log
 **/sparamviewer.log.*
+**/dist
+**/build
 samples/*.zip
 samples/*.cti
 samples/*.citi
 samples/*.s*p
-src/dist
-src/build
-src/pipenv/dist
-src/pipenv/build
 share
 .vscode
 *.patch
