@@ -1,9 +1,6 @@
-import skrf
 import numpy as np
-import math
-import cmath
 import scipy
-import re
+import enum
 from .utils import window_has_argument
 from .sparam_helpers import check_freqs_dc_and_equidist, get_missing_freq_dc_and_equidist, extrapolate_to_dc, interpolate_freq, interpolate_equidistant_freq, irndft
 
@@ -13,7 +10,8 @@ class TDR:
 
 
     def __init__(self):
-        self.dc_extrapolation: str|None = 'IEEE370'
+        self.dc_extrapolation: str|None = 'IEEE370'  # 'IEEE370', 'polar', None
+        self.dc_mag_assumption: str|None = 'auto'  # 'zero', 'unity', 'auto', None; only used for polar method
         self.interpolation: bool = True
         self.window: str = 'boxcar'
         self.window_args: tuple[float] = tuple()
@@ -24,6 +22,9 @@ class TDR:
     
 
     def get(self, f: np.ndarray, s: np.ndarray, z0: float = 50) -> tuple[np.ndarray,np.ndarray]:
+
+        # TODO: check quality metrics? See e.g. Shlepnev, How to Avoid Butchering S-parameters
+
         if len(f) < 2 or len(f) != len(s):
             raise ValueError('For TDR, at least 2 frequency points are needed')
         f, s, equidistant_from_dc = self._interpolate_extrapolate(f, s)
@@ -64,7 +65,7 @@ class TDR:
         can_fix, f_missing = get_missing_freq_dc_and_equidist(f)
         if can_fix:
             # extrapolationg, while interpolation is not needed
-            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation)
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
             assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
             return f, s, True
         
@@ -75,7 +76,7 @@ class TDR:
             n_steps = round(f_first / f_step)
             f_missing = np.linspace(0, f_first-f_step, n_steps, dtype=f.dtype)
             
-            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation)
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
 
             return f,s, False
 
@@ -85,7 +86,7 @@ class TDR:
         f_new = np.linspace(0, f[-1], n_steps)
         f_extrap = f_new[f_new < f[0]]
 
-        f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=self.dc_extrapolation)
+        f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
         f, s = interpolate_freq(f, s, f_new)
         assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
         return f, s, True

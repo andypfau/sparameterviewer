@@ -1,10 +1,10 @@
-import skrf
 import numpy as np
 import math
 import scipy.interpolate
-import re
+from typing import Callable
 from .network_ext import NetworkExt
 from .utils import window_has_argument
+from .settings import Settings
 
 
 def _get_mixed_port_names(nw: NetworkExt) -> list[tuple[str,int]]:
@@ -154,33 +154,95 @@ def extrapolate_to_dc_ieee370(f: np.ndarray, s: np.ndarray, f_extrapolate: np.nd
     return f_complete, s_complete
 
 
-def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None) -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, dc_mag_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
     """ Extrapolation in polar coordinates """
     if f_extrapolate is None:
         f_extrapolate = np.array([0])
     assert f[0] > 0 and len(f) >= 2
 
     mag, pha = np.abs(s), np.unwrap(np.angle(s))
-    
-    # extrapolate phase to DC
-    interp_pha = scipy.interpolate.interp1d(f, pha, kind='linear', bounds_error=False, fill_value='extrapolate')
-    dc_phase_extrap = interp_pha(0)
-    dc_phase_real_guess = round(dc_phase_extrap / math.pi) * math.pi
-    
-    # magnitude: just extrapolate down to DC, do not make any further assumptions
-    interp_mag = scipy.interpolate.make_interp_spline(f, mag, k=3)
 
-    # phase: assume real-value for DC phase
-    f_pha, s_pha = np.concatenate([[0], f]), np.concatenate([[dc_phase_real_guess], pha])
-    interp_pha = scipy.interpolate.make_interp_spline(f_pha, s_pha, k=3)
+    def extrapolate_with_phase_assumption(dc_phase_assumption: float) -> tuple[Callable[tuple[np.ndarray],np.ndarray],Callable[tuple[np.ndarray],np.ndarray]]:
+        f_pha, s_pha = np.concatenate([[0], f]), np.concatenate([[dc_phase_assumption], pha])
+        interp_pha = scipy.interpolate.make_interp_spline(f_pha, s_pha, k=3)
+        interp_mag = scipy.interpolate.make_interp_spline(f, mag, k=3)
+        return interp_mag, interp_pha
+
+    def extrapolate_with_magnitude_assumption(dc_mag_assumption: float) -> tuple[Callable[tuple[np.ndarray],np.ndarray],Callable[tuple[np.ndarray],np.ndarray]]:
+        f_mag, s_mag = np.concatenate([[0], f]), np.concatenate([[dc_mag_assumption], mag])
+        interp_pha = scipy.interpolate.make_interp_spline(f, pha, k=3)
+        interp_mag = scipy.interpolate.make_interp_spline(f_mag, s_mag, k=3)
+        return interp_mag, interp_pha
+    
+    def extrapolate_mag() -> tuple[float,float,float]:
+        interp_mag = scipy.interpolate.make_interp_spline(f, mag, k=3)
+        dc_mag_extrap = interp_mag(0)
+
+        # this algorithm can only estimate if the extrapolated magnitude is zero or not
+        dc_mag_guessed = 0
+        
+        # does the magnitude extrapolate towards zero, or away from it?
+        if (dc_mag_extrap < 0) != abs(mag[0] < 0):
+            dc_mag_error = 0  # extrapolation crosses zero -> assume it converges to zero at DC
+        elif abs(dc_mag_extrap) < abs(mag[0]):
+            # converges towards zero, estimate error
+            if mag[0] == 0:
+                dc_mag_error = abs(dc_mag_extrap)  # I have no better idea here...
+            else:
+                dc_mag_error = abs(dc_mag_extrap) / abs(mag[0])
+        else:
+            dc_mag_error = 1e99  # diverges away from zero -> large penalty
+        
+        return dc_mag_extrap, dc_mag_guessed, dc_mag_error
+
+    def extrapolate_phase() -> tuple[float,float,float]:
+        interp_pha = scipy.interpolate.make_interp_spline(f, pha, k=3)
+        dc_phase_extrap = math.degrees(interp_pha(0))
+
+        # the actual value can only be 0° or 180°
+        dc_phase_real_guess = round(dc_phase_extrap / 180) * 180
+
+        # how much is the extrapolated phase away from 0° or 180°?
+        dc_phase_extrap_clamped = dc_phase_extrap
+        while dc_phase_extrap_clamped > 90:
+            dc_phase_extrap_clamped -= 180
+        while dc_phase_extrap_clamped < -90:
+            dc_phase_extrap_clamped += 180
+        dc_phase_error = abs(dc_phase_extrap_clamped) / 90  # calculate error vs. real-valued DC phase (0° or 180°)
+
+        return dc_phase_extrap, dc_phase_real_guess, dc_phase_error
+
+    match dc_mag_assumption:
+        case None:
+            # make no assumption about magnitude, just extrapolate phase
+            _, dc_phase_real_guess, _ = extrapolate_phase()
+            interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
+            print(f'~~ DC extrapolation: assuming DC phase of {dc_phase_real_guess}° ({dc_mag_assumption=})')
+        case 'auto':
+            # check which method has the smaller error
+            _, dc_phase_real_guess, dc_phase_error = extrapolate_phase()
+            _, dc_mag_guessed, dc_mag_error = extrapolate_mag()
+            if dc_mag_error < dc_phase_error:
+                print(f'~~ DC extrapolation: assuming DC magnitude of {dc_mag_guessed} ({dc_mag_assumption=})')
+                interp_mag, interp_pha = extrapolate_with_magnitude_assumption(dc_mag_guessed)
+            else:
+                print(f'~~ DC extrapolation: assuming DC phase of {dc_phase_real_guess}° ({dc_mag_assumption=})')
+                interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
+        case 'zero':
+            interp_mag, interp_pha = extrapolate_with_magnitude_assumption(0)
+            print(f'~~ DC extrapolation: assuming DC magnitude of zero ({dc_mag_assumption=})')
+        case 'unity':
+            interp_mag, interp_pha = extrapolate_with_magnitude_assumption(1)
+            print(f'~~ DC extrapolation: assuming DC magnitude of unity ({dc_mag_assumption=})')
+        case _:
+            raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero", "unity"; got "{dc_mag_assumption}"')
 
     s_extrap = interp_mag(f_extrapolate) * np.exp(1j * (interp_pha(f_extrapolate)))  # don't forget to add the DC phase again (we subtracted it above!)
-
     f_complete, s_complete = np.concatenate([f_extrapolate, f]), np.concatenate([s_extrap, s])
     return f_complete, s_complete
 
 
-def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, method: str = 'IEEE370') -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, method: str = 'IEEE370', dc_mag_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
 
     if f[0] < 0:
         raise RuntimeError('Cannot handle S-parameters with negative frequencies')
@@ -190,7 +252,7 @@ def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = 
     if method=='IEEE370':
         f, s = extrapolate_to_dc_ieee370(f, s, f_extrapolate)
     elif method=='polar':
-        f, s = extrapolate_to_dc_polar(f, s, f_extrapolate)
+        f, s = extrapolate_to_dc_polar(f, s, f_extrapolate, dc_mag_assumption)
     return f, s
 
 
