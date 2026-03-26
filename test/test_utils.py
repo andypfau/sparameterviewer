@@ -80,7 +80,7 @@ class TestFilenameMatching(MyTestCase):
 
 
     def pattern_test(self, pattern: str, expected_result: list[str]):
-        TEST_PATHS = [
+        test_paths = [
             '/tmp/samples/amp.s2p',
             '/tmp/samples/diff_amp.s4p',
             '/tmp/samples/att_10db.s2p',
@@ -91,12 +91,17 @@ class TestFilenameMatching(MyTestCase):
             '/tmp/others/amp.s2p',        
         ]
 
-        test_paths = [s.replace('/', os.sep) for s in TEST_PATHS]
-        pattern = pattern.replace('/', os.sep)
-        expected_result = [s.replace('/', os.sep) for s in expected_result]
+        if os.name == 'nt':
+            def linux_path_to_windows_path(path: str) -> str:
+                if path.startswith('/'):
+                    path = 'C:' + path
+                return path.replace('/', os.sep)
+            test_paths = [linux_path_to_windows_path(s) for s in test_paths]
+            pattern = linux_path_to_windows_path(pattern)
+            expected_result = [linux_path_to_windows_path(s) for s in expected_result]
 
-        matcher = make_filename_matcher(pattern)
-        matches = [p for p in test_paths if matcher(PathExt(p))]
+        matches_pattern = make_filename_matcher(pattern)
+        matches = [p for p in test_paths if matches_pattern(PathExt(p))]
         self.assertArrayEqual(matches, expected_result)
 
 
