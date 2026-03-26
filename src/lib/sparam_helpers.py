@@ -227,10 +227,8 @@ def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndar
                 interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
         case 'zero':
             interp_mag, interp_pha = extrapolate_with_magnitude_assumption(0)
-        case 'unity':
-            interp_mag, interp_pha = extrapolate_with_magnitude_assumption(1)
         case _:
-            raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero", "unity"; got "{dc_mag_assumption}"')
+            raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero"; got "{dc_mag_assumption}"')
 
     s_extrap = interp_mag(f_extrapolate) * np.exp(1j * (interp_pha(f_extrapolate)))  # don't forget to add the DC phase again (we subtracted it above!)
     f_complete, s_complete = np.concatenate([f_extrapolate, f]), np.concatenate([s_extrap, s])

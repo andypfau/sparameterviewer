@@ -196,7 +196,8 @@ class MainWindow(MainWindowUi):
         self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
         self.ui_plot_selector.setTdShift(Settings.tdr_shift)
         self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
-        self.ui_plot_selector.setTdExtrapolation(Settings.tdr_extrapolation)
+        self.ui_plot_selector.setTdExtrapolationMethod(Settings.tdr_extrapolation)
+        self.ui_plot_selector.setTdExtrapolationDcAssumption(Settings.tdr_dc_mag_assumption)
         self.ui_plot_selector.setTdInterpolation(Settings.tdr_interpolation)
         self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
         self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
@@ -773,7 +774,8 @@ class MainWindow(MainWindowUi):
         Settings.window_arg = self.ui_plot_selector.tdWindowArg()
         Settings.tdr_shift = self.ui_plot_selector.tdShift()
         Settings.tdr_minsize = self.ui_plot_selector.tdMinisize()
-        Settings.tdr_extrapolation = self.ui_plot_selector.tdExtrapolation()
+        Settings.tdr_extrapolation = self.ui_plot_selector.tdExtrapolationMethod()
+        Settings.tdr_dc_mag_assumption = self.ui_plot_selector.tdExtrapolationDcAssumption()
         Settings.tdr_interpolation = self.ui_plot_selector.tdInterpolation()
         Settings.smith_norm = self.ui_plot_selector.smithNorm()
         Settings.tdr_impedance = self.ui_plot_selector.tdImpedance()
@@ -1422,7 +1424,7 @@ class MainWindow(MainWindowUi):
             self.update_most_recent_exprfile_menu()
         
         if any_common_elements(('simplified_param_sel', 'plotted_params', 'simplified_no_expressions', 'use_expressions', 'plot_type', 'plot_y_quantitiy', 'plot_y2_quantitiy',
-                'td_response', 'phase_unit', 'phase_processing', 'smith_norm', 'tdr_extrapolation', 'tdr_interpolation', 'tdr_impedance', 'window_type', 'window_arg', 'tdr_shift', 'tdr_minsize',
+                'td_response', 'phase_unit', 'phase_processing', 'smith_norm', 'tdr_extrapolation', 'tdr_dc_assumption', 'tdr_interpolation', 'tdr_impedance', 'window_type', 'window_arg', 'tdr_shift', 'tdr_minsize',
                 'simplified_plot_sel', 'simplified_browser', 'use_expressions', 'simplified_no_expressions', 'color_assignment', 'legend_position',
                 'plot_semitransparent', 'plot_semitransparent_opacity', 'max_legend_items', 'expression', 'show_legend', 'show_grid', 'hide_single_item_legend',
                 'shorten_legend_items', 'plot_mark_points', 'log_x', 'log_y', 'smart_db_scaling', 'mainwindow_layout', 'extract_zip'), attributes):
@@ -1962,7 +1964,8 @@ class MainWindow(MainWindowUi):
             plot_type = self.ui_plot_selector.plotType()
             y_qty = self.ui_plot_selector.yQuantity()
             y2_qty = self.ui_plot_selector.y2Quantity()
-            tdr.dc_extrapolation = None if self.ui_plot_selector.tdExtrapolation()=='off' else self.ui_plot_selector.tdExtrapolation()
+            tdr.dc_extrapolation = None if self.ui_plot_selector.tdExtrapolationMethod()=='off' else self.ui_plot_selector.tdExtrapolationMethod()
+            tdr.dc_mag_assumption = None if self.ui_plot_selector.tdExtrapolationDcAssumption()=='none' else self.ui_plot_selector.tdExtrapolationDcAssumption()
             tdr.interpolation = self.ui_plot_selector.tdInterpolation()
             tdr.padded_length = self.ui_plot_selector.tdMinisize()
             tdr.window = self.ui_plot_selector.tdWindow()

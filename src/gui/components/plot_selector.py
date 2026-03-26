@@ -82,10 +82,17 @@ class PlotSelector(QWidget):
     }
 
 
-    EXTRAPOLATION_NAMES = {
+    EXTRAPOLATION_METH_NAMES = {
         'off': 'Off',
         'IEEE370': 'IEEE370',
         'polar': 'Polar',
+    }
+
+
+    EXTRAPOLATION_DC_ASSUMPTION_NAMES = {
+        'none': 'None',
+        'auto': 'Auto',
+        'zero': 'Zero',
     }
 
 
@@ -100,7 +107,8 @@ class PlotSelector(QWidget):
         self._smith_norm = SmithNorm.Impedance
         self._phase_unit = PhaseUnit.Degrees
         self._td_z = False
-        self._td_extrapolation = 'IEEE370'
+        self._td_extrapolation_meth = 'IEEE370'
+        self._td_extrapolation_dc_asmp = 'auto'
         self._td_interpolation = True
         self._td_window = 'boxcar'
         self._td_window_arg = 0
@@ -177,11 +185,16 @@ class PlotSelector(QWidget):
         self._ui_degrees_menuitem = QtHelper.add_menuitem(self._menu, 'Phase in Degrees', self._on_phaseunit_change, checkable=True)
         self._menu.addSeparator()
         
-        self._ui_td_extrap_combo = QComboBox()
-        for name in PlotSelector.EXTRAPOLATION_NAMES.values():
-            self._ui_td_extrap_combo.addItem(name)
-        self._ui_td_extrap_combo.currentTextChanged.connect(self._on_change_extrap)
-        self._ui_td_extrap_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Extrap.:', self._ui_td_extrap_combo, ...))
+        self._ui_td_extrap_meth_combo = QComboBox()
+        for name in PlotSelector.EXTRAPOLATION_METH_NAMES.values():
+            self._ui_td_extrap_meth_combo.addItem(name)
+        self._ui_td_extrap_meth_combo.currentTextChanged.connect(self._on_change_extrap_meth)
+        self._ui_td_extrap_meth_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Extrap.:', self._ui_td_extrap_meth_combo, ...))
+        self._ui_td_extrap_dc_asmp_combo = QComboBox()
+        for name in PlotSelector.EXTRAPOLATION_DC_ASSUMPTION_NAMES.values():
+            self._ui_td_extrap_dc_asmp_combo.addItem(name)
+        self._ui_td_extrap_dc_asmp_combo.currentTextChanged.connect(self._on_change_extrap_dc_asmp)
+        self._ui_td_extrap_dc_asmp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Mag. Assump.:', self._ui_td_extrap_dc_asmp_combo, ...))
         self._ui_td_interp_check = QCheckBox('Interpolate')
         self._ui_td_interp_check.stateChanged.connect(self._on_change_interp)
         self._ui_td_interp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h(self._ui_td_interp_check, ...))
@@ -275,10 +288,17 @@ class PlotSelector(QWidget):
         self._update_control_values()
     
 
-    def tdExtrapolation(self) -> str:
-        return self._td_extrapolation
-    def setTdExtrapolation(self, value: str):
-        self._td_extrapolation = value
+    def tdExtrapolationMethod(self) -> str:
+        return self._td_extrapolation_meth
+    def setTdExtrapolationMethod(self, value: str):
+        self._td_extrapolation_meth = value
+        self._update_control_values()
+    
+
+    def tdExtrapolationDcAssumption(self) -> str:
+        return self._td_extrapolation_dc_asmp
+    def setTdExtrapolationDcAssumption(self, value: str):
+        self._td_extrapolation_dc_asmp = value
         self._update_control_values()
     
 
@@ -349,11 +369,11 @@ class PlotSelector(QWidget):
         self._ui_admittance_button.setVisible(self._plot_type == PlotType.Smith)
         
         self._ui_degrees_menuitem.setEnabled(self._plot_type == PlotType.Cartesian and self._y2 == YQuantity.Phase)
-        self._ui_td_extrap_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_extrap_meth_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
+        self._ui_td_extrap_dc_asmp_combo.setEnabled(self._plot_type == PlotType.TimeDomain and self._td_extrapolation_meth == 'polar')
         self._ui_td_interp_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_window_arg_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain and window_has_argument(self._td_window))
-        self._ui_td_extrap_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_minsize_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
         self._ui_td_shift_menuwidget.setEnabled(self._plot_type == PlotType.TimeDomain)
 
@@ -423,7 +443,8 @@ class PlotSelector(QWidget):
             self._ui_detrend_button.setChecked(self._phase_processing == PhaseProcessing.UnwrapDetrend)
 
         self._ui_degrees_menuitem.setChecked(self._phase_unit == PhaseUnit.Degrees)
-        self._ui_td_extrap_combo.setCurrentText(PlotSelector.EXTRAPOLATION_NAMES[self._td_extrapolation])
+        self._ui_td_extrap_meth_combo.setCurrentText(PlotSelector.EXTRAPOLATION_METH_NAMES[self._td_extrapolation_meth])
+        self._ui_td_extrap_dc_asmp_combo.setCurrentText(PlotSelector.EXTRAPOLATION_DC_ASSUMPTION_NAMES[self._td_extrapolation_dc_asmp])
         self._ui_td_interp_check.setChecked(self._td_interpolation)
         self._ui_td_window_combo.setCurrentText(PlotSelector.WINDOW_NAMES[self._td_window])
         self._ui_td_window_arg_spinner.setValue(self._td_window_arg)
@@ -661,12 +682,22 @@ class PlotSelector(QWidget):
         self.valueChanged.emit()
         
 
-    def _on_change_extrap(self):
-        for method, name in PlotSelector.EXTRAPOLATION_NAMES.items():
-            if name == self._ui_td_extrap_combo.currentText():
-                self._td_extrapolation = method
+    def _on_change_extrap_meth(self):
+        for method, name in PlotSelector.EXTRAPOLATION_METH_NAMES.items():
+            if name == self._ui_td_extrap_meth_combo.currentText():
+                self._td_extrapolation_meth = method
                 break
         self._update_control_enabled()
+        if self.plotType() != PlotType.TimeDomain:
+            return
+        self.valueChanged.emit()
+        
+
+    def _on_change_extrap_dc_asmp(self):
+        for dc_assumption, name in PlotSelector.EXTRAPOLATION_DC_ASSUMPTION_NAMES.items():
+            if name == self._ui_td_extrap_dc_asmp_combo.currentText():
+                self._td_extrapolation_dc_asmp = dc_assumption
+                break
         if self.plotType() != PlotType.TimeDomain:
             return
         self.valueChanged.emit()
