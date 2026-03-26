@@ -217,23 +217,18 @@ def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndar
             # make no assumption about magnitude, just extrapolate phase
             _, dc_phase_real_guess, _ = extrapolate_phase()
             interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
-            print(f'~~ DC extrapolation: assuming DC phase of {dc_phase_real_guess}° ({dc_mag_assumption=})')
         case 'auto':
             # check which method has the smaller error
             _, dc_phase_real_guess, dc_phase_error = extrapolate_phase()
             _, dc_mag_guessed, dc_mag_error = extrapolate_mag()
             if dc_mag_error < dc_phase_error:
-                print(f'~~ DC extrapolation: assuming DC magnitude of {dc_mag_guessed} ({dc_mag_assumption=})')
                 interp_mag, interp_pha = extrapolate_with_magnitude_assumption(dc_mag_guessed)
             else:
-                print(f'~~ DC extrapolation: assuming DC phase of {dc_phase_real_guess}° ({dc_mag_assumption=})')
                 interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
         case 'zero':
             interp_mag, interp_pha = extrapolate_with_magnitude_assumption(0)
-            print(f'~~ DC extrapolation: assuming DC magnitude of zero ({dc_mag_assumption=})')
         case 'unity':
             interp_mag, interp_pha = extrapolate_with_magnitude_assumption(1)
-            print(f'~~ DC extrapolation: assuming DC magnitude of unity ({dc_mag_assumption=})')
         case _:
             raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero", "unity"; got "{dc_mag_assumption}"')
 
