@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b3 (2026-03-27)
+--------------------
+
+- new: additional option for DC extrapolation magnitude assumption
+
+
 0.45b2 (2026-03-24)
 --------------------
 
