@@ -17,10 +17,14 @@ class TestUtils(MyTestCase):
 
 
     def test_db(self):
-        self.assertAlmostEqual(v2db(0.1), -20)
-        self.assertAlmostEqual(v2db(0.1j), -20)
-        self.assertAlmostEqual(v2db(0.5-0.5j), -3.01, delta=0.01)
-        self.assertAlmostEqual(db2v(-20), 0.1)
+        with self.subTest():
+            self.assertAlmostEqual(v2db(0.1), -20)
+        with self.subTest():
+            self.assertAlmostEqual(v2db(0.1j), -20)
+        with self.subTest():
+            self.assertAlmostEqual(v2db(0.5-0.5j), -3.01, delta=0.01)
+        with self.subTest():
+            self.assertAlmostEqual(db2v(-20), 0.1)
 
 
     def test_group_delay(self):
@@ -40,39 +44,49 @@ class TestUtils(MyTestCase):
 
     def test_steps(self):
 
-        self.assertAlmostEqual(get_next_1_2_5_10(0), 1)
-        self.assertAlmostEqual(get_next_1_2_5_10(1), 2)
-        self.assertAlmostEqual(get_next_1_2_5_10(3), 5)
-        self.assertAlmostEqual(get_next_1_2_5_10(6), 10)
-        self.assertAlmostEqual(get_next_1_2_5_10(9), 10)
-        self.assertAlmostEqual(get_next_1_2_5_10(10), 20)
+        with self.subTest():
+            self.assertAlmostEqual(get_next_1_2_5_10(0), 1)
+            self.assertAlmostEqual(get_next_1_2_5_10(1), 2)
+            self.assertAlmostEqual(get_next_1_2_5_10(3), 5)
+            self.assertAlmostEqual(get_next_1_2_5_10(6), 10)
+            self.assertAlmostEqual(get_next_1_2_5_10(9), 10)
+            self.assertAlmostEqual(get_next_1_2_5_10(10), 20)
 
-        self.assertAlmostEqual(get_next_1_3_10(0), 1)
-        self.assertAlmostEqual(get_next_1_3_10(1), 3)
-        self.assertAlmostEqual(get_next_1_3_10(5), 10)
-        self.assertAlmostEqual(get_next_1_3_10(10), 30)
-        self.assertAlmostEqual(get_next_1_3_10(99), 100)
-        self.assertAlmostEqual(get_next_1_3_10(100), 300)
+        with self.subTest():
+            self.assertAlmostEqual(get_next_1_3_10(0), 1)
+            self.assertAlmostEqual(get_next_1_3_10(1), 3)
+            self.assertAlmostEqual(get_next_1_3_10(5), 10)
+            self.assertAlmostEqual(get_next_1_3_10(10), 30)
+            self.assertAlmostEqual(get_next_1_3_10(99), 100)
+            self.assertAlmostEqual(get_next_1_3_10(100), 300)
 
-        self.assertAlmostEqual(get_next_1_10_100(0), 1)
-        self.assertAlmostEqual(get_next_1_10_100(1), 10)
-        self.assertAlmostEqual(get_next_1_10_100(5), 10)
-        self.assertAlmostEqual(get_next_1_10_100(10), 100)
-        self.assertAlmostEqual(get_next_1_10_100(99), 100)
-        self.assertAlmostEqual(get_next_1_10_100(100), 1_000)
+        with self.subTest():
+            self.assertAlmostEqual(get_next_1_10_100(0), 1)
+            self.assertAlmostEqual(get_next_1_10_100(1), 10)
+            self.assertAlmostEqual(get_next_1_10_100(5), 10)
+            self.assertAlmostEqual(get_next_1_10_100(10), 100)
+            self.assertAlmostEqual(get_next_1_10_100(99), 100)
+            self.assertAlmostEqual(get_next_1_10_100(100), 1_000)
 
 
     def test_common_elements(self):
-        self.assertTrue(any_common_elements([1,2,3],[3,4,5]))
-        self.assertFalse(any_common_elements([1,2,3],[4,5,6]))
+        with self.subTest():
+            self.assertTrue(any_common_elements([1,2,3],[3,4,5]))
+        with self.subTest():
+            self.assertFalse(any_common_elements([1,2,3],[4,5,6]))
     
 
     def test_factorize_int(self):
-        self.assertArrayEqual(sorted(factorize_int(7)), [7])
-        self.assertArrayEqual(sorted(factorize_int(10)), [2,5])
-        self.assertArrayEqual(sorted(factorize_int(23)), [23])
-        self.assertArrayEqual(sorted(factorize_int(25)), [5,5])
-        self.assertArrayEqual(sorted(factorize_int(1001)), [7,11,13])
+        with self.subTest():
+            self.assertSequenceEqual(sorted(factorize_int(7)), [7])
+        with self.subTest():
+            self.assertSequenceEqual(sorted(factorize_int(10)), [2,5])
+        with self.subTest():
+            self.assertSequenceEqual(sorted(factorize_int(23)), [23])
+        with self.subTest():
+            self.assertSequenceEqual(sorted(factorize_int(25)), [5,5])
+        with self.subTest():
+            self.assertSequenceEqual(sorted(factorize_int(1001)), [7,11,13])
 
 
 
@@ -102,28 +116,37 @@ class TestFilenameMatching(MyTestCase):
 
         matches_pattern = make_filename_matcher(pattern)
         matches = [p for p in test_paths if matches_pattern(PathExt(p))]
-        self.assertArrayEqual(matches, expected_result)
+        self.assertSequenceEqual(matches, expected_result)
 
 
     def test_wildcard(self):
-        self.pattern_test('*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
-        self.pattern_test('**/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+        with self.subTest():
+            self.pattern_test('*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+        with self.subTest():
+            self.pattern_test('**/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
     
 
     def test_name(self):
-        self.pattern_test('*.s2p', ['/tmp/samples/amp.s2p', '/tmp/samples/att_10db.s2p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
-        self.pattern_test('*.s3p', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p'])
+        with self.subTest():
+            self.pattern_test('*.s2p', ['/tmp/samples/amp.s2p', '/tmp/samples/att_10db.s2p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p', '/tmp/others/amp.s2p'])
+        with self.subTest():
+            self.pattern_test('*.s3p', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p'])
     
 
     def test_single_path(self):
-        self.pattern_test('*/samples/*', [])
+        with self.subTest():
+            self.pattern_test('*/samples/*', [])
     
 
     def test_recursive_path(self):
-        self.pattern_test('**/samples/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p'])
-        self.pattern_test('*/tmp/samples/**', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p'])
-        self.pattern_test('**/*.zip/*', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
-        self.pattern_test('**/*.zip/**', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
+        with self.subTest():
+            self.pattern_test('**/samples/*', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p'])
+        with self.subTest():
+            self.pattern_test('*/tmp/samples/**', ['/tmp/samples/amp.s2p', '/tmp/samples/diff_amp.s4p', '/tmp/samples/att_10db.s2p', '/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p', '/tmp/samples/subdir1/amp.s2p', '/tmp/samples/subdir2/amp.s2p'])
+        with self.subTest():
+            self.pattern_test('**/*.zip/*', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
+        with self.subTest():
+            self.pattern_test('**/*.zip/**', ['/tmp/samples/dummy_n-ports.zip/dummy_3-way-divider.s3p', '/tmp/samples/dummy_n-ports.zip/dummy_4-way-divider.s4p'])
     
 
     def test_specific_path(self):

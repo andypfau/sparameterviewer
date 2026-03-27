@@ -70,4 +70,4 @@ class TestFileFormats(MyTestCase):
                 self.assertEqual(f.nw.number_of_ports, 1)
                 self.assertEqual(len(f.nw.f), 3)
                 self.assertArrayAlmostEqual(f.nw.z0_simple, [50])
-                self.assertArrayEqual(f.nw.port_modes, ['S'])
+                self.assertSequenceEqual(f.nw.port_modes, ['S'])
