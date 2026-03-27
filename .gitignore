@@ -1,6 +1,6 @@
 **/__pycache__
-**/sparamviewer.log
-**/sparamviewer.log.*
+**/.log
+**/.log.*
 **/dist
 **/build
 samples/*.zip
