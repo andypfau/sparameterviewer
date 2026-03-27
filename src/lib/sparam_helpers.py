@@ -68,11 +68,11 @@ def irndft(f: np.ndarray, s: np.ndarray, n_samples: int = None, t_total: float =
     
     t = np.linspace(0, t_total*(n_samples-1)/n_samples, n_samples)
 
-    # wave[i] = Σ_j s[j] * e^(2jπ * t[i] * f[j])
+    # IDFT: wave[i] = Σ_j s[j] * e^(2jπ * t[i] * f[j])
     twopi_t_f = np.tensordot(1j * math.tau * t, f, axes=0)
     wave = np.sum(s * np.exp(twopi_t_f), axis=1)
     
-    return t, np.real(wave) / len(wave) * 2
+    return t, np.astype(np.real(wave), float) / len(wave) * 2
 
 
 def check_freqs_dc_and_equidist(f: np.ndarray) -> tuple[bool,bool]:

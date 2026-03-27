@@ -534,6 +534,20 @@ class PlotHelper:
                         x, y = fix_log_x(data=x, other_data=y, name=item.label)
                     if self._y_log and (not use_y2):
                         y, x = fix_log_y(data=y, other_data=x, name=item.label)
+
+                    if np.iscomplexobj(x):
+                        if np.any(np.iscomplex(x)):
+                            logging.debug(f'Trace "{label}" X-data has complex values; dropping imaginary part, casting to real')
+                        else:
+                            logging.debug(f'Trace "{label}" X-data has complex type, but no complex values; casting to real')
+                        x = np.astype(np.real(x), float)
+                    if np.iscomplexobj(y):
+                        if np.any(np.iscomplex(y)):
+                            logging.debug(f'Trace "{label}" Y-data has complex values; dropping imaginary part, casting to real')
+                        else:
+                            logging.debug(f'Trace "{label}" Y-data has complex type, but no complex values; casting to real')
+                        y = np.astype(np.real(y), float)
+
                     new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
                     self._anything_in_plot = True
 

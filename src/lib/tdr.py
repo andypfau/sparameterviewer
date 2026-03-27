@@ -1,6 +1,7 @@
+import math
 import numpy as np
 import scipy
-import enum
+import logging
 from .utils import window_has_argument
 from .sparam_helpers import check_freqs_dc_and_equidist, get_missing_freq_dc_and_equidist, extrapolate_to_dc, interpolate_freq, interpolate_equidistant_freq, irndft
 
@@ -198,18 +199,13 @@ class TDR:
         
         if self.convert_to_impedance:
 
-            def get_one_plus_epsilon():
-                epsilon = 1
-                while True:
-                    if 1 + (epsilon / 2) == 1:
-                        break
-                    epsilon /= 2
-                greater_than_one = 1 + epsilon
-                assert greater_than_one > 1
-                return greater_than_one
-
             # S-parameter to impedance
-            w[w==1] = get_one_plus_epsilon()  # avoid division by zero
+            w[w==1] = math.nextafter(1, -math.inf)  # avoid division by zero
             w = z0 * (1+w) / (1-w)
+            
+            # ensure the resulting trace is real-valued
+            if z0.imag != 0:
+                logging.warning(f'TDR: Converting to impedance with complex-valued characteristic impedance ({z0:.3g} Ω), dropping imaginary part of result')
+            w = np.astype(np.real(w), float)
         
         return t, w
