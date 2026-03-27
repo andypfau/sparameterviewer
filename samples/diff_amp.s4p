@@ -5,7 +5,7 @@
 !        |In  Out|
 !   3 o--| -   - |--o 4
 !        +-------+
-! This network can be used to verify the single-ended to differential conversion:
+! This network can be used to verify the single-ended to mixed-mode conversion:
 !   nw("diff_amp.s4p").s2m("P1,P2,N1,N2").plot_sel_params()
 [Version] 2.0
 # HZ S RI R 50
