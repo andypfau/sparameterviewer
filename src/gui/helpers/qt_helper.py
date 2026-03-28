@@ -324,7 +324,7 @@ class QtHelper:
 
 
     @staticmethod
-    def _box_layout(layout: QBoxLayout, direction: str, *items, margins: int|None = None, spacing: int|None = None) -> QBoxLayout:
+    def _box_layout(layout: QBoxLayout, direction: str, *items, margins: int|tuple|None = None, spacing: int|None = None) -> QBoxLayout:
         for item in items:
             if item is ...:
                 layout.addStretch()
@@ -344,19 +344,22 @@ class QtHelper:
             else:
                 layout.addWidget(item)
         if margins is not None:
-            layout.setContentsMargins(margins, margins, margins, margins)
+            if isinstance(margins, tuple):
+                layout.setContentsMargins(*margins)
+            else:
+                layout.setContentsMargins(margins, margins, margins, margins)
         if spacing is not None:
             layout.setSpacing(spacing)
         return layout
 
 
     @staticmethod
-    def layout_h(*items, margins: int|None = None, spacing: int|None = None) -> QBoxLayout:
+    def layout_h(*items, margins: int|tuple|None = None, spacing: int|None = None) -> QBoxLayout:
         return QtHelper._box_layout(QHBoxLayout(), 'h', *items, margins=margins, spacing=spacing)
 
 
     @staticmethod
-    def layout_v(*items, margins: int|None = None, spacing: int|None = None) -> QBoxLayout:
+    def layout_v(*items, margins: int|tuple|None = None, spacing: int|None = None) -> QBoxLayout:
         return QtHelper._box_layout(QVBoxLayout(), 'v', *items, margins=margins, spacing=spacing)
 
 
@@ -386,27 +389,36 @@ class QtHelper:
                 else:
                     layout.addWidget(item, i_row, i_col, rows, cols)
         if margins is not None:
-            layout.setContentsMargins(margins, margins, margins, margins)
+            if isinstance(margins, tuple):
+                layout.setContentsMargins(*margins)
+            else:
+                layout.setContentsMargins(margins, margins, margins, margins)
         if spacing is not None:
             layout.setSpacing(spacing)
         return layout
 
 
     @staticmethod
-    def layout_widget_h(*items, margins: int|None = None, spacing: int|None = None) -> QWidget:
+    def layout_widget_h(*items, margins: int|tuple|None = None, spacing: int|None = None) -> QWidget:
         widget = QWidget()
         widget.setLayout(QtHelper.layout_h(*items, margins=margins, spacing=spacing))
         if margins is not None:
-            widget.setContentsMargins(margins, margins, margins, margins)
+            if isinstance(margins, tuple):
+                widget.setContentsMargins(*margins)
+            else:
+                widget.setContentsMargins(margins, margins, margins, margins)
         return widget
 
 
     @staticmethod
-    def layout_widget_v(*items, margins: int|None = None, spacing: int|None = None) -> QWidget:
+    def layout_widget_v(*items, margins: int|tuple|None = None, spacing: int|None = None) -> QWidget:
         widget = QWidget()
         widget.setLayout(QtHelper.layout_v(*items, margins=margins, spacing=spacing))
         if margins is not None:
-            widget.setContentsMargins(margins, margins, margins, margins)
+            if isinstance(margins, tuple):
+                widget.setContentsMargins(*margins)
+            else:
+                widget.setContentsMargins(margins, margins, margins, margins)
         return widget
 
 
@@ -415,7 +427,10 @@ class QtHelper:
         widget = QWidget()
         widget.setLayout(QtHelper.layout_grid(*widgets_rows_then_columns, margins=margins, spacing=spacing))
         if margins is not None:
-            widget.setContentsMargins(margins, margins, margins, margins)
+            if isinstance(margins, tuple):
+                widget.setContentsMargins(*margins)
+            else:
+                widget.setContentsMargins(margins, margins, margins, margins)
         return widget
 
 
