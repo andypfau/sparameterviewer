@@ -14,8 +14,6 @@ from .text_dialog import TextDialog
 from .log_dialog import LogDialog
 from .about_dialog import AboutDialog
 
-import matplotlib.backend_bases
-import matplotlib.backend_bases
 from lib.si import SiFormat
 from lib import Clipboard
 from lib import AppPaths
@@ -40,7 +38,8 @@ import numpy as np
 import re
 import os
 import scipy.signal
-import matplotlib.axes
+import matplotlib.figure
+import matplotlib.pyplot
 from typing import Optional, Callable, Any
 
 
@@ -1088,7 +1087,10 @@ class MainWindow(MainWindowUi):
                 ))
             if not filename:
                 return
-            self.ui_plot.figure.savefig(filename)
+
+            figure = self.get_plot_figure_for_export()
+            figure.savefig(filename)
+            
         except Exception as ex:
             error_dialog('Error', 'Exporting failed.', detailed_text=str(ex))
     
@@ -1274,6 +1276,19 @@ class MainWindow(MainWindowUi):
     def on_logy_changed(self):
         Settings.log_y = self.ui_logy
         self.schedule_plot_update()
+    
+
+    def get_plot_figure_for_export(self) -> matplotlib.pyplot.Figure:
+        if Settings.plot_export_fixed:
+            figure = matplotlib.pyplot.Figure()
+            width_inch = max(1, Settings.plot_export_width) / figure.get_dpi()
+            height_inch = max(1, Settings.plot_export_height) / figure.get_dpi()
+            figure.set_size_inches(width_inch, height_inch)
+            self.update_plot(figure=figure)
+            self.update_plot()
+            return figure
+        else:
+            return self.ui_plot.figure
 
 
     def on_copy_image(self):
@@ -1283,7 +1298,8 @@ class MainWindow(MainWindowUi):
             return
 
         try:
-            Clipboard.copy_figure(self.ui_plot.figure)
+            figure = self.get_plot_figure_for_export()
+            Clipboard.copy_figure(figure)
         except Exception as ex:
             error_dialog('Error', 'Copying plot to clipboard failed.', detailed_text=str(ex))
         
@@ -1975,10 +1991,13 @@ class MainWindow(MainWindowUi):
         self.update_plot()
     
 
-    def update_plot(self):
+    def update_plot(self, figure: matplotlib.figure.Figure = None):
         
         if not self.ready:
             return
+
+        if figure is None:
+            figure = self.ui_plot.figure
         
         self.ui_abort_oneshot_timer(MainWindow.TIMER_RESCALE_GUI_ID)
         self.ui_abort_oneshot_timer(MainWindow.TIMER_CLEAR_LOAD_COUNTER_ID)
@@ -2027,11 +2046,13 @@ class MainWindow(MainWindowUi):
             y2q, y2f = '', SiFormat()
 
             if plot_type == PlotType.Polar:
-                self.plot = PlotHelper(self.ui_plot.figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFormat(), x_log=False, y_qty='Imaginary', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), **common_plot_args)
+                self.plot = PlotHelper(figure=figure, smith=False, polar=True, x_qty='Real', x_fmt=SiFormat(), x_log=False, y_qty='Imaginary', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), **common_plot_args)
+            
             elif plot_type == PlotType.Smith:
                 smith_z = 1.0
                 typ = 'y' if smith_norm==SmithNorm.Admittance else 'z'
-                self.plot = PlotHelper(figure=self.ui_plot.figure, smith=True, polar=False, x_qty='', x_fmt=SiFormat(), x_log=False, y_qty='', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
+                self.plot = PlotHelper(figure=figure, smith=True, polar=False, x_qty='', x_fmt=SiFormat(), x_log=False, y_qty='', y_fmt=SiFormat(), y_log=False, y2_fmt=None, y2_qty=None, z_qty='Frequency', z_fmt=SiFormat(unit='Hz'), smith_type=typ, smith_z=smith_z, **common_plot_args)
+            
             elif plot_type == PlotType.TimeDomain:
                 resp_name = 'Step Response' if tdr.step_response else 'Impulse Response'
                 xq,xf,xl = 'Time',SiFormat(unit='s',signed=True),False
@@ -2039,9 +2060,9 @@ class MainWindow(MainWindowUi):
                     yq,yf,yl = resp_name,SiFormat(unit='Ω', signed=True),False
                 else:
                     yq,yf,yl = resp_name,SiFormat(signed=True),False
-                self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
-            else:
-                
+                self.plot = PlotHelper(figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
+            
+            else:  # S-parameters vs. frequency
                 xq,xf,xl = 'Frequency', SiFormat(unit='Hz'), log_x
                 if y_qty in [YQuantity.Real, YQuantity.RealImag, YQuantity.Imag]:
                     yq,yf,yl = 'Level',SiFormat(unit='',prefixed=False,signed=True),log_y
@@ -2059,7 +2080,7 @@ class MainWindow(MainWindowUi):
                         y2q,y2f = 'Phase',SiFormat(unit='°',prefixed=False,signed=True)
                 elif y2_qty == YQuantity.GroupDelay:
                     y2q,y2f = 'Group Delay',SiFormat(unit='s',signed=True)
-                self.plot = PlotHelper(self.ui_plot.figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
+                self.plot = PlotHelper(figure, False, False, xq, xf, xl, yq, yf, yl, y2q, y2f, **common_plot_args)
 
             available_colors = PlotWidget.get_color_cycle()
             next_color_index = 0

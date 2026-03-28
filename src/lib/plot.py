@@ -10,6 +10,7 @@ import logging
 import matplotlib
 import matplotlib.lines
 import matplotlib.text
+import matplotlib.figure
 import matplotlib.pyplot as pyplot
 import matplotlib.ticker as ticker
 import matplotlib.axes
@@ -148,7 +149,7 @@ class PlotHelper:
                     self._text.set_visible(False)
     
 
-    def __init__(self, figure: any, smith: bool, polar: bool, x_qty: str, x_fmt: SiFormat, x_log: bool,
+    def __init__(self, figure: matplotlib.figure.Figure, smith: bool, polar: bool, x_qty: str, x_fmt: SiFormat, x_log: bool,
         y_qty: "str", y_fmt: SiFormat, y_log: bool, y2_qty: "str", y2_fmt: SiFormat, z_qty: "str" = None, z_fmt: SiFormat = None,
         smith_type: str='z', smith_z=1.0,
         show_legend: bool = True, hide_single_item_legend: bool = False, shorten_legend: bool = False, max_legend_items: int = -1):

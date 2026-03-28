@@ -29,7 +29,6 @@ Roadmap
 - GUI:
     - Add "color by command", where each "plot()" statement gets its own color assinged.
     - Find a way to present the large matrix in a bigger form, e.g. as a dialog.
-    - Find a way to set define fixed size for saved/copied plots.
     - For the documentations, find a nicer representation than plain markdown files.
 - Expressions:
     - Review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?

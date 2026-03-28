@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - new: saving assigned colors/styles/labels
+- new: setting to define exact size of copied/exported plots
 
 
 0.45b3 (2026-03-27)

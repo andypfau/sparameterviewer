@@ -93,8 +93,20 @@ class SettingsDialogUi(QDialog):
         self._ui_logyneg_combo.setToolTip('What to do when there are negative values on a logarithmic X-axis.')
         self._ui_singletracecolor_check = QCheckBox('Individual Trace Colors When Single File Selected')
         self._ui_singletracecolor_check.setToolTip('When enabled, and only one single file is selected, then it is always plotted with individual colors for each trace. Otherwise, the combobox in the main window toolbar can be used to define a color scheme.')
-        self._ui_singletracecolor_check.setToolTip('When this option is enabled, the trace colors are set to individual colors when only one single file is selected.')
         self._ui_singletracecolor_check.toggled.connect(self.on_singletracecolor_changed)
+        self._ui_plotsize_fixed_check = QCheckBox('Fixed Save/Copy Plot Size')
+        self._ui_plotsize_fixed_check.setToolTip('When checked, the saved/copied plots have specified size (in pixels); otherwise, the size of the plot in the main windowis used.')
+        self._ui_plotsize_fixed_check.checkStateChanged.connect(self._on_fixed_plot_size_changed)
+        self._ui_plotsize_width = QSpinBox()
+        self._ui_plotsize_width.setMinimum(1)
+        self._ui_plotsize_width.setMaximum(9999)
+        self._ui_plotsize_width.setToolTip('Width of saved/copied plots, in pixels')
+        self._ui_plotsize_width.valueChanged.connect(self.on_plot_width_changed)
+        self._ui_plotsize_height  = QSpinBox()
+        self._ui_plotsize_height.setMinimum(1)
+        self._ui_plotsize_height.setMaximum(9999)
+        self._ui_plotsize_height.setToolTip('Height of saved/copied plots, in pixels')
+        self._ui_plotsize_height.valueChanged.connect(self.on_plot_height_changed)
         format_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h(
@@ -105,6 +117,7 @@ class SettingsDialogUi(QDialog):
                 ),
                 self._ui_allcomplex_check,
                 self._ui_singletracecolor_check,
+                QtHelper.layout_h(self._ui_plotsize_fixed_check, self._ui_plotsize_width, '\N{MULTIPLICATION SIGN}', self._ui_plotsize_height, 'px', ...),
                 ...
             )
         )
@@ -501,6 +514,38 @@ class SettingsDialogUi(QDialog):
 
     def ui_indicate_ext_ed_error(self, indicate_error: bool):
         QtHelper.indicate_error(self._ui_exted_edit, indicate_error)
+    
+
+    def _on_fixed_plot_size_changed(self):
+        self._ui_plotsize_width.setEnabled(self._ui_plotsize_fixed_check.isChecked())
+        self._ui_plotsize_height.setEnabled(self._ui_plotsize_fixed_check.isChecked())
+        self.on_plot_fixed_size_changed()
+
+    
+    @property
+    def ui_fixed_plot_size(self) -> bool:
+        return self._ui_plotsize_fixed_check.isChecked()
+    @ui_fixed_plot_size.setter
+    def ui_fixed_plot_size(self, value: bool):
+        self._ui_plotsize_width.setEnabled(value)
+        self._ui_plotsize_height.setEnabled(value)
+        self._ui_plotsize_fixed_check.setChecked(value)
+
+    
+    @property
+    def ui_fixed_plot_width(self) -> int:
+        return self._ui_plotsize_width.value()
+    @ui_fixed_plot_width.setter
+    def ui_fixed_plot_width(self, value: int):
+        self._ui_plotsize_width.setValue(value)
+
+    
+    @property
+    def ui_fixed_plot_height(self) -> int:
+        return self._ui_plotsize_height.value()
+    @ui_fixed_plot_height.setter
+    def ui_fixed_plot_height(self, value: int):
+        self._ui_plotsize_height.setValue(value)
 
     
     # to be implemented in derived class
@@ -573,4 +618,10 @@ class SettingsDialogUi(QDialog):
     def on_reset_all_settings(self):
         pass
     def on_restore_geometry_changed(self):
+        pass
+    def on_plot_fixed_size_changed(self):
+        pass
+    def on_plot_width_changed(self):
+        pass
+    def on_plot_height_changed(self):
         pass

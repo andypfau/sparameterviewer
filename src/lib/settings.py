@@ -187,6 +187,9 @@ class SParamViewerAppSettings(AppSettings):
     custom_label_history: dict[str,str] = {}
     custom_color_history: dict[str,str] = {}
     custom_style_history: dict[str,str] = {}
+    plot_export_fixed: bool = False
+    plot_export_width: int = 400
+    plot_export_height: int = 300
 
     
     def _reset(self):

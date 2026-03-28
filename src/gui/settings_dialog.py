@@ -3,7 +3,7 @@ from .helpers.simple_dialogs import okcancel_dialog, open_file_dialog, error_dia
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
 from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme
-from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum, is_valid_binary, start_process, find_default_editor
+from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum, is_valid_binary, start_process, find_default_editor, is_valid_binary
 import pathlib
 import logging
 import os
@@ -99,7 +99,10 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_selecttocheck = Settings.select_file_to_check
             self.ui_maxhist = Settings.path_history_maxsize
             self.ui_restore_geometry = Settings.restore_window_geometry
-            self.ui_indicate_ext_ed_error(not self.is_ext_ed_valid(Settings.ext_editor_cmd))
+            self.ui_fixed_plot_size = Settings.plot_export_fixed
+            self.ui_fixed_plot_width = Settings.plot_export_width
+            self.ui_fixed_plot_height = Settings.plot_export_height
+            self.ui_indicate_ext_ed_error(not is_valid_binary(Settings.ext_editor_cmd))
         except Exception as ex:
             logging.error('Unable to apply setting values to settings dialog')
             logging.exception(ex)
@@ -258,3 +261,12 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_restore_geometry_changed(self):
         Settings.restore_window_geometry = self.ui_restore_geometry
+
+    def on_plot_fixed_size_changed(self):
+        Settings.plot_export_fixed = self.ui_fixed_plot_size
+
+    def on_plot_width_changed(self):
+        Settings.plot_export_width = self.ui_fixed_plot_width
+
+    def on_plot_height_changed(self):
+        Settings.plot_export_height = self.ui_fixed_plot_height
