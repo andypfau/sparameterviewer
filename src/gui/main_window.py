@@ -41,7 +41,7 @@ import re
 import os
 import scipy.signal
 import matplotlib.axes
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 
 
@@ -112,7 +112,7 @@ class MainWindow(MainWindowUi):
         self.ui_set_color_assignment_options(list(MainWindow.COLOR_ASSIGNMENT_NAMES.values()))
         self.ui_set_legend_pos_options(list(MainWindow.LEGEND_POS_NAMES.values()))
 
-        self.apply_settings_to_ui_or_reset()
+        self.initially_apply_settings_to_ui_or_reset()
 
         initial_paths: list[str] = filenames
 
@@ -179,52 +179,96 @@ class MainWindow(MainWindowUi):
             Settings.last_screen_height = dim.screen_height
 
 
-    def apply_settings_to_ui(self):
-        self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
-        self.ui_param_selector.setParams(Settings.plotted_params)
-        self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
-        self.ui_param_selector.setUseExpressions(Settings.use_expressions)
-        self.ui_plot_selector.setPlotType(Settings.plot_type)
-        self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
-        self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
-        self.ui_plot_selector.setTdResponse(Settings.td_response)
-        self.ui_plot_selector.setPhaseUnit(Settings.phase_unit)
-        self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
-        self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
-        self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
-        self.ui_plot_selector.setTdWindow(Settings.window_type)
-        self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
-        self.ui_plot_selector.setTdShift(Settings.tdr_shift)
-        self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
-        self.ui_plot_selector.setTdExtrapolationMethod(Settings.tdr_extrapolation)
-        self.ui_plot_selector.setTdExtrapolationDcAssumption(Settings.tdr_dc_assumption)
-        self.ui_plot_selector.setTdInterpolation(Settings.tdr_interpolation)
-        self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
-        self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
-        self.ui_enable_expressions(Settings.use_expressions)
-        self.ui_show_expressions(not Settings.simplified_no_expressions)
-        self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
-        self.ui_legend_pos = enum_to_string(Settings.legend_position, MainWindow.LEGEND_POS_NAMES)
-        self.ui_semitrans_traces = Settings.plot_semitransparent
-        self.ui_trace_opacity = Settings.plot_semitransparent_opacity
-        self.ui_maxlegend = Settings.max_legend_items
-        self.ui_expression = Settings.expression
-        self.ui_show_legend = Settings.show_legend
-        self.ui_show_grid = Settings.show_grid
-        self.ui_hide_single_item_legend = Settings.hide_single_item_legend
-        self.ui_shorten_legend = Settings.shorten_legend_items
-        self.ui_mark_datapoints = Settings.plot_mark_points
-        self.ui_logx = Settings.log_x
-        self.ui_logy = Settings.log_y
-        self.ui_smart_db = Settings.smart_db_scaling
-        self.ui_layout = Settings.mainwindow_layout
-        self.ui_filesys_browser.show_archives = Settings.extract_zip
-        self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
+    def apply_settings_to_ui(self, attributes: list[str]|Any = any):
+        def check(attribute: str) -> bool:
+            return bool((attributes is any) or (attribute in attributes))
+        
+        if check('simplified_param_sel'):
+            self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
+        if check('plotted_params'):
+            self.ui_param_selector.setParams(Settings.plotted_params)
+        if check('simplified_no_expressions'):
+            self.ui_param_selector.setAllowExpressions(not Settings.simplified_no_expressions)
+        if check('use_expressions'):
+            self.ui_param_selector.setUseExpressions(Settings.use_expressions)
+        if check('plot_type'):
+            self.ui_plot_selector.setPlotType(Settings.plot_type)
+        if check('plot_y_quantitiy'):
+            self.ui_plot_selector.setYQuantity(Settings.plot_y_quantitiy)
+        if check('plot_y2_quantitiy'):
+            self.ui_plot_selector.setY2Quantity(Settings.plot_y2_quantitiy)
+        if check('td_response'):
+            self.ui_plot_selector.setTdResponse(Settings.td_response)
+        if check('phase_unit'):
+            self.ui_plot_selector.setPhaseUnit(Settings.phase_unit)
+        if check('phase_processing'):
+            self.ui_plot_selector.setPhaseProcessing(Settings.phase_processing)
+        if check('smith_norm'):
+            self.ui_plot_selector.setSmithNorm(Settings.smith_norm)
+        if check('tdr_impedance'):
+            self.ui_plot_selector.setTdImpedance(Settings.tdr_impedance)
+        if check('window_type'):
+            self.ui_plot_selector.setTdWindow(Settings.window_type)
+        if check('window_arg'):
+            self.ui_plot_selector.setTdWindowArg(Settings.window_arg)
+        if check('tdr_shift'):
+            self.ui_plot_selector.setTdShift(Settings.tdr_shift)
+        if check('tdr_minsize'):
+            self.ui_plot_selector.setTdMinsize(Settings.tdr_minsize)
+        if check('tdr_extrapolation'):
+            self.ui_plot_selector.setTdExtrapolationMethod(Settings.tdr_extrapolation)
+        if check('tdr_dc_assumption'):
+            self.ui_plot_selector.setTdExtrapolationDcAssumption(Settings.tdr_dc_assumption)
+        if check('tdr_interpolation'):
+            self.ui_plot_selector.setTdInterpolation(Settings.tdr_interpolation)
+        if check('simplified_plot_sel'):
+            self.ui_plot_selector.setSimplified(Settings.simplified_plot_sel)
+        if check('simplified_browser'):
+            self.ui_filesys_browser.setSimplified(Settings.simplified_browser)
+        if check('use_expressions'):
+            self.ui_enable_expressions(Settings.use_expressions)
+        if check('simplified_no_expressions'):
+            self.ui_show_expressions(not Settings.simplified_no_expressions)
+        if check('color_assignment'):
+            self.ui_color_assignment = enum_to_string(Settings.color_assignment, MainWindow.COLOR_ASSIGNMENT_NAMES)
+        if check('legend_position'):
+            self.ui_legend_pos = enum_to_string(Settings.legend_position, MainWindow.LEGEND_POS_NAMES)
+        if check('plot_semitransparent'):
+            self.ui_semitrans_traces = Settings.plot_semitransparent
+        if check('plot_semitransparent_opacity'):
+            self.ui_trace_opacity = Settings.plot_semitransparent_opacity
+        if check('max_legend_items'):
+            self.ui_maxlegend = Settings.max_legend_items
+        if check('expression'):
+            self.ui_expression = Settings.expression
+        if check('show_legend'):
+            self.ui_show_legend = Settings.show_legend
+        if check('show_grid'):
+            self.ui_show_grid = Settings.show_grid
+        if check('hide_single_item_legend'):
+            self.ui_hide_single_item_legend = Settings.hide_single_item_legend
+        if check('shorten_legend_items'):
+            self.ui_shorten_legend = Settings.shorten_legend_items
+        if check('plot_mark_points'):
+            self.ui_mark_datapoints = Settings.plot_mark_points
+        if check('log_x'):
+            self.ui_logx = Settings.log_x
+        if check('log_y'):
+            self.ui_logy = Settings.log_y
+        if check('smart_db_scaling'):
+            self.ui_smart_db = Settings.smart_db_scaling
+        if check('mainwindow_layout'):
+            self.ui_layout = Settings.mainwindow_layout
+        if check('extract_zip'):
+            self.ui_filesys_browser.show_archives = Settings.extract_zip
+        if check('plot_cursor_readouts'):
+            self.ui_plot_cursor_readouts = Settings.plot_cursor_readouts
+        
         self.ui_use_polar_axis_controls = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
-        self.ui_plot_cursor_readouts = Settings.plot_cursor_readouts
+        self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
 
 
-    def apply_settings_to_ui_or_reset(self):
+    def initially_apply_settings_to_ui_or_reset(self):
         try:
             self.apply_settings_to_ui()
             return
@@ -1423,15 +1467,10 @@ class MainWindow(MainWindowUi):
                 Settings.exprfile_history = history
             self.update_most_recent_exprfile_menu()
         
-        if any_common_elements(('simplified_param_sel', 'plotted_params', 'simplified_no_expressions', 'use_expressions', 'plot_type', 'plot_y_quantitiy', 'plot_y2_quantitiy',
-                'td_response', 'phase_unit', 'phase_processing', 'smith_norm', 'tdr_extrapolation', 'tdr_dc_assumption', 'tdr_interpolation', 'tdr_impedance', 'window_type', 'window_arg', 'tdr_shift', 'tdr_minsize',
-                'simplified_plot_sel', 'simplified_browser', 'use_expressions', 'simplified_no_expressions', 'color_assignment', 'legend_position',
-                'plot_semitransparent', 'plot_semitransparent_opacity', 'max_legend_items', 'expression', 'show_legend', 'show_grid', 'hide_single_item_legend',
-                'shorten_legend_items', 'plot_mark_points', 'log_x', 'log_y', 'smart_db_scaling', 'mainwindow_layout', 'extract_zip'), attributes):
-            try:
-                self.apply_settings_to_ui()
-            except:
-                pass
+        try:
+            self.apply_settings_to_ui(attributes)
+        except:
+            pass
             
         if any_common_elements(('plot_cursor_readouts'), attributes):
             self.update_cursor_readout()
