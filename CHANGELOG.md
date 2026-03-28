@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b4 (2026-03-28)
+--------------------
+
+- new: saving assigned colors/styles/labels
+
+
 0.45b3 (2026-03-27)
 --------------------
 

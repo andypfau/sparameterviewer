@@ -41,8 +41,8 @@ class SParamFile:
     def name(self) -> str:
         if self._name is not None:
             return self._name
-        elif FileConfig.get_label(str(self.path)):
-            return FileConfig.get_label(str(self.path))
+        elif FileConfig.labels[self.path]:
+            return FileConfig.labels[self.path]
         elif self.path.is_in_arch():
             return self.path.arch_path_name
         else:

@@ -184,6 +184,9 @@ class SParamViewerAppSettings(AppSettings):
     main_win_splitter_pos: int = -1
     plot_cursor_readouts: bool = True
     log_to_file: bool = True
+    custom_label_history: dict[str,str] = {}
+    custom_color_history: dict[str,str] = {}
+    custom_style_history: dict[str,str] = {}
 
     
     def _reset(self):

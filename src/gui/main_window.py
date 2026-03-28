@@ -1567,7 +1567,7 @@ class MainWindow(MainWindowUi):
             return recolor
         def make_decolor(path: PathExt):
             def decolor():
-                FileConfig.clear_color(path)
+                del FileConfig.colors[path]
                 self.schedule_plot_update()
             return decolor
         def make_restyle(path: PathExt):
@@ -1576,7 +1576,7 @@ class MainWindow(MainWindowUi):
             return restyle
         def make_destyle(path: PathExt):
             def destyle():
-                FileConfig.clear_style(path)
+                del FileConfig.styles[path]
                 self.schedule_plot_update()
             return destyle
 
@@ -1602,10 +1602,10 @@ class MainWindow(MainWindowUi):
                 menu.append((None, None))
                 menu.append((('Change Label...','F2'), make_relabel(path)))
                 menu.append(('Assign Color...', make_recolor(path)))
-                if FileConfig.get_color(path):
+                if FileConfig.colors[path]:
                     menu.append(('Reset Color', make_decolor(path)))
                 menu.append(('Assign Style...', make_restyle(path)))
-                if FileConfig.get_style(path):
+                if FileConfig.styles[path]:
                     menu.append(('Reset Style', make_destyle(path)))
         elif item_type in [FilesysBrowserItemType.Arch, FilesysBrowserItemType.Dir]:
             typename = 'Directory' if item_type==FilesysBrowserItemType.Dir else 'Archive'

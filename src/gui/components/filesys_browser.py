@@ -76,8 +76,8 @@ class FilesysBrowser(QWidget):
         def _get_name(self):
             if self._type == FilesysBrowserItemType.Elision:
                 return '[...]'
-            elif FileConfig.get_label(self._path) is not None:
-                return FileConfig.get_label(self._path) + f' ({self._path.final_name})'
+            elif FileConfig.labels[self._path] is not None:
+                return FileConfig.labels[self._path] + f' ({self._path.final_name})'
             else:
                 return self._path.final_name
         
@@ -214,8 +214,8 @@ class FilesysBrowser(QWidget):
                 path = item.path
                 
                 # make sure the text edit either shows the default label, OR the custom label, but no the processed display string
-                if FileConfig.get_label(path):
-                    return FileConfig.get_label(path)
+                if FileConfig.labels[path]:
+                    return FileConfig.labels[path]
                 else:
                     return super().data(index, role)
 
@@ -232,9 +232,9 @@ class FilesysBrowser(QWidget):
                     
                     # save the change, and trigger a UI update
                     if value == '':
-                        FileConfig.clear_label(item.path)
+                        del FileConfig.labels[item.path]
                     else:
-                        FileConfig.set_label(item.path, str(value))
+                        FileConfig.labels[item.path] = str(value)
                     item.refresh_name()
                     self.checkedChanged.emit()
                     
@@ -599,22 +599,22 @@ class FilesysBrowser(QWidget):
     
     def recolor_item(self, path: PathExt):
         title = f'Color for <{path.final_name}>'
-        if FileConfig.get_color(path):
-            new_color = QColorDialog.getColor(initial=QColor.fromString(FileConfig.get_color(path)), parent=self, title=title)
+        if FileConfig.colors[path]:
+            new_color = QColorDialog.getColor(initial=QColor.fromString(FileConfig.colors[path]), parent=self, title=title)
         else:
             new_color = QColorDialog.getColor(parent=self, title=title)
         if QColor.isValid(new_color):
-            FileConfig.set_color(path, new_color.name())
+            FileConfig.colors[path] = new_color.name()
         self.selectionChanged.emit()  # trigger a re-draw
     
     
     def restyle_item(self, path: PathExt):
-        new_style = textinput_dialog('Assign Style', f'Style for <{path.final_name}>:', FileConfig.get_style(path) or '', suggestions=['', '-', '--', ':', '-.'])
+        new_style = textinput_dialog('Assign Style', f'Style for <{path.final_name}>:', FileConfig.styles[path] or '', suggestions=['', '-', '--', ':', '-.'])
         if new_style != None:
             if new_style == '':
-                FileConfig.clear_style(path)
+                del FileConfig.styles[path]
             else:
-                FileConfig.set_style(path, new_style)
+                FileConfig.styles[path] = new_style
         self.selectionChanged.emit()  # trigger a re-draw
 
 

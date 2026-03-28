@@ -455,15 +455,15 @@ class SParams:
                 individual_color = color
                 if (individual_color is None) and (len(sp.original_files) == 1):
                     original_file = next(iter(sp.original_files))
-                    assigned_color = FileConfig.get_color(original_file)
-                    if assigned_color:
+                    assigned_color = FileConfig.colors[original_file]
+                    if assigned_color is not None:
                         individual_color = assigned_color
                 
                 individual_style = style
                 if (individual_style is None) and (len(sp.original_files) == 1):
                     original_file = next(iter(sp.original_files))
-                    assigned_style = FileConfig.get_style(original_file)
-                    if assigned_style:
+                    assigned_style = FileConfig.styles[original_file]
+                    if assigned_style is not None:
                         individual_style = assigned_style
                 
                 sp.plot(label=label, style=individual_style, color=individual_color, width=width, opacity=opacity, original_files=sp.original_files, param_type=sp.param_type, number_type=sp.number_type)

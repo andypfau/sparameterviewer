@@ -1,56 +1,80 @@
+from __future__ import annotations
 from .path_ext import PathExt
+from .settings import Settings
+from typing import Callable
 
 
 
-class FileConfig:
-
-
-    # TODO: save the last 100 labels/colors/styles or so to settings?
-
-
-    _labels: dict[str,str] = dict()
-
-    @staticmethod
-    def set_label(path: PathExt, new_label: str):
-        FileConfig._labels[str(path)] = new_label
+class FileConfigSingleton:
     
-    @staticmethod
-    def clear_label(path: PathExt):
-        if str(path) in FileConfig._labels:
-            del FileConfig._labels[str(path)]
     
-    @staticmethod
-    def get_label(path: PathExt, default: str|None = None) -> str|None:
-        return FileConfig._labels.get(str(path), default)
+    class Attribute:
 
 
-    _colors: dict[str,str] = dict()
+        def __init__(self, setting_name: str):
+            self._setting_name = setting_name
 
-    @staticmethod
-    def set_color(path: PathExt, new_color: str):
-        FileConfig._colors[str(path)] = new_color
+        
+        def get(self, path: PathExt, default: str|None = None) -> str|None:
+            return getattr(Settings,self._setting_name).get(str(path), default)
+        
+
+        def clear(self):
+            setattr(Settings, self._setting_name, dict())
+        
+
+        def __getitem__(self, key):
+            if not isinstance(key, PathExt):
+                raise ValueError()
+            return getattr(Settings,self._setting_name).get(str(key), None)
+        
+
+        def __setitem__(self, key, value):
+            if not isinstance(key, PathExt):
+                raise ValueError()
+            storage = getattr(Settings,self._setting_name)
+            if value:
+                storage[str(key)] = value
+            else:
+                del storage[str(key)]
+            setattr(Settings, self._setting_name, storage)
+        
+
+        def __delitem__(self, key):
+            if not isinstance(key, PathExt):
+                raise ValueError()
+            storage = getattr(Settings,self._setting_name)
+            if str(key) in storage:
+                del storage[str(key)]
+                setattr(Settings, self._setting_name, storage)
+
+
+    _instance = None
+
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
+    def __init__(self):
+        self._labels = FileConfigSingleton.Attribute('custom_label_history')
+        self._colors = FileConfigSingleton.Attribute('custom_color_history')
+        self._styles = FileConfigSingleton.Attribute('custom_style_history')
     
-    @staticmethod
-    def clear_color(path: PathExt):
-        if str(path) in FileConfig._colors:
-            del FileConfig._colors[str(path)]
-    
-    @staticmethod
-    def get_color(path: PathExt, default: str|None = None) -> str|None:
-        return FileConfig._colors.get(str(path), default)
+
+    @property
+    def labels(self) -> FileConfigSingleton.Attribute:
+        return self._labels
+
+    @property
+    def colors(self) -> FileConfigSingleton.Attribute:
+        return self._colors
+
+    @property
+    def styles(self) -> FileConfigSingleton.Attribute:
+        return self._styles
 
 
-    _styles: dict[str,str] = dict()
-
-    @staticmethod
-    def set_style(path: PathExt, new_style: str):
-        FileConfig._styles[str(path)] = new_style
-    
-    @staticmethod
-    def clear_style(path: PathExt):
-        if str(path) in FileConfig._styles:
-            del FileConfig._styles[str(path)]
-    
-    @staticmethod
-    def get_style(path: PathExt, default: str|None = None) -> str|None:
-        return FileConfig._styles.get(str(path), default)
+FileConfig = FileConfigSingleton()

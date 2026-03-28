@@ -30,10 +30,6 @@ class AppSettings:
         self._observers.append(callback)
     
 
-    def reset(self):
-        self._reset()
-    
-
     def _notify(self, attributes: list[str]):
         if self._inhbit_listeners:
             return
