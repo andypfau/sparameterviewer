@@ -1,4 +1,5 @@
 from .appsettings import AppSettings
+from .utils import find_default_editor, is_valid_binary
 import logging
 import enum
 
@@ -127,7 +128,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_semitransparent_opacity: float = 0.15
     max_legend_items: int = 25
     use_expressions: bool = False
-    expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().s().plot()'
+    expression: str = '# click "Template" or "Help" to learn more about expressions...\nsel_nws().plot_sel_params()'
     window_type: str = 'kaiser'
     window_arg: float = 35.0
     tdr_extrapolation: TdrDcExtrapolation = TdrDcExtrapolation.IEEE370
@@ -183,6 +184,23 @@ class SParamViewerAppSettings(AppSettings):
     main_win_splitter_pos: int = -1
     plot_cursor_readouts: bool = True
     log_to_file: bool = True
+
+    
+    def _reset(self):
+        super()._reset()
+        self._ensure_editor()
+
+    
+    def _load(self):
+        super()._load()
+        self._ensure_editor()
+    
+
+    def _ensure_editor(self):
+        if not is_valid_binary(self.ext_editor_cmd):
+            default_editor = find_default_editor()
+            if is_valid_binary(default_editor):
+                self.ext_editor_cmd = default_editor
 
 
 

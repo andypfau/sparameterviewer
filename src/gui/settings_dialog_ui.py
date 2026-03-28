@@ -177,8 +177,12 @@ class SettingsDialogUi(QDialog):
         self._ui_exted_edit.setToolTip('Path to an external editor, which is used by the "open in external editor" command.')
         self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
         self._ui_exted_edit.setMinimumWidth(120)
-        self._ui_exted_btn = QtHelper.make_button(self, '...', self.on_browse_ext_ed)
-        self._ui_exted_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
+        self._ui_exted_search_btn = QtHelper.make_button(self, 'Find...', self.on_browse_ext_ed)
+        self._ui_exted_search_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
+        self._ui_exted_test_btn = QtHelper.make_button(self, 'Test', self.on_test_ext_ed)
+        self._ui_exted_test_btn.setToolTip('Test external text editor.')
+        self._ui_exted_default_btn = QtHelper.make_button(self, 'Default', self.on_default_ext_ed)
+        self._ui_exted_default_btn.setToolTip('Try to find a suitable default editor.')
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
         self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to  expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
@@ -194,7 +198,8 @@ class SettingsDialogUi(QDialog):
                         ['Cursor Snap:', QtHelper.layout_h(self._ui_cursor_snap, ...)],
                         ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
                         ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
-                        ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, self._ui_exted_btn)],
+                        ['External Editor:', QtHelper.layout_h(self._ui_exted_edit)],
+                        [None, QtHelper.layout_h(self._ui_exted_search_btn, self._ui_exted_default_btn, self._ui_exted_test_btn)],
                 ]),
                 QtHelper.layout_h(self._ui_verbose_check, self._ui_logtofile_check, ...),
                 QtHelper.layout_h(self._ui_resetall_btn, ...),
@@ -520,6 +525,10 @@ class SettingsDialogUi(QDialog):
     def on_ext_ed_change(self):
         pass
     def on_browse_ext_ed(self):
+        pass
+    def on_test_ext_ed(self):
+        pass
+    def on_default_ext_ed(self):
         pass
     def on_plotstyle_change(self):
         pass

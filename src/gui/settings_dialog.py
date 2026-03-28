@@ -1,12 +1,12 @@
 from .settings_dialog_ui import SettingsDialogUi, SettingsTab
-from .helpers.simple_dialogs import okcancel_dialog
-from .helpers.simple_dialogs import open_file_dialog
+from .helpers.simple_dialogs import okcancel_dialog, open_file_dialog, error_dialog
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
 from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme
-from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum
+from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum, is_valid_binary, start_process, find_default_editor
 import pathlib
 import logging
+import os
 
 
 class SettingsDialog(SettingsDialogUi):
@@ -107,12 +107,12 @@ class SettingsDialog(SettingsDialogUi):
 
     @staticmethod
     def ensure_external_editor_is_set(parent) -> bool:
-        if not Settings.ext_editor_cmd:
+        if not is_valid_binary(Settings.ext_editor_cmd):
             if not okcancel_dialog('External Editor', 'No external editor specified. Please select one.', informative_text='A dialog will open where you can select the binary of an external editor of your choice.'):
                 return False
             if not SettingsDialog._let_user_select_ext_editor(parent):
                 return False
-        return True
+        return is_valid_binary(Settings.ext_editor_cmd)
 
 
     @staticmethod
@@ -132,19 +132,22 @@ class SettingsDialog(SettingsDialogUi):
         return True
     
 
-    def is_ext_ed_valid(self, ext_ed: str):
-        if not ext_ed:
-            return False
-        path = pathlib.Path(ext_ed)
-        if not path.exists():
-            return False
-        if not path.is_file():
-            return False
-        return True
-    
-
     def on_browse_ext_ed(self):
         SettingsDialog._let_user_select_ext_editor(self, self.ui_ext_ed)
+
+
+    def on_test_ext_ed(self):
+        try:
+            start_process(self.ui_ext_ed)
+        except Exception as ex:
+            error_dialog('Error', 'Command failed.', f'Command "self.ui_ext_ed"', detailed_text=str(ex))
+    
+    
+    def on_default_ext_ed(self):
+        default = find_default_editor()
+        if default is None:
+            error_dialog('Error', 'Unable to find a default editor on your system.')
+        self.ui_ext_ed = default
     
 
     def on_phase_unit_change(self):
@@ -172,8 +175,8 @@ class SettingsDialog(SettingsDialogUi):
 
 
     def on_ext_ed_change(self):
-        is_valid = self.is_ext_ed_valid(self.ui_ext_ed)
-        was_valid = self.is_ext_ed_valid(Settings.ext_editor_cmd)
+        is_valid = is_valid_binary(self.ui_ext_ed)
+        was_valid = is_valid_binary(Settings.ext_editor_cmd)
         if is_valid or (not was_valid):
             Settings.ext_editor_cmd = self.ui_ext_ed
         self.ui_indicate_ext_ed_error(not is_valid)
@@ -251,7 +254,7 @@ class SettingsDialog(SettingsDialogUi):
 
     def on_reset_all_settings(self):
         if okcancel_dialog('Reset all Settings', 'All settings will be reset to their default value.', informative_text='This action cannot be undone.'):
-            Settings._reset()
+            Settings.reset()
 
     def on_restore_geometry_changed(self):
         Settings.restore_window_geometry = self.ui_restore_geometry

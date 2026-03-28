@@ -560,3 +560,39 @@ def make_filename_matcher(pattern: str) -> Callable[tuple[PathExt],bool]:
         return match_full_path
     else:
         return match_name_only
+
+
+def is_valid_binary(path: str) -> bool:
+    if not path:
+        return False
+    if not os.path.exists(path):
+        return False
+    if not os.path.isfile(path):
+        return False
+    if not os.access(path, os.X_OK):
+        return False
+    return True
+
+
+def find_default_editor() -> str|None:
+    if is_windows():
+        common_paths = [
+            '%ProgramFiles%/Notepad++/notepad++.exe',
+            '%ProgramFiles(x86)%/Notepad++/notepad++.exe',
+            '%ProgramFiles%/Microsoft VS Code/bin/code.cmd',
+            '%LocalAppData%/Programs/Microsoft VS Code/bin/code.cmd',
+            '%SystemRoot%/System32/notepad.exe',
+        ]
+    else:
+        common_paths = [
+            '/usr/bin/code',
+            '/snap/bin/code',
+            '/usr/bin/geany',
+            '/usr/bin/gedit',
+            '/usr/bin/vim',
+        ]
+
+    for path in common_paths:
+        if is_valid_binary(path):
+            return path
+    return None
