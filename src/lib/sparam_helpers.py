@@ -154,7 +154,7 @@ def extrapolate_to_dc_ieee370(f: np.ndarray, s: np.ndarray, f_extrapolate: np.nd
     return f_complete, s_complete
 
 
-def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, dc_mag_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, dc_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
     """ Extrapolation in polar coordinates """
     if f_extrapolate is None:
         f_extrapolate = np.array([0])
@@ -212,11 +212,7 @@ def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndar
 
         return dc_phase_extrap, dc_phase_real_guess, dc_phase_error
 
-    match dc_mag_assumption:
-        case None:
-            # make no assumption about magnitude, just extrapolate phase
-            _, dc_phase_real_guess, _ = extrapolate_phase()
-            interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
+    match dc_assumption:
         case 'auto':
             # check which method has the smaller error
             _, dc_phase_real_guess, dc_phase_error = extrapolate_phase()
@@ -225,17 +221,22 @@ def extrapolate_to_dc_polar(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndar
                 interp_mag, interp_pha = extrapolate_with_magnitude_assumption(dc_mag_guessed)
             else:
                 interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
-        case 'zero':
+        case 'zero_pha':
+            # assume 0/180° phase, make no assumption about magnitude
+            _, dc_phase_real_guess, _ = extrapolate_phase()
+            interp_mag, interp_pha = extrapolate_with_phase_assumption(math.radians(dc_phase_real_guess))
+        case 'zero_mag':
+            # assume zeri magnitude, make no assumption about phase
             interp_mag, interp_pha = extrapolate_with_magnitude_assumption(0)
         case _:
-            raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero"; got "{dc_mag_assumption}"')
+            raise ValueError(f'Invalid argument for dc_mag_assumption: expected one of None, "auto", "zero"; got "{dc_assumption}"')
 
     s_extrap = interp_mag(f_extrapolate) * np.exp(1j * (interp_pha(f_extrapolate)))  # don't forget to add the DC phase again (we subtracted it above!)
     f_complete, s_complete = np.concatenate([f_extrapolate, f]), np.concatenate([s_extrap, s])
     return f_complete, s_complete
 
 
-def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, method: str = 'IEEE370', dc_mag_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
+def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = None, method: str = 'IEEE370', dc_assumption: str|None = None) -> tuple[np.ndarray,np.ndarray]:
 
     if f[0] < 0:
         raise RuntimeError('Cannot handle S-parameters with negative frequencies')
@@ -245,7 +246,9 @@ def extrapolate_to_dc(f: np.ndarray, s: np.ndarray, f_extrapolate: np.ndarray = 
     if method=='IEEE370':
         f, s = extrapolate_to_dc_ieee370(f, s, f_extrapolate)
     elif method=='polar':
-        f, s = extrapolate_to_dc_polar(f, s, f_extrapolate, dc_mag_assumption)
+        f, s = extrapolate_to_dc_polar(f, s, f_extrapolate, dc_assumption)
+    else:
+        raise ValueError()
     return f, s
 
 

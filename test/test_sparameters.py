@@ -24,7 +24,7 @@ class TestTdr(MyTestCase):
         
         tdr = TDR()
         tdr.dc_extrapolation = 'polar'
-        tdr.dc_mag_assumption = 'auto'
+        tdr.dc_assumption = 'auto'
         tdr.interpolation = True
         tdr.shift_s = 100e-12
         tdr.window = 'blackman'
@@ -52,7 +52,7 @@ class TestTdr(MyTestCase):
         
         tdr = TDR()
         tdr.dc_extrapolation = 'polar'
-        tdr.dc_mag_assumption = 'auto'
+        tdr.dc_assumption = 'auto'
         tdr.interpolation = True
         tdr.shift_s = 500e-12  # must shift a bit more, because the 100 Ω port is immediately hit by a 50 Ω line
         tdr.window = 'blackman'
@@ -82,7 +82,7 @@ class TestTdr(MyTestCase):
         
         tdr = TDR()
         tdr.dc_extrapolation = 'polar'
-        tdr.dc_mag_assumption = 'auto'
+        tdr.dc_assumption = 'auto'
         tdr.interpolation = True
         tdr.shift_s = 100e-12
         tdr.window = 'blackman'

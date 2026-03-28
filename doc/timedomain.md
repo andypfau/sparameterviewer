@@ -8,11 +8,10 @@ The time-domain response is calculated as follows:
     - Extrapolation using [IEEE370, Annex T](https://standards.ieee.org/ieee/370/6165/). Works well for many networks.
         - Makes the assumption that the spectrum must be Hermitean, i.e. real part is mirrored, and imaginary part must cross zero.
     - Extrapolation in polar coordinates. May work better for electicrally long networks.
-        - Makes the assumption that the phase at DC must be 0° or 180°, to ensure the DC component is real-valued.
-        - A real-valued DC can also be ensured by a zero magnitude:
-            - Choosing "Zero" always assumes a zero magnitude at DC (and makes no further assumption on the phase).
-            - Choosing "Auto" checks if the magnitude roughly extrapolates to zero, and if so, makes that assumption (and makes no further assumption on the phase).
-            - Choosing "None" never makes an assumptio about the magitude, and assumes a 0° or 180° DC phase.
+        - Makes the assumption that the DC component is real-valued, which can be achieved in two ways:
+            - Assume that the magnitude is zero at DC.
+            - Assume that the phase is 0° or 180° at DC.
+            - When selecting "Auto", both magnitude and phase are attempted to extrapolate to DC; then either zero magnitude or 0°/180° phase are assumed on the final extrapolation method, depending on which has the smaller error.
 2. Interpolate frequency axis to get equidistant scaling.
     - Interpolation is done in polar domain (i.e. interpolation of magnitude and of unwrapped phase separately).
     - This step is skipped when extrapolation is turned off.

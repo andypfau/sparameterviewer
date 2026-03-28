@@ -23,10 +23,10 @@ class TdrDcExtrapolation(enum.StrEnum):
     IEEE370 = 'IEEE370'
     Polar = 'polar'
 
-class TdrDcMagnitudeAssumption(enum.StrEnum):
-    NoAssumption = 'none'
+class TdrDcAssumption(enum.StrEnum):
     Auto = 'auto'
-    Zero = 'zero'
+    ZeroMagnitude = 'zero_mag'
+    ZeroPhase = 'zero_pha'
 
 class YQuantity(enum.StrEnum):
     Off = 'none'
@@ -131,7 +131,7 @@ class SParamViewerAppSettings(AppSettings):
     window_type: str = 'kaiser'
     window_arg: float = 35.0
     tdr_extrapolation: TdrDcExtrapolation = TdrDcExtrapolation.IEEE370
-    tdr_dc_mag_assumption: TdrDcMagnitudeAssumption = TdrDcMagnitudeAssumption.Auto
+    tdr_dc_assumption: TdrDcAssumption = TdrDcAssumption.Auto
     tdr_interpolation: bool = True
     tdr_shift: float = 100e-12
     tdr_impedance: bool = False

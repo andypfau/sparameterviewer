@@ -12,7 +12,7 @@ class TDR:
 
     def __init__(self):
         self.dc_extrapolation: str|None = 'IEEE370'  # 'IEEE370', 'polar', None
-        self.dc_mag_assumption: str|None = 'auto'  # 'zero', 'unity', 'auto', None; only used for polar method
+        self.dc_assumption: str = 'auto'  # 'auto', 'zero_pha', 'zero_mag'
         self.interpolation: bool = True
         self.window: str = 'boxcar'
         self.window_args: tuple[float] = tuple()
@@ -66,7 +66,7 @@ class TDR:
         can_fix, f_missing = get_missing_freq_dc_and_equidist(f)
         if can_fix:
             # extrapolationg, while interpolation is not needed
-            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_assumption=self.dc_assumption)
             assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
             return f, s, True
         
@@ -77,7 +77,7 @@ class TDR:
             n_steps = round(f_first / f_step)
             f_missing = np.linspace(0, f_first-f_step, n_steps, dtype=f.dtype)
             
-            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
+            f, s = extrapolate_to_dc(f, s, f_missing, method=self.dc_extrapolation, dc_assumption=self.dc_assumption)
 
             return f,s, False
 
@@ -87,7 +87,7 @@ class TDR:
         f_new = np.linspace(0, f[-1], n_steps)
         f_extrap = f_new[f_new < f[0]]
 
-        f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=self.dc_extrapolation, dc_mag_assumption=self.dc_mag_assumption)
+        f, s = extrapolate_to_dc(f, s, f_extrapolate=f_extrap, method=self.dc_extrapolation, dc_assumption=self.dc_assumption)
         f, s = interpolate_freq(f, s, f_new)
         assert check_freqs_dc_and_equidist(f) == (True,True)  # sanity check
         return f, s, True

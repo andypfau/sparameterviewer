@@ -90,9 +90,9 @@ class PlotSelector(QWidget):
 
 
     EXTRAPOLATION_DC_ASSUMPTION_NAMES = {
-        'none': 'None',
         'auto': 'Auto',
-        'zero': 'Zero',
+        'zero_pha': 'Phase ∈ 0°,180°',
+        'zero_mag': 'Magnitude = 0',
     }
 
 
@@ -194,7 +194,7 @@ class PlotSelector(QWidget):
         for name in PlotSelector.EXTRAPOLATION_DC_ASSUMPTION_NAMES.values():
             self._ui_td_extrap_dc_asmp_combo.addItem(name)
         self._ui_td_extrap_dc_asmp_combo.currentTextChanged.connect(self._on_change_extrap_dc_asmp)
-        self._ui_td_extrap_dc_asmp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Mag. Assump.:', self._ui_td_extrap_dc_asmp_combo, ...))
+        self._ui_td_extrap_dc_asmp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h('DC Assump.:', self._ui_td_extrap_dc_asmp_combo, ...))
         self._ui_td_interp_check = QCheckBox('Interpolate')
         self._ui_td_interp_check.stateChanged.connect(self._on_change_interp)
         self._ui_td_interp_menuwidget = QtHelper.add_menu_action(self._menu, QtHelper.layout_widget_h(self._ui_td_interp_check, ...))
