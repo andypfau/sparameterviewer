@@ -143,7 +143,7 @@ class SettingsDialog(SettingsDialogUi):
         try:
             start_process(self.ui_ext_ed)
         except Exception as ex:
-            error_dialog('Error', 'Command failed.', f'Command "self.ui_ext_ed"', detailed_text=str(ex))
+            error_dialog('Error', 'Command failed.', f'Command "{self.ui_ext_ed}" failed.', detailed_text=str(ex))
     
     
     def on_default_ext_ed(self):

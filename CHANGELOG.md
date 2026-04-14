@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b5 (2026-04-14)
+--------------------
+
+- bugfix: finding a default editor in the settings dialog now works under Windows
+
+
 0.45b4 (2026-03-28)
 --------------------
 

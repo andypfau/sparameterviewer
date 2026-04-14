@@ -576,13 +576,14 @@ def is_valid_binary(path: str) -> bool:
 
 def find_default_editor() -> str|None:
     if is_windows():
-        common_paths = [
+        common_paths_raw = [
             '%ProgramFiles%/Notepad++/notepad++.exe',
             '%ProgramFiles(x86)%/Notepad++/notepad++.exe',
             '%ProgramFiles%/Microsoft VS Code/bin/code.cmd',
             '%LocalAppData%/Programs/Microsoft VS Code/bin/code.cmd',
             '%SystemRoot%/System32/notepad.exe',
         ]
+        common_paths = [os.path.abspath(os.path.expandvars(path)) for path in common_paths_raw]
     else:
         common_paths = [
             '/usr/bin/code',
