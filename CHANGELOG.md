@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.45b6 (2026-04-15)
+--------------------
+
+- new: suggesting multiple defailt editors in settings dialog
+- bugfix: slicer can now be used on multiple parameters/expressions simultaneously, as long as the slicer items are always the same
+
+
 0.45b5 (2026-04-14)
 --------------------
 
