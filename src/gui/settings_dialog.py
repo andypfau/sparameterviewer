@@ -3,7 +3,7 @@ from .helpers.simple_dialogs import okcancel_dialog, open_file_dialog, error_dia
 from .helpers.qt_helper import QtHelper
 from .components.plot_widget import PlotWidget
 from lib import Settings, PhaseUnit, CsvSeparator, CursorSnap, ColorAssignment, LogNegativeHandling, MainWindowLayout, LargeMatrixBehavior, GuiColorScheme
-from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum, is_valid_binary, start_process, find_default_editor, is_valid_binary
+from lib.utils import is_windows, window_has_argument, enum_to_string, string_to_enum, is_valid_binary, start_process, find_default_editors, is_valid_binary
 import pathlib
 import logging
 import os
@@ -57,6 +57,7 @@ class SettingsDialog(SettingsDialogUi):
         self.ui_set_mainwinlayout_options(list(SettingsDialog.MAINWINLAYOUT_NAMES.values()))
         self.ui_set_largematrix_options(list(SettingsDialog.LARGEMATRIX_NAMES.values()))
         self.ui_set_guicolorscheme_options(list(SettingsDialog.GUICOLORSCHEME_NAMES.values()))
+        self.ui_set_ext_ed_options(find_default_editors())
     
 
     def show_modal_dialog(self, tab: SettingsTab = None):
@@ -144,13 +145,6 @@ class SettingsDialog(SettingsDialogUi):
             start_process(self.ui_ext_ed)
         except Exception as ex:
             error_dialog('Error', 'Command failed.', f'Command "{self.ui_ext_ed}" failed.', detailed_text=str(ex))
-    
-    
-    def on_default_ext_ed(self):
-        default = find_default_editor()
-        if default is None:
-            error_dialog('Error', 'Unable to find a default editor on your system.')
-        self.ui_ext_ed = default
     
 
     def on_phase_unit_change(self):

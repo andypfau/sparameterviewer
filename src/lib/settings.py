@@ -1,5 +1,5 @@
 from .appsettings import AppSettings
-from .utils import find_default_editor, is_valid_binary
+from .utils import find_default_editors, is_valid_binary
 import logging
 import enum
 
@@ -204,9 +204,9 @@ class SParamViewerAppSettings(AppSettings):
 
     def _ensure_editor(self):
         if not is_valid_binary(self.ext_editor_cmd):
-            default_editor = find_default_editor()
-            if is_valid_binary(default_editor):
-                self.ext_editor_cmd = default_editor
+            default_editors = find_default_editors()
+            if len(default_editors) > 0:
+                self.ext_editor_cmd = default_editors[0]
 
 
 

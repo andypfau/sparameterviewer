@@ -186,16 +186,15 @@ class SettingsDialogUi(QDialog):
         self._ui_font_combo = QComboBox()
         self._ui_font_combo.setToolTip('The font used in all text viewers/editors.')
         self._ui_font_combo.setMinimumWidth(250)
-        self._ui_exted_edit = QLineEdit()
-        self._ui_exted_edit.setToolTip('Path to an external editor, which is used by the "open in external editor" command.')
-        self._ui_exted_edit.textChanged.connect(self.on_ext_ed_change)
-        self._ui_exted_edit.setMinimumWidth(120)
-        self._ui_exted_search_btn = QtHelper.make_button(self, 'Find...', self.on_browse_ext_ed)
-        self._ui_exted_search_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
+        self._ui_exted_combo = QComboBox()
+        self._ui_exted_combo.setEditable(True)
+        self._ui_exted_combo.setToolTip('Path to an external editor, which is used by the "open in external editor" command.')
+        self._ui_exted_combo.currentTextChanged.connect(self.on_ext_ed_change)
+        self._ui_exted_combo.setMinimumWidth(120)
+        self._ui_exted_browse_btn = QtHelper.make_button(self, 'Browse...', self.on_browse_ext_ed)
+        self._ui_exted_browse_btn.setToolTip('Browse for external text editor, which is used by the "open in external editor" command.')
         self._ui_exted_test_btn = QtHelper.make_button(self, 'Test', self.on_test_ext_ed)
         self._ui_exted_test_btn.setToolTip('Test external text editor.')
-        self._ui_exted_default_btn = QtHelper.make_button(self, 'Default', self.on_default_ext_ed)
-        self._ui_exted_default_btn.setToolTip('Try to find a suitable default editor.')
         self._ui_verbose_check = QCheckBox('Verbose Log Output')
         self._ui_verbose_check.setToolTip('Adds additional log messages; might be helpful to  expressions.')
         self._ui_verbose_check.toggled.connect(self.on_verbose_changed)
@@ -211,8 +210,8 @@ class SettingsDialogUi(QDialog):
                         ['Cursor Snap:', QtHelper.layout_h(self._ui_cursor_snap, ...)],
                         ['Plot Style:', QtHelper.layout_h(self._ui_plot_style_combo, '(requires restart)')],
                         ['Editor Font:', QtHelper.layout_h(self._ui_font_combo)],
-                        ['External Editor:', QtHelper.layout_h(self._ui_exted_edit, margins=(-1,-1,-1,0))],
-                        [None, QtHelper.layout_h(self._ui_exted_search_btn, self._ui_exted_default_btn, self._ui_exted_test_btn, ..., margins=(-1,0,-1,-1))],
+                        ['External Editor:', QtHelper.layout_h(self._ui_exted_combo, margins=(-1,-1,-1,0))],
+                        [None, QtHelper.layout_h(self._ui_exted_browse_btn, self._ui_exted_test_btn, ..., margins=(-1,0,-1,-1))],
                 ]),
                 QtHelper.layout_h(self._ui_verbose_check, self._ui_logtofile_check, ...),
                 QtHelper.layout_h(self._ui_resetall_btn, ...),
@@ -476,10 +475,10 @@ class SettingsDialogUi(QDialog):
     
     @property
     def ui_ext_ed(self) -> str:
-        return self._ui_exted_edit.text()
+        return self._ui_exted_combo.currentText()
     @ui_ext_ed.setter
     def ui_ext_ed(self, value: str):
-        self._ui_exted_edit.setText(value)
+        self._ui_exted_combo.setCurrentText(value)
 
     
     @property
@@ -512,8 +511,16 @@ class SettingsDialogUi(QDialog):
         except: pass
 
 
+    def ui_set_ext_ed_options(self, options: list[str]):
+        text = self._ui_exted_combo.currentText()
+        self._ui_exted_combo.clear()
+        for option in options:
+            self._ui_exted_combo.addItem(option)
+        self._ui_exted_combo.setCurrentText(text)
+
+
     def ui_indicate_ext_ed_error(self, indicate_error: bool):
-        QtHelper.indicate_error(self._ui_exted_edit, indicate_error)
+        QtHelper.indicate_error(self._ui_exted_combo, indicate_error)
     
 
     def _on_fixed_plot_size_changed(self):
@@ -572,8 +579,6 @@ class SettingsDialogUi(QDialog):
     def on_browse_ext_ed(self):
         pass
     def on_test_ext_ed(self):
-        pass
-    def on_default_ext_ed(self):
         pass
     def on_plotstyle_change(self):
         pass

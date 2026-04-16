@@ -12,7 +12,7 @@ from .utils import natural_sort_key, format_minute_seconds, string_to_enum, enum
 from .utils import get_next_1_10_100, get_next_1_3_10, get_next_1_2_5_10
 from .utils import find_files_in_archive, load_file_from_archive
 from .utils import file_pattern_to_regex, make_filename_matcher
-from .utils import is_windows, get_callstack_str, open_file_in_default_viewer, start_process, is_running_from_binary, is_valid_binary, find_default_editor
+from .utils import is_windows, get_callstack_str, open_file_in_default_viewer, start_process, is_running_from_binary, is_valid_binary, find_default_editors
 from .utils import ArchiveFileLoader
 from .expressions import ExpressionParser, DefaultAction
 from .apppaths import AppPaths

@@ -563,18 +563,24 @@ def make_filename_matcher(pattern: str) -> Callable[tuple[PathExt],bool]:
 
 
 def is_valid_binary(path: str) -> bool:
-    if not path:
+    try:
+        if not path:
+            return False
+        if not os.path.exists(path):
+            return False
+        if not os.path.isfile(path):
+            return False
+        if not os.access(path, os.X_OK):
+            return False
+        
+        return True
+    
+    except Exception as ex:
+        logging.error(f'Error while checking if path <{path}> is a valid binary: {ex}')
         return False
-    if not os.path.exists(path):
-        return False
-    if not os.path.isfile(path):
-        return False
-    if not os.access(path, os.X_OK):
-        return False
-    return True
 
 
-def find_default_editor() -> str|None:
+def find_default_editors() -> list[str]:
     if is_windows():
         common_paths_raw = [
             '%ProgramFiles%/Notepad++/notepad++.exe',
@@ -593,7 +599,8 @@ def find_default_editor() -> str|None:
             '/usr/bin/vim',
         ]
 
-    for path in common_paths:
-        if is_valid_binary(path):
-            return path
-    return None
+    try:
+        return list([path for path in common_paths if is_valid_binary(path)])
+    except Exception as ex:
+        logging.error(f'Error while trying to find default editors: {ex}')
+        return []
