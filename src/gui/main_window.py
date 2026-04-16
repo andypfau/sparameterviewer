@@ -2165,10 +2165,10 @@ class MainWindow(MainWindowUi):
                 generated_lines.extend(make_expression_lines(f'nws().slice(r\'{filter_str}\')'))
             self.generated_expressions = '\n'.join(generated_lines)
 
-            using_slicer = False
+            current_slicer_options = None
+            current_slicer_index = None
             def slicer_fn_wrapper(show: bool, options: list[str]) -> tuple[int,str|None]:
-                nonlocal using_slicer
-                
+                nonlocal current_slicer_options, current_slicer_index                
                 if not show:
                     return 0, None
                     
@@ -2179,15 +2179,19 @@ class MainWindow(MainWindowUi):
                             return 0, None
                         return 0, options[0]
                 
-                if using_slicer:
-                    raise RuntimeError(f'Slicer is already in use; cannot show another one')
-                using_slicer = True
-                
                 options_unique = list(set(options))
                 options_sorted = sorted(options_unique, key=lambda s: natural_sort_key(s))
                 options_short = shorten_string_list(options_sorted, target_len=50)
-                
-                index,_ = self.ui_expr_slicer(show, options_short, closable=not use_expressions)
+
+                if current_slicer_options is not None:
+                    if options_short != current_slicer_options:
+                        raise RuntimeError(f'Slicer is already in use; cannot show another one with different values')
+                    index = current_slicer_index
+                else:
+                    index,_ = self.ui_expr_slicer(show, options_short, closable=not use_expressions)
+                    current_slicer_options = options_short
+                    current_slicer_index = index
+
                 assert 0 <= index < len(options_sorted)
                 value = options_sorted[index]
                 
@@ -2209,7 +2213,7 @@ class MainWindow(MainWindowUi):
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
 
-            if not using_slicer:
+            if current_slicer_options is None:
                 self.ui_expr_slicer(False, [], False)  # if slicer is not used, hide it from the GUI
             self.ui_file_slicer_enabled = not use_expressions
 
