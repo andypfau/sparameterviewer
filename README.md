@@ -45,4 +45,6 @@ Roadmap
 
 ### Known Issues
 
+- Cursors are not displayed correctly in polar charts.
+- Cursor placemement by entering a frequency value does not work properly. This would require a significant rework of the plot helper class.
 - The Smith chart is based on Scikit RF, and behaves a bit different from other plots, e.g. it will always display the grid, regardless of whether "Show Grid" is selected or not.
