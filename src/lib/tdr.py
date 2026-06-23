@@ -206,6 +206,6 @@ class TDR:
             # ensure the resulting trace is real-valued
             if z0.imag != 0:
                 logging.warning(f'TDR: Converting to impedance with complex-valued characteristic impedance ({z0:.3g} Ω), dropping imaginary part of result')
-            w = np.astype(np.real(w), float)
+            w = np.real(w).astype(float)
         
         return t, w

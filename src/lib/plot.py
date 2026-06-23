@@ -541,13 +541,13 @@ class PlotHelper:
                             logging.debug(f'Trace "{label}" X-data has complex values; dropping imaginary part, casting to real')
                         else:
                             logging.debug(f'Trace "{label}" X-data has complex type, but no complex values; casting to real')
-                        x = np.astype(np.real(x), float)
+                        x = np.real(x).astype(float)
                     if np.iscomplexobj(y):
                         if np.any(np.iscomplex(y)):
                             logging.debug(f'Trace "{label}" Y-data has complex values; dropping imaginary part, casting to real')
                         else:
                             logging.debug(f'Trace "{label}" Y-data has complex type, but no complex values; casting to real')
-                        y = np.astype(np.real(y), float)
+                        y = np.real(y).astype(float)
 
                     new_plt = plot.plot(x, y, style, label=item.label, color=color, lw=width, alpha=opacity)
                     self._anything_in_plot = True
