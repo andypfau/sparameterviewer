@@ -492,6 +492,35 @@ nw("lpf.s2p").reciprocity().plot()
 
 
 
+### get_f_min()
+
+```python
+get_f_min() -> float
+```
+
+Returns the lowest frequency of all networks.
+
+Example:
+```python
+sel_nws().get_f_min()
+```
+
+
+### get_f_max()
+
+```python
+get_f_max() -> float
+```
+
+Returns the highest frequency of all networks.
+
+Example:
+```python
+sel_nws().get_f_max()
+```
+
+
+
 ### crop_f()
 
 ```python

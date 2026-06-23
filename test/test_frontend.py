@@ -93,6 +93,7 @@ class MyFrontendTestCase(MyTestCase):
             default_actions = [],
             ref_nw_name = None,
             slicer_fn = None,
+            slider_fn = None,
         )
 
         return super().setUp()

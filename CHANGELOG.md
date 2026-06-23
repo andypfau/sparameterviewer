@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.46b1 (2026-06-23)
+--------------------
+
+- new: global function `slider()` (incl. new expression template)
+- new: `Networks.get_f_min()` and `Networks.get_f_max()`
+
+
 0.45b6 (2026-04-15)
 --------------------
 

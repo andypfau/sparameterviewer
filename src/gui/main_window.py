@@ -703,6 +703,13 @@ class MainWindow(MainWindowUi):
             expressions = [f'{nw}.sel_params().plot()' for nw in const_selected_files()]
             set_expression(*expressions)
         
+        def show_freq_slider():
+            set_expression(
+                'f0, f1, nf = sel_nws().get_f_min(), sel_nws().get_f_max(), 101',
+                'f = slider(linspace=(f0, f1 ,nf))',
+                'sel_nws().crop_f(f-(f1-f0)/nf, f+(f1-f0)/nf).plot_sel_params()',
+            )
+        
         def invoke_template(template_fn, ctrl, shift):
             nonlocal comment_existing_expr
             comment_existing_expr = Settings.comment_existing_expr != ctrl
@@ -786,6 +793,7 @@ class MainWindow(MainWindowUi):
                 ('Currently Selected Networks', selected_networks),
                 ('Currently Selected Networks (via Explicit Name)', selected_networks_explicit),
                 ('Select Networks via Slicer', add_slicer),
+                ('Slide through Frequencies', show_freq_slider),
             ]),
         ], call_wrapper=invoke_template)
 
@@ -884,7 +892,11 @@ class MainWindow(MainWindowUi):
         self.ui_file_slicer_active = False
         self._file_slice_filter = None
         self.schedule_plot_update()
-    
+
+
+    def on_expr_slider_change(self):
+        self.schedule_plot_update()
+
 
     def on_load_dir(self):
         title = 'Change Directory' if self.ui_filesys_browser.simplified() else 'Open Another Directory'
@@ -2196,9 +2208,15 @@ class MainWindow(MainWindowUi):
                 value = options_sorted[index]
                 
                 return index, value
+
+            slider_in_use = False
+            def slider_fn_wrapper(show: bool, min: float|None = None, max: float|None = None) -> float|None:
+                nonlocal slider_in_use
+                slider_in_use = show
+                return self.ui_expr_slider(show, min, max)
             
             param_selector_is_in_use = True
-            expression_parser = ExpressionParser(self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper)
+            expression_parser = ExpressionParser(self.files.values(), selected_files, actions, self.get_nw_name_for_template(self._ref_path_for_template), add_to_plot_list, slicer_fn_wrapper, slider_fn_wrapper)
             if use_expressions:
 
                 Settings.expression = self.ui_expression
@@ -2215,6 +2233,8 @@ class MainWindow(MainWindowUi):
 
             if current_slicer_options is None:
                 self.ui_expr_slicer(False, [], False)  # if slicer is not used, hide it from the GUI
+            if not slider_in_use:
+                self.ui_expr_slider(False)  # if slider is not used, hide it from the GUI
             self.ui_file_slicer_enabled = not use_expressions
 
             singlefile_colorizing = False

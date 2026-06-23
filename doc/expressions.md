@@ -48,9 +48,10 @@ The expressions use [Python](https://docs.python.org/3/) syntax. You have access
     - `nws()`: a set of specific networks
     - `saved_nw()`: the network that was selected as reference in the GUI
     - `quick()`: a simple and quick plotting mechanism
+    - `slider()`: shows a slider in the GUI
 - Classes:
     - `Networks`: [representation of one or more network files](./expr_networks.md)
-    - `SParams`: [representation of data from networks](./expr_networks.md)
+    - `SParams`: [representation of data from networks](./expr_sparams.md)
     - `Comp`: [parameteric network components](./expr_components.md)
 
 
@@ -177,6 +178,32 @@ def my_fn(s, ref_s):
     return s / ref_s  # normalization
 
 map(my_fn, sel_nws(), saved_nw()).plot_sel_params()
+```
+
+
+### slider()
+
+```python
+slider(show=True, range=None, arange=None, linspace=None, geomspace=None)
+```
+
+Show a slider (trackbar) in the GUI, which allows to select a value in a given range.
+
+The return value is the current value of the slider in the GUI.
+
+The range can be defined in various ways, analogous to common Python/Numpy methods:
+- `range`: a tuple of integers `(min, max)`.
+- `arange`: a tuple of floats ``(min, max, number_of_steps)`.
+- `linspace`: a tuple of floats ``(min, max, step)`.
+- `geomspace`: a tuple of floats ``(min, max, logarithmic_step)`.
+
+Set `show=False` to hide the slider.
+
+Example:
+```python
+# show a slider to select any frequency in the networks' range
+f = slider(linspace=(sel_nws().get_f_min(), sel_nws().get_f_max(), 101))
+sel_nws().crop_f(f, f+100e6).s(11).plot()
 ```
 
 

@@ -262,6 +262,12 @@ class MainWindowUi(QMainWindow):
         self._ui_ribbon.setContentsMargins(0, 0, 0, 0)
         self._ui_ribbon.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+        self._ui_expr_slider = QSlider(Qt.Orientation.Horizontal)
+        self._ui_expr_slider.setVisible(False)
+        self._ui_expr_slider.setMinimum(0)
+        self._ui_expr_slider.setMaximum(100)
+        self._ui_expr_slider.valueChanged.connect(self.on_expr_slider_change)
+
         self._ui_expr_slicer_label = QLabel('Slice:')
         self._ui_expr_slicer_label.setVisible(False)
         self._ui_expr_slicer_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -280,6 +286,7 @@ class MainWindowUi(QMainWindow):
         self._ui_plot_container = QWidget()
         self._ui_plot_container.setLayout(
             QtHelper.layout_v(
+                QtHelper.layout_h(self._ui_expr_slider),
                 QtHelper.layout_h(self._ui_expr_slicer_label, self._ui_expr_slicer, self._ui_slicer_close_button),
                 self._ui_plot,
             )
@@ -747,6 +754,25 @@ class MainWindowUi(QMainWindow):
 
 
         return index, options[index]
+    
+
+    def ui_expr_slider(self, show: bool, min: int|None = None, max: int|None = None, position: int|None = None) -> int:
+
+        if not show:
+            self._ui_expr_slider.setVisible(False)
+            return 0
+
+        self._ui_expr_slider.blockSignals(True)
+        if min is not None and max is not None:
+            self._ui_expr_slider.setMinimum(min)
+            self._ui_expr_slider.setMaximum(max)
+        if position is not None:
+            self._ui_expr_slider.setValue(position)
+        self._ui_expr_slider.blockSignals(False)
+
+        self._ui_expr_slider.setVisible(True)
+
+        return self._ui_expr_slider.value()
 
     
     def ui_show_abort_button(self, value: bool):
@@ -1340,4 +1366,6 @@ class MainWindowUi(QMainWindow):
     def on_maxlegend_changed(self):
         pass
     def on_close(self):
+        pass
+    def on_expr_slider_change(self):
         pass

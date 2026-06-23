@@ -18,6 +18,9 @@ import dataclasses
 from typing import Callable
 
 
+SliderFnType = Callable[[bool,int|None,int|None],int]
+
+
 class ExpressionParser:
 
 
@@ -32,11 +35,14 @@ class ExpressionParser:
             default_actions: list[DefaultAction],
             ref_nw_name: str|None,
             plot_fn: SParam.PlotFnType,
-            slicer_fn: Networks.SlicerFnType):
+            slicer_fn: Networks.SlicerFnType,
+            slider_fn: SliderFnType,
+        ):
         
         self._available_networks = available_networks
         self._selected_networks = selected_networks
         self._ref_nw_name = ref_nw_name
+        self._slider_fn = slider_fn
         
         SParam.setup(plot_fn)
         Networks.setup(default_actions, slicer_fn)
@@ -127,6 +133,35 @@ class ExpressionParser:
             
             return SParams(result)
 
+        def slider(show: bool = True, range: tuple = None, arange: tuple = None, linspace: tuple = None, geomspace: tuple = None) -> int:
+            n_specified = sum([1 for x in [range, arange, linspace, geomspace] if x is not None])
+            if n_specified != 1:
+                raise ValueError(f'Please specify only one of "range", "arange", "linspace", or "geomspace"')
+            if range is not None:
+                if len(range) != 2:
+                    raise ValueError(f'Please specify exactly two values for "range" (min, max)')
+                min, max = range
+                return self._slider_fn(show, min, max)
+            if arange is not None:
+                if len(arange) != 3:
+                    raise ValueError(f'Please specify exactly three values for "arange" (min, max, step)')
+                min, max, step = arange
+                n = int((max - min) / step) + 1
+                value = self._slider_fn(show, 0, n-1)
+                return min + value * step
+            if linspace is not None:
+                if len(linspace) != 3:
+                    raise ValueError(f'Please specify exactly three values for "linspace" (min, max, num)')
+                min, max, num = linspace
+                value = self._slider_fn(show, 0, num-1)
+                return min + value * (max - min) / (num - 1)
+            if geomspace is not None:
+                if len(geomspace) != 3:
+                    raise ValueError(f'Please specify exactly three values for "geomspace" (min, max, num)')
+                min, max, num = geomspace
+                value = self._slider_fn(show, 0, num-1)
+                return min * (max / min) ** (value / (num - 1))
+
         vars_global = {}
         vars_local = {
             'Networks': Networks,
@@ -138,6 +173,7 @@ class ExpressionParser:
             'sel_nws': sel_nws,
             'quick': quick,
             'map': map,  # TODO: document in `expressions.md`?
+            'slider': slider,  # TODO: document in `expressions.md`?
             'math': math,
             'cmath': cmath,
             'np': np,

@@ -1334,6 +1334,28 @@ class Networks:
     def rewire(self, ports: list[int]) -> "Networks":
         return self._unary_op(Network.rewire, Networks, ports=ports)
 
+    
+    def get_f_min(self) -> float:
+        f_min = None
+        for nw in self.nws:
+            nw_f_min = min(nw.nw.f)
+            if f_min is None:
+                f_min = nw_f_min
+            else:
+                f_min = min(f_min, nw_f_min)
+        return f_min
+
+    
+    def get_f_max(self) -> float:
+        f_max = None
+        for nw in self.nws:
+            nw_f_max = max(nw.nw.f)
+            if f_max is None:
+                f_max = nw_f_max
+            else:
+                f_max = max(f_max, nw_f_max)
+        return f_max
+
 
     def _save(self, filename: str):
         WILDCARD_NUM = '$NUM'
