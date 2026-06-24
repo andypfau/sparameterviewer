@@ -2209,10 +2209,15 @@ class MainWindow(MainWindowUi):
                 
                 return index, value
 
-            slider_in_use = False
+            current_slider_values = None
             def slider_fn_wrapper(show: bool, min: float|None = None, max: float|None = None) -> float|None:
-                nonlocal slider_in_use
-                slider_in_use = show
+                nonlocal current_slider_values
+                if not show:
+                    return None
+                if current_slider_values is not None:
+                    if current_slider_values != (min, max):
+                        raise RuntimeError(f'Slider is already in use; cannot show another one with different values')
+                current_slider_values = (min, max)
                 return self.ui_expr_slider(show, min, max)
             
             param_selector_is_in_use = True
@@ -2231,11 +2236,11 @@ class MainWindow(MainWindowUi):
                     logging.error(f'Unable to parse expressions: {ex} (trace: {traceback.format_exc()})')
                     self.ui_plot.clear()
 
-            if current_slicer_options is None:
-                self.ui_expr_slicer(False, [], False)  # if slicer is not used, hide it from the GUI
-            if not slider_in_use:
-                self.ui_expr_slider(False)  # if slider is not used, hide it from the GUI
             self.ui_file_slicer_enabled = not use_expressions
+            if current_slicer_options is None:
+                self.ui_expr_slicer(False, [], False)  # slicer is not used, hide it from the GUI
+            if current_slider_values is None:
+                self.ui_expr_slider(False)             # slider is not used, hide it from the GUI
 
             singlefile_colorizing = False
             if Settings.singlefile_individualcolor:
