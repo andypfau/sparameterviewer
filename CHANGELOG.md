@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - bugfix: preferred of legend position was not applied to plot
+- bugfix: added missing end-tag to touchstone 2.0 files
 
 
 0.46b1 (2026-06-23)
