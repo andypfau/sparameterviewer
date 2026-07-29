@@ -71,8 +71,8 @@ class MainWindow(MainWindowUi):
         LegendPos.Center: 'Center',
         LegendPos.Right: 'Right Center',
         LegendPos.BottomLeft: 'Bottom Left',
-        LegendPos.BottomRight: 'Bottom Right',
         LegendPos.Bottom: 'Bottom Center',
+        LegendPos.BottomRight: 'Bottom Right',
     }
 
 
@@ -2387,6 +2387,8 @@ class MainWindow(MainWindowUi):
             self.ui_param_selector.setDimParameters(not param_selector_is_in_use)
 
             self.update_params_size()
+
+            self.plot.preferred_legend_position = Settings.legend_position
             self.plot.render()
             
             if plot_type == PlotType.Polar:
@@ -2428,7 +2430,6 @@ class MainWindow(MainWindowUi):
                         self.plot.set_yaxis_range(self.ui_yaxis_range.low, self.ui_yaxis_range.high)
             
             self.plot.show_grid(Settings.show_grid)
-            self.plot.preferred_legend_position = Settings.legend_position
 
             self.plot.attach_xaxis_range_listener(self.on_user_change_xaxis)
             self.plot.attach_yaxis_range_listener(self.on_user_change_yaxis)

@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.46b2 (2026-07-29)
+--------------------
+
+- bugfix: preferred of legend position was not applied to plot
+
+
 0.46b1 (2026-06-23)
 --------------------
 

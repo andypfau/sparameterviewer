@@ -570,16 +570,16 @@ class PlotHelper:
         if self._anything_in_plot:
             if show_legend:
                 match self._preferred_legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
-                    case LegendPos.Auto: loc = 0
-                    case LegendPos.TopLeft: loc = 2
-                    case LegendPos.Top: loc = 9
-                    case LegendPos.TopRight: loc = 1
-                    case LegendPos.Left: loc = 6
-                    case LegendPos.Center: loc = 10
-                    case LegendPos.Right: loc = 7
-                    case LegendPos.BottomLeft: loc = 3
-                    case LegendPos.Bottom: loc = 8
-                    case LegendPos.BottomRight: loc = 4
+                    case LegendPos.TopLeft:     loc = 'upper left'
+                    case LegendPos.Top:         loc = 'upper center'
+                    case LegendPos.TopRight:    loc = 'upper right'
+                    case LegendPos.Left:        loc = 'center left'
+                    case LegendPos.Center:      loc = 'center'
+                    case LegendPos.Right:       loc = 'center right'
+                    case LegendPos.BottomLeft:  loc = 'lower left'
+                    case LegendPos.Bottom:      loc = 'lower center'
+                    case LegendPos.BottomRight: loc = 'lower right'
+                    case _:                     loc = 'best'
                 self._plot.legend(loc=loc)
             else:
                 if self._plot:
