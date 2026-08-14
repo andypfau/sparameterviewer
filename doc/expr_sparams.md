@@ -357,6 +357,23 @@ sel_nws().sel_params().interpolate(0, 10e9, 301).plot()
 ```
 
 
+### smooth()
+
+```python
+smooth(winsize=None, order=None) -> SParams
+```
+
+Smooths a trace using a Savitzky-Golay filter (via [`scipy.signal.savgol()`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.savgol_filter.html)). Parameters are `winsize` (the window length of the filter, in samples; default is chosen to give reasonable smoothing) and `order` (the polynomial order; default 5).
+
+Examples:
+```python
+sel_nws().sel_params().smooth().plot()  # plot smoothed traces
+
+(sel_nws().sel_params()/sel_nws().sel_params().smooth()).plot()  # plot only the "noisyness" of a trace
+```
+
+
+
 
 ### map()
 

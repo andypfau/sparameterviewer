@@ -160,12 +160,16 @@ Returns a `Networks` object with the network that was saved from the Filesystem 
 ### map()
 
 ```python
-map(fn, sparams, f_arg=False)
+map(fn, *sparams, f_arg=False)
 ```
 
-Maps `SParams` objects using a user-defined function `fn`.
+Maps `SParams` objects, using a user-defined function `fn`, followed by one or more Instances of `SParams` instances (e.g. from a call to `sel_nws().sel_params()`).
 
 If `f_arg=True`, the first argument handed to `fn` is the frequency (as `np.ndarray`), and all subsequent arguments are the S-parameters of each `sparams` argument (as `np.ndarray`). The S-parameters are interpolated to all have the same freuqencies. If `f_arg=False` (default), the frequency argument is omitted.
+
+The signature of `fn` must be:
+- if `f_arg=False`: `(*s: np.narray) -> list[np.narray]`
+- if `f_arg=True`: `(f: np.narray, *s: np.narray) -> list[np.narray]`
 
 If the items of `sparams` have different numbers of elements, all items with only a single element are repeated. If there are different numbers of elements that are not one, an error occurs. Example:
 - `map(fn, three_elements, three_elements)`: `fn()` is called 3x, with `three_elements[0],three_elements[0]`, `three_elements[1],three_elements[1]`, `three_elements[2],three_elements[2]`.
@@ -177,7 +181,7 @@ Example:
 def my_fn(s, ref_s):
     return s / ref_s  # normalization
 
-map(my_fn, sel_nws(), saved_nw()).plot_sel_params()
+map(my_fn, sel_nws().sel_params(), saved_nw().sel_params()).plot_sel_params()
 ```
 
 

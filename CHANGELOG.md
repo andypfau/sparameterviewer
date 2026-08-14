@@ -2,6 +2,12 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.47b1 (2026-08-14)
+--------------------
+
+- new: method `SParams.smooth()` (incl. new expression template)
+
+
 0.46b2 (2026-07-29)
 --------------------
 

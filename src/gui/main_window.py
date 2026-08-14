@@ -474,6 +474,12 @@ class MainWindow(MainWindowUi):
             set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
             setup_plot(PlotType.Cartesian, YQuantity.Decibels)
 
+        def smooth():
+            set_expression(
+                'sel_nws().sel_params().smooth().plot()  # smoothed traces',
+                '(sel_nws().sel_params()/sel_nws().sel_params().smooth()).plot()  # plot only the "noisyness" of a trace',
+            )
+
         def stat_minmax():
             if len(const_selected_files()) < 2:
                 warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
@@ -794,6 +800,7 @@ class MainWindow(MainWindowUi):
                 ('Currently Selected Networks (via Explicit Name)', selected_networks_explicit),
                 ('Select Networks via Slicer', add_slicer),
                 ('Slide through Frequencies', show_freq_slider),
+                ('Smooth Trace', smooth),
             ]),
         ], call_wrapper=invoke_template)
 

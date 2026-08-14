@@ -104,6 +104,8 @@ class ExpressionParser:
         def map(fn: Callable[[list[np.ndarray]],np.ndarray], *sparams: SParams, f_arg: bool = False) -> SParams:
             if len(sparams) < 1:
                 raise ValueError(f'Expected at least one SParams object, got none')
+            if not all(isinstance(s, SParams) for s in sparams):
+                raise ValueError(f'Expected all arguments to be SParams objects, got {[type(s) for s in sparams]}')
             
             shapes = [len(s.sps) for s in sparams]
             broadcast_shape = 1

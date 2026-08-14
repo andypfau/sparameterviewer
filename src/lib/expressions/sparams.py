@@ -292,6 +292,19 @@ class SParam:
             new_name = re.sub(pattern, subs, new_name)
         return self._modified_copy(name=new_name)
     
+    
+    def smooth(self, winsize=None, order=None):
+        if winsize is None:
+            winsize = max(5, int(round(len(self.f)/50)))
+        if order is None:
+            order = 3
+        s = self.s
+        r, i = np.real(s), np.imag(s)
+        r_smooth = scipy.signal.savgol_filter(r, window_length=winsize, polyorder=order, axis=0)
+        i_smooth = scipy.signal.savgol_filter(i, window_length=winsize, polyorder=order, axis=0)
+        s_smooth = r_smooth + 1j*i_smooth
+        return self._modified_copy(s=s_smooth, name=f'{self.name} smooth')
+    
 
     def save(self, filename: str):
         
@@ -634,6 +647,10 @@ class SParams:
     
     def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):
         return self._unary_op(SParam.rename, True, name=name, prefix=prefix, suffix=suffix, pattern=pattern, subs=subs)
+
+    
+    def smooth(self, winsize=None, order=None):
+        return self._unary_op(SParam.smooth, True, winsize=winsize, order=order)
     
 
     def _save(self, filename: str):
