@@ -1,0 +1,7 @@
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.s1p text eol=lf
+*.s2p text eol=lf
+*.s3p text eol=lf
+*.s4p text eol=lf
