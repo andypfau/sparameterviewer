@@ -476,8 +476,9 @@ class MainWindow(MainWindowUi):
 
         def smooth():
             set_expression(
+                '#sel_nws().sel_params().plot()  # regular traces',
                 'sel_nws().sel_params().smooth().plot()  # smoothed traces',
-                '(sel_nws().sel_params()/sel_nws().sel_params().smooth()).plot()  # plot only the "noisyness" of a trace',
+                '#(sel_nws().sel_params()/sel_nws().sel_params().smooth()).plot()  # plot only the "noisyness" of a trace',
             )
 
         def stat_minmax():
