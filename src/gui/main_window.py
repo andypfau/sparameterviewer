@@ -26,6 +26,7 @@ from lib import PathExt
 from lib import Settings, PlotType, PhaseProcessing, PhaseUnit, CursorSnap, ColorAssignment, Parameters, YQuantity, TdrResponse, SmithNorm, LegendPos, FileConfig, TdrResponse
 from lib import TDR
 from lib.expressions.sparams import NumberType
+from lib.expressions.templates import get_expression_templates, ExpressionTemplate, ExpressionTemplateGroup
 from info import Info
 
 import pathlib
@@ -376,27 +377,6 @@ class MainWindow(MainWindowUi):
 
         comment_existing_expr = Settings.comment_existing_expr
 
-        def const_all_files():
-            return [f'nw(\'{self.get_nw_name_for_template(file)}\')' for file in self.files]
-        
-        def const_selected_files():
-            return [f'nw(\'{self.get_nw_name_for_template(file.path)}\')' for file in self.get_selected_files()]
-        
-        def dynamic_selected_files():
-            if Settings.dynamic_template_references:
-                return ['sel_nws()']
-            else:
-                return const_selected_files()
-        
-        def get_reference_file_for_multifile_op() -> str|None:
-            if self._ref_path_for_template is None:
-                info_dialog('Error', 'No reference network selected.', informative_text='Right-click a network in te fileview browser, and click "Save for Template". Then use this template again.')
-                return None
-            if Settings.dynamic_template_references:
-                return 'saved_nw()'
-            else:
-                return f'nw("{self.get_nw_name_for_template(self._ref_path_for_template)}")'
-
         def set_expression(*expressions):
             nonlocal comment_existing_expr
             if Settings.simplified_no_expressions:
@@ -420,9 +400,6 @@ class MainWindow(MainWindowUi):
             self.ui_enable_expressions(True)
             self.schedule_plot_update()
         
-        def as_currently_selected():
-            set_expression(self.generated_expressions)
-
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
             changed = False
             if plot_type and plot_type != self.ui_plot_selector.plotType():
@@ -434,376 +411,114 @@ class MainWindow(MainWindowUi):
             if changed:
                 self.on_plottype_changed()
 
-        def all_sparams():
-            set_expression('sel_nws().s().plot()  # all S-params')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def const_all_files():
+            return [f'nw(\'{self.get_nw_name_for_template(file)}\')' for file in self.files]
         
-        def insertion_loss():
-            set_expression('sel_nws().s(il_only=True).plot()  # insertion loss')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def explicit_selected_files():
+            return [f'nw(\'{self.get_nw_name_for_template(file.path)}\')' for file in self.get_selected_files()]
         
-        def insertion_loss_reciprocal():
-            set_expression('sel_nws().s(fwd_il_only=True).plot()  # forward gain')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def dynamic_selected_files():
+            if Settings.dynamic_template_references:
+                return ['sel_nws()']
+            else:
+                return explicit_selected_files()
         
-        def return_loss():
-            set_expression('sel_nws().s(rl_only=True).plot()  # return loss')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
-        
-        def vswr():
-            set_expression('sel_nws().s(rl_only=True).vswr().plot()  # voltage standing wave ratio')
-            setup_plot(PlotType.Cartesian)
-        
-        def mismatch_loss():
-            set_expression('sel_nws().s(rl_only=True).ml().plot()  # mismatch loss')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def get_reference_file_for_multifile_op() -> str|None:
+            if self._ref_path_for_template is None:
+                info_dialog('Error', 'No reference network selected.', informative_text='Right-click a network in te fileview browser, and click "Save for Template". Then use this template again.')
+                return None
+            if Settings.dynamic_template_references:
+                return 'saved_nw()'
+            else:
+                return f'nw("{self.get_nw_name_for_template(self._ref_path_for_template)}")'
 
-        def quick11():
-            set_expression('quick(11)')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
-        
-        def quick112122():
-            set_expression('quick(11)', 'quick(21)', 'quick(22)')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
-        
-        def quick11211222():
-            set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def verify_ranges(template: ExpressionTemplate, selected_files: list) -> bool:
+            if template.min_selected is not None:
+                if len(selected_files) < template.min_selected:
+                    error_dialog('Multiple Networks Required', f'Please select at least two networks before using this tempate.')
+                    return False
+            elif template.need_many_for_stat:
+                if len(selected_files) < 3:
+                    warning_dialog('Statistics', f'For meaningful statistics, a significant amount of networks should be selected.')
+            return True
 
-        def quick112122313233():
-            set_expression('quick(11)', 'quick(21)', 'quick(12)', 'quick(22)', 'quick(31)', 'quick(32)', 'quick(33)')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+        def make_menu_item_fn(template: ExpressionTemplate):
+            def template_fn():
+                expressions, freqref, slicerpattern = [], None, None
+                for ex in template.snippets:
 
-        def smooth():
-            set_expression(
-                '#sel_nws().sel_params().plot()  # regular traces',
-                'sel_nws().sel_params().smooth().plot()  # smoothed traces',
-                '#(sel_nws().sel_params()/sel_nws().sel_params().smooth()).plot()  # plot only the "noisyness" of a trace',
-            )
+                    # replace single-patterns
+                    if '{freqref}' in ex:
+                        if not freqref:
+                            freqref = textinput_dialog('Frequency', 'Normalization frequency:', '1e9')
+                            if not freqref:
+                                return
+                        ex = ex.replace('{freqref}', freqref)
+                    if '{reference}' in ex:
+                        ref = get_reference_file_for_multifile_op()
+                        if not ref:
+                            return
+                        ex = ex.replace('{reference}', ref)
+                    if '{slicerpattern}' in ex:
+                        if not slicerpattern:
+                            slicerpattern = textinput_dialog('Slicer', 'Slicer pattern:', '.*')
+                            if not slicerpattern:
+                                return
+                        ex = ex.replace('{slicerpattern}', slicerpattern)
+                    if '{selected_explicit_casc}' in ex:
+                        selected_files = explicit_selected_files()
+                        if not verify_ranges(template, selected_files):
+                            return
+                        ex = ex.replace('{selected_explicit_casc}', ' ** '.join(selected_files))
+                        raise NotImplementedError()
 
-        def stat_minmax():
-            if len(const_selected_files()) < 2:
-                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
-            set_expression('sel_nws().sel_params().min().plot()     # lowest value',
-                           'sel_nws().sel_params().max().plot()     # highest value',
-                           'sel_nws().sel_params().pkpk().plot()    # peak-to-peak value',
-                           'sel_nws().sel_params().plot(style=":")  # all raw data')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+                    # replace array-patterns
+                    if '{*generated}' in ex:
+                        for line in self.generated_expressions.split('\n'):
+                            expressions.append(ex.replace('{*generated}', line))
+                    elif '{*all}' in ex:
+                        for name in const_all_files():
+                            expressions.append(ex.replace('{*all}', name))
+                    elif '{*selected}' in ex:
+                        selected_files = dynamic_selected_files()
+                        if not verify_ranges(template, selected_files):
+                            return
+                        for name in selected_files:
+                            expressions.append(ex.replace('{*selected}', name))
+                    elif '{*selected_explicit}' in ex:
+                        selected_files = explicit_selected_files()
+                        if not verify_ranges(template, selected_files):
+                            return
+                        for name in selected_files:
+                            expressions.append(ex.replace('{*selected_explicit}', name))
+                    else:
+                        expressions.append(ex)
 
-        def stat_meansdev():
-            if len(const_selected_files()) < 2:
-                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
-            set_expression('sel_nws().sel_params().mean().plot()    # mean',
-                           'sel_nws().sel_params().sdev().plot()    # standard deviation',
-                           'sel_nws().sel_params().plot(style=":")  # all raw data')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
+                set_expression(*expressions)
+                setup_plot(template.plot_type, template.y_quantity)
+            return template_fn
 
-        def stat_rmeansdev():
-            if len(const_selected_files()) < 2:
-                warning_dialog('Statistics', f'For meaningful statistics, please select two or more networks.')
-            set_expression('sel_nws().sel_params().median().plot()             # median / robust mean',
-                           'sel_nws().sel_params().rsdev(quantiles=50).plot()  # robust standard deviation from inter-quantile range',
-                           'sel_nws().sel_params().plot(style=":")             # all raw data')
-            setup_plot(PlotType.Cartesian, YQuantity.Decibels)
-        
-        def stability_k():
-            set_expression('sel_nws().k().plot()      # Stability k; should be > 1 for stable network',
-                           'sel_nws().delta().plot()  # Stability Δ; should be < 1 for stable network')
-            setup_plot(PlotType.Cartesian)
-        
-        def stability_mu():
-            set_expression('sel_nws().mu(1).plot()  # µ; should be > 1 for stable network',
-                           'sel_nws().mu(2).plot()  # µ\'; should be > 1 for stable network')
-            setup_plot(PlotType.Cartesian)
-        
-        def stability_circles():
-            set_expression('sel_nws().plot_stab(n=5,port=2)  # stability circles of port 2')
-            setup_plot(PlotType.Smith)
-        
-        def amp_noise():
-            set_expression('sel_nws().noisefactor().plot()  # noise factor F')
-            setup_plot(PlotType.Cartesian)
-        
-        def amp_minnoise():
-            set_expression('sel_nws().f_min().plot()      # minimum noise factor Fmin',
-                           'sel_nws().rn().plot()         # equivalent noise resistance Rn',
-                           'sel_nws().gamma_opt().plot()  # optimum input reflection coefficient Γopt for minimum noise; plot in Smith chart')
-            setup_plot(PlotType.Cartesian)
-
-        def amp_noise_circles():
-            set_expression('sel_nws().plot_noise([1,3],n=1)  # noise circles')
-            setup_plot(PlotType.Smith)
-        
-        def reciprocity():
-            set_expression('sel_nws().reciprocity().plot()  # should be 0 for reciprocal network')
-            setup_plot(PlotType.Cartesian)
-        
-        def symmetry():
-            set_expression('sel_nws().symmetry().plot()  # should be 0 for symmetric network')
-            setup_plot(PlotType.Cartesian)
-        
-        def passivity():
-            set_expression('sel_nws().passivity().plot()  # should be 0 for passive network')
-            setup_plot(PlotType.Cartesian)
-        
-        def losslessness():
-            set_expression('sel_nws().losslessness().plot()  # should be 0 for lossless network')
-            setup_plot(PlotType.Cartesian)
-        
-        def four_metrics():
-            set_expression(
-                'sel_nws().reciprocity().plot()   # should be 0 for reciprocal network\n' +
-                'sel_nws().symmetry().plot()      # should be 0 for symmetric network\n' +
-                'sel_nws().passivity().plot()     # should be 0 for passive network\n' +
-                'sel_nws().losslessness().plot()  # should be 0 for lossless network'
-            )
-            setup_plot(PlotType.Cartesian)
-        
-        def amp_gain():
-            set_expression(
-                'sel_nws().s(21).plot()  # S-parameter gain\n' +
-                'sel_nws().mag().plot()  # maximum available gain\n' +
-                'sel_nws().msg().plot()  # maximum stable gain\n' +
-                'sel_nws().u().plot()    # Mason\'s unilateral gain'
-            )
-            setup_plot(PlotType.Cartesian)
-        
-        def cascade():
-            selected_files = const_selected_files()
-            if len(selected_files) < 2:
-                error_dialog('Multiple Networks Required', f'Please select at least two networks before using this tempate.')
-                return
-            nws = ' ** '.join([selected_files])
-            set_expression(f'({nws}).s(2,1).plot()')
-        
-        def cascade_ref():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(({ref_nw}) ** sel_nws()).plot_sel_params()  # cascade reference network')
-        
-        def normalize_to_ref():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() / {ref_nw}).plot_sel_params()  # normalize to reference newtork')
-        
-        def deembed_ref_from_others():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'((~{ref_nw}) ** sel_nws()).plot_sel_params()  # de-embed reference network')
-        
-        def deembed_ref_flipped_from_others():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(~({ref_nw}.flipped()) ** sel_nws()).plot_sel_params()  # de-embed flipped reference network')
-        
-        def from_others_deembed_ref():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() ** (~"{ref_nw}).plot_sel_params()  # de-embed reference network')
-        
-        def from_others_deembed_ref_flipped():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f'(sel_nws() ** (~{ref_nw}).flipped)).plot_sel_params()  # de-embed flipped reference network')
-        
-        def deembed_ref_as_2xthru():
-            if ref_nw := get_reference_file_for_multifile_op():
-                set_expression(f"((~{ref_nw}).half(side=1)) ** sel_nws() ** (~{ref_nw}).half(side=2))).plot_sel_params()  # deembed 2x thru")
-        
-        def normalize_to_f():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            f_str = textinput_dialog('Frequency', 'Normalization frequency:', '1e9')
-            if not f_str:
-                return
-            expressions = [f'{nw}.sel_params().norm(at_f={f_str}).plot()  # normalize at given frequency' for nw in selected_files]
-            set_expression(*expressions)
-        
-        def to_mixed_mode():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f"{nw}.s2m('P1,P2,N1,N2').plot_sel_params()  # single-ended to mixed-mode" for nw in selected_files]
-            set_expression(*expressions)
-
-        def to_single_ended():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f"{nw}.m2s('D1,D2,C1,C2').plot_sel_params()  # mixed-mode to single-ended" for nw in selected_files]
-            set_expression(*expressions)
-
-        def z_renorm():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'{nw}.renorm([50,75]).plot_sel_params()  # re-normalize port impedances' for nw in selected_files]
-            set_expression(*expressions)
-
-        def add_passive():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'({nw} ** Comp.CSer(1e-9)).plot_sel_params()  # add a passive series component' for nw in selected_files]
-            set_expression(*expressions)
-
-        def add_shunted_passive():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'({nw} ** Comp.RShunt(1e3)).plot_sel_params()  # add a shunted passive component' for nw in selected_files]
-            set_expression(*expressions)
-
-        def add_tline():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'({nw} ** Comp.Line(len=0.1)).plot_sel_params()  # add a transmission line' for nw in selected_files]
-            set_expression(*expressions)
-
-        def add_tline_stub():
-            selected_files = dynamic_selected_files()
-            if len(selected_files) < 1:
-                error_dialog('No Network Selected', f'Please select at least one network before using this tempate.')
-                return
-            expressions = [f'({nw} ** Comp.LineStub(len=0.1, stub_gamma=+1)).plot_sel_params()  # add a transmission line stub' for nw in selected_files]
-            set_expression(*expressions)
-        
-        def z():
-            set_expression('sel_nws().z(any,any).plot()  # Z-parameters')
-            setup_plot(PlotType.Cartesian)
-        
-        def y():
-            set_expression('sel_nws().y(any,any).plot()  # Y-parameters')
-            setup_plot(PlotType.Cartesian)
-        
-        def abcd():
-            set_expression('sel_nws().abcd(any,any).plot()  # ABCD-parameters')
-            setup_plot(PlotType.Cartesian)
-        
-        def t():
-            set_expression('sel_nws().t(any,any).plot()  # scattering transfer parameters')
-            setup_plot(PlotType.Cartesian)
-        
-        def add_slicer():
-            pattern = textinput_dialog('Slicer', 'Slicer pattern:', '.*')
-            if not pattern:
-                return
-            expressions = [f'nws().slice(\'{pattern}\').sel_params().plot()  # show slicer']
-            set_expression(*expressions)
-        
-        def all_networks():
-            expressions = [f'nws().sel_params().plot()  # just plot all available networks']
-            set_expression(*expressions)
-        
-        def all_networks_explicit():
-            expressions = [f'{nw}.sel_params().plot()' for nw in const_all_files()]
-            set_expression(*expressions)
-        
-        def selected_networks():
-            expressions = [f'sel_nws().sel_params().plot()  # just plot all selected networks']
-            set_expression(*expressions)
-        
-        def selected_networks_explicit():
-            expressions = [f'{nw}.sel_params().plot()' for nw in const_selected_files()]
-            set_expression(*expressions)
-        
-        def show_freq_slider():
-            set_expression(
-                'f0, f1, nf = sel_nws().get_f_min(), sel_nws().get_f_max(), 101',
-                'f = slider(linspace=(f0, f1 ,nf))',
-                'sel_nws().crop_f(f-(f1-f0)/nf, f+(f1-f0)/nf).plot_sel_params()',
-            )
-        
-        def invoke_template(template_fn, ctrl, shift):
+        def recurse_templates(templates, menu_items):
+            for template in templates:
+                if template is None:
+                    menu_items.append((None, None))  # separator
+                elif isinstance(template, ExpressionTemplate):
+                    menu_items.append((template.name, make_menu_item_fn(template)))
+                elif isinstance(template, ExpressionTemplateGroup):
+                    sub_menu_items = []
+                    recurse_templates(template.templates, sub_menu_items)
+                    menu_items.append((template.name, sub_menu_items))
+                else:
+                    raise ValueError('Unknown template type: {template}')
+        templates = get_expression_templates()
+        menu_items: list[tuple[str,Callable|list]] = []
+        recurse_templates(templates, menu_items)
+                    
+        def call_wrapper_fn(template_fn, ctrl, shift):
             nonlocal comment_existing_expr
             comment_existing_expr = Settings.comment_existing_expr != ctrl
             template_fn()
-        
-        self.ui_show_template_menu([
-            ('As Currently Selected', as_currently_selected),
-            (None, None),
-            ('S-Parameters', [
-                ('All S-Parameters', all_sparams),
-                ('Insertion Loss', insertion_loss),
-                ('Insertion Loss (reciprocal)', insertion_loss_reciprocal),
-                ('Return Loss', return_loss),
-                ('VSWR', vswr),
-                ('Mismatch Loss', mismatch_loss),
-                (None, None),
-                ('S11', quick11),
-                ('S11, S21, S22', quick112122),
-                ('S11, S21, S12, S22', quick11211222),
-                ('S11, S21, S22, S31, S32, S33', quick112122313233),
-            ]),
-            ('Other Parameters', [
-                ('Z-Matrix (Impedance)', z),
-                ('Y-Matrix (Admittance)', y),
-                ('ABCD-Matrix (Cascade; 2-Port Only)', abcd),
-                ('T-Matrix (Scattering Transfer; Even Port Numbers Only)', t),
-            ]),
-            ('General Network Analysis', [
-                ('Reciprocity (2-Port or Higher Only)', reciprocity),
-                ('Symmmetry (2-Port or Higher Only)', symmetry),
-                ('Passivity', passivity),
-                ('Losslessness', losslessness),
-                (None, None),
-                ('All of Above', four_metrics),
-            ]),
-            ('Amplifier Analysis', [
-                ('Gain (2-Port Only)', amp_gain),
-                (None, None),
-                ('Stability K (2-Port Only)', stability_k),
-                ('Stability µ (2-Port Only)', stability_mu),
-                ('Stability Circles (2-Port Only)', stability_circles),
-                (None, None),
-                ('Noise Figure (2-Port Only)', amp_noise),
-                ('Noise Circles (2-Port Only)', amp_noise_circles),
-                ('Minimum Noise Parameters (2-Port Only)', amp_minnoise),
-            ]),
-            ('Add Network', [
-                ('Add Passive To Network', add_passive),
-                ('Add Shunted Passive To Network', add_shunted_passive),
-                ('Add Line To Network', add_tline),
-                ('Add Line-Stub To Network', add_tline_stub),
-            ]),
-            ('Cascading and De-Embedding', [
-                ('Cascade Selected Networks', cascade),
-                ('Cascade Reference Network', cascade_ref),
-                (None, None),
-                ('De-Embed Reference Network From Others', deembed_ref_from_others),
-                ('De-Embed Reference Network (Flipped) From Others', deembed_ref_flipped_from_others),
-                ('From Others De-Embed Reference Network', from_others_deembed_ref),
-                ('From Others De-Embed Reference Network (Flipped)', from_others_deembed_ref_flipped),
-                (None, None),
-                ('Treat Reference as 2xTHRU, De-Embed from Others', deembed_ref_as_2xthru),
-            ]),
-            ('Normalization and Conversion', [
-                ('Normalize at Given Frequency', normalize_to_f),
-                ('Normalize to Reference Network', normalize_to_ref),
-                (None, None),
-                ('Single-Ended to Mixed-Mode', to_mixed_mode),
-                ('Mixed-Mode to Single-Ended', to_single_ended),
-                (None, None),
-                ('Impedance Renormalization', z_renorm),
-            ]),
-            ('Statistics', [
-                ('Min, Max, Peak-Peak', stat_minmax),
-                ('Mean and Stddev', stat_meansdev),
-                ('Robust Mean and Stddev', stat_rmeansdev),
-            ]),
-            ('Miscellaneous', [
-                ('All Available Networks', all_networks),
-                ('All Available Networks (via Explicit Name)', all_networks_explicit),
-                ('Currently Selected Networks', selected_networks),
-                ('Currently Selected Networks (via Explicit Name)', selected_networks_explicit),
-                ('Select Networks via Slicer', add_slicer),
-                ('Slide through Frequencies', show_freq_slider),
-                ('Smooth Trace', smooth),
-            ]),
-        ], call_wrapper=invoke_template)
+        self.ui_show_template_menu(menu_items, call_wrapper=call_wrapper_fn)
 
 
     def on_color_change(self):
