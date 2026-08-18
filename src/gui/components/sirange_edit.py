@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import *
 import pathlib
 import os
 import enum
+from typing import Any
 
 
 
@@ -17,7 +18,7 @@ class SiRangeEdit(QComboBox):
 
     rangeChanged = pyqtSignal()
 
-    def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[any,any]]):
+    def __init__(self, parent: QWidget, range: SiRange, presets: list[tuple[Any,Any]]):
         super().__init__(parent)
         self._event_lock = Lock(initially_locked=True)
         self._edit_in_progress = False

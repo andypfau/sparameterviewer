@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import scipy.interpolate
-from typing import Callable
+from typing import Callable, Any
 from .network_ext import NetworkExt
 from .utils import window_has_argument
 from .settings import Settings
@@ -280,7 +280,7 @@ def ensure_equidistant_to_dc(f: np.ndarray, s: np.ndarray, method: str = 'IEEE37
     return f, s
 
 
-def parse_quick_param(param: any) -> tuple[int,int]:
+def parse_quick_param(param: Any) -> tuple[int,int]:
     match param:
         case int():
             if param<11 or param>99:

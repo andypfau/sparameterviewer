@@ -47,9 +47,9 @@ class TestSiRange(MyTestCase):
 
 
     def test_wildcard(self):
-        self.assertEqual(str(SiRange(any, any, SiFormat('V'))), '*')
-        self.assertEqual(str(SiRange(0, any, SiFormat('V'))), '0 V … *')
-        self.assertEqual(str(SiRange(any, 5, SiFormat('V'))), '* … 5 V')
+        self.assertEqual(str(SiRange(..., ..., SiFormat('V'))), '*')
+        self.assertEqual(str(SiRange(0, ..., SiFormat('V'))), '0 V … *')
+        self.assertEqual(str(SiRange(..., 5, SiFormat('V'))), '* … 5 V')
 
 
     def test_parse(self):
@@ -59,7 +59,7 @@ class TestSiRange(MyTestCase):
 
         r = SiRange(spec=SiFormat('V')).parse('1kV-*')
         self.assertAlmostEqual(r.low, 1e3)
-        self.assertAlmostEqual(r.high, any)
+        self.assertAlmostEqual(r.high, ...)
     
 
     def parse_invalid(self):

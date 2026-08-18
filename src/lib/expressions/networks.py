@@ -281,9 +281,9 @@ class Network:
                 ep_filter, ip_filter = ep_filter+1, ip_filter+1
             case int(), int():
                 ep_filter, ip_filter = egress_port, ingress_port
-            case int(), any:
+            case int(), Ellipsis:
                 ep_filter = egress_port
-            case any, int():
+            case Ellipsis, int():
                 ip_filter = ingress_port
             case _:
                 raise ValueError(f'Unknown port format: <{egress_port},{ingress_port}>')

@@ -6,6 +6,8 @@ import re
 import functools
 import warnings
 from dataclasses import dataclass
+from types import EllipsisType
+from typing import Any
 
 
 
@@ -189,7 +191,7 @@ class SiRange:
     STR_CENTERED_SEPARATOR = '±'
 
 
-    def __init__(self, low: float = any, high: float = any, spec: SiFormat = SiFormat(), *, wildcard_value_low: any = any, wildcard_value_high: any = any, allow_both_wildcards: bool = True, allow_individual_wildcards: bool = True):
+    def __init__(self, low: float|EllipsisType = ..., high: float|EllipsisType = ..., spec: SiFormat = SiFormat(), *, wildcard_value_low: Any = ..., wildcard_value_high: Any = ..., allow_both_wildcards: bool = True, allow_individual_wildcards: bool = True):
         self._observers: list[callable[tuple[float,float],None]] = []
         self._low, self._high, self.spec = low, high, spec
         self.wildcard_value_low, self.wildcard_value_high, self.allow_both_wildcards, self.allow_individual_wildcards = wildcard_value_low, wildcard_value_high, allow_both_wildcards, allow_individual_wildcards

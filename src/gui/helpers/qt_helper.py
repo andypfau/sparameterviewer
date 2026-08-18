@@ -6,7 +6,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import logging
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Any
 import re
 import dataclasses
 
@@ -365,7 +365,7 @@ class QtHelper:
 
     @dataclasses.dataclass
     class CellSpan:
-        item: any
+        item: Any
         cols: int = 1
         rows: int = 1
 

@@ -16,7 +16,7 @@ import os
 import re
 import logging
 import enum
-from typing import Callable, overload, override
+from typing import Callable, overload, override, Any
 from types import SimpleNamespace
 
 
@@ -164,7 +164,7 @@ class FilesysBrowser(QWidget):
             return self._has_children
 
         @override
-        def setData(self, value: any, role: int):
+        def setData(self, value: Any, role: int):
             if role == Qt.ItemDataRole.CheckStateRole and value != self._last_reported_checked_state:
                 self._last_reported_checked_state = value
                 self._model.checkedChanged.emit()

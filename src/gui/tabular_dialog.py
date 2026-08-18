@@ -14,6 +14,7 @@ import enum
 import json
 import pandas as pd
 import numpy as np
+from typing import Any
 
 
 
@@ -74,7 +75,7 @@ class TabularDataset(TabularDatasetBase):
         return self._is_spar
 
     @staticmethod
-    def create(dataset: any, display_number: int|None = None) -> "TabularDataset":
+    def create(dataset: Any, display_number: int|None = None) -> "TabularDataset":
         if isinstance(dataset, SParamFile):
             return TabularDatasetSFile(dataset, f'{display_number} (File): {dataset.name}')
         elif isinstance(dataset, PlotData):
@@ -185,7 +186,7 @@ class TabularDialog(TabularDialogUi):
 
         self.ui_set_formats_list([str(fmt) for fmt in TabularDialog.Format])
         self.ui_set_freq_filters_list([
-            SiRange(any, any, allow_both_wildcards=True).format(),
+            SiRange(..., ..., allow_both_wildcards=True).format(),
             SiRange(0, 100e9).format(),
         ])
         self.ui_set_param_filters_list([
@@ -197,7 +198,7 @@ class TabularDialog(TabularDialogUi):
         ])
     
 
-    def show_modal_dialog(self, datasets: list[any], initial_selection: int = None):
+    def show_modal_dialog(self, datasets: list[Any], initial_selection: int = None):
         assert len(datasets) > 0, 'Expected at least one dataset'
         try:
             self.datasets = [TabularDataset.create(dataset,i+1) for i,dataset in enumerate(datasets)]
@@ -366,7 +367,7 @@ class TabularDialog(TabularDialogUi):
         def parse_cols(s: str):
             s = s.strip()
             if s=='*':
-                return any
+                return ...
             parts = [p for p in re.split(r'\s+|\s*,\s*|\s*;\s*', s) if p!='']
             return parts
 
@@ -385,9 +386,9 @@ class TabularDialog(TabularDialogUi):
         filter_cols = parse_cols(self.ui_selected_param_filter)
 
         if not dataset.is_spar:
-            filter_cols = any  # ignore filter
+            filter_cols = ...  # ignore filter
         
-        if filter_cols is not any:
+        if filter_cols is not ...:
             ycols_filtered = []
             ycol_datas_filtered = []
             for col in filter_cols:

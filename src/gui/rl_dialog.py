@@ -16,7 +16,7 @@ class RlDialog(RlDialogUi):
         self.files: list[SParamFile] = []
         super().__init__(parent)
         self.ui_intrange_presets([
-            str(SiRange(any, any, spec=RlDialog.SI_FORMAT_HZ)),
+            str(SiRange(..., ..., spec=RlDialog.SI_FORMAT_HZ)),
             str(SiRange(0, 10e9, spec=RlDialog.SI_FORMAT_HZ)),
         ])
         self.ui_tgtrange_presets([

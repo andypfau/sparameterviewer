@@ -42,6 +42,7 @@ import scipy.signal
 import matplotlib.figure
 import matplotlib.pyplot
 from typing import Optional, Callable, Any
+from types import EllipsisType
 
 
 
@@ -179,9 +180,9 @@ class MainWindow(MainWindowUi):
             Settings.last_screen_height = dim.screen_height
 
 
-    def apply_settings_to_ui(self, attributes: list[str]|Any = any):
+    def apply_settings_to_ui(self, attributes: list[str]|EllipsisType = ...):
         def check(attribute: str) -> bool:
-            return bool((attributes is any) or (attribute in attributes))
+            return bool((attributes is ...) or (attribute in attributes))
         
         if check('simplified_param_sel'):
             self.ui_param_selector.setSimplified(Settings.simplified_param_sel)
@@ -402,10 +403,10 @@ class MainWindow(MainWindowUi):
         
         def setup_plot(plot_type: PlotType|None = None, quantity: YQuantity|None = None):
             changed = False
-            if plot_type and plot_type != self.ui_plot_selector.plotType():
+            if plot_type is not None and plot_type != self.ui_plot_selector.plotType():
                 self.ui_plot_selector.setPlotType(plot_type)
                 changed = True
-            if quantity and quantity != self.ui_plot_selector.yQuantity():
+            if quantity is not None and quantity != self.ui_plot_selector.yQuantity():
                 self.ui_plot_selector.setYQuantity(quantity)
                 changed = True
             if changed:
@@ -2012,7 +2013,7 @@ class MainWindow(MainWindowUi):
                     style_y2 = style
 
                 if not color:  # assign a color
-                    key: any|None = None
+                    key: Any|None = None
                     match color_assignment:
                         case ColorAssignment.Default:
                             pass

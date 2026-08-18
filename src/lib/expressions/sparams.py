@@ -19,7 +19,8 @@ import scipy.signal, scipy.stats
 import os
 import re
 import enum
-from typing import Callable
+from typing import Callable, Any
+from types import EllipsisType
 
 
 
@@ -246,20 +247,20 @@ class SParam:
         return self._modified_copy(f=f, s=s)
         
     
-    def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParam":
+    def rl_avg(self, f_integrate_start: "float|EllipsisType" = ..., f_integrate_end: "float|EllipsisType" = ..., f_target_start: "float|EllipsisType" = ..., f_target_end: "float|EllipsisType" = ...) -> "SParam":
         
-        if f_integrate_start is any:
+        if f_integrate_start is ...:
             f_integrate_start = -1e99
-        if f_integrate_end is any:
+        if f_integrate_end is ...:
             f_integrate_end = +1e99
         
-        if f_target_start is any or f_target_end is any:
+        if f_target_start is ... or f_target_end is ...:
             
             bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_integrate_start, f_integrate_end)
 
-            if f_target_start is any:
+            if f_target_start is ...:
                 f_target_start = bodefano.f_integration_actual_start_hz
-            if f_target_end is any:
+            if f_target_end is ...:
                 f_target_end = bodefano.f_integration_actual_stop_hz
         
         bodefano = BodeFano(self.f, self.s, f_integrate_start, f_integrate_end, f_target_start, f_target_end)
@@ -637,7 +638,7 @@ class SParams:
         return self._interpolated_fn('PkPk', fn, min_size=1, type_str='.pkpk', enforce_real=True, number_type=NumberType.MagnitudeLike if in_db else NumberType.VectorLike)
     
 
-    def rl_avg(self, f_integrate_start: "float|any" = any, f_integrate_end: "float|any" = any, f_target_start: "float|any" = any, f_target_end: "float|any" = any) -> "SParams":
+    def rl_avg(self, f_integrate_start: "float|EllipsisType" = ..., f_integrate_end: "float|EllipsisType" = ..., f_target_start: "float|EllipsisType" = ..., f_target_end: "float|EllipsisType" = ...) -> "SParams":
         return self._unary_op(SParam.rl_avg, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
     
 

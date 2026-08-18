@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import *
 import pathlib
 import os
 import enum
+from typing import Any
 
 
 
@@ -96,7 +97,7 @@ class PathBar(QWidget):
         if not path:
             path = AppPaths.get_default_file_dir()
         self._path = pathlib.Path(path)
-        self._breadcrumb_paths: dict[any,pathlib.Path] = {}
+        self._breadcrumb_paths: dict[Any,pathlib.Path] = {}
         self._enabled = True
         self._default_mode = PathBar.Mode.Breadcrumbs
 

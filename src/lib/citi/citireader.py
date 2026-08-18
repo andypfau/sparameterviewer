@@ -7,6 +7,7 @@ import re
 import os
 import logging
 import difflib
+from typing import Any
 
 
 
@@ -26,7 +27,7 @@ class CitiReader:
         return [name for name in self._citi.data_vars]
 
     @property
-    def coords(self) -> dict[str,list[any]]:
+    def coords(self) -> dict[str,list[Any]]:
         return {name: self._citi.coords[name] for name in self._citi.coords}
 
     @property
@@ -58,7 +59,7 @@ class CitiReader:
             logging.error(f'Unable to read comments form {self.filename} ({ex})')
             return []
 
-    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,any], select_default: bool = False) -> "tuple[NetworkExt,str]":
+    def get_network(self, frequency_coord: "str|None", at_coords: dict[str,Any], select_default: bool = False) -> "tuple[NetworkExt,str]":
 
         if frequency_coord is None:
             frequency_coord = self.guess_frequency_coord_name()

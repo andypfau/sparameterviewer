@@ -1,7 +1,7 @@
 from .apppaths import AppPaths
 from logging import warning
 import os, json, logging
-from typing import Callable
+from typing import Callable, Any
 
 
 
@@ -40,7 +40,7 @@ class AppSettings:
                 del self._observers[i]
     
 
-    def __setattr__(self, __name: str, __value: any) -> None:
+    def __setattr__(self, __name: str, __value: Any) -> None:
         is_setting = ('_defaults' in self.__dict__) and (__name in self.__dict__['_defaults'])
         if is_setting:
             current_value = self.__getattribute__(__name)

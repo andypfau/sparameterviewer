@@ -23,7 +23,7 @@ import logging
 import os
 import dataclasses
 import numpy as np
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Any
 
 
 
@@ -47,7 +47,7 @@ class MainWindowUi(QMainWindow):
 
 
     def __init__(self):
-        self._ui_timers: dict[any,tuple[QTimer,Callable]] = {}
+        self._ui_timers: dict[Any,tuple[QTimer,Callable]] = {}
         self._show_expressions = True
         self._layout = MainWindowLayout.Wide
         self._show_menu = False
@@ -157,13 +157,13 @@ class MainWindowUi(QMainWindow):
         self._ui_plotmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
         self._ui_help_button = QtHelper.make_toolbutton(self, None, self.on_help, icon='toolbar_help.svg', tooltip='Show Help (F1)', shortcut='F1')
         self._ui_abort_button = QtHelper.make_toolbutton(self, None, self.on_abort, icon='toolbar_abort.svg', tooltip='Abort Loading')
-        self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(0,10e9)])
+        self._ui_xaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(...,...),(0,10e9)])
         self._ui_xaxis_range.setToolTip('Set X-axis range, e.g. "0..20G" for 0 to 20 GHz, "10G +- 100M" for 10 GHz ± 100 MHz, or "*" for auto-scale.')
         self._ui_xaxis_range.setMinimumWidth(120)
         self._ui_xaxis_range.setMaximumWidth(120)
         self._ui_xaxis_range.setStyleSheet('QComboBox QAbstractItemView { min-width: 30ex; }')
         self._ui_xaxis_range.rangeChanged.connect(self.on_xaxis_range_change)
-        self._ui_yaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(any,any),(-25,+3),(-25,+25),(-50,+3),(-100,+3)])
+        self._ui_yaxis_range = SiRangeEdit(self, SiRange(allow_individual_wildcards=False), [(...,...),(-25,+3),(-25,+25),(-50,+3),(-100,+3)])
         self._ui_yaxis_range.setToolTip('Set Y-axis range, e.g. "-20..5" for -20 to +5 dB, "0 +- 2" for ± 2 dB, or "*" for auto-scale.')
         self._ui_yaxis_range.setMinimumWidth(120)
         self._ui_yaxis_range.setMaximumWidth(120)
@@ -792,7 +792,7 @@ class MainWindowUi(QMainWindow):
         self.setWindowTitle(title)
 
 
-    def ui_schedule_oneshot_timer(self, identifier: any, seconds: float, callback: Callable, retrigger_behavior: str = 'keep'):
+    def ui_schedule_oneshot_timer(self, identifier: Any, seconds: float, callback: Callable, retrigger_behavior: str = 'keep'):
         
         msec = max(1,int(round(seconds*1e3)))
         
@@ -818,7 +818,7 @@ class MainWindowUi(QMainWindow):
         self._ui_timers[identifier][0].start(msec)
         
     
-    def ui_abort_oneshot_timer(self, identifier: any):
+    def ui_abort_oneshot_timer(self, identifier: Any):
         if identifier not in self._ui_timers:
             return
         timer = self._ui_timers[identifier][0]
