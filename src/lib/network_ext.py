@@ -81,7 +81,7 @@ class NetworkExt(skrf.Network):
         self._ports: list[NetworkExtPort] = []
 
 
-    def copy(self) -> NetworkExt:
+    def copy(self, *, shallow_copy: bool = False) -> NetworkExt:
         result = NetworkExt(s=self.s, f=self.f, f_unit='Hz', z0=self.z0, comments=self.comments, name=self.name)
         result._ports = list(self.ports)
         return result

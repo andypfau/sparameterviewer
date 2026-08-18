@@ -471,7 +471,6 @@ class MainWindow(MainWindowUi):
                         if not verify_ranges(template, selected_files):
                             return
                         ex = ex.replace('{selected_explicit_casc}', ' ** '.join(selected_files))
-                        raise NotImplementedError()
 
                     # replace array-patterns
                     if '{*generated}' in ex:

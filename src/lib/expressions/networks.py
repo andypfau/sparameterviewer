@@ -503,7 +503,9 @@ class Network:
                 freq = np.full([n_points], f)
                 final_label = label if label is not None else f'{self.name} NF {db} dB {SiValue(f,"Hz")}'
                 SParam.plot_xy(freq, data, self.nw.z0, final_label, style, color, width, opacity, self.original_files, 'noise') 
-            except:
+            except Exception as ex:
+                if Settings.verbose:
+                    logging.debug(f'plot_noise(): {ex}')
                 pass  # ignore this, continue with other circles
         
         if not hasattr(db, '__len__'):
@@ -696,12 +698,16 @@ class Network:
 
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
         if method=='IEEE370NZC':
-            from skrf.calibration import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
-            deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw)
+            from skrf.calibration.deembedding import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
+            deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw, use_z_instead_ifft=True)  # TODO: `use_z_instead_ifft=True` is a hack; since some time, it complains about non-uniform frequency vectors when I use default args
+            
+            # get networks with correct orientation: 1 = outer, 2 = inner
             if side==1:
-                return Network(deembed.s_side1, name=self.name+'_side1', original_files=self.original_files)
+                half_nw = deembed.s_side1
+                return Network(NetworkExt(s=half_nw.s, f=half_nw.f, f_unit='Hz', z0=half_nw.z0), name=self.name+'_side1', original_files=self.original_files)
             elif side==2:
-                return Network(deembed.s_side2.flipped(), name=self.name+'_side2', original_files=self.original_files)
+                half_nw = deembed.s_side2.flipped()
+                return Network(NetworkExt(s=half_nw.s, f=half_nw.f, f_unit='Hz', z0=half_nw.z0), name=self.name+'_side2', original_files=self.original_files)
             else:
                 raise ValueError(f'half(): Invalid side, must be 1 or 2')
         elif method=='ChopInHalf':
@@ -711,7 +717,8 @@ class Network:
     
 
     def flip(self) -> "Network":
-        return Network(NetworkExt(name=self.name, f=self.nw.f, s=skrf.network.flip(self.nw.s), f_unit='Hz', z0=self.nw.z0), name='~'+self.name, original_files=self.original_files)
+        nwf = self.nw.flipped()
+        return Network(NetworkExt(name=self.name, f=nwf.f, s=nwf.s, f_unit='Hz', z0=nwf.z0), name='~'+self.name, original_files=self.original_files)
     
 
     def invert(self) -> "Network":

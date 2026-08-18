@@ -95,7 +95,7 @@ class NoiseCircle(SParameterCircle):
         self.center = Γ_opt / (n + 1)
         sqrt_arg = n * (n + 1 - abs(Γ_opt)**2)
         if sqrt_arg < 0:
-            raise ValueError(f'Cannot calculate noise circle for NF={nf_db} dB at f={SiValue(frequency_hz,"Hz")}: out of range')
+            raise ValueError(f'Cannot calculate noise circle for NF={nf_db} dB at f={SiValue(frequency_hz,"Hz")}: NF is out of range')
         self.radius = math.sqrt(sqrt_arg) / (n + 1)
         
     

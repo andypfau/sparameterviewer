@@ -54,7 +54,7 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                 ExpressionTemplate(
                     'VSWR',
                     ['sel_nws().s(rl_only=True).vswr().plot()  # voltage standing wave ratio'],
-                    PlotType.Cartesian
+                    PlotType.Cartesian, YQuantity.Magnitude
                 ),
                 ExpressionTemplate(
                     'Mismatch Loss',
@@ -89,22 +89,22 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
             [
                 ExpressionTemplate(
                     'Z-Matrix (Impedance)',
-                    ['sel_nws().z(any,any).plot()  # Z-parameters'],
+                    ['sel_nws().z().plot()  # Z-parameters'],
                     PlotType.Cartesian
                 ),
                 ExpressionTemplate(
                     'Y-Matrix (Admittance)',
-                    ['sel_nws().y(any,any).plot()  # Y-parameters'],
+                    ['sel_nws().y().plot()  # Y-parameters'],
                     PlotType.Cartesian
                 ),
                 ExpressionTemplate(
                     'ABCD-Matrix (Cascade; 2-Port Only)',
-                    ['sel_nws().abcd(any,any).plot()  # ABCD-parameters'],
+                    ['sel_nws().abcd().plot()  # ABCD-parameters'],
                     PlotType.Cartesian
                 ),
                 ExpressionTemplate(
                     'T-Matrix (Scattering Transfer; Even Port Numbers Only)',
-                    ['sel_nws().t(any,any).plot()  # scattering transfer parameters'],
+                    ['sel_nws().t().plot()  # scattering transfer parameters'],
                     PlotType.Cartesian
                 ),
             ]
@@ -221,8 +221,8 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                     min_selected=1
                 ),
                 ExpressionTemplate(
-                    'Add Line-Stub To Network',
-                    ['({*selected} ** Comp.LineStub(len=0.1, stub_gamma=+1)).plot_sel_params()  # add a transmission line stub'],
+                    'Add Shunted Line To Network',
+                    ['({*selected} ** Comp.LineShunt(len=0.1, stub_gamma=+1)).plot_sel_params()  # add a shunted transmission line'],
                     min_selected=1
                 ),
             ]
@@ -246,20 +246,20 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                 ),
                 ExpressionTemplate(
                     'De-Embed Reference Network (Flipped) From Others',
-                    ['(~({reference}.flipped()) ** sel_nws()).plot_sel_params()  # de-embed flipped reference network']
+                    ['(~({reference}.flip()) ** sel_nws()).plot_sel_params()  # de-embed flipped reference network']
                 ),
                 ExpressionTemplate(
                     'From Others De-Embed Reference Network',
-                    ['(sel_nws() ** (~"{reference}).plot_sel_params()  # de-embed reference network']
+                    ['(sel_nws() ** (~{reference})).plot_sel_params()  # de-embed reference network']
                 ),
                 ExpressionTemplate(
                     'From Others De-Embed Reference Network (Flipped)',
-                    ['(sel_nws() ** (~{reference}).flipped)).plot_sel_params()  # de-embed flipped reference network']
+                    ['(sel_nws() ** (~({reference}.flip()))).plot_sel_params()  # de-embed flipped reference network']
                 ),
                 None,
                 ExpressionTemplate(
                     'Treat Reference as 2xTHRU, De-Embed from Others',
-                    ['((~{reference}).half(side=1)) ** sel_nws() ** (~{reference}).half(side=2))).plot_sel_params()  # deembed 2x thru']
+                    ['(((~{reference}).half(side=1)) ** sel_nws() ** (~{reference}).half(side=2))).plot_sel_params()  # deembed 2x thru']
                 ),
             ]
         ),
@@ -347,7 +347,7 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                 ),
                 ExpressionTemplate(
                     'Select Networks via Slicer',
-                    ["nws().slice(r'{slicerpattern}'').sel_params().plot()  # show slicer"]
+                    ["nws().slice(r'{slicerpattern}').sel_params().plot()  # show slicer"]
                 ),
                 ExpressionTemplate(
                     'Slide through Frequencies',

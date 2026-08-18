@@ -58,7 +58,7 @@ There are two variants with different positional arguments, and the same keyword
 - `ports` is a string: e.g. `s("21")` or `s("2,1")` for S21.
     - You may also use e.g. `'dd21'` or `'cd4,3'` for a mixed-mode network. The mixed-mode network must have port order <diff1, diff2, ..., comm1, comm2, ...>.
 - `egress_port` and `ingress_port` are integers: e.g. `s(2,1)` for S21.
-    - You may use `any` as a wildcard, e.g. `s(2,any)` for S21, S22, S23, ...
+    - You may use `...` as a wildcard, e.g. `s(2,...)` for S21, S22, S23, ...
 - No positional argument: everything (i.e. `s()`).
 
 In any case, further filtering is possible with the keyword arguments:
@@ -77,24 +77,10 @@ sel_nws().s("21").plot()                # S21
 sel_nws().s("2,1").plot()               # S21
 sel_nws().s("dd21").plot()              # SDD21; only works on mixed-mode file
 sel_nws().s(rl_only=True).plot()        # S11, S22, S33, ...
-sel_nws().s(any, 1).plot()              # S11, S21, S31, ...
-sel_nws().s(3,any,il_only=True).plot()  # S31, S32, ...
+sel_nws().s(..., 1).plot()              # S11, S21, S31, ...
+sel_nws().s(3,...,il_only=True).plot()  # S31, S32, ...
 ```
 
-
-
-### z(), y(), abcd(), t()
-
-Similar as `s()`, but instead of S-parameters:
-- `z()` returns the Z-matrix parameters,
-- `y()` returns the Y-matrix parameters,
-- `abcd()` returns the ABCD-matrix parameters,
-- `t()` returns the T-matrix (scattering transfer) parameters,
-
-Examples:
-```python
-sel_nws().z(2,1).plot()
-```
 
 
 
