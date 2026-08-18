@@ -2,6 +2,14 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.47b2 (2026-08-18)
+--------------------
+
+- new: allow to wrap text in log dialog
+- change: for some expressions I accidentally used `any` when I really meant `Ellipsis`/`...`
+- bugfix: new implementation of templates, with some small fixes
+
+
 0.47b1 (2026-08-14)
 --------------------
 

@@ -32,13 +32,17 @@ class LogDialogUi(QDialog):
 
         self._ui_level_combo = QComboBox()
         self._ui_level_combo.currentIndexChanged.connect(self.on_select_level)
+
+        self._ui_linewrap_check = QCheckBox('Wrap')
+        self._ui_linewrap_check.setToolTip('Wrap ling lines')
+        self._ui_linewrap_check.toggled.connect(self._on_linewrap_toggled)
         
         self._ui_clear_button = QPushButton('Clear Log')
         self._ui_clear_button.clicked.connect(self.on_clear)
 
         self.setLayout(QtHelper.layout_v(
             self._ui_logtext,
-            QtHelper.layout_h('Level:', self._ui_level_combo, ..., self._ui_clear_button)
+            QtHelper.layout_h('Level:', self._ui_level_combo, self._ui_linewrap_check, ..., self._ui_clear_button)
         ))
 
         self.resize(800, 600)
@@ -63,6 +67,13 @@ class LogDialogUi(QDialog):
 
     def ui_set_logtext(self, text: str):
         self._ui_logtext.setPlainText(text)
+    
+
+    def _on_linewrap_toggled(self):
+        if self._ui_linewrap_check.isChecked():
+            self._ui_logtext.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        else:
+            self._ui_logtext.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
 
 
     # to be implemented in derived class
