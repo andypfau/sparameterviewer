@@ -6,6 +6,7 @@ S-Parameter Viewer Changelog
 --------------------
 
 - new: **kwargs for `Networks.plot_sel_params()`
+- new: reset zoom button next to zoom/pan buttons
 - bugfix: global variables accessible in experession, even within functions
 - bugfix: fixed 2xTHRU
 - bugfix: "Clear Log" button works
