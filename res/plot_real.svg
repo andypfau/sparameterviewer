@@ -7,7 +7,7 @@
    viewBox="0 0 5.2916665 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="plot_real.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -27,10 +27,10 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="43.9"
-     inkscape:cx="9.9886105"
+     inkscape:cx="9.977221"
      inkscape:cy="10.022779"
      inkscape:window-width="1920"
-     inkscape:window-height="1131"
+     inkscape:window-height="1163"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -70,17 +70,22 @@
      id="defs1" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10;stroke-opacity:1"
-     d="m 1.7197916,4.3656248 c 0,0 0.2645834,0 0.2645834,-0.2645833 0,0 0,-2.2489582 0,-2.9104165 0,-0.66145835 -0.79375,0.2645833 -0.79375,0.2645833"
+     d="m 1.190625,3.8364582 c 0,0 0.6891612,0.9441225 0.79375,0.2645833 0.1045887,-0.6795392 0,-2.9104165 0,-2.9104165 0,-0.33072918 -0.7937501,-0.41341153 -0.9260417,-0.26458337 -0.13229169,0.14882807 0.396875,0.52916667 0.396875,0.52916667"
      id="path1"
-     sodipodi:nodetypes="cszc" />
+     sodipodi:nodetypes="czssc" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:butt;stroke-miterlimit:10;stroke-opacity:1"
-     d="m 3.7041666,4.3656248 c 0,0 -0.2645833,0.1322917 -0.5291667,-0.1322916 C 2.9104166,3.9687498 1.984375,2.778125 1.984375,2.778125"
+     d="m 3.9687499,4.3656248 c 0,0 -0.2645832,0.1322917 -0.5291666,-0.1322916 -0.2645833,-0.2645834 0,-1.4552083 -1.3229167,-1.4552083"
      id="path3"
      sodipodi:nodetypes="czc" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10"
-     d="M 2.1166666,1.190625 C 4.1010416,0.13229166 3.8364583,2.9104166 1.984375,2.9104166"
+     d="M 2.1164587,1.2068511 C 3.8668603,0.03400561 3.4397912,2.2327321 3.8364583,2.2489582"
      id="path2"
+     sodipodi:nodetypes="cc" />
+  <path
+     style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10;stroke-opacity:1;paint-order:stroke fill markers"
+     d="M 2.2489583,2.778125 3.7041666,2.3812499"
+     id="path4"
      sodipodi:nodetypes="cc" />
 </svg>
