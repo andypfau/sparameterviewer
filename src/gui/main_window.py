@@ -1122,6 +1122,13 @@ class MainWindow(MainWindowUi):
 
         if dx != 0 or dy != 0:
             self.schedule_plot_update()
+
+
+    def on_zoomall_clicked(self):
+        self._smartscale_set_y = False
+        self.ui_plot_tool = PlotWidget.Tool.Off
+        self.ui_xaxis_range.both_are_wildcard, self.ui_yaxis_range.both_are_wildcard = True, True
+        self.schedule_plot_update()
     
 
     def on_user_change_xaxis(self, lo: float, hi: float):

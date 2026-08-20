@@ -142,6 +142,7 @@ class MainWindowUi(QMainWindow):
         self._ui_smartdb_button = QtHelper.make_toolbutton(self, None, self.on_smart_db, icon='toolbar_smart-db.svg', tooltip='Attempt Smart Scaling of dB-Values', checked=False)
         self._ui_pan_button = QtHelper.make_toolbutton(self, None, self._on_plottool_pan, icon='toolbar_pan.svg', tooltip='Pan-Tool for Plot; while this is active, you cannot move cursors', checked=False)
         self._ui_zoom_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom, icon='toolbar_zoom.svg', tooltip='Zoom-Tool for Plot; while this is active, you cannot move cursors', checked=False)
+        self._ui_zoomall_button = QtHelper.make_toolbutton(self, None, self.on_zoomall_clicked, icon='toolbar_zoomall.svg', tooltip='Reset X- and Y-Axis Scales')
         self._ui_zoom_xp_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_xp, icon='toolbar_zoom_xp.svg', tooltip='X-Axis Zoom In ')
         self._ui_zoom_xm_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_xm, icon='toolbar_zoom_xm.svg', tooltip='X-Axis Zoom Out')
         self._ui_zoom_yp_button = QtHelper.make_toolbutton(self, None, self._on_plottool_zoom_yp, icon='toolbar_zoom_yp.svg', tooltip='Y-Axis Zoom In')
@@ -218,6 +219,8 @@ class MainWindowUi(QMainWindow):
                 QtHelper.layout_h(
                     self._ui_pan_button,
                     self._ui_zoom_button,
+                    default_spacing,
+                    self._ui_zoomall_button,
                     wide_spacing,
                     self._ui_refresh_button,
                     ..., margins=margins, spacing=default_spacing
@@ -1336,6 +1339,8 @@ class MainWindowUi(QMainWindow):
     def on_logy_changed(self):
         pass
     def on_zoom_clicked(self, dx: int, dy: int):
+        pass
+    def on_zoomall_clicked(self):
         pass
     def on_statusbar_click(self):
         pass
