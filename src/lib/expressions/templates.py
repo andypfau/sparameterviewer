@@ -258,8 +258,14 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                 ),
                 None,
                 ExpressionTemplate(
-                    'Treat Reference as 2xTHRU, De-Embed from Others',
-                    ['(((~{reference}).half(side=1)) ** sel_nws() ** (~{reference}).half(side=2))).plot_sel_params()  # deembed 2x thru']
+                    'Treat Reference as 2xTHRU, De-Embed from Selected',
+                    [
+                        'lthru, rthru = {reference}.half(side=1), {reference}.half(side=2)',
+                        'deemb = (~lthru) ** sel_nws() ** (~rthru)',
+                        '#lthru.plot_sel_params()',
+                        '#rthru.plot_sel_params()',
+                        'deemb.plot_sel_params()',
+                    ]
                 ),
             ]
         ),

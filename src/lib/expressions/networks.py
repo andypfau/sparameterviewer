@@ -1,4 +1,5 @@
 from __future__ import annotations
+import warnings
 
 from ..sparam_file import SParamFile, PathExt
 from ..bodefano import BodeFano
@@ -20,6 +21,7 @@ import logging
 import re
 import os
 import logging
+import warnings
 from types import NoneType
 from typing import overload, Callable, Generator
 
@@ -699,7 +701,10 @@ class Network:
     def half(self, method: str = 'IEEE370NZC', side: int = 1) -> "Network":
         if method=='IEEE370NZC':
             from skrf.calibration.deembedding import IEEEP370_SE_NZC_2xThru # don't import on top of file, as some older versions of the package don't provide this yet
-            deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw, use_z_instead_ifft=True)  # TODO: `use_z_instead_ifft=True` is a hack; since some time, it complains about non-uniform frequency vectors when I use default args
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)  # since some version I get warnings here that are treated as errors; this is a workaround
+                deembed = IEEEP370_SE_NZC_2xThru(dummy_2xthru=self.nw)
             
             # get networks with correct orientation: 1 = outer, 2 = inner
             if side==1:
