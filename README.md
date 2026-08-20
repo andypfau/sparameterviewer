@@ -35,7 +35,6 @@ Roadmap
     - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Networks:
     - Mixed-mode S-parameter sample file (e.g. Touchstone 2.0 format).
-    - 2xTHRU S-parameter sample files.
     - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General:
     - "TODO"-comments in code.
