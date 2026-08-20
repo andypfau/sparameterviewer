@@ -1312,10 +1312,13 @@ class Networks:
             raise ValueError(f'Invalid port number: {port}')
 
 
-    def plot_sel_params(self) -> None:
+    def plot_sel_params(self, **kwargs) -> None:
         Networks._default_actions_used = True
         for action in Networks._default_actions:
-            self.s(*action.s_args, **action.s_kwargs).plot(*action.plot_args, **action.plot_kwargs)
+            plot_kwargs = action.plot_kwargs
+            for k,v in kwargs.items():
+                plot_kwargs[k] = v
+            self.s(*action.s_args, **action.s_kwargs).plot(*action.plot_args, **plot_kwargs)
 
 
     def quick(self, *items) -> None:

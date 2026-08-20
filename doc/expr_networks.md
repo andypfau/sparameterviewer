@@ -16,10 +16,12 @@ Note that any operation on the object may, by design, fail silently. For example
 ### plot_sel_params()
 
 ```python
-plot_sel_params()
+plot_sel_params(**kwargs)
 ```
 
 Plots the parameters of the networks, according to the parameter selector in the main window.
+
+Similar to `.sel_params().plot()`. The keyword arguments `**kwargs` are handed over to `SParams.plot()`.
 
 Example:
 ```python
