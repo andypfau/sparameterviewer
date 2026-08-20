@@ -51,8 +51,8 @@ class ExpressionParser:
     def eval(self, code: str) -> ExpressionParser.Result:
 
         Networks.get_and_clear_default_actions_used()
-        vars_global, vars_local = self.get_vars()
-        exec(code, vars_global, vars_local)
+        vars = self.get_vars()
+        exec(code, vars, vars)
         default_actions_used = Networks.get_and_clear_default_actions_used()
 
         return ExpressionParser.Result(default_actions_used)
@@ -164,8 +164,7 @@ class ExpressionParser:
                 value = self._slider_fn(show, 0, num-1)
                 return min * (max / min) ** (value / (num - 1))
 
-        vars_global = {}
-        vars_local = {
+        vars = {
             'Networks': Networks,
             'SParams': SParams,
             'Comp': Components,
@@ -182,4 +181,4 @@ class ExpressionParser:
             'logging': logging,
         }
 
-        return vars_global, vars_local
+        return vars
