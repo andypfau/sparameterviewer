@@ -2,6 +2,15 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.47b3 (2026-08-19)
+--------------------
+
+- new: **kwargs for `Networks.plot_sel_params()`
+- bugfix: global variables accessible in experession, even within functions
+- bugfix: fixed 2xTHRU
+- bugfix: "Clear Log" button works
+
+
 0.47b2 (2026-08-18)
 --------------------
 
