@@ -67,7 +67,7 @@ class LogHandler(logging.StreamHandler):
         return [format(record) for record in self.get_records(level)]
 
 
-    def _notify(self, record: LogHandler.Record|None):
+    def _notify(self, record: LogHandler.Record|None = None):
         for i in reversed(range(len(self._observers))):
             try:
                 self._observers[i](record)
