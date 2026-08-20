@@ -272,8 +272,11 @@ class SParam:
     
         
 
-    def map(self, fn: "Callable[[np.ndarray],np.ndarray]"):
-        s = np.array(fn(self.s))
+    def map(self, fn: "Callable[[np.ndarray],np.ndarray]", f_arg: bool):
+        if f_arg:
+            s = np.array(fn(self.f, self.s))
+        else:
+            s = np.array(fn(self.s))
         if s.shape != self.s.shape:
             raise RuntimeError(f'SParam.map(): user-provided function returned a different shape (expected {self.s.shape}, got {s.shape})')
         return self._modified_copy(name=f'map({self.name})', s=s, param_type=self.param_type+'.map')
@@ -642,8 +645,8 @@ class SParams:
         return self._unary_op(SParam.rl_avg, True, f_integrate_start=f_integrate_start, f_integrate_end=f_integrate_end, f_target_start=f_target_start, f_target_end=f_target_end)
     
 
-    def map(self, fn: "Callable[[np.ndarray],np.ndarray]"):
-        return SParams(sps=[s.map(fn) for s in self.sps])
+    def map(self, fn: "Callable[[np.ndarray],np.ndarray]", f_arg: bool = False):
+        return SParams(sps=[s.map(fn, f_arg) for s in self.sps])
 
     
     def rename(self, name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, subs: str=None):

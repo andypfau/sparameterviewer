@@ -118,6 +118,7 @@ class ExpressionParser:
                     raise ValueError(f'Cannot broadcast shapes {shapes}')
 
             result = []
+            z0 = sparams[0].sps[0].z0
             for i in range(broadcast_shape):
                 sparam_list: list[SParam] = []
                 for s in sparams:
@@ -131,7 +132,7 @@ class ExpressionParser:
                     s_result = fn(f_adapted, *s_adapted)
                 else:
                     s_result = fn(*s_adapted)
-                result.append(SParam('mapped', f_adapted, s_result, sparams[0].sps[0].z0, number_type))  # TODO: better name and Z0
+                result.append(SParam(name='mapped', f=f_adapted, s=s_result, z0=z0, number_type=number_type))  # TODO: better name and Z0
             
             return SParams(result)
 

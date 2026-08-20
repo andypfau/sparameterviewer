@@ -31,13 +31,11 @@ Roadmap
     - Find a way to present the large matrix in a bigger form, e.g. as a dialog.
     - For the documentations, find a nicer representation than plain markdown files.
 - Expressions:
-    - Review `half()`: I am not sure if it really works; create a test jig. Also, check if orientation is correct.
-    - Review the examples for the `map()` function, I think they do not work. Is the `map()` function really intuitive to use?
-    - `f_arg` parameter for `SParams.map()`.
     - Add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
     - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
 - Networks:
     - Mixed-mode S-parameter sample file (e.g. Touchstone 2.0 format).
+    - 2xTHRU S-parameter sample files.
     - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General:
     - "TODO"-comments in code.

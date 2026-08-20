@@ -378,15 +378,17 @@ sel_nws().sel_params().smooth().plot()  # plot smoothed traces
 ### map()
 
 ```python
-map(fn: callable) → SParams.
+map(fn: callable, f_arg=False) → SParams.
 ```
 
 Applies an arbitrary function to each S-parameter. The function `fn` is called for each S-parameter (`numpy.ndarray`) individually.
 
+If `f_arg=True`, the first argument handed to `fn` is the frequency (as `np.ndarray`), and the second argument arguments are the S-parameters. If `f_arg=False` (default), the frequency argument is omitted.
+
 Example:
 
 ```python
-sel_nws().sel_params().map(lambda s: s**2).plot()  # squares the linear S-parameters
+sel_nws().sel_params().map(lambda s: s*2).plot()  # increase every parameter by 3.01 dB
 ```
 
 
