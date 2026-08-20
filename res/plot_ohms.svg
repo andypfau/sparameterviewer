@@ -7,7 +7,7 @@
    viewBox="0 0 5.2916665 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="plot_ohms.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -27,7 +27,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="31.041988"
-     inkscape:cx="10.389154"
+     inkscape:cx="10.373047"
      inkscape:cy="10.985121"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
@@ -35,7 +35,7 @@
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg1"
-     showgrid="true">
+     showgrid="false">
     <inkscape:grid
        id="grid2"
        units="px"
@@ -49,7 +49,7 @@
        opacity="0.14901961"
        empspacing="5"
        enabled="true"
-       visible="true" />
+       visible="false" />
     <inkscape:grid
        id="grid3"
        units="px"
@@ -63,14 +63,14 @@
        opacity="0.14901961"
        empspacing="5"
        enabled="true"
-       visible="true"
+       visible="false"
        dotted="true" />
   </sodipodi:namedview>
   <defs
      id="defs1" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
-     d="m 1.190625,4.3656248 h 0.79375 V 4.1010415 C 0.92604165,1.9843749 1.190625,0.92604163 2.6458333,0.92604163 c 1.4552083,0 1.9843749,1.05833327 0.6614584,3.17499987 v 0.2645833 h 0.7937499"
+     d="M 0.92604165,4.1010415 1.190625,4.3656248 h 0.79375 L 1.8520833,3.8364582 C 0.39687495,2.2489583 1.5875,0.92604163 2.6458333,0.92604163 c 1.0583333,0 2.2489582,1.32291667 0.79375,2.91041657 L 3.3072917,4.3656248 H 4.1010416 L 4.3656249,4.1010415"
      id="path1"
-     sodipodi:nodetypes="ccczccc" />
+     sodipodi:nodetypes="cccczcccc" />
 </svg>

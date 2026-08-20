@@ -7,7 +7,7 @@
    viewBox="0 0 5.2916665 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="plot_phase.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="43.9"
-     inkscape:cx="9.9886105"
-     inkscape:cy="10.022779"
+     inkscape:zoom="31.041988"
+     inkscape:cx="13.530061"
+     inkscape:cy="13.852206"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
      inkscape:window-x="0"
@@ -70,7 +70,7 @@
      id="defs1" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#1a1a1a;stroke-width:0.265;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none"
-     d="m 1.4552083,1.4552083 c 0,0 0,1.3229166 1.3229166,1.3229166 1.3229167,0 1.4552083,-0.9260416 1.0583334,-1.3229166 C 3.4395833,1.0583333 2.7781249,1.190625 2.778125,2.2489582 v 2.1166665"
+     d="m 2.2489583,1.190625 c -0.9260417,0 -1.1906251,2.1166665 0.5291666,2.1166665 1.7197917,0 1.3898159,-2.1166665 0.5291667,-2.1166665 -0.2645833,0 -0.5291667,0.1322916 -0.5291667,0.5291666 l 1e-7,2.6458331"
      id="path1"
-     sodipodi:nodetypes="czzzc" />
+     sodipodi:nodetypes="czczc" />
 </svg>

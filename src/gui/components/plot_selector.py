@@ -160,7 +160,7 @@ class PlotSelector(QWidget):
         self._ui_detrend_button = QtHelper.make_toolbutton(self, None, self._on_select_detrend, icon='plot_phase-detrend.svg', tooltip='Unwrap and De-Trend Phase', checked=False)
         self._ui_impulse_button = QtHelper.make_toolbutton(self, None, self._on_select_impulse, icon='plot_tdr-impulse.svg', tooltip='Show Impulse Response', checked=False)
         self._ui_step_button = QtHelper.make_toolbutton(self, None, self._on_select_step, icon='plot_tdr-step.svg', tooltip='Show Step Response', checked=False)
-        self._ui_tdr_z_button = QtHelper.make_toolbutton(self, None, self._on_select_tdr_z, icon='plot_impedance.svg', tooltip='Convert Y-Axis to Impedance', checked=False)
+        self._ui_tdr_z_button = QtHelper.make_toolbutton(self, None, self._on_select_tdr_z, icon='plot_ohms.svg', tooltip='Convert Y-Axis to Impedance', checked=False)
         self._ui_smith_z_button = QtHelper.make_toolbutton(self, None, self._on_select_smith_z, icon='plot_impedance.svg', tooltip='Show Impedance (Z) Smith Chart', checked=False)
         self._ui_admittance_button = QtHelper.make_toolbutton(self, None, self._on_select_y, icon='plot_admittance.svg', tooltip='Show Admittance (Y) Smith Chart', checked=False)
         self._ui_advancedmenu_button = QtHelper.make_toolbutton(self, None, None, icon='toolbar_menu-small.svg', tooltip='Show Plot Menu')
