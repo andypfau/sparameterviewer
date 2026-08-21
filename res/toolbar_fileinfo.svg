@@ -7,7 +7,7 @@
    viewBox="0 0 6.3499998 6.3499999"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="toolbar_fileinfo.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="36.583333"
-     inkscape:cx="11.986333"
-     inkscape:cy="12"
+     inkscape:zoom="146.33333"
+     inkscape:cx="11.771071"
+     inkscape:cy="10.769932"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
      inkscape:window-x="0"
@@ -79,19 +79,20 @@
      id="path2"
      sodipodi:nodetypes="ccc" />
   <circle
-     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
+     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.32292;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none"
      id="path3"
-     cx="3.0427084"
-     cy="2.6458335"
-     r="0.13229166" />
+     cx="3.0427082"
+     cy="2.5135415"
+     r="0.17638446" />
   <path
      style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
      d="M 3.0427083,3.1750001 V 4.2333332"
      id="path4" />
   <path
      style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 2.6458332,4.2333332 H 3.4395833"
-     id="path5" />
+     d="M 2.7781249,4.2333332 H 3.3072916"
+     id="path5"
+     sodipodi:nodetypes="cc" />
   <path
      style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
      d="M 3.0427083,3.1750001 H 2.778125"

@@ -7,7 +7,7 @@
    viewBox="0 0 10.583333 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="toolbar_s-expr.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -27,8 +27,8 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="31.125"
-     inkscape:cx="20"
-     inkscape:cy="9.9919679"
+     inkscape:cx="18.056225"
+     inkscape:cy="9.124498"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
      inkscape:window-x="0"
@@ -91,12 +91,12 @@
      sodipodi:nodetypes="czc" />
   <path
      style="fill:none;stroke:#000000;stroke-width:0.265112;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none"
-     d="m 3.8364582,4.3656249 c 0,0 0,-1.8520833 0,-2.3812499 0,-0.5291667 0.2645834,-0.79375 1.0583334,-0.79375"
+     d="m 3.8364583,4.2333332 0,-2.5135416 c 0,-0.2645833 0.2645833,-0.5291666 0.5291666,-0.5291666 h 0.396875"
      id="path3"
-     sodipodi:nodetypes="czc" />
+     sodipodi:nodetypes="cscc" />
   <path
      style="fill:none;stroke:#000000;stroke-width:0.265112;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none"
-     d="M 3.3072916,2.7781249 H 4.3656249"
+     d="M 3.4395833,2.2489582 H 4.2333332"
      id="path4"
      sodipodi:nodetypes="cc" />
 </svg>

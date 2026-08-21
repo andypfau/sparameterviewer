@@ -7,7 +7,7 @@
    viewBox="0 0 5.2916665 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="plot_impedance.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -27,7 +27,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:zoom="43.9"
-     inkscape:cx="9.9886105"
+     inkscape:cx="9.977221"
      inkscape:cy="10.022779"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
@@ -74,6 +74,6 @@
      id="path3" />
   <path
      style="fill:none;stroke:#000000;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 2.2489583,2.5135415 H 3.3072916"
+     d="M 2.2489583,2.6458332 H 3.3072916"
      id="path4" />
 </svg>

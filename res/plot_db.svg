@@ -7,7 +7,7 @@
    viewBox="0 0 5.2916665 5.2916666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="plot_db.svg"
    inkscape:export-filename="filesys_archive_pin.png"
    inkscape:export-xdpi="96"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="43.9"
-     inkscape:cx="9.9886105"
-     inkscape:cy="10.022779"
+     inkscape:zoom="21.95"
+     inkscape:cx="2.3234624"
+     inkscape:cy="11.389522"
      inkscape:window-width="1920"
      inkscape:window-height="1131"
      inkscape:window-x="0"
@@ -78,17 +78,17 @@
      id="path1-5" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10"
-     d="m 1.8520833,4.3656247 c -1.5875,2e-7 -1.32291667,-2.1166664 0,-2.1166665"
+     d="m 1.984375,3.9576076 c 0,0.6726005 -1.32717838,0.5405168 -1.32291668,-0.6503161 C 0.66572002,2.1164587 1.984375,1.9920447 1.984375,2.6712244"
      id="path2"
-     sodipodi:nodetypes="cc" />
+     sodipodi:nodetypes="czc" />
   <path
      style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10"
-     d="m 2.7781249,2.2489583 c 1.5875,2e-7 1.3229167,-1.58749989 0,-1.58749999"
-     id="path2-7"
-     sodipodi:nodetypes="cc" />
-  <path
-     style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10"
-     d="m 2.7781249,4.3656248 c 2.1166667,0 1.8520833,-2.1166666 0,-2.1166665"
+     d="m 2.7781249,4.3656248 h 0.5291667 c 0.6614583,0 0.9260416,-0.5291666 0.9260416,-1.0583333 0,-0.5291666 -0.2645833,-1.0583333 -1.0583333,-1.0583333 l -0.396875,10e-8"
      id="path2-2"
-     sodipodi:nodetypes="cc" />
+     sodipodi:nodetypes="cczcc" />
+  <path
+     style="fill:none;fill-opacity:0.33;stroke:#000000;stroke-width:0.264999;stroke-linecap:square;stroke-miterlimit:10"
+     d="m 2.7781249,2.2489582 h 0.396875 c 0.6614583,0 0.9260417,-0.3968749 0.9260417,-0.7937499 0,-0.396875 -0.2645833,-0.79374999 -0.9260417,-0.79374999 l -0.396875,1e-7"
+     id="path2-2-2"
+     sodipodi:nodetypes="cczcc" />
 </svg>

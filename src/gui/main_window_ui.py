@@ -176,8 +176,10 @@ class MainWindowUi(QMainWindow):
         self._ui_colors_layout = QtHelper.layout_widget_h('Color', self._ui_color_combo, ...,spacing=default_spacing, margins=0)
         self._ui_zoom_buttons_panel = QtHelper.layout_h(
             self._ui_zoom_xm_button, self._ui_zoom_xp_button,
-            wide_spacing,
+            default_spacing,
             self._ui_zoom_ym_button, self._ui_zoom_yp_button, 
+            default_spacing,
+            self._ui_zoomall_button,
             ..., spacing=default_spacing
         )
         self._ui_ribbon.setLayout(QtHelper.layout_h(
@@ -219,8 +221,6 @@ class MainWindowUi(QMainWindow):
                 QtHelper.layout_h(
                     self._ui_pan_button,
                     self._ui_zoom_button,
-                    default_spacing,
-                    self._ui_zoomall_button,
                     wide_spacing,
                     self._ui_refresh_button,
                     ..., margins=margins, spacing=default_spacing
@@ -862,6 +862,7 @@ class MainWindowUi(QMainWindow):
         self._ui_pan_button.setChecked(value == PlotWidget.Tool.Pan)
         self._ui_zoom_button.setChecked(value == PlotWidget.Tool.Zoom)
         self._ui_plot.setTool(value)
+        self._ui_show_zoombuttons(value != PlotWidget.Tool.Off)
         self._enable_cursors(value == PlotWidget.Tool.Off)
 
 
