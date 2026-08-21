@@ -11,13 +11,19 @@ import skrf
 import zipfile
 import tempfile
 import numpy as np
+import warnings
 
 
 
 TARGET_DIR = 'samples'
 
-N_POINTS = 301
-FREQ_RANGE = (10e6, 10e9)
+FREQ_RANGE, FREQ_N_POINTS = (10e6, 10e9), 301
+
+Z0 = 50
+DIEL_DK, DIEL_DF = 3.4, 0.03
+DIEL_TH_M, CU_TH_M = 0.1e-3, 18e-6
+LEN_TOL_M, W_TOL_M = 60e-6, 10e-6
+
 
 with tempfile.TemporaryDirectory() as tempdir:
     print(f'Working inside temporary directory <{tempdir}>...')
@@ -26,26 +32,17 @@ with tempfile.TemporaryDirectory() as tempdir:
     print(f'Creating <{zip_path}>...')
     with zipfile.ZipFile(zip_path, 'w') as zfp:
 
-        freq = skrf.Frequency(*FREQ_RANGE, N_POINTS)
+        freq = skrf.Frequency(*FREQ_RANGE, FREQ_N_POINTS, unit='Hz')
 
         def make_msl(len_m: float, w_m: float, name='MSL') -> skrf.Network:
-            len_m += random.gauss(0, 60e-6)
-            w_m += random.gauss(0, 10e-6)
-            msl = skrf.media.MLine(
-                frequency=freq,
-                ep_r=3.4,
-                tand=0.03,
-                w=w_m,
-                h=0.1e-3,
-                t=18e-6,
-                z0_port=50,
-            )
-            def make(name):
-                return msl.line(len_m, unit='m', name=name)
             if isinstance(name, list):
-                return tuple([make(n) for n in name])
-            else:
-                return make(name)
+                return tuple(make_msl(len_m, w_m, n) for n in name)
+            len_m += random.gauss(0, LEN_TOL_M)
+            w_m += random.gauss(0, W_TOL_M)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)  # ignore any warnings, I just need a coarse model
+                msl = skrf.media.MLine(frequency=freq, ep_r=DIEL_DK, tand=DIEL_DF, w=w_m, h=DIEL_TH_M, t=CU_TH_M, z0_port=Z0)
+            return msl.line(len_m, unit='m', name=name)
 
         conn1, conn2 = make_msl(5e-3, 0.19e-3, name=['Connector 1', 'Connector 2'])  # tiny mismatch
         trace1, trace2 = make_msl(25e-3, 0.214e-3, name=['Feed 1', 'Feed 2'])
