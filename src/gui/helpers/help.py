@@ -4,7 +4,7 @@ import pathlib
 
 
 
-def show_help(doc: str = 'main'):
+def show_help(doc: str = 'index'):
 
     def locate_helpfile(doc: str):
         try:

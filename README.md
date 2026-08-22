@@ -18,7 +18,7 @@ Main Features
 Documentation
 -------------
 
-[See here](./doc/main.md).
+[See here](./doc/index.md).
 
 Roadmap
 -------

@@ -3,7 +3,7 @@ docs_dir: doc
 site_dir: htmldoc
 use_directory_urls: false
 nav:
-  - main.md
+  - index.md
   - howtorun.md
   - expressions.md
   - expr_networks.md
