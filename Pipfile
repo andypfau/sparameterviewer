@@ -15,6 +15,7 @@ citifile = "*"
 
 [docs]
 mkdocs = "*"
+pymdown-extensions = "*"
 
 [dev-packages]
 pyinstaller = "*"
