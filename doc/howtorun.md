@@ -35,7 +35,10 @@ S-parameter Viewer was tested with:
 HTML Documentation
 ------------------
 
-Experimental **optional** feature: install `mkdocs`, then run `mkdocs build` from the main directory to create HTML documentation files.
+Experimental **optional** feature:
+
+1. Install `mkdocs` (`python -m pipenv install --categories docs`).
+2. Run `mkdocs build` from the main directory to create HTML documentation files.
 
 
 Compiling
