@@ -10,7 +10,7 @@ See [here](./howtorun.md).
 Main Window
 -----------
 
-<img src="./mainwin_numbered.png" width="600" />
+<img src="./img/mainwin_numbered.png" width="600" />
 
 1. Main menu.
 2. **Parameter Selector**: select which S-parameters to plot.
