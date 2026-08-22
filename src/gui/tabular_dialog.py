@@ -623,7 +623,7 @@ class TabularDialog(TabularDialogUi):
 
 
     def on_help(self):
-        show_help('tools.md')
+        show_help('tools')
     
 
     def on_open_externally(self):

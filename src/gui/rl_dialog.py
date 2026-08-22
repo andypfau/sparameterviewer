@@ -135,4 +135,4 @@ class RlDialog(RlDialogUi):
 
 
     def on_help(self):
-        show_help('tools.md')
+        show_help('tools')

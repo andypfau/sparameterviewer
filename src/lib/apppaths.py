@@ -54,6 +54,11 @@ class AppPaths:
 
 
     @staticmethod
+    def get_htmldoc_dir() -> str:
+        return os.path.join(AppPaths._get_content_dir(), 'htmldoc')
+
+
+    @staticmethod
     def get_doc_dir() -> str:
         return os.path.join(AppPaths._get_content_dir(), 'doc')
 

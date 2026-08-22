@@ -1241,7 +1241,7 @@ class MainWindow(MainWindowUi):
     
     
     def on_help_button(self):
-        show_help('expressions.md')
+        show_help('expressions')
 
 
     def on_tab_change(self):

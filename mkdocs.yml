@@ -1,0 +1,19 @@
+site_name: S-Parameter Viewer
+docs_dir: doc
+site_dir: htmldoc
+use_directory_urls: false
+nav:
+  - main.md
+  - howtorun.md
+  - expressions.md
+  - expr_networks.md
+  - expr_sparams.md
+  - expr_components.md
+  - timedomain.md
+  - tools.md
+markdown_extensions:
+  - tables
+  - fenced_code
+  - toc:
+      toc_depth: 3
+plugins: []  # disable search (won't work on local files anywa<y)

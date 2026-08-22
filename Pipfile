@@ -13,6 +13,9 @@ openpyxl = "*"
 pandas = "*"
 citifile = "*"
 
+[docs]
+mkdocs = "*"
+
 [dev-packages]
 pyinstaller = "*"
 pywin32-ctypes = {version = "*", markers = "sys_platform == 'win32'"}

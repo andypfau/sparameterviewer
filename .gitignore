@@ -10,6 +10,6 @@ samples/*.s*p
 share
 .vscode
 *.patch
-doc/html/*
+htmldoc/*
 automation/*
 sandbox/*
