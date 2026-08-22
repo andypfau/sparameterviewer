@@ -5,7 +5,7 @@ Networks Class
 
 The `Networks` class is a container for one or more S-parameter networks (i.e. files).
 
-To get a `Networks` object, call the [global functions](./expressions.ms) `nws()`, `sel_nws()` or `nw()`.
+To get a `Networks` object, call the [global functions](./expressions.md) `nws()`, `sel_nws()` or `nw()`.
 
 Note that any operation on the object may, by design, fail silently. For example, if an object contains a 1-port and a 2-port, and you attempt to invert the object (an operation that only works on 2-ports), the 1-port will silently be dropped. This is to avoid excessive errors when applying general expressions on a large set of networks.
 
