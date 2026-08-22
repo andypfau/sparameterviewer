@@ -37,6 +37,7 @@ However, there is also a quicker way if you don't need full control:
 ```
 
 The expressions use [Python](https://docs.python.org/3/) syntax. You have access to:
+
 - Packets:
     - `math`: [math](https://docs.python.org/3/library/math.html)
     - `cmath`: [cmath](https://docs.python.org/3/library/cmath.html)
@@ -87,6 +88,7 @@ If no pattern is provided, returns a `Networks` object that contains *all availa
 If a pattern is provided, returns a `Networks` object that contains all available networks that match the given pattern. Wildcards `*`, `*` and `?` are supported, e.g. `'*.s2p'`. See examples below.
 
 Notes:
+
 -  This function returns an empty `Networks` object if the pattern does not match anything (instead of raising an error).
 - "Available" networks in this context means that all files are considered which are currently shown in the filesystem browser. If a file matches that is currently not loaded, it will be loaded.
 
@@ -121,6 +123,7 @@ Example file structure (Linux nomenclature):
 ```
 
 Example patterns:
+
 - `"*"`: matches all files (there is no `/` in the pattern, so it only checks against the filename)
 - `"amp*"`: matches only "amp.s2p" and "diff_amp.s4p" 
 - `"dummy*"`: matches only "dummy_termination.s1p", "dummy_2-way-divider.s2p", "dummy_3-way-divider.s3p"
@@ -168,10 +171,12 @@ Maps `SParams` objects, using a user-defined function `fn`, followed by one or m
 If `f_arg=True`, the first argument handed to `fn` is the frequency (as `np.ndarray`), and all subsequent arguments are the S-parameters of each `sparams` argument (as `np.ndarray`). The S-parameters are interpolated to all have the same freuqencies. If `f_arg=False` (default), the frequency argument is omitted.
 
 The signature of `fn` must be:
+
 - if `f_arg=False`: `(*s: np.narray) -> list[np.narray]`
 - if `f_arg=True`: `(f: np.narray, *s: np.narray) -> list[np.narray]`
 
 If the items of `sparams` have different numbers of elements, all items with only a single element are repeated. If there are different numbers of elements that are not one, an error occurs. Example:
+
 - `map(fn, three_elements, three_elements)`: `fn()` is called 3x, with `three_elements[0],three_elements[0]`, `three_elements[1],three_elements[1]`, `three_elements[2],three_elements[2]`.
 - `map(fn, three_elements, one_element)`: `fn()` is called 3x, with `three_elements[0],one_element`, `three_elements[1],one_element`, `three_elements[2],one_element`.
 - `map(fn, three_elements, two_elements)`: fails.
@@ -196,6 +201,7 @@ Show a slider (trackbar) in the GUI, which allows to select a value in a given r
 The return value is the current value of the slider in the GUI.
 
 The range can be defined in various ways, analogous to common Python/Numpy methods:
+
 - `range`: a tuple of integers `(min, max)`.
 - `arange`: a tuple of floats ``(min, max, number_of_steps)`.
 - `linspace`: a tuple of floats ``(min, max, step)`.

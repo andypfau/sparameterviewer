@@ -45,11 +45,13 @@ Main Window
 ### Filesystem Browser
 
 How to navigate:
+
 - Use the breadcrumb bar (hidden when multiple/no directories are selected), or the buttons next to it.
 - Use "Open Directory" from the main menu.
 - Right-click a directory (hidden when simplified filesystem browser is enabled in settings).
 
 How to select files for plotting:
+
 - All checked files are plotted.
 - How to change an item being checked:
     - Just click the checkbox of a file to toggle it; *or*

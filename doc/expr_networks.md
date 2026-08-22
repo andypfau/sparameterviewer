@@ -55,6 +55,7 @@ s(egress_port=None, ingress_port=None, *, rl_only=False, il_only=False, fwd_il_o
 Returns S-parameters (an `SParams` object) of a network.
 
 There are two variants with different positional arguments, and the same keyword arguments. The positional arguments can be:
+
 - `ports` is an integer: e.g. `s(21)` for S21.
     - Only valid for `11` to `99`.
 - `ports` is a string: e.g. `s("21")` or `s("2,1")` for S21.
@@ -64,6 +65,7 @@ There are two variants with different positional arguments, and the same keyword
 - No positional argument: everything (i.e. `s()`).
 
 In any case, further filtering is possible with the keyword arguments:
+
 - `rl_only=True`: only S11, S22, S33, ...
 - `il_only=True`: only S21, S12, S31, ...
 - `fwd_il_only=True`: only S21, S31, S32, ...
@@ -572,11 +574,13 @@ def_ports(ports):
 ```
 
 Defines the types of each port. This information is used for:
+
 - displaying the correct parameter (e.g. "SDD21") name when plotting,
 - single-ended to mixed-mode conversion (`s2m()`; can also be provided as an argument to that function instead),
 - mixed-mode ro single-ended conversion (`m2s()`; can also be provided as an argument to that function instead).
 
 Valid types are:
+
 - `"S"`: single-ended port.
 - `"P"`: single-ended port, which is the positive terminal of a differential port.
 - `"N"`: single-ended port, which is the negative terminal of a differential port.
@@ -584,6 +588,7 @@ Valid types are:
 - `"C"`: common-mode terminal of a differential port.
 
 It is expected that you provide as many arguments are the file network has terminals. You may provide these either as a list, or as a comma-separated string, e.g.:
+
 - `["P1", "P2", "N1", "N2"]` or
 - `"P1,P2,N1,N2"`
 

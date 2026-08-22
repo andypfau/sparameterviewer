@@ -400,6 +400,7 @@ rename(name: str=None, prefix: str=None, suffix: str=None, pattern: str=None, su
 ```
 
 Renames S-parameters; parameters:
+
 - `name`: if provided, replaces the whole name with `name`
 - `prefix`: if provided, prepends the existing name with `prefix`
 - `suffix`: if provided, appends `suffix` to the existing name

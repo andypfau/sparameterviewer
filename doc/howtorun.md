@@ -5,6 +5,7 @@ Prerequisites
 -------------
 
 Either install the required Python packets:
+
 - Mandatory: `python -m pip install PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
 - Optional: `python -m pip install pyinstaller`: to compile a binary.
 - Optional: `python -m pip install markdown`: to convert Markdown docs to HTML (using `doc/make_html_docs.py`).
@@ -25,9 +26,16 @@ Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") t
 Optionally, compile it, see next section.
 
 S-parameter Viewer was tested with:
+
 - Python 3.13.
     - Might work with 3.7 or newer, but was not tested.
 - Windows 11, Fedora Linux 43.
+
+
+HTML Documentation
+------------------
+
+Experimental **optional** feature: install `mkdocs`, then run `mkdocs build` from the main directory to create HTML documentation files.
 
 
 Compiling

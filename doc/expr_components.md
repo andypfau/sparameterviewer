@@ -124,6 +124,7 @@ Comp.Line(z, c_m, l_m, r_m, g_m, len, eps_r, delay, deg, at_f, db, db_m_mhz, db_
 ```
 
 Creates a transmission line. There are varios ways to define the transmission line characteristics:
+
 - Via length:
     - `len`: length in meters
     - `z`: impedance in Ω (default: matched)
@@ -144,6 +145,7 @@ Creates a transmission line. There are varios ways to define the transmission li
     - `g_m`: distribted conductance, in Siemens per meter (default: `g_m=0`)
 
 In all cases, *except* for the material constants, attenuation can also be defined (note that loss is given in positive dB values):
+
 - either in decibels:
     - `db`: constant (frequency-independent) attenuation in dB (default: `db=0`)
     - `db_m_mhz`: attenuation in dB per meter per MHz (default: `db_m_mhz=0`)
