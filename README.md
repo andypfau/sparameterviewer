@@ -29,7 +29,6 @@ Roadmap
 - GUI:
     - Add "color by command", where each "plot()" statement gets its own color assinged.
     - Find a way to present the large matrix in a bigger form, e.g. as a dialog.
-    - For the documentations, find a nicer representation than plain markdown files.
 - Expressions:
     - Add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
     - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).

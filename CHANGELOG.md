@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.47b4 (2026-08-22)
+--------------------
+
+- new: experimental feature to generate HTML docs
+
+
+- new: **kwargs for `Networks.plot_sel_params()`
 0.47b3 (2026-08-19)
 --------------------
 
