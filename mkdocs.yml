@@ -18,7 +18,7 @@ markdown_extensions:
       toc_depth: 3
   - pymdownx.arithmatex:
       generic: true
-plugins: []  # disable search (won't work on local files anywa<y)
+plugins: []  # disable search (won't work on local files anyway)
 extra_javascript:
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
