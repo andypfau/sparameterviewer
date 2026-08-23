@@ -92,9 +92,9 @@ with tempfile.TemporaryDirectory() as tempdir:
             f = np.linspace(*FREQ_RANGE, N_POINTS)
             rl_lin = 10**(RL_REF_DB/20)
             cable_loss = 10**((IL_PER_DB_SQRT_GHZ*np.sqrt(f/1e9))/20)
-            s11 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 5*math.tau, math.tau*0.001, OUTLIER_CHANCE)
-            s22 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 8*math.tau, math.tau*0.001, OUTLIER_CHANCE)
-            mismatch = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, 6*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            s11 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, -5*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            s22 = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, -8*math.tau, math.tau*0.001, OUTLIER_CHANCE)
+            mismatch = make_random_sii(N_POINTS, rl_lin, rl_lin/10, 0, -6*math.tau, math.tau*0.001, OUTLIER_CHANCE)
             sij = cable_loss * np.sqrt(1 - np.abs(mismatch)**2) * np.exp(-1j*math.tau*f/PHASE_PERIOD_HZ)
             
             
