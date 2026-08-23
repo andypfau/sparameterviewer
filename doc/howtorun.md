@@ -35,7 +35,7 @@ S-parameter Viewer was tested with:
 HTML Documentation
 ------------------
 
-Experimental **optional** feature:
+The documentation exists in the form of .md-files (Markdown). As an experimental, **optional** feature, you can compile it to HTML:
 
 1. Install `mkdocs` (`python -m pipenv install --categories docs`).
 2. Run `mkdocs build` from the main directory to create HTML documentation files.
