@@ -1,7 +1,11 @@
+# script for MkDocs
+
 site_name: S-Parameter Viewer
+
 docs_dir: doc
 site_dir: htmldoc
 use_directory_urls: false
+
 nav:
   - index.md
   - howtorun.md
@@ -11,6 +15,9 @@ nav:
   - expr_components.md
   - timedomain.md
   - tools.md
+
+plugins: []  # disable search (won't work on local files anyway)
+
 markdown_extensions:
   - tables
   - fenced_code
@@ -18,7 +25,7 @@ markdown_extensions:
       toc_depth: 3
   - pymdownx.arithmatex:
       generic: true
-plugins: []  # disable search (won't work on local files anyway)
+
 extra_javascript:
   - javascripts/mathjax.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
