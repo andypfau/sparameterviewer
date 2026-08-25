@@ -2,14 +2,17 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="237.06667mm"
-   height="84.666664mm"
-   viewBox="0 0 237.06667 84.666664"
+   width="896"
+   height="320"
+   viewBox="0 0 237.06667 84.666667"
    version="1.1"
    id="svg1"
    xml:space="preserve"
    inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    sodipodi:docname="mainwin_numbered.svg"
+   inkscape:export-filename="mainwin_numbered.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -58,7 +61,7 @@
        id="image1"
        x="0"
        y="0" /><path
-       style="fill:none;fill-opacity:0.33;stroke:#00cc00;stroke-width:1.32292;stroke-linecap:square;stroke-miterlimit:10;paint-order:stroke fill markers;stroke-opacity:1"
+       style="fill:none;fill-opacity:0.33;stroke:#00cc00;stroke-width:1.32292;stroke-linecap:square;stroke-miterlimit:10;stroke-opacity:1;paint-order:stroke fill markers"
        d="M 3.966869,42.333333 H 230.54509"
        id="path1" /><path
        style="fill:none;fill-opacity:0.33;stroke:#00cc00;stroke-width:1.32292;stroke-linecap:square;stroke-miterlimit:10;stroke-opacity:1;paint-order:stroke fill markers"
