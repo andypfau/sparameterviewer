@@ -1,35 +1,37 @@
 How To Run
 ==========
 
-Prerequisites
--------------
 
-Either install the required Python packets:
+Quickstart
+----------
+
+Install [Pytho](https://www.python.org/), [Pipenv](https://pipenv.pypa.io/en/latest/) and [pyenv](https://github.com/pyenv/pyenv), then run
+```bash
+python -m pipenv run python src/sparamviewer.py
+```
+
+Optionally, build the HTML documentation, and compile the application into a binary, see next sections.
+
+Requirements
+------------
+
+With [Pipenv](https://pipenv.pypa.io/en/latest/) and [pyenv](https://github.com/pyenv/pyenv), you can simply install the requirements from the `Pipfile`:
+```bash
+python -m pipenv install
+```
+
+Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") the "`[requires]`" section in <`Pipfile`>.
+
+You can also install the required Python packets manually:
 
 - Mandatory: `python -m pip install PyQt6 numpy scipy scikit-rf matplotlib openpyxl pandas CITIfile`.
 - Optional: `python -m pip install pyinstaller`: to compile a binary.
 - Optional: `python -m pip install markdown`: to convert Markdown docs to HTML (using `doc/make_html_docs.py`).
 
-Then run
-```bash
-cd src
-python ../sparamviewer.py
-```
-
-Alternatively, install the packets `pipenv pyenv`, then use the environment:
-```bash
-python -m pipenv shell
-python ../sparamviewer.py
-``` 
-Note: if you want to use `pipenv` without `pyenv`, you can comment out ("`#`") the "`[requires]`" section in <`Pipfile`>.
-
-Optionally, compile it, see next section.
-
 S-parameter Viewer was tested with:
 
-- Python 3.13.
-    - Might work with 3.7 or newer, but was not tested.
-- Windows 11, Fedora Linux 43.
+- Python 3.13 (might work with 3.7 or newer, but was not tested).
+- Windows 11, Fedora Linux 44.
 
 
 HTML Documentation
@@ -37,7 +39,7 @@ HTML Documentation
 
 The documentation exists in the form of .md-files (Markdown). As an experimental, **optional** feature, you can compile it to HTML via [MkDocs](https://www.mkdocs.org/):
 
-1. Install `mkdocs` (`python -m pipenv install --categories docs`).
+1. Install additional packets: `python -m pipenv install --categories docs`.
 2. Run `mkdocs build` from the main directory to create HTML documentation files.
 
 
@@ -46,15 +48,10 @@ Compiling
 
 Compiling is **optional**. You can just as well run the Python script without compiling.
 
-Make sure the dependencies, including `pyinstaller`, are installed. You may use the [pipenv](https://pipenv.pypa.io/) environment in `src/pipenv`.
+1. Install additional packets: `python -m pipenv install --categories dev`.
+2. Run `pyinstaller --clean pyinstaller.spec` from the `./src` directory to compile.
 
-To compile, run:
-```bash
-cd src
-pyinstaller --noconfirm --clean pyinstaller.spec
-```
-
-The flag `--noconfirm` overwrites existing files, the flag `--clean` triggers a fresh build.
+The flag `--clean` triggers a fresh build. Cou can add the flag `--noconfirm` to overwrite existing files without confirmation.
 
 
 File Type Association
