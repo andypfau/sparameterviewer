@@ -5,12 +5,17 @@ datas = []
 hiddenimports = []
 
 
-# add icons
+# add icons, help, samples
 datas.extend([
     ('../res/*.ico', './res/'),
     ('../res/*.png', './res/'),
     ('../res/*.xbm', './res/'),
     ('../res/*.svg', './res/'),
+    ('../doc/*.md', './doc/'),
+    ('../doc/img/*.png', './doc/img'),
+    ('../htmldoc/*', './htmldoc/'),
+    ('../samples/*.s?p', './samples/'),
+    ('../samples/*.zip', './samples/'),
 ])
 
 
@@ -24,6 +29,12 @@ datas.extend([
 import os, skrf as rf
 skrf_data_dir = os.path.join(os.path.dirname(rf.__file__), 'data/*')
 datas.extend([(skrf_data_dir, 'skrf/data/')])
+
+
+# scipy hidden imports
+from PyInstaller.utils.hooks import collect_submodules
+hiddenimports.extend(collect_submodules("scipy"))
+hiddenimports.extend(collect_submodules("scipy._external"))
 
 
 # OS-specific
