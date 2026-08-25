@@ -38,7 +38,7 @@ Main Window
     - The [tabular view](./tools.md) allows to view the parameters as a table, and to export it in valious formats.
     - Additional tools in the menu.
 7. **Help** and **Settings**.
-8. **Filesystem Browser**, **Expressions** and **Cursors**.
+8. **Filesystem Browser**, **[Expressions](expressions.md)** and **Cursors**.
 9. **Graph**.
 
 
