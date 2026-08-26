@@ -32,8 +32,6 @@ Roadmap
 - Expressions:
     - Add more metadata to each SParams object, so I can track the origin (file, parameter, equstion) separately; then I could add a function to e.g. define the color by origin file.
     - Function to set plot type (i.e. when I run that equation, it automatically sets up the plot type).
-- Networks:
-    - Show correct parameter names of mixed-mode parameters in `Networks.s()`, and in the GUI.
 - General:
     - "TODO"-comments in code.
     - More unit tests.
