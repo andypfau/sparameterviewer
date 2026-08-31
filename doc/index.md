@@ -1,5 +1,5 @@
-S-Parameter Viewer Documentation
-================================
+Getting Started
+===============
 
 How To Run S-Parameter Viewer
 -----------------------------
