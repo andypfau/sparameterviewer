@@ -264,6 +264,8 @@ class MainWindow(MainWindowUi):
             self.ui_filesys_browser.show_archives = Settings.extract_zip
         if check('plot_cursor_readouts'):
             self.ui_plot_cursor_readouts = Settings.plot_cursor_readouts
+        if check('ribbon_titles'):
+            self.ui_show_ribbon_titles(Settings.ribbon_titles)
         
         self.ui_use_polar_axis_controls = self.ui_plot_selector.plotType() in [PlotType.Polar,PlotType.Smith]
         self.ui_show_smart_db = self.ui_plot_selector.plotType()==PlotType.Cartesian and self.ui_plot_selector.yQuantity()==YQuantity.Decibels
@@ -1230,9 +1232,6 @@ class MainWindow(MainWindowUi):
         except:
             pass
 
-        if 'ribbon_titles' in attributes:
-            self.ui_show_ribbon_titles(Settings.ribbon_titles)
-            
         if 'plot_cursor_readouts' in attributes:
             self.update_cursor_readout()
             self.schedule_plot_update()

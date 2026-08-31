@@ -182,11 +182,11 @@ class MainWindowUi(QMainWindow):
             self._ui_zoomall_button,
             ..., spacing=default_spacing
         )
-        self._ui_ribbon_title_params = QLabel('Displayed Parameters')
-        self._ui_ribbon_title_plot = QLabel('Plot Config')
-        self._ui_ribbon_title_scale = QLabel('Axis Scale')
-        self._ui_ribbon_title_traces = QLabel('Traces and Tools')
-        self._ui_ribbon_title_helpers = QLabel('Helpers')
+        self._ui_ribbon_title_params = QLabel('Parameter Selector')
+        self._ui_ribbon_title_plot = QLabel('Plot Selector')
+        self._ui_ribbon_title_scale = QLabel('Axis Range')
+        self._ui_ribbon_title_traces = QLabel('Plot Options')
+        self._ui_ribbon_title_helpers = QLabel('Tools')
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
@@ -205,8 +205,9 @@ class MainWindowUi(QMainWindow):
                 ..., margins=margins, spacing=default_spacing,
             ),
             vline(),
-            QtHelper.layout_v(...,
+            QtHelper.layout_v(
                 self._ui_ribbon_title_scale,
+                ...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
                 #QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
