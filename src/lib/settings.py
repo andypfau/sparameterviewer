@@ -190,6 +190,7 @@ class SParamViewerAppSettings(AppSettings):
     plot_export_fixed: bool = False
     plot_export_width: int = 400
     plot_export_height: int = 300
+    ribbon_titles: bool = True
 
     
     def _reset(self):

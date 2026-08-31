@@ -182,6 +182,11 @@ class MainWindowUi(QMainWindow):
             self._ui_zoomall_button,
             ..., spacing=default_spacing
         )
+        self._ui_ribbon_title_params = QLabel('Parameter Selector')
+        self._ui_ribbon_title_plot = QLabel('Plot Selector')
+        self._ui_ribbon_title_scale = QLabel('Axis Range')
+        self._ui_ribbon_title_traces = QLabel('Plot Options')
+        self._ui_ribbon_title_helpers = QLabel('Tools')
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
@@ -189,16 +194,20 @@ class MainWindowUi(QMainWindow):
             ),
             vline(),
             QtHelper.layout_v(...,
+                self._ui_ribbon_title_params,
                 self._ui_param_selector,
                 ..., margins=margins, spacing=default_spacing,
             ),
             vline(),
             QtHelper.layout_v(default_spacing,
+                self._ui_ribbon_title_plot,
                 self._ui_plot_selector,
                 ..., margins=margins, spacing=default_spacing,
             ),
             vline(),
-            QtHelper.layout_v(...,
+            QtHelper.layout_v(
+                self._ui_ribbon_title_scale,
+                ...,
                 QtHelper.layout_h(self._ui_locky_button, self._ui_yaxis_range, self._ui_logy_button, ..., spacing=default_spacing),
                 QtHelper.layout_h(self._ui_lockx_button, self._ui_xaxis_range, self._ui_logx_button, ..., spacing=default_spacing),
                 #QtHelper.layout_h(self._ui_lockboth_button, wide_spacing, self._ui_zoom_xm_button, self._ui_zoom_xp_button, wide_spacing, self._ui_zoom_ym_button, self._ui_zoom_yp_button, wide_spacing, self._ui_smartdb_button, ..., spacing=default_spacing),
@@ -207,6 +216,7 @@ class MainWindowUi(QMainWindow):
             ),
             vline(),
             QtHelper.layout_v(
+                self._ui_ribbon_title_traces,
                 QtHelper.layout_h(
                     self._ui_legend_button,
                     self._ui_short_legend_button,
@@ -231,6 +241,7 @@ class MainWindowUi(QMainWindow):
             ),
             vline(),
             QtHelper.layout_v(
+                self._ui_ribbon_title_helpers,
                 QtHelper.layout_h(
                     self._ui_filter_button,
                     self._ui_filesel_button,
@@ -980,6 +991,14 @@ class MainWindowUi(QMainWindow):
     @ui_hide_single_item_legend.setter
     def ui_hide_single_item_legend(self, value):
         self._ui_menuitem_hide_single_legend.setChecked(value)
+    
+
+    def ui_show_ribbon_titles(self, show: bool):
+        self._ui_ribbon_title_helpers.setVisible(show)
+        self._ui_ribbon_title_params.setVisible(show)
+        self._ui_ribbon_title_plot.setVisible(show)
+        self._ui_ribbon_title_scale.setVisible(show)
+        self._ui_ribbon_title_traces.setVisible(show)
     
 
     @property

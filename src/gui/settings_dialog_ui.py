@@ -45,6 +45,9 @@ class SettingsDialogUi(QDialog):
         self._ui_tabs.addTab(gui_widget, 'GUI')
         self._ui_mainwinlayout_combo = QComboBox()
         self._ui_mainwinlayout_combo.setToolTip('Layout of the toolbar, filesysem browser, and plot in the main window.')
+        self._ui_ribbon_titles_check = QCheckBox('Show titles in the toolbar')
+        self._ui_ribbon_titles_check.setToolTip('Show titles in the top of every toolbar column')
+        self._ui_ribbon_titles_check.toggled.connect(self.on_ribbon_titles_changed)
         self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')
         self._ui_simple_params_check.setToolTip('Show a simple drop-down to select the plotted parameters, instead of the buttons and the parameter matrix in the main window toolbar.')
         self._ui_simple_params_check.toggled.connect(self.on_simple_params_changed)
@@ -70,6 +73,7 @@ class SettingsDialogUi(QDialog):
         gui_widget.setLayout(
             QtHelper.layout_v(
                 QtHelper.layout_h('Main Window Layout:', self._ui_mainwinlayout_combo,...),
+                self._ui_ribbon_titles_check,
                 self._ui_simple_params_check,
                 self._ui_simple_noexpr_check,
                 self._ui_simple_plot_check,
@@ -255,6 +259,14 @@ class SettingsDialogUi(QDialog):
     @ui_singletrace_individualcolor.setter
     def ui_singletrace_individualcolor(self, value: bool):
         self._ui_singletracecolor_check.setChecked(value)
+
+    
+    @property
+    def ui_ribbon_titles(self) -> bool:
+        return self._ui_ribbon_titles_check.isChecked()
+    @ui_ribbon_titles.setter
+    def ui_ribbon_titles(self, value: bool):
+        self._ui_ribbon_titles_check.setChecked(value)
 
     
     @property
@@ -599,6 +611,8 @@ class SettingsDialogUi(QDialog):
     def on_logxneg_changed(self):
         pass
     def on_logyneg_changed(self):
+        pass
+    def on_ribbon_titles_changed(self):
         pass
     def on_simple_params_changed(self):
         pass

@@ -93,6 +93,7 @@ class SettingsDialog(SettingsDialogUi):
             self.ui_mainwin_layout = enum_to_string(Settings.mainwindow_layout, SettingsDialog.MAINWINLAYOUT_NAMES)
             self.ui_largematrix_layout = enum_to_string(Settings.large_matrix_behavior, SettingsDialog.LARGEMATRIX_NAMES)
             self.ui_guicolorscheme = enum_to_string(Settings.gui_color_scheme, SettingsDialog.GUICOLORSCHEME_NAMES)
+            self.ui_ribbon_titles = Settings.ribbon_titles
             self.ui_simplified_plot = Settings.simplified_plot_sel
             self.ui_simplified_params = Settings.simplified_param_sel
             self.ui_simplified_noexpr = Settings.simplified_no_expressions
@@ -220,6 +221,10 @@ class SettingsDialog(SettingsDialogUi):
     
     def on_guicolorscheme_changed(self):
         Settings.gui_color_scheme = string_to_enum(self.ui_guicolorscheme, SettingsDialog.GUICOLORSCHEME_NAMES)
+
+
+    def on_ribbon_titles_changed(self):
+        Settings.ribbon_titles = self.ui_ribbon_titles
 
 
     def on_simple_plot_changed(self):
