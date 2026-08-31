@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.48b1 (2026-08-31)
+--------------------
+
+- new: ribbon titles (can be turned off in settings)
+- change: HTML doc theme
+
+
 0.47b4 (2026-08-22)
 --------------------
 
