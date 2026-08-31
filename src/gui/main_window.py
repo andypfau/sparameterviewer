@@ -1229,8 +1229,11 @@ class MainWindow(MainWindowUi):
             self.apply_settings_to_ui(attributes)
         except:
             pass
+
+        if 'ribbon_titles' in attributes:
+            self.ui_show_ribbon_titles(Settings.ribbon_titles)
             
-        if any_common_elements(('plot_cursor_readouts'), attributes):
+        if 'plot_cursor_readouts' in attributes:
             self.update_cursor_readout()
             self.schedule_plot_update()
             
