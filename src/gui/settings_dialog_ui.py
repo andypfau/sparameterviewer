@@ -45,7 +45,7 @@ class SettingsDialogUi(QDialog):
         self._ui_tabs.addTab(gui_widget, 'GUI')
         self._ui_mainwinlayout_combo = QComboBox()
         self._ui_mainwinlayout_combo.setToolTip('Layout of the toolbar, filesysem browser, and plot in the main window.')
-        self._ui_ribbon_titles_check = QCheckBox('Show titles in the toolbar')
+        self._ui_ribbon_titles_check = QCheckBox('Show Toolbar Titles')
         self._ui_ribbon_titles_check.setToolTip('Show titles in the top of every toolbar column')
         self._ui_ribbon_titles_check.toggled.connect(self.on_ribbon_titles_changed)
         self._ui_simple_params_check = QCheckBox('Simple Drop-Down Parameter Selection')

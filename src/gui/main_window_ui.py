@@ -69,6 +69,9 @@ class MainWindowUi(QMainWindow):
         
         combo_arrow_image_url = os.path.join(AppPaths.get_resource_dir(), 'combo_arrow.svg').replace('\\', '/')
         self._ui_ribbon.setStyleSheet(f"""
+            QLabel  {{
+                font-size: 80%;
+            }}
             QWidget {{
                 background-color: {color_bg};
                 border: none;
@@ -182,11 +185,16 @@ class MainWindowUi(QMainWindow):
             self._ui_zoomall_button,
             ..., spacing=default_spacing
         )
-        self._ui_ribbon_title_params = QLabel('Parameter Selector')
-        self._ui_ribbon_title_plot = QLabel('Plot Selector')
-        self._ui_ribbon_title_scale = QLabel('Axis Range')
-        self._ui_ribbon_title_traces = QLabel('Plot Options')
-        self._ui_ribbon_title_helpers = QLabel('Tools')
+        def make_ribbon_label(text: str):
+            label = QLabel(text)
+            label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            return label
+        self._ui_ribbon_title_params = make_ribbon_label('Parameter Selector')
+        self._ui_ribbon_title_plot = make_ribbon_label('Plot Selector')
+        self._ui_ribbon_title_scale = make_ribbon_label('Axis Range')
+        self._ui_ribbon_title_traces = make_ribbon_label('Plot Options')
+        self._ui_ribbon_title_helpers = make_ribbon_label('Tools')
         self._ui_ribbon.setLayout(QtHelper.layout_h(
             QtHelper.layout_v(
                 self._ui_menu_button,
