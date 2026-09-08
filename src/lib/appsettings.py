@@ -64,12 +64,15 @@ class AppSettings:
                 
                 initial_value = self._defaults[setting_name]
                 try:
-                    loaded_value = data[setting_name]
-                    expected_type = type(self._defaults[setting_name])
-                    try:
-                        initial_value = expected_type(loaded_value)
-                    except (ValueError, TypeError) as ex:
-                        logging.warning(f'Casting <{loaded_value}> to {expected_type} failed, using default <{initial_value}> ({ex})')
+                    if setting_name in data:
+                        loaded_value = data[setting_name]
+                        expected_type = type(self._defaults[setting_name])
+                        try:
+                            initial_value = expected_type(loaded_value)
+                        except (ValueError, TypeError) as ex:
+                            logging.warning(f'Casting <{loaded_value}> to {expected_type} failed, using default <{initial_value}> ({ex})')
+                    else:
+                        logging.warning(f'Setting <{setting_name}> not found in data, using default <{initial_value}>')
                 except Exception as ex:
                     logging.warning(f'Unable to load setting <{setting_name}>, using default <{initial_value}> ({ex})')
                 
