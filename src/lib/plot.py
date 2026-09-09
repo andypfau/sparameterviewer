@@ -564,11 +564,17 @@ class PlotHelper:
                 # for whatever reason, Smith charts can only be scaled after adding data (whereas e.g. polar plots can be scaled before)
                 self._plot.set_xlim((-self._r_smith,+self._r_smith))
                 self._plot.set_ylim((-self._r_smith,+self._r_smith))
-                if self._anything_in_plot:
-                    self._plot.legend()
                 
         if self._anything_in_plot:
             if show_legend:
+
+                # collect legend items, to ensure labels on a secondary Y-axis are shown
+                handles, labels = self._plot.get_legend_handles_labels()
+                if self._plot2 is not None:
+                    handles2, labels2 = self._plot2.get_legend_handles_labels()
+                    handles += handles2
+                    labels += labels2
+                
                 match self._preferred_legend_position:  # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
                     case LegendPos.TopLeft:     loc = 'upper left'
                     case LegendPos.Top:         loc = 'upper center'
@@ -580,7 +586,8 @@ class PlotHelper:
                     case LegendPos.Bottom:      loc = 'lower center'
                     case LegendPos.BottomRight: loc = 'lower right'
                     case _:                     loc = 'best'
-                self._plot.legend(loc=loc)
+
+                self._plot.legend(handles, labels, loc=loc)
             else:
                 if self._plot:
                     legend = self._plot.get_legend()
