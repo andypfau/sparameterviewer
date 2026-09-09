@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.48b2 (2026-09-09)
+--------------------
+
+- bugfix: showing legend for all plots when secondary axis is used
+
+
+
 0.48b1 (2026-08-31)
 --------------------
 
