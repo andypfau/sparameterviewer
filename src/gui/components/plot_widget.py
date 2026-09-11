@@ -133,8 +133,15 @@ class PlotWidget(QWidget):
 
 
     def draw(self):
-        self._figure.tight_layout()
-        self._canvas.draw()
+        try:
+            self._figure.tight_layout()
+        except Exception as ex:
+            logging.warning(f'Error during Figure.tight_layout, ignoring: {ex}')
+
+        try:
+            self._canvas.draw()
+        except Exception as ex:
+            logging.error(f'Error during Figure.canvas.draw, skipping: {ex}')
 
 
     def clear(self):
