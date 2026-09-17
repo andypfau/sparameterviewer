@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.48b3 (2026-09-17)
+--------------------
+
+- bugfix: fixed the "open selected files externally" menu command
+
+
+
 0.48b2 (2026-09-09)
 --------------------
 

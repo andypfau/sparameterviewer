@@ -891,7 +891,7 @@ class MainWindow(MainWindowUi):
             return
         
         try:
-            start_process(Settings.ext_editor_cmd, *[str(file) for file in selected_files_nonarchive])
+            start_process(Settings.ext_editor_cmd, *[str(file.path) for file in selected_files_nonarchive])
         except Exception as ex:
             error_dialog('Open File Externally', 'Unable to open file with external editor.', detailed_text=str(ex))
     
