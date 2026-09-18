@@ -587,6 +587,7 @@ def find_default_editors() -> list[str]:
             '%ProgramFiles(x86)%/Notepad++/notepad++.exe',
             '%ProgramFiles%/Microsoft VS Code/bin/code.cmd',
             '%LocalAppData%/Programs/Microsoft VS Code/bin/code.cmd',
+            '%LocalAppData%/Programs/Microsoft VS Code/Code.exe',
             '%SystemRoot%/System32/notepad.exe',
         ]
         common_paths = [os.path.abspath(os.path.expandvars(path)) for path in common_paths_raw]
