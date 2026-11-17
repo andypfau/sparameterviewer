@@ -2,6 +2,13 @@ S-Parameter Viewer Changelog
 ============================
 
 
+0.49b1 (2026-11-17)
+--------------------
+
+- new: option to show a popup-dialog with a large matrix, when the S-parameter matrix is too large
+
+
+
 0.48b3 (2026-09-17)
 --------------------
 

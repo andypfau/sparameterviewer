@@ -2,5 +2,5 @@ class Info:
     Author = 'Andreas Pfau'
     Domain = 'apfau.de'
     AppName = 'S-Parameter Viewer'
-    AppVersionStr = "0.48b3"  # see https://peps.python.org/pep-0440/
-    AppDateStr = "2026-09-17"
+    AppVersionStr = "0.49b1"  # see https://peps.python.org/pep-0440/
+    AppDateStr = "2026-11-17"
