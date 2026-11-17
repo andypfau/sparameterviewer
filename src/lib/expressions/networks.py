@@ -1354,7 +1354,7 @@ class Networks:
         return self._unary_op(Network.rewire, Networks, ports=ports)
 
 
-    def merge(self, *others: "Networks") -> "Networks":
+    def merge(self, *others: "Networks") -> "Networks":  # TODO: document?
         
         if len(self.nws) < 1:
             return self
