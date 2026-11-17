@@ -468,11 +468,25 @@ class MainWindow(MainWindowUi):
                             if not slicerpattern:
                                 return
                         ex = ex.replace('{slicerpattern}', slicerpattern)
-                    if '{selected_explicit_casc}' in ex:
+                    if '{selected_explicit_ascasc}' in ex:
                         selected_files = explicit_selected_files()
                         if not verify_ranges(template, selected_files):
                             return
-                        ex = ex.replace('{selected_explicit_casc}', ' ** '.join(selected_files))
+                        ex = ex.replace('{selected_explicit_ascasc}', ' ** '.join(selected_files))
+                    if '{selected_explicit_first}' in ex:
+                        selected_files = explicit_selected_files()
+                        if len(selected_files) < 2:
+                            raise ValueError('Select at least two networks for this template.')
+                        if not verify_ranges(template, selected_files):
+                            return
+                        ex = ex.replace('{selected_explicit_first}', selected_files[0])
+                    if '{selected_explicit_rest_asargs}' in ex:
+                        selected_files = explicit_selected_files()
+                        if len(selected_files) < 2:
+                            raise ValueError('Select at least two networks for this template.')
+                        if not verify_ranges(template, selected_files):
+                            return
+                        ex = ex.replace('{selected_explicit_rest_asargs}', ','.join(selected_files[1:]))
 
                     # replace array-patterns
                     if '{*generated}' in ex:
@@ -517,9 +531,12 @@ class MainWindow(MainWindowUi):
         recurse_templates(templates, menu_items)
                     
         def call_wrapper_fn(template_fn, ctrl, shift):
-            nonlocal comment_existing_expr
-            comment_existing_expr = Settings.comment_existing_expr != ctrl
-            template_fn()
+            try:
+                nonlocal comment_existing_expr
+                comment_existing_expr = Settings.comment_existing_expr != ctrl
+                template_fn()
+            except Exception as e:
+                logging.error(f"Error executing template function: {e}")
         self.ui_show_template_menu(menu_items, call_wrapper=call_wrapper_fn)
 
 

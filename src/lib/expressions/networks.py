@@ -867,6 +867,10 @@ class Network:
             nw_renumbered = nw.renumbered(old_indices, new_indices)
         return Network(nw_renumbered, original_files=self.original_files)
 
+        nw = NetworkExt(s=s, f=f)
+        name = '&'.join([nw.name for nw in networks])
+        return Network(nw, name=name, original_files=self.original_files)
+
 
     def save(self, filename: str):
         
@@ -1348,6 +1352,35 @@ class Networks:
 
     def rewire(self, ports: list[int]) -> "Networks":
         return self._unary_op(Network.rewire, Networks, ports=ports)
+
+
+    def merge(self, *others: "Networks") -> "Networks":
+        
+        if len(self.nws) < 1:
+            return self
+        n_ports = self.nws[0]._nw.number_of_ports
+
+        nws_to_merge = []
+        for nws in [self, *others]:
+            for nw in nws.nws: 
+                if nw._nw.number_of_ports != n_ports:
+                    continue  # TODO: a debug message?
+                nws_to_merge.append(nw._nw)
+        if len(nws_to_merge) < 2:
+            return self  # TODO: a debug message?
+        
+        f = np.sort(np.unique(np.concat([nw.f for nw in nws_to_merge])))
+        s = np.zeros([len(f),n_ports,n_ports], dtype=complex)
+        for i,f1 in enumerate(f):
+            for nw in nws_to_merge:
+                if f1 in nw.f:
+                    idx = np.where(nw.f == f1)[0][0]
+                    s[i,:,:] = nw.s[idx,:,:]
+                    break
+        assert len(f) == s.shape[0]
+
+        nw = NetworkExt(f=f, s=s, name=f'({")&(".join([nw.name for nw in nws_to_merge])})')
+        return Networks([nw])
 
     
     def get_f_min(self) -> float:

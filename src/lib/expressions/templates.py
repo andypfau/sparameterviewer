@@ -232,7 +232,7 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
             [
                 ExpressionTemplate(
                     'Cascade Selected Networks',
-                    ['({selected_explicit_casc}).s(2,1).plot()'],
+                    ['({selected_explicit_ascasc}).s(2,1).plot()'],
                     min_selected=2
                 ),
                 ExpressionTemplate(
@@ -292,7 +292,7 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                 None,
                 ExpressionTemplate(
                     'Impedance Renormalization',
-                    ['{*selected}.renorm([50,75]).plot_sel_params()  # re-normalize port impedances']
+                    ['{*selected}.renorm(50).plot_sel_params()  # re-normalize port impedances (argument can also be an array, with one impedance per port)']
                 ),
             ]
         ),
@@ -361,6 +361,12 @@ def get_expression_templates() -> list[ExpressionTemplate|ExpressionTemplateGrou
                         'f0, f1, nf = sel_nws().get_f_min(), sel_nws().get_f_max(), 101',
                         'f = slider(linspace=(f0, f1 ,nf))',
                         'sel_nws().crop_f(f-(f1-f0)/nf, f+(f1-f0)/nf).plot_sel_params()',
+                    ]
+                ),
+                ExpressionTemplate(
+                    'Merge Selected Networks',
+                    [
+                        '{selected_explicit_first}.merge({selected_explicit_rest_asargs}).plot_sel_params()',
                     ]
                 ),
                 ExpressionTemplate(
