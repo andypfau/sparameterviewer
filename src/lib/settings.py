@@ -87,9 +87,9 @@ class MainWindowLayout(enum.StrEnum):
     Ultrawide = 'ultrawide'
 
 class LargeMatrixBehavior(enum.StrEnum):
-    Clickable = 'clickable'
-    Scrollable = 'scrollable'
-    PopupDialog = 'popupdialog'
+    AlwaysExpand = 'scrollable'
+    DblclkExpand = 'clickable'
+    DblclkPopup = 'popupdialog'
 
 class GuiColorScheme(enum.StrEnum):
     Default = 'default'
@@ -173,7 +173,7 @@ class SParamViewerAppSettings(AppSettings):
     simplified_browser: bool = False
     simplified_no_expressions: bool = False
     dynamic_template_references: bool = False
-    large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.Clickable
+    large_matrix_behavior: LargeMatrixBehavior = LargeMatrixBehavior.DblclkExpand
     select_file_to_check: bool = True
     gui_color_scheme: GuiColorScheme = GuiColorScheme.Default
     legend_position: LegendPos = LegendPos.Auto

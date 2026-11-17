@@ -35,9 +35,9 @@ class SettingsDialog(SettingsDialogUi):
     }
 
     LARGEMATRIX_NAMES = {
-        LargeMatrixBehavior.Scrollable: 'Click to Expand',
-        LargeMatrixBehavior.PopupDialog: 'Click to Show Popup-Dialog',
-        LargeMatrixBehavior.Clickable: 'Editable, Double-Click to Expand',
+        LargeMatrixBehavior.AlwaysExpand: 'Always Expand',
+        LargeMatrixBehavior.DblclkPopup: 'Double-Click for Popup-Dialog',
+        LargeMatrixBehavior.DblclkExpand: 'Double-Click to Expand',
     }
 
     GUICOLORSCHEME_NAMES = {
