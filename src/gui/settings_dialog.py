@@ -36,6 +36,7 @@ class SettingsDialog(SettingsDialogUi):
 
     LARGEMATRIX_NAMES = {
         LargeMatrixBehavior.Scrollable: 'Click to Expand',
+        LargeMatrixBehavior.PopupDialog: 'Click to Show Popup-Dialog',
         LargeMatrixBehavior.Clickable: 'Editable, Double-Click to Expand',
     }
 

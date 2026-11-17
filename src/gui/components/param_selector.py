@@ -44,7 +44,7 @@ class ParamSelector(QWidget):
         def focusOutEvent(self, event: QFocusEvent):
             self.focusLost.emit()
 
-
+    
     class GraphicWidget(QWidget):
 
         paramClicked = pyqtSignal(int, int, QtCore.Qt.KeyboardModifier)
@@ -60,7 +60,7 @@ class ParamSelector(QWidget):
             total_size: float
             overflow: bool
 
-        def __init__(self, parent = ...):
+        def __init__(self, parent=None):
             super().__init__(parent)
             self._data = np.array([[False, False, True], [False, True, True], [True, True, True]], dtype=bool)
             self._scale_widget_to_contents = False
@@ -69,6 +69,34 @@ class ParamSelector(QWidget):
             self._dim_parameters = False
             self.setContentsMargins(0, 0, 0, 0)
             self._adjust_widget_size()
+            self._dialog = None
+
+        def _get_dialog(self):
+            def on_param_clicked(i: int, j: int, keys: QtCore.Qt.KeyboardModifier):
+                self.paramClicked.emit(i, j, keys)
+            class Dialog(QDialog):
+                def __init__(self, parent_widget: ParamSelector.GraphicWidget):
+                    super().__init__(parent_widget)
+                    self.setWindowTitle('Parameters')
+                    QtHelper.set_dialog_icon(self)
+                    self.setSizeGripEnabled(True)
+                    self.resize(500, 500)
+                    self._widget = ParamSelector.GraphicWidget()
+                    self._widget.scale_widget_to_contents = True
+                    self._widget.paramClicked.connect(on_param_clicked)
+                    self._scroll = QScrollArea()
+                    self._scroll.setWidget(self._widget)
+                    self.setLayout(QtHelper.layout_v(self._scroll))
+            if self._dialog is None:
+                self._dialog = Dialog(self)
+                self._dialog._widget.data = self.data
+            return self._dialog
+
+        def _dialog_widget(self) -> ParamSelector.GraphicWidget:
+            return self._get_dialog()._widget
+        
+        def _show_dialog(self):
+            return self._get_dialog().show()
         
         def get_geometry(self) -> ParamSelector.GraphicWidget.Geometry:
             if self._current_geometry is None:
@@ -139,10 +167,10 @@ class ParamSelector(QWidget):
                 return  # no mouse click -> ignore
             geometry = self.get_geometry()
 
-            if geometry.overflow and Settings.large_matrix_behavior==LargeMatrixBehavior.Clickable:
+            if geometry.overflow and Settings.large_matrix_behavior!=LargeMatrixBehavior.Scrollable:
                 self.overflowClicked.emit()
                 return
-            
+                
             super().mouseDoubleClickEvent(event)
 
         def paintEvent(self, event):
@@ -232,6 +260,8 @@ class ParamSelector(QWidget):
             if (not size_changed) and np.array_equal(value, self._data):
                 return
             self._data = value
+            if self._dialog is not None:
+                self._dialog_widget().data = value
             if size_changed:
                 self._adjust_widget_size()
             self.repaint()
@@ -267,6 +297,10 @@ class ParamSelector(QWidget):
         def dim_parameters(self, value: bool):
             self._dim_parameters = value
             self.repaint()
+
+        def showPopupDialog(self):
+            self._show_dialog()
+
 
 
     def __init__(self, parent = ...):
@@ -587,7 +621,10 @@ class ParamSelector(QWidget):
 
 
     def _on_overflow_clicked(self):
-        self.setAutoScaleGridToContents(True)
+        if Settings.large_matrix_behavior == LargeMatrixBehavior.Clickable:
+            self.setAutoScaleGridToContents(True)
+        elif Settings.large_matrix_behavior == LargeMatrixBehavior.PopupDialog:
+            self._ui_grid.showPopupDialog()
     
 
     def _update_simple_params_from_params(self, params: Parameters):

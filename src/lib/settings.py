@@ -89,6 +89,7 @@ class MainWindowLayout(enum.StrEnum):
 class LargeMatrixBehavior(enum.StrEnum):
     Clickable = 'clickable'
     Scrollable = 'scrollable'
+    PopupDialog = 'popupdialog'
 
 class GuiColorScheme(enum.StrEnum):
     Default = 'default'
